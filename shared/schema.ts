@@ -1,21 +1,6 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, foreignKey, varchar, decimal, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, foreignKey, varchar, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-// Session storage for auth persistence
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: json("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => {
-    return {
-      expireIdx: index("IDX_session_expire").on(table.expire),
-    };
-  }
-);
 
 // Users & Auth
 export const users = pgTable("users", {

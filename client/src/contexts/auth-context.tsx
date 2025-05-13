@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -78,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, [queryClient]);
 
-  // Login function - direct form submission to ensure cookie handling
+  // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
@@ -94,68 +95,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       console.log("Login response status:", response.status);
-      const responseData = await response.json();
-      console.log("Login response data:", responseData);
+      const data = await response.json();
+      console.log("Login response data:", data);
       
       if (!response.ok) {
-        console.error("Login failed:", responseData);
+        console.error("Login failed:", data);
         toast({
           title: "Login failed",
-          description: responseData.message || "Invalid username or password",
+          description: data.message || "Invalid username or password",
           variant: "destructive",
         });
         return false;
       }
 
-      // Verify session with a follow-up request
-      try {
-        console.log("Verifying session after login...");
-        const verifyResponse = await fetch(`/api/auth/me?cacheBuster=${Date.now()}`, {
-          credentials: "include",
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        
-        const verifyData = await verifyResponse.json();
-        console.log("Session verification:", verifyData);
-        
-        if (verifyData && verifyData.authenticated && verifyData.user) {
-          // Set the user in state
-          setUser(verifyData.user);
-          
-          // Show success toast
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${verifyData.user.name || username}!`,
-          });
-          
-          // Invalidate all queries to ensure fresh data
-          await queryClient.invalidateQueries();
-          
-          return true;
-        } else {
-          console.error("Login succeeded but session verification failed");
-          toast({
-            title: "Login error",
-            description: "Session verification failed. Please try again.",
-            variant: "destructive",
-          });
-          setUser(null);
-          return false;
-        }
-      } catch (verifyErr) {
-        console.error("Error verifying session:", verifyErr);
-        toast({
-          title: "Login error",
-          description: "Session verification failed. Please try again.",
-          variant: "destructive",
-        });
-        setUser(null);
-        return false;
-      }
+      console.log("Login successful, user data:", data);
+      
+      // Set the user in state
+      setUser(data.user);
+      
+      // Show success toast
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${data.user?.name || username}!`,
+      });
+      
+      // Invalidate all queries to ensure fresh data
+      await queryClient.invalidateQueries();
+      
+      return true;
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -173,10 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await apiRequest("POST", "/api/auth/logout", {});
       setUser(null);
       
       // Clear all query caches

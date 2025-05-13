@@ -18,7 +18,6 @@ import multer from "multer";
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
-import { pool } from "./db";
 
 // Setup multer for file uploads
 const upload = multer({
@@ -43,10 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: '/'
       },
       store: new MemoryStoreSession({
-        checkPeriod: 86400000 // prune expired entries every 24h
+        checkPeriod: 86400000, // prune expired entries every 24h
       }),
-      resave: false,
-      saveUninitialized: false, // Don't create session until data is stored
+      resave: true, // Changed to true to ensure session is saved back to store
+      saveUninitialized: true, // Changed to true to create session by default
       secret: "shiftpro-secret-key",
       name: 'connect.sid', // Using default name for better compatibility
     })

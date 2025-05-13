@@ -13,13 +13,12 @@ declare global {
 declare module 'express-session' {
     interface SessionData {
         userId: number;
-        loggedIn: boolean;
     }
 }
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        if (!req.session.userId || !req.session.loggedIn) {
+        if (!req.session.userId) {
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
