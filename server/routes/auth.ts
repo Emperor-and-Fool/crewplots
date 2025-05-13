@@ -107,7 +107,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Get current user
+// Get current user - authenticated endpoint
 router.get('/user', authenticateUser, (req, res) => {
     try {
         if (!req.user) {
@@ -121,6 +121,40 @@ router.get('/user', authenticateUser, (req, res) => {
     } catch (error) {
         console.error('Get user error:', error);
         return res.status(500).json({ message: 'Error getting user data' });
+    }
+});
+
+// Get current user - session check endpoint
+router.get('/me', async (req, res) => {
+    try {
+        console.log('Session data:', req.session);
+        const userId = req.session?.userId;
+        console.log('Get /me - userId from session:', userId);
+        
+        if (!userId) {
+            console.log('No user ID in session');
+            return res.status(200).json({ authenticated: false });
+        }
+        
+        const user = await storage.getUser(userId);
+        console.log('Get /me - found user:', user ? 'yes' : 'no');
+        
+        if (!user) {
+            console.log('User not found in database');
+            return res.status(200).json({ authenticated: false });
+        }
+        
+        // Remove password from response
+        const { password, ...userWithoutPassword } = user;
+        
+        console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
+        return res.status(200).json({ 
+            authenticated: true,
+            user: userWithoutPassword
+        });
+    } catch (error) {
+        console.error('Error in /me endpoint:', error);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 
