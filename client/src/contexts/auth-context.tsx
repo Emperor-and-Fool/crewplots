@@ -40,7 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
           console.log("User data:", data);
-          setUser(data.user);
+          if (data && data.user) {
+            setUser(data.user);
+            console.log("User authenticated:", data.user.username);
+          } else {
+            console.log("Response OK but no user data found");
+          }
         } else {
           console.log("Not authenticated, redirecting to login");
         }
@@ -71,23 +76,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       console.log("Login response status:", response.status);
+      const data = await response.json();
+      console.log("Login response data:", data);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Login failed:", errorData);
+        console.error("Login failed:", data);
         toast({
           title: "Login failed",
-          description: errorData.message || "Invalid username or password",
+          description: data.message || "Invalid username or password",
           variant: "destructive",
         });
         return false;
       }
 
-      const data = await response.json();
       console.log("Login successful, user data:", data);
       
       // Set the user in state
       setUser(data.user);
+      
+      // Show success toast
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${data.user?.name || username}!`,
+      });
       
       // Invalidate all queries to ensure fresh data
       await queryClient.invalidateQueries();
