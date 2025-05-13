@@ -49,7 +49,10 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 };
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
+
+  // Debug logging to see what state we're in
+  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user });
 
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
