@@ -28,6 +28,7 @@ import { Loader2 } from "lucide-react";
 export default function Login() {
   console.log("Login component rendering");
   const [isLoading, setIsLoading] = useState(false);
+  const [autoLoginLoading, setAutoLoginLoading] = useState(false);
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
@@ -46,6 +47,73 @@ export default function Login() {
     },
   });
 
+  // Auto-login function for development
+  const handleAutoLogin = async () => {
+    try {
+      setAutoLoginLoading(true);
+      console.log("Clicking auto-login button");
+      
+      // Create a script element to make the request
+      // This is a more direct way to make a request that bypasses potential fetch/XHR issues
+      const script = document.createElement('script');
+      script.innerHTML = `
+        console.log("Auto-login script executing");
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "/api/auth/autologin", true);
+        xhr.withCredentials = true;
+        xhr.onreadystatechange = function() {
+          console.log("XHR readyState change: " + xhr.readyState + ", status: " + (xhr.readyState === 4 ? xhr.status : "N/A"));
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              console.log("Auto-login successful, response: " + xhr.responseText);
+              window.location.href = "/dashboard";
+            } else {
+              console.error("Auto-login failed with status: " + xhr.status);
+              if (xhr.responseText) {
+                console.error("Error response: " + xhr.responseText);
+              }
+            }
+          }
+        };
+        xhr.onerror = function(e) {
+          console.error("XHR error during auto-login:", e);
+        };
+        console.log("Sending XHR request to /api/auth/autologin");
+        xhr.send();
+      `;
+      document.body.appendChild(script);
+      
+      // Alternative approach using a direct form submission
+      setTimeout(() => {
+        console.log("Trying alternative approach - direct form submission");
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/auth/login';
+        
+        const usernameInput = document.createElement('input');
+        usernameInput.type = 'hidden';
+        usernameInput.name = 'username';
+        usernameInput.value = 'admin';
+        form.appendChild(usernameInput);
+        
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = 'adminpass123';
+        form.appendChild(passwordInput);
+        
+        document.body.appendChild(form);
+        console.log("Submitting form directly to backend");
+        form.submit();
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Auto-login error:", error);
+    } finally {
+      // We don't set loading to false because we're either redirecting or failing
+    }
+  };
+  
   // Form submission handler
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
@@ -136,6 +204,27 @@ export default function Login() {
             </div>
             <div className="text-xs text-center text-gray-500">
               By signing in, you agree to our Terms of Service and Privacy Policy.
+            </div>
+            <div className="mt-4 border-t pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
+                onClick={handleAutoLogin}
+                disabled={autoLoginLoading}
+              >
+                {autoLoginLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Auto-Login in progress...
+                  </>
+                ) : (
+                  "Auto-Login (Development)"
+                )}
+              </Button>
+              <div className="mt-2 text-xs text-center text-gray-500">
+                This will automatically log you in with admin credentials for development purposes.
+              </div>
             </div>
           </CardFooter>
         </Card>
