@@ -52,9 +52,37 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 function App() {
   const { isLoading, user } = useAuth();
   const [forcedLoad, setForcedLoad] = React.useState(false);
+  const [autoLoginAttempted, setAutoLoginAttempted] = React.useState(false);
 
   // Debug logging to see what state we're in
-  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user, forcedLoad });
+  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user, forcedLoad, autoLoginAttempted });
+  
+  // Auto-login for development
+  React.useEffect(() => {
+    // Only attempt auto-login once and if no user is already logged in
+    if (!autoLoginAttempted && !user && !isLoading) {
+      setAutoLoginAttempted(true);
+      console.log("Attempting auto-login...");
+      
+      fetch('/api/auth/autologin')
+        .then(response => {
+          console.log("Auto-login response status:", response.status);
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Auto-login failed');
+        })
+        .then(data => {
+          console.log("Auto-login successful:", data);
+          // Force a page reload to reflect logged-in state
+          window.location.href = '/dashboard';
+        })
+        .catch(error => {
+          console.error("Auto-login error:", error);
+          // Continue with normal login flow if auto-login fails
+        });
+    }
+  }, [user, isLoading, autoLoginAttempted]);
   
   // If still loading after 2 seconds, force the login page
   React.useEffect(() => {

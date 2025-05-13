@@ -245,4 +245,44 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     }
 });
 
+// Auto-login endpoint for development
+router.get('/autologin', async (req, res) => {
+    try {
+        console.log('Attempting auto-login with admin credentials');
+        
+        // Find the admin user
+        const user = await storage.getUserByUsername('admin');
+        if (!user) {
+            console.error('Admin user not found');
+            return res.status(404).json({ message: 'Admin user not found' });
+        }
+        
+        // Set session data
+        req.session.userId = user.id;
+        req.session.loggedIn = true;
+        console.log('Auto-login successful, session:', req.session);
+        
+        // Explicitly save session
+        req.session.save((err) => {
+            if (err) {
+                console.error('Error saving session:', err);
+                return res.status(500).json({ message: 'Error saving session' });
+            }
+            
+            console.log('Session saved successfully for auto-login');
+            
+            // Remove password from response
+            const { password, ...userWithoutPassword } = user;
+            
+            return res.status(200).json({
+                message: 'Auto-login successful',
+                user: userWithoutPassword
+            });
+        });
+    } catch (error) {
+        console.error('Auto-login error:', error);
+        return res.status(500).json({ message: 'Error in auto-login' });
+    }
+});
+
 export default router;
