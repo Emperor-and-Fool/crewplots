@@ -116,6 +116,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ url: registerUrl });
   });
 
+  // Location routes
+  // Get all locations
+  app.get("/api/locations", async (req, res) => {
+    try {
+      const locations = await storage.getLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ message: "Failed to fetch locations" });
+    }
+  });
+
+  // Get a specific location
+  app.get("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      const location = await storage.getLocation(locationId);
+      if (!location) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      res.json(location);
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      res.status(500).json({ message: "Failed to fetch location" });
+    }
+  });
+
+  // Create a new location
+  app.post("/api/locations", async (req, res) => {
+    try {
+      const locationData = insertLocationSchema.parse(req.body);
+      const newLocation = await storage.createLocation(locationData);
+      res.status(201).json(newLocation);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error creating location:", error);
+      res.status(500).json({ message: "Failed to create location" });
+    }
+  });
+
+  // Update a location
+  app.put("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      const locationData = insertLocationSchema.parse(req.body);
+      const updatedLocation = await storage.updateLocation(locationId, locationData);
+      if (!updatedLocation) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      res.json(updatedLocation);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error updating location:", error);
+      res.status(500).json({ message: "Failed to update location" });
+    }
+  });
+
+  // Delete a location
+  app.delete("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      const success = await storage.deleteLocation(locationId);
+      if (!success) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      res.json({ message: "Location deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      res.status(500).json({ message: "Failed to delete location" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 

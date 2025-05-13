@@ -196,7 +196,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link href="/applicants">
                 <a className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
+                  isActive("/applicants") ? "bg-blue-700" : "hover:bg-blue-700"
                 )}>
                   <UserPlus className="h-5 w-5 mr-3" />
                   Applicants
@@ -209,7 +209,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link href="/cash-management">
                 <a className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
+                  isActive("/cash-management") ? "bg-blue-700" : "hover:bg-blue-700"
                 )}>
                   <DollarSign className="h-5 w-5 mr-3" />
                   Cash Management
