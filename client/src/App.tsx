@@ -70,19 +70,10 @@ function App() {
     </div>;
   }
   
-  // If not authenticated, redirect to login
+  // Show login page directly if not authenticated and not loading
   if (!user) {
-    console.log("Not authenticated - redirecting to login page");
-    return (
-      <Router>
-        <Switch>
-          <Route path="/login" component={Login} />
-          <Route path="*">
-            <Redirect to="/login" />
-          </Route>
-        </Switch>
-      </Router>
-    );
+    console.log("Not authenticated - showing login page");
+    return <Login />;
   }
 
   return (
