@@ -1,15 +1,19 @@
 import {
   users, locations, competencies, staff, staffCompetencies, applicants,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
-  kbCategories, kbArticles,
+  kbCategories, kbArticles, uploadedFiles, documentAttachments,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
   type Applicant, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type CashCount, type KbCategory, type KbArticle,
+  type Shift, type CashCount, type KbCategory, type KbArticle, 
+  type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
   type InsertStaffCompetency, type InsertApplicant, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
-  type InsertCashCount, type InsertKbCategory, type InsertKbArticle
+  type InsertCashCount, type InsertKbCategory, type InsertKbArticle,
+  type InsertUploadedFile, type InsertDocumentAttachment
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -39,17 +43,19 @@ export interface IStorage {
   deleteCompetency(id: number): Promise<boolean>;
 
   // Staff
-  getStaffMember(id: number): Promise<Staff | undefined>;
+  getStaff(id: number): Promise<Staff | undefined>;
   getStaffMembers(): Promise<Staff[]>;
-  getStaffMembersByLocation(locationId: number): Promise<Staff[]>;
-  createStaffMember(staff: InsertStaff): Promise<Staff>;
-  updateStaffMember(id: number, staff: Partial<InsertStaff>): Promise<Staff | undefined>;
-  deleteStaffMember(id: number): Promise<boolean>;
+  getStaffByLocation(locationId: number): Promise<Staff[]>;
+  getStaffByUser(userId: number): Promise<Staff | undefined>;
+  createStaff(staff: InsertStaff): Promise<Staff>;
+  updateStaff(id: number, staff: Partial<InsertStaff>): Promise<Staff | undefined>;
+  deleteStaff(id: number): Promise<boolean>;
 
   // Staff Competencies
   getStaffCompetency(id: number): Promise<StaffCompetency | undefined>;
   getStaffCompetencies(): Promise<StaffCompetency[]>;
   getStaffCompetenciesByStaff(staffId: number): Promise<StaffCompetency[]>;
+  getStaffCompetenciesByCompetency(competencyId: number): Promise<StaffCompetency[]>;
   createStaffCompetency(staffCompetency: InsertStaffCompetency): Promise<StaffCompetency>;
   updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined>;
   deleteStaffCompetency(id: number): Promise<boolean>;
@@ -73,7 +79,9 @@ export interface IStorage {
 
   // Template Shifts
   getTemplateShift(id: number): Promise<TemplateShift | undefined>;
+  getTemplateShifts(): Promise<TemplateShift[]>;
   getTemplateShiftsByTemplate(templateId: number): Promise<TemplateShift[]>;
+  getTemplateShiftsByDay(templateId: number, dayOfWeek: number): Promise<TemplateShift[]>;
   createTemplateShift(shift: InsertTemplateShift): Promise<TemplateShift>;
   updateTemplateShift(id: number, shift: Partial<InsertTemplateShift>): Promise<TemplateShift | undefined>;
   deleteTemplateShift(id: number): Promise<boolean>;
@@ -82,7 +90,7 @@ export interface IStorage {
   getWeeklySchedule(id: number): Promise<WeeklySchedule | undefined>;
   getWeeklySchedules(): Promise<WeeklySchedule[]>;
   getWeeklySchedulesByLocation(locationId: number): Promise<WeeklySchedule[]>;
-  getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule | undefined>;
+  getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]>;
   createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule>;
   updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined>;
   deleteWeeklySchedule(id: number): Promise<boolean>;
@@ -92,7 +100,7 @@ export interface IStorage {
   getShifts(): Promise<Shift[]>;
   getShiftsBySchedule(scheduleId: number): Promise<Shift[]>;
   getShiftsByStaff(staffId: number): Promise<Shift[]>;
-  getShiftsByDateRange(startDate: Date, endDate: Date): Promise<Shift[]>;
+  getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]>;
   createShift(shift: InsertShift): Promise<Shift>;
   updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined>;
   deleteShift(id: number): Promise<boolean>;
@@ -101,12 +109,13 @@ export interface IStorage {
   getCashCount(id: number): Promise<CashCount | undefined>;
   getCashCounts(): Promise<CashCount[]>;
   getCashCountsByLocation(locationId: number): Promise<CashCount[]>;
+  getCashCountsByShift(shiftId: number): Promise<CashCount[]>;
   getCashCountsByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<CashCount[]>;
   createCashCount(cashCount: InsertCashCount): Promise<CashCount>;
   updateCashCount(id: number, cashCount: Partial<InsertCashCount>): Promise<CashCount | undefined>;
   deleteCashCount(id: number): Promise<boolean>;
 
-  // Knowledge Base Categories
+  // KB Categories
   getKbCategory(id: number): Promise<KbCategory | undefined>;
   getKbCategories(): Promise<KbCategory[]>;
   getKbCategoriesByLocation(locationId: number): Promise<KbCategory[]>;
@@ -121,6 +130,23 @@ export interface IStorage {
   createKbArticle(article: InsertKbArticle): Promise<KbArticle>;
   updateKbArticle(id: number, article: Partial<InsertKbArticle>): Promise<KbArticle | undefined>;
   deleteKbArticle(id: number): Promise<boolean>;
+
+  // Upload Files
+  getUploadedFile(id: number): Promise<UploadedFile | undefined>;
+  getUploadedFiles(): Promise<UploadedFile[]>;
+  createUploadedFile(file: InsertUploadedFile): Promise<UploadedFile>;
+  updateUploadedFile(id: number, file: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined>;
+  deleteUploadedFile(id: number): Promise<boolean>;
+
+  // Document Attachments
+  getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined>;
+  getDocumentAttachments(): Promise<DocumentAttachment[]>;
+  getDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<DocumentAttachment[]>;
+  getDocumentAttachmentsByFile(fileId: number): Promise<DocumentAttachment[]>;
+  createDocumentAttachment(attachment: InsertDocumentAttachment): Promise<DocumentAttachment>;
+  deleteDocumentAttachment(id: number): Promise<boolean>;
+  deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean>;
+  deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -137,6 +163,8 @@ export class MemStorage implements IStorage {
   private cashCounts: Map<number, CashCount>;
   private kbCategories: Map<number, KbCategory>;
   private kbArticles: Map<number, KbArticle>;
+  private uploadedFiles: Map<number, UploadedFile>;
+  private documentAttachments: Map<number, DocumentAttachment>;
 
   private currentUserId: number;
   private currentLocationId: number;
@@ -151,6 +179,8 @@ export class MemStorage implements IStorage {
   private currentCashCountId: number;
   private currentKbCategoryId: number;
   private currentKbArticleId: number;
+  private currentUploadedFileId: number;
+  private currentDocumentAttachmentId: number;
 
   constructor() {
     this.users = new Map();
@@ -166,6 +196,8 @@ export class MemStorage implements IStorage {
     this.cashCounts = new Map();
     this.kbCategories = new Map();
     this.kbArticles = new Map();
+    this.uploadedFiles = new Map();
+    this.documentAttachments = new Map();
 
     this.currentUserId = 1;
     this.currentLocationId = 1;
@@ -180,43 +212,17 @@ export class MemStorage implements IStorage {
     this.currentCashCountId = 1;
     this.currentKbCategoryId = 1;
     this.currentKbArticleId = 1;
+    this.currentUploadedFileId = 1;
+    this.currentDocumentAttachmentId = 1;
 
     // Add default admin user
     this.createUser({
       username: "admin",
-      password: "admin123",
-      email: "admin@shiftpro.com",
+      password: "$2a$10$GQKjpzhl2PjwoZx8ZLOCruR0FiAzUOKYCC4JRkYdOjPALMrXbJgEq", // adminpass123
+      email: "admin@example.com",
       name: "Admin User",
       role: "manager",
       locationId: null
-    });
-
-    // Add demo location
-    this.createLocation({
-      name: "Downtown Bar",
-      address: "123 Main St, Downtown",
-      contactPerson: "John Doe",
-      contactEmail: "john@example.com",
-      contactPhone: "555-123-4567"
-    });
-
-    // Add competencies for demo location
-    this.createCompetency({
-      name: "Bar Service",
-      description: "Skills related to mixing drinks and bar operations",
-      locationId: 1
-    });
-
-    this.createCompetency({
-      name: "Floor Service",
-      description: "Skills related to table service and customer interaction",
-      locationId: 1
-    });
-
-    this.createCompetency({
-      name: "Cash Handling",
-      description: "Skills related to managing transactions and cash",
-      locationId: 1
     });
   }
 
@@ -226,30 +232,33 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    return Array.from(this.users.values()).find(user => user.username === username);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email
-    );
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const createdAt = new Date();
-    const newUser: User = { ...user, id, createdAt };
-    this.users.set(id, newUser);
+    const newUser: User = {
+      id: this.currentUserId++,
+      createdAt: new Date(),
+      ...user
+    };
+    this.users.set(newUser.id, newUser);
     return newUser;
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
     const existingUser = this.users.get(id);
-    if (!existingUser) return undefined;
-    
-    const updatedUser = { ...existingUser, ...user };
+    if (!existingUser) {
+      return undefined;
+    }
+
+    const updatedUser = {
+      ...existingUser,
+      ...user
+    };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -280,18 +289,25 @@ export class MemStorage implements IStorage {
   }
 
   async createLocation(location: InsertLocation): Promise<Location> {
-    const id = this.currentLocationId++;
-    const createdAt = new Date();
-    const newLocation: Location = { ...location, id, createdAt };
-    this.locations.set(id, newLocation);
+    const newLocation: Location = {
+      id: this.currentLocationId++,
+      createdAt: new Date(),
+      ...location
+    };
+    this.locations.set(newLocation.id, newLocation);
     return newLocation;
   }
 
   async updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined> {
     const existingLocation = this.locations.get(id);
-    if (!existingLocation) return undefined;
-    
-    const updatedLocation = { ...existingLocation, ...location };
+    if (!existingLocation) {
+      return undefined;
+    }
+
+    const updatedLocation = {
+      ...existingLocation,
+      ...location
+    };
     this.locations.set(id, updatedLocation);
     return updatedLocation;
   }
@@ -310,24 +326,29 @@ export class MemStorage implements IStorage {
   }
 
   async getCompetenciesByLocation(locationId: number): Promise<Competency[]> {
-    return Array.from(this.competencies.values()).filter(
-      comp => comp.locationId === locationId
-    );
+    return Array.from(this.competencies.values()).filter(competency => competency.locationId === locationId);
   }
 
   async createCompetency(competency: InsertCompetency): Promise<Competency> {
-    const id = this.currentCompetencyId++;
-    const createdAt = new Date();
-    const newCompetency: Competency = { ...competency, id, createdAt };
-    this.competencies.set(id, newCompetency);
+    const newCompetency: Competency = {
+      id: this.currentCompetencyId++,
+      createdAt: new Date(),
+      ...competency
+    };
+    this.competencies.set(newCompetency.id, newCompetency);
     return newCompetency;
   }
 
   async updateCompetency(id: number, competency: Partial<InsertCompetency>): Promise<Competency | undefined> {
     const existingCompetency = this.competencies.get(id);
-    if (!existingCompetency) return undefined;
-    
-    const updatedCompetency = { ...existingCompetency, ...competency };
+    if (!existingCompetency) {
+      return undefined;
+    }
+
+    const updatedCompetency = {
+      ...existingCompetency,
+      ...competency
+    };
     this.competencies.set(id, updatedCompetency);
     return updatedCompetency;
   }
@@ -337,7 +358,7 @@ export class MemStorage implements IStorage {
   }
 
   // Staff
-  async getStaffMember(id: number): Promise<Staff | undefined> {
+  async getStaff(id: number): Promise<Staff | undefined> {
     return this.staff.get(id);
   }
 
@@ -345,30 +366,39 @@ export class MemStorage implements IStorage {
     return Array.from(this.staff.values());
   }
 
-  async getStaffMembersByLocation(locationId: number): Promise<Staff[]> {
-    return Array.from(this.staff.values()).filter(
-      staff => staff.locationId === locationId
-    );
+  async getStaffByLocation(locationId: number): Promise<Staff[]> {
+    return Array.from(this.staff.values()).filter(staff => staff.locationId === locationId);
   }
 
-  async createStaffMember(staff: InsertStaff): Promise<Staff> {
-    const id = this.currentStaffId++;
-    const createdAt = new Date();
-    const newStaff: Staff = { ...staff, id, createdAt };
-    this.staff.set(id, newStaff);
+  async getStaffByUser(userId: number): Promise<Staff | undefined> {
+    return Array.from(this.staff.values()).find(staff => staff.userId === userId);
+  }
+
+  async createStaff(staffMember: InsertStaff): Promise<Staff> {
+    const newStaff: Staff = {
+      id: this.currentStaffId++,
+      createdAt: new Date(),
+      ...staffMember
+    };
+    this.staff.set(newStaff.id, newStaff);
     return newStaff;
   }
 
-  async updateStaffMember(id: number, staff: Partial<InsertStaff>): Promise<Staff | undefined> {
+  async updateStaff(id: number, staffMember: Partial<InsertStaff>): Promise<Staff | undefined> {
     const existingStaff = this.staff.get(id);
-    if (!existingStaff) return undefined;
-    
-    const updatedStaff = { ...existingStaff, ...staff };
+    if (!existingStaff) {
+      return undefined;
+    }
+
+    const updatedStaff = {
+      ...existingStaff,
+      ...staffMember
+    };
     this.staff.set(id, updatedStaff);
     return updatedStaff;
   }
 
-  async deleteStaffMember(id: number): Promise<boolean> {
+  async deleteStaff(id: number): Promise<boolean> {
     return this.staff.delete(id);
   }
 
@@ -382,24 +412,33 @@ export class MemStorage implements IStorage {
   }
 
   async getStaffCompetenciesByStaff(staffId: number): Promise<StaffCompetency[]> {
-    return Array.from(this.staffCompetencies.values()).filter(
-      comp => comp.staffId === staffId
-    );
+    return Array.from(this.staffCompetencies.values()).filter(sc => sc.staffId === staffId);
+  }
+
+  async getStaffCompetenciesByCompetency(competencyId: number): Promise<StaffCompetency[]> {
+    return Array.from(this.staffCompetencies.values()).filter(sc => sc.competencyId === competencyId);
   }
 
   async createStaffCompetency(staffCompetency: InsertStaffCompetency): Promise<StaffCompetency> {
-    const id = this.currentStaffCompetencyId++;
-    const createdAt = new Date();
-    const newStaffCompetency: StaffCompetency = { ...staffCompetency, id, createdAt };
-    this.staffCompetencies.set(id, newStaffCompetency);
+    const newStaffCompetency: StaffCompetency = {
+      id: this.currentStaffCompetencyId++,
+      createdAt: new Date(),
+      ...staffCompetency
+    };
+    this.staffCompetencies.set(newStaffCompetency.id, newStaffCompetency);
     return newStaffCompetency;
   }
 
   async updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined> {
     const existingStaffCompetency = this.staffCompetencies.get(id);
-    if (!existingStaffCompetency) return undefined;
-    
-    const updatedStaffCompetency = { ...existingStaffCompetency, ...staffCompetency };
+    if (!existingStaffCompetency) {
+      return undefined;
+    }
+
+    const updatedStaffCompetency = {
+      ...existingStaffCompetency,
+      ...staffCompetency
+    };
     this.staffCompetencies.set(id, updatedStaffCompetency);
     return updatedStaffCompetency;
   }
@@ -418,30 +457,33 @@ export class MemStorage implements IStorage {
   }
 
   async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(
-      applicant => applicant.locationId === locationId
-    );
+    return Array.from(this.applicants.values()).filter(applicant => applicant.locationId === locationId);
   }
 
   async getApplicantsByStatus(status: string): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(
-      applicant => applicant.status === status
-    );
+    return Array.from(this.applicants.values()).filter(applicant => applicant.status === status);
   }
 
   async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
-    const id = this.currentApplicantId++;
-    const createdAt = new Date();
-    const newApplicant: Applicant = { ...applicant, id, createdAt };
-    this.applicants.set(id, newApplicant);
+    const newApplicant: Applicant = {
+      id: this.currentApplicantId++,
+      createdAt: new Date(),
+      ...applicant
+    };
+    this.applicants.set(newApplicant.id, newApplicant);
     return newApplicant;
   }
 
   async updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined> {
     const existingApplicant = this.applicants.get(id);
-    if (!existingApplicant) return undefined;
-    
-    const updatedApplicant = { ...existingApplicant, ...applicant };
+    if (!existingApplicant) {
+      return undefined;
+    }
+
+    const updatedApplicant = {
+      ...existingApplicant,
+      ...applicant
+    };
     this.applicants.set(id, updatedApplicant);
     return updatedApplicant;
   }
@@ -460,24 +502,29 @@ export class MemStorage implements IStorage {
   }
 
   async getScheduleTemplatesByLocation(locationId: number): Promise<ScheduleTemplate[]> {
-    return Array.from(this.scheduleTemplates.values()).filter(
-      template => template.locationId === locationId
-    );
+    return Array.from(this.scheduleTemplates.values()).filter(template => template.locationId === locationId);
   }
 
   async createScheduleTemplate(template: InsertScheduleTemplate): Promise<ScheduleTemplate> {
-    const id = this.currentScheduleTemplateId++;
-    const createdAt = new Date();
-    const newTemplate: ScheduleTemplate = { ...template, id, createdAt };
-    this.scheduleTemplates.set(id, newTemplate);
+    const newTemplate: ScheduleTemplate = {
+      id: this.currentScheduleTemplateId++,
+      createdAt: new Date(),
+      ...template
+    };
+    this.scheduleTemplates.set(newTemplate.id, newTemplate);
     return newTemplate;
   }
 
   async updateScheduleTemplate(id: number, template: Partial<InsertScheduleTemplate>): Promise<ScheduleTemplate | undefined> {
     const existingTemplate = this.scheduleTemplates.get(id);
-    if (!existingTemplate) return undefined;
-    
-    const updatedTemplate = { ...existingTemplate, ...template };
+    if (!existingTemplate) {
+      return undefined;
+    }
+
+    const updatedTemplate = {
+      ...existingTemplate,
+      ...template
+    };
     this.scheduleTemplates.set(id, updatedTemplate);
     return updatedTemplate;
   }
@@ -491,24 +538,39 @@ export class MemStorage implements IStorage {
     return this.templateShifts.get(id);
   }
 
+  async getTemplateShifts(): Promise<TemplateShift[]> {
+    return Array.from(this.templateShifts.values());
+  }
+
   async getTemplateShiftsByTemplate(templateId: number): Promise<TemplateShift[]> {
-    return Array.from(this.templateShifts.values()).filter(
-      shift => shift.templateId === templateId
+    return Array.from(this.templateShifts.values()).filter(shift => shift.templateId === templateId);
+  }
+
+  async getTemplateShiftsByDay(templateId: number, dayOfWeek: number): Promise<TemplateShift[]> {
+    return Array.from(this.templateShifts.values()).filter(shift => 
+      shift.templateId === templateId && shift.dayOfWeek === dayOfWeek
     );
   }
 
   async createTemplateShift(shift: InsertTemplateShift): Promise<TemplateShift> {
-    const id = this.currentTemplateShiftId++;
-    const newShift: TemplateShift = { ...shift, id };
-    this.templateShifts.set(id, newShift);
+    const newShift: TemplateShift = {
+      id: this.currentTemplateShiftId++,
+      ...shift
+    };
+    this.templateShifts.set(newShift.id, newShift);
     return newShift;
   }
 
   async updateTemplateShift(id: number, shift: Partial<InsertTemplateShift>): Promise<TemplateShift | undefined> {
     const existingShift = this.templateShifts.get(id);
-    if (!existingShift) return undefined;
-    
-    const updatedShift = { ...existingShift, ...shift };
+    if (!existingShift) {
+      return undefined;
+    }
+
+    const updatedShift = {
+      ...existingShift,
+      ...shift
+    };
     this.templateShifts.set(id, updatedShift);
     return updatedShift;
   }
@@ -527,33 +589,37 @@ export class MemStorage implements IStorage {
   }
 
   async getWeeklySchedulesByLocation(locationId: number): Promise<WeeklySchedule[]> {
-    return Array.from(this.weeklySchedules.values()).filter(
-      schedule => schedule.locationId === locationId
-    );
+    return Array.from(this.weeklySchedules.values()).filter(schedule => schedule.locationId === locationId);
   }
 
-  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule | undefined> {
-    return Array.from(this.weeklySchedules.values()).find(
-      schedule => 
-        schedule.locationId === locationId && 
-        schedule.weekStartDate >= startDate && 
-        schedule.weekStartDate <= endDate
+  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]> {
+    return Array.from(this.weeklySchedules.values()).filter(schedule => 
+      schedule.locationId === locationId &&
+      schedule.weekStartDate >= startDate &&
+      schedule.weekStartDate <= endDate
     );
   }
 
   async createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule> {
-    const id = this.currentWeeklyScheduleId++;
-    const createdAt = new Date();
-    const newSchedule: WeeklySchedule = { ...schedule, id, createdAt };
-    this.weeklySchedules.set(id, newSchedule);
+    const newSchedule: WeeklySchedule = {
+      id: this.currentWeeklyScheduleId++,
+      createdAt: new Date(),
+      ...schedule
+    };
+    this.weeklySchedules.set(newSchedule.id, newSchedule);
     return newSchedule;
   }
 
   async updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined> {
     const existingSchedule = this.weeklySchedules.get(id);
-    if (!existingSchedule) return undefined;
-    
-    const updatedSchedule = { ...existingSchedule, ...schedule };
+    if (!existingSchedule) {
+      return undefined;
+    }
+
+    const updatedSchedule = {
+      ...existingSchedule,
+      ...schedule
+    };
     this.weeklySchedules.set(id, updatedSchedule);
     return updatedSchedule;
   }
@@ -572,36 +638,42 @@ export class MemStorage implements IStorage {
   }
 
   async getShiftsBySchedule(scheduleId: number): Promise<Shift[]> {
-    return Array.from(this.shifts.values()).filter(
-      shift => shift.scheduleId === scheduleId
-    );
+    return Array.from(this.shifts.values()).filter(shift => shift.scheduleId === scheduleId);
   }
 
   async getShiftsByStaff(staffId: number): Promise<Shift[]> {
-    return Array.from(this.shifts.values()).filter(
-      shift => shift.staffId === staffId
-    );
+    return Array.from(this.shifts.values()).filter(shift => shift.staffId === staffId);
   }
 
-  async getShiftsByDateRange(startDate: Date, endDate: Date): Promise<Shift[]> {
-    return Array.from(this.shifts.values()).filter(
-      shift => shift.date >= startDate && shift.date <= endDate
+  async getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]> {
+    return Array.from(this.shifts.values()).filter(shift => 
+      shift.scheduleId === scheduleId && 
+      shift.date.getFullYear() === date.getFullYear() &&
+      shift.date.getMonth() === date.getMonth() &&
+      shift.date.getDate() === date.getDate()
     );
   }
 
   async createShift(shift: InsertShift): Promise<Shift> {
-    const id = this.currentShiftId++;
-    const createdAt = new Date();
-    const newShift: Shift = { ...shift, id, createdAt };
-    this.shifts.set(id, newShift);
+    const newShift: Shift = {
+      id: this.currentShiftId++,
+      createdAt: new Date(),
+      ...shift
+    };
+    this.shifts.set(newShift.id, newShift);
     return newShift;
   }
 
   async updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined> {
     const existingShift = this.shifts.get(id);
-    if (!existingShift) return undefined;
-    
-    const updatedShift = { ...existingShift, ...shift };
+    if (!existingShift) {
+      return undefined;
+    }
+
+    const updatedShift = {
+      ...existingShift,
+      ...shift
+    };
     this.shifts.set(id, updatedShift);
     return updatedShift;
   }
@@ -620,33 +692,41 @@ export class MemStorage implements IStorage {
   }
 
   async getCashCountsByLocation(locationId: number): Promise<CashCount[]> {
-    return Array.from(this.cashCounts.values()).filter(
-      count => count.locationId === locationId
-    );
+    return Array.from(this.cashCounts.values()).filter(cashCount => cashCount.locationId === locationId);
+  }
+
+  async getCashCountsByShift(shiftId: number): Promise<CashCount[]> {
+    return Array.from(this.cashCounts.values()).filter(cashCount => cashCount.shiftId === shiftId);
   }
 
   async getCashCountsByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<CashCount[]> {
-    return Array.from(this.cashCounts.values()).filter(
-      count => 
-        count.locationId === locationId && 
-        count.countDate >= startDate && 
-        count.countDate <= endDate
+    return Array.from(this.cashCounts.values()).filter(cashCount => 
+      cashCount.locationId === locationId &&
+      cashCount.countDate >= startDate &&
+      cashCount.countDate <= endDate
     );
   }
 
   async createCashCount(cashCount: InsertCashCount): Promise<CashCount> {
-    const id = this.currentCashCountId++;
-    const createdAt = new Date();
-    const newCashCount: CashCount = { ...cashCount, id, createdAt };
-    this.cashCounts.set(id, newCashCount);
+    const newCashCount: CashCount = {
+      id: this.currentCashCountId++,
+      createdAt: new Date(),
+      ...cashCount
+    };
+    this.cashCounts.set(newCashCount.id, newCashCount);
     return newCashCount;
   }
 
   async updateCashCount(id: number, cashCount: Partial<InsertCashCount>): Promise<CashCount | undefined> {
     const existingCashCount = this.cashCounts.get(id);
-    if (!existingCashCount) return undefined;
-    
-    const updatedCashCount = { ...existingCashCount, ...cashCount };
+    if (!existingCashCount) {
+      return undefined;
+    }
+
+    const updatedCashCount = {
+      ...existingCashCount,
+      ...cashCount
+    };
     this.cashCounts.set(id, updatedCashCount);
     return updatedCashCount;
   }
@@ -655,7 +735,7 @@ export class MemStorage implements IStorage {
     return this.cashCounts.delete(id);
   }
 
-  // Knowledge Base Categories
+  // KB Categories
   async getKbCategory(id: number): Promise<KbCategory | undefined> {
     return this.kbCategories.get(id);
   }
@@ -665,24 +745,29 @@ export class MemStorage implements IStorage {
   }
 
   async getKbCategoriesByLocation(locationId: number): Promise<KbCategory[]> {
-    return Array.from(this.kbCategories.values()).filter(
-      category => category.locationId === locationId
-    );
+    return Array.from(this.kbCategories.values()).filter(category => category.locationId === locationId);
   }
 
   async createKbCategory(category: InsertKbCategory): Promise<KbCategory> {
-    const id = this.currentKbCategoryId++;
-    const createdAt = new Date();
-    const newCategory: KbCategory = { ...category, id, createdAt };
-    this.kbCategories.set(id, newCategory);
+    const newCategory: KbCategory = {
+      id: this.currentKbCategoryId++,
+      createdAt: new Date(),
+      ...category
+    };
+    this.kbCategories.set(newCategory.id, newCategory);
     return newCategory;
   }
 
   async updateKbCategory(id: number, category: Partial<InsertKbCategory>): Promise<KbCategory | undefined> {
     const existingCategory = this.kbCategories.get(id);
-    if (!existingCategory) return undefined;
-    
-    const updatedCategory = { ...existingCategory, ...category };
+    if (!existingCategory) {
+      return undefined;
+    }
+
+    const updatedCategory = {
+      ...existingCategory,
+      ...category
+    };
     this.kbCategories.set(id, updatedCategory);
     return updatedCategory;
   }
@@ -701,27 +786,28 @@ export class MemStorage implements IStorage {
   }
 
   async getKbArticlesByCategory(categoryId: number): Promise<KbArticle[]> {
-    return Array.from(this.kbArticles.values()).filter(
-      article => article.categoryId === categoryId
-    );
+    return Array.from(this.kbArticles.values()).filter(article => article.categoryId === categoryId);
   }
 
   async createKbArticle(article: InsertKbArticle): Promise<KbArticle> {
-    const id = this.currentKbArticleId++;
-    const createdAt = new Date();
-    const newArticle: KbArticle = { ...article, id, createdAt, updatedAt: null };
-    this.kbArticles.set(id, newArticle);
+    const newArticle: KbArticle = {
+      id: this.currentKbArticleId++,
+      createdAt: new Date(),
+      ...article
+    };
+    this.kbArticles.set(newArticle.id, newArticle);
     return newArticle;
   }
 
   async updateKbArticle(id: number, article: Partial<InsertKbArticle>): Promise<KbArticle | undefined> {
     const existingArticle = this.kbArticles.get(id);
-    if (!existingArticle) return undefined;
-    
-    const updatedArticle = { 
-      ...existingArticle, 
-      ...article, 
-      updatedAt: new Date() 
+    if (!existingArticle) {
+      return undefined;
+    }
+
+    const updatedArticle = {
+      ...existingArticle,
+      ...article
     };
     this.kbArticles.set(id, updatedArticle);
     return updatedArticle;
@@ -730,45 +816,130 @@ export class MemStorage implements IStorage {
   async deleteKbArticle(id: number): Promise<boolean> {
     return this.kbArticles.delete(id);
   }
+
+  // Upload Files
+  async getUploadedFile(id: number): Promise<UploadedFile | undefined> {
+    return this.uploadedFiles.get(id);
+  }
+
+  async getUploadedFiles(): Promise<UploadedFile[]> {
+    return Array.from(this.uploadedFiles.values());
+  }
+
+  async createUploadedFile(file: InsertUploadedFile): Promise<UploadedFile> {
+    const newFile: UploadedFile = {
+      id: this.currentUploadedFileId++,
+      createdAt: new Date(),
+      ...file
+    };
+    this.uploadedFiles.set(newFile.id, newFile);
+    return newFile;
+  }
+
+  async updateUploadedFile(id: number, file: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined> {
+    const existingFile = this.uploadedFiles.get(id);
+    if (!existingFile) {
+      return undefined;
+    }
+
+    const updatedFile = {
+      ...existingFile,
+      ...file
+    };
+    this.uploadedFiles.set(id, updatedFile);
+    return updatedFile;
+  }
+
+  async deleteUploadedFile(id: number): Promise<boolean> {
+    // First delete all document attachments that reference this file
+    await this.deleteDocumentAttachmentsByFile(id);
+    return this.uploadedFiles.delete(id);
+  }
+
+  // Document Attachments
+  async getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined> {
+    return this.documentAttachments.get(id);
+  }
+
+  async getDocumentAttachments(): Promise<DocumentAttachment[]> {
+    return Array.from(this.documentAttachments.values());
+  }
+
+  async getDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<DocumentAttachment[]> {
+    return Array.from(this.documentAttachments.values())
+      .filter(attachment => attachment.entityType === entityType && attachment.entityId === entityId);
+  }
+
+  async getDocumentAttachmentsByFile(fileId: number): Promise<DocumentAttachment[]> {
+    return Array.from(this.documentAttachments.values())
+      .filter(attachment => attachment.fileId === fileId);
+  }
+
+  async createDocumentAttachment(attachment: InsertDocumentAttachment): Promise<DocumentAttachment> {
+    const newAttachment: DocumentAttachment = {
+      id: this.currentDocumentAttachmentId++,
+      createdAt: new Date(),
+      ...attachment
+    };
+    this.documentAttachments.set(newAttachment.id, newAttachment);
+    return newAttachment;
+  }
+
+  async deleteDocumentAttachment(id: number): Promise<boolean> {
+    return this.documentAttachments.delete(id);
+  }
+
+  async deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean> {
+    const attachmentsToDelete = await this.getDocumentAttachmentsByEntity(entityType, entityId);
+    attachmentsToDelete.forEach(attachment => {
+      this.documentAttachments.delete(attachment.id);
+    });
+    return true;
+  }
+
+  async deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean> {
+    const attachmentsToDelete = await this.getDocumentAttachmentsByFile(fileId);
+    attachmentsToDelete.forEach(attachment => {
+      this.documentAttachments.delete(attachment.id);
+    });
+    return true;
+  }
 }
 
-import { db } from "./db";
-import { eq, and, gte, lte } from "drizzle-orm";
-
-// DatabaseStorage implementation
 export class DatabaseStorage implements IStorage {
   // Users
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    return user;
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    const [createdUser] = await db.insert(users).values(user).returning();
+    return createdUser;
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
-    const [updatedUser] = await db.update(users)
+    const [updatedUser] = await db
+      .update(users)
       .set(user)
       .where(eq(users.id, id))
       .returning();
-    return updatedUser || undefined;
+    return updatedUser;
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return true; // Postgres doesn't return count of deleted rows in a standard way
+    await db.delete(users).where(eq(users.id, id));
+    return true;
   }
 
   async getUsers(): Promise<User[]> {
@@ -786,7 +957,7 @@ export class DatabaseStorage implements IStorage {
   // Locations
   async getLocation(id: number): Promise<Location | undefined> {
     const [location] = await db.select().from(locations).where(eq(locations.id, id));
-    return location || undefined;
+    return location;
   }
 
   async getLocations(): Promise<Location[]> {
@@ -794,16 +965,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLocation(location: InsertLocation): Promise<Location> {
-    const [newLocation] = await db.insert(locations).values(location).returning();
-    return newLocation;
+    const [createdLocation] = await db.insert(locations).values(location).returning();
+    return createdLocation;
   }
 
   async updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined> {
-    const [updatedLocation] = await db.update(locations)
+    const [updatedLocation] = await db
+      .update(locations)
       .set(location)
       .where(eq(locations.id, id))
       .returning();
-    return updatedLocation || undefined;
+    return updatedLocation;
   }
 
   async deleteLocation(id: number): Promise<boolean> {
@@ -814,7 +986,7 @@ export class DatabaseStorage implements IStorage {
   // Competencies
   async getCompetency(id: number): Promise<Competency | undefined> {
     const [competency] = await db.select().from(competencies).where(eq(competencies.id, id));
-    return competency || undefined;
+    return competency;
   }
 
   async getCompetencies(): Promise<Competency[]> {
@@ -826,16 +998,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompetency(competency: InsertCompetency): Promise<Competency> {
-    const [newCompetency] = await db.insert(competencies).values(competency).returning();
-    return newCompetency;
+    const [createdCompetency] = await db.insert(competencies).values(competency).returning();
+    return createdCompetency;
   }
 
   async updateCompetency(id: number, competency: Partial<InsertCompetency>): Promise<Competency | undefined> {
-    const [updatedCompetency] = await db.update(competencies)
+    const [updatedCompetency] = await db
+      .update(competencies)
       .set(competency)
       .where(eq(competencies.id, id))
       .returning();
-    return updatedCompetency || undefined;
+    return updatedCompetency;
   }
 
   async deleteCompetency(id: number): Promise<boolean> {
@@ -844,41 +1017,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Staff
-  async getStaffMember(id: number): Promise<Staff | undefined> {
-    const [staff] = await db.select().from(staffMembers).where(eq(staffMembers.id, id));
-    return staff || undefined;
+  async getStaff(id: number): Promise<Staff | undefined> {
+    const [staffMember] = await db.select().from(staff).where(eq(staff.id, id));
+    return staffMember;
   }
 
   async getStaffMembers(): Promise<Staff[]> {
-    return await db.select().from(staffMembers);
+    return await db.select().from(staff);
   }
 
-  async getStaffMembersByLocation(locationId: number): Promise<Staff[]> {
-    return await db.select().from(staffMembers).where(eq(staffMembers.locationId, locationId));
+  async getStaffByLocation(locationId: number): Promise<Staff[]> {
+    return await db.select().from(staff).where(eq(staff.locationId, locationId));
   }
 
-  async createStaffMember(staff: InsertStaff): Promise<Staff> {
-    const [newStaff] = await db.insert(staffMembers).values(staff).returning();
-    return newStaff;
+  async getStaffByUser(userId: number): Promise<Staff | undefined> {
+    const [staffMember] = await db.select().from(staff).where(eq(staff.userId, userId));
+    return staffMember;
   }
 
-  async updateStaffMember(id: number, staff: Partial<InsertStaff>): Promise<Staff | undefined> {
-    const [updatedStaff] = await db.update(staffMembers)
-      .set(staff)
-      .where(eq(staffMembers.id, id))
+  async createStaff(staffMember: InsertStaff): Promise<Staff> {
+    const [createdStaff] = await db.insert(staff).values(staffMember).returning();
+    return createdStaff;
+  }
+
+  async updateStaff(id: number, staffMember: Partial<InsertStaff>): Promise<Staff | undefined> {
+    const [updatedStaff] = await db
+      .update(staff)
+      .set(staffMember)
+      .where(eq(staff.id, id))
       .returning();
-    return updatedStaff || undefined;
+    return updatedStaff;
   }
 
-  async deleteStaffMember(id: number): Promise<boolean> {
-    await db.delete(staffMembers).where(eq(staffMembers.id, id));
+  async deleteStaff(id: number): Promise<boolean> {
+    await db.delete(staff).where(eq(staff.id, id));
     return true;
   }
 
   // Staff Competencies
   async getStaffCompetency(id: number): Promise<StaffCompetency | undefined> {
     const [staffCompetency] = await db.select().from(staffCompetencies).where(eq(staffCompetencies.id, id));
-    return staffCompetency || undefined;
+    return staffCompetency;
   }
 
   async getStaffCompetencies(): Promise<StaffCompetency[]> {
@@ -889,17 +1068,22 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(staffCompetencies).where(eq(staffCompetencies.staffId, staffId));
   }
 
+  async getStaffCompetenciesByCompetency(competencyId: number): Promise<StaffCompetency[]> {
+    return await db.select().from(staffCompetencies).where(eq(staffCompetencies.competencyId, competencyId));
+  }
+
   async createStaffCompetency(staffCompetency: InsertStaffCompetency): Promise<StaffCompetency> {
-    const [newStaffCompetency] = await db.insert(staffCompetencies).values(staffCompetency).returning();
-    return newStaffCompetency;
+    const [createdStaffCompetency] = await db.insert(staffCompetencies).values(staffCompetency).returning();
+    return createdStaffCompetency;
   }
 
   async updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined> {
-    const [updatedStaffCompetency] = await db.update(staffCompetencies)
+    const [updatedStaffCompetency] = await db
+      .update(staffCompetencies)
       .set(staffCompetency)
       .where(eq(staffCompetencies.id, id))
       .returning();
-    return updatedStaffCompetency || undefined;
+    return updatedStaffCompetency;
   }
 
   async deleteStaffCompetency(id: number): Promise<boolean> {
@@ -910,7 +1094,7 @@ export class DatabaseStorage implements IStorage {
   // Applicants
   async getApplicant(id: number): Promise<Applicant | undefined> {
     const [applicant] = await db.select().from(applicants).where(eq(applicants.id, id));
-    return applicant || undefined;
+    return applicant;
   }
 
   async getApplicants(): Promise<Applicant[]> {
@@ -926,16 +1110,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
-    const [newApplicant] = await db.insert(applicants).values(applicant).returning();
-    return newApplicant;
+    const [createdApplicant] = await db.insert(applicants).values(applicant).returning();
+    return createdApplicant;
   }
 
   async updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined> {
-    const [updatedApplicant] = await db.update(applicants)
+    const [updatedApplicant] = await db
+      .update(applicants)
       .set(applicant)
       .where(eq(applicants.id, id))
       .returning();
-    return updatedApplicant || undefined;
+    return updatedApplicant;
   }
 
   async deleteApplicant(id: number): Promise<boolean> {
@@ -946,7 +1131,7 @@ export class DatabaseStorage implements IStorage {
   // Schedule Templates
   async getScheduleTemplate(id: number): Promise<ScheduleTemplate | undefined> {
     const [template] = await db.select().from(scheduleTemplates).where(eq(scheduleTemplates.id, id));
-    return template || undefined;
+    return template;
   }
 
   async getScheduleTemplates(): Promise<ScheduleTemplate[]> {
@@ -958,16 +1143,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createScheduleTemplate(template: InsertScheduleTemplate): Promise<ScheduleTemplate> {
-    const [newTemplate] = await db.insert(scheduleTemplates).values(template).returning();
-    return newTemplate;
+    const [createdTemplate] = await db.insert(scheduleTemplates).values(template).returning();
+    return createdTemplate;
   }
 
   async updateScheduleTemplate(id: number, template: Partial<InsertScheduleTemplate>): Promise<ScheduleTemplate | undefined> {
-    const [updatedTemplate] = await db.update(scheduleTemplates)
+    const [updatedTemplate] = await db
+      .update(scheduleTemplates)
       .set(template)
       .where(eq(scheduleTemplates.id, id))
       .returning();
-    return updatedTemplate || undefined;
+    return updatedTemplate;
   }
 
   async deleteScheduleTemplate(id: number): Promise<boolean> {
@@ -978,24 +1164,37 @@ export class DatabaseStorage implements IStorage {
   // Template Shifts
   async getTemplateShift(id: number): Promise<TemplateShift | undefined> {
     const [shift] = await db.select().from(templateShifts).where(eq(templateShifts.id, id));
-    return shift || undefined;
+    return shift;
+  }
+
+  async getTemplateShifts(): Promise<TemplateShift[]> {
+    return await db.select().from(templateShifts);
   }
 
   async getTemplateShiftsByTemplate(templateId: number): Promise<TemplateShift[]> {
     return await db.select().from(templateShifts).where(eq(templateShifts.templateId, templateId));
   }
 
+  async getTemplateShiftsByDay(templateId: number, dayOfWeek: number): Promise<TemplateShift[]> {
+    return await db.select().from(templateShifts)
+      .where(and(
+        eq(templateShifts.templateId, templateId),
+        eq(templateShifts.dayOfWeek, dayOfWeek)
+      ));
+  }
+
   async createTemplateShift(shift: InsertTemplateShift): Promise<TemplateShift> {
-    const [newShift] = await db.insert(templateShifts).values(shift).returning();
-    return newShift;
+    const [createdShift] = await db.insert(templateShifts).values(shift).returning();
+    return createdShift;
   }
 
   async updateTemplateShift(id: number, shift: Partial<InsertTemplateShift>): Promise<TemplateShift | undefined> {
-    const [updatedShift] = await db.update(templateShifts)
+    const [updatedShift] = await db
+      .update(templateShifts)
       .set(shift)
       .where(eq(templateShifts.id, id))
       .returning();
-    return updatedShift || undefined;
+    return updatedShift;
   }
 
   async deleteTemplateShift(id: number): Promise<boolean> {
@@ -1006,7 +1205,7 @@ export class DatabaseStorage implements IStorage {
   // Weekly Schedules
   async getWeeklySchedule(id: number): Promise<WeeklySchedule | undefined> {
     const [schedule] = await db.select().from(weeklySchedules).where(eq(weeklySchedules.id, id));
-    return schedule || undefined;
+    return schedule;
   }
 
   async getWeeklySchedules(): Promise<WeeklySchedule[]> {
@@ -1017,29 +1216,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(weeklySchedules).where(eq(weeklySchedules.locationId, locationId));
   }
 
-  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule | undefined> {
-    const [schedule] = await db.select().from(weeklySchedules)
-      .where(
-        and(
-          eq(weeklySchedules.locationId, locationId),
-          gte(weeklySchedules.startDate, startDate),
-          lte(weeklySchedules.endDate, endDate)
-        )
-      );
-    return schedule || undefined;
+  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]> {
+    return await db.select().from(weeklySchedules)
+      .where(and(
+        eq(weeklySchedules.locationId, locationId),
+        gte(weeklySchedules.weekStartDate, startDate),
+        lte(weeklySchedules.weekStartDate, endDate)
+      ));
   }
 
   async createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule> {
-    const [newSchedule] = await db.insert(weeklySchedules).values(schedule).returning();
-    return newSchedule;
+    const [createdSchedule] = await db.insert(weeklySchedules).values(schedule).returning();
+    return createdSchedule;
   }
 
   async updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined> {
-    const [updatedSchedule] = await db.update(weeklySchedules)
+    const [updatedSchedule] = await db
+      .update(weeklySchedules)
       .set(schedule)
       .where(eq(weeklySchedules.id, id))
       .returning();
-    return updatedSchedule || undefined;
+    return updatedSchedule;
   }
 
   async deleteWeeklySchedule(id: number): Promise<boolean> {
@@ -1050,7 +1247,7 @@ export class DatabaseStorage implements IStorage {
   // Shifts
   async getShift(id: number): Promise<Shift | undefined> {
     const [shift] = await db.select().from(shifts).where(eq(shifts.id, id));
-    return shift || undefined;
+    return shift;
   }
 
   async getShifts(): Promise<Shift[]> {
@@ -1065,27 +1262,26 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(shifts).where(eq(shifts.staffId, staffId));
   }
 
-  async getShiftsByDateRange(startDate: Date, endDate: Date): Promise<Shift[]> {
+  async getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]> {
     return await db.select().from(shifts)
-      .where(
-        and(
-          gte(shifts.date, startDate),
-          lte(shifts.date, endDate)
-        )
-      );
+      .where(and(
+        eq(shifts.scheduleId, scheduleId),
+        eq(shifts.date, date)
+      ));
   }
 
   async createShift(shift: InsertShift): Promise<Shift> {
-    const [newShift] = await db.insert(shifts).values(shift).returning();
-    return newShift;
+    const [createdShift] = await db.insert(shifts).values(shift).returning();
+    return createdShift;
   }
 
   async updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined> {
-    const [updatedShift] = await db.update(shifts)
+    const [updatedShift] = await db
+      .update(shifts)
       .set(shift)
       .where(eq(shifts.id, id))
       .returning();
-    return updatedShift || undefined;
+    return updatedShift;
   }
 
   async deleteShift(id: number): Promise<boolean> {
@@ -1096,7 +1292,7 @@ export class DatabaseStorage implements IStorage {
   // Cash Counts
   async getCashCount(id: number): Promise<CashCount | undefined> {
     const [cashCount] = await db.select().from(cashCounts).where(eq(cashCounts.id, id));
-    return cashCount || undefined;
+    return cashCount;
   }
 
   async getCashCounts(): Promise<CashCount[]> {
@@ -1107,28 +1303,31 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(cashCounts).where(eq(cashCounts.locationId, locationId));
   }
 
+  async getCashCountsByShift(shiftId: number): Promise<CashCount[]> {
+    return await db.select().from(cashCounts).where(eq(cashCounts.shiftId, shiftId));
+  }
+
   async getCashCountsByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<CashCount[]> {
     return await db.select().from(cashCounts)
-      .where(
-        and(
-          eq(cashCounts.locationId, locationId),
-          gte(cashCounts.countDate, startDate),
-          lte(cashCounts.countDate, endDate)
-        )
-      );
+      .where(and(
+        eq(cashCounts.locationId, locationId),
+        gte(cashCounts.countDate, startDate),
+        lte(cashCounts.countDate, endDate)
+      ));
   }
 
   async createCashCount(cashCount: InsertCashCount): Promise<CashCount> {
-    const [newCashCount] = await db.insert(cashCounts).values(cashCount).returning();
-    return newCashCount;
+    const [createdCashCount] = await db.insert(cashCounts).values(cashCount).returning();
+    return createdCashCount;
   }
 
   async updateCashCount(id: number, cashCount: Partial<InsertCashCount>): Promise<CashCount | undefined> {
-    const [updatedCashCount] = await db.update(cashCounts)
+    const [updatedCashCount] = await db
+      .update(cashCounts)
       .set(cashCount)
       .where(eq(cashCounts.id, id))
       .returning();
-    return updatedCashCount || undefined;
+    return updatedCashCount;
   }
 
   async deleteCashCount(id: number): Promise<boolean> {
@@ -1136,10 +1335,10 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Knowledge Base Categories
+  // KB Categories
   async getKbCategory(id: number): Promise<KbCategory | undefined> {
     const [category] = await db.select().from(kbCategories).where(eq(kbCategories.id, id));
-    return category || undefined;
+    return category;
   }
 
   async getKbCategories(): Promise<KbCategory[]> {
@@ -1151,16 +1350,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createKbCategory(category: InsertKbCategory): Promise<KbCategory> {
-    const [newCategory] = await db.insert(kbCategories).values(category).returning();
-    return newCategory;
+    const [createdCategory] = await db.insert(kbCategories).values(category).returning();
+    return createdCategory;
   }
 
   async updateKbCategory(id: number, category: Partial<InsertKbCategory>): Promise<KbCategory | undefined> {
-    const [updatedCategory] = await db.update(kbCategories)
+    const [updatedCategory] = await db
+      .update(kbCategories)
       .set(category)
       .where(eq(kbCategories.id, id))
       .returning();
-    return updatedCategory || undefined;
+    return updatedCategory;
   }
 
   async deleteKbCategory(id: number): Promise<boolean> {
@@ -1168,10 +1368,10 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Knowledge Base Articles
+  // KB Articles
   async getKbArticle(id: number): Promise<KbArticle | undefined> {
     const [article] = await db.select().from(kbArticles).where(eq(kbArticles.id, id));
-    return article || undefined;
+    return article;
   }
 
   async getKbArticles(): Promise<KbArticle[]> {
@@ -1183,22 +1383,101 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createKbArticle(article: InsertKbArticle): Promise<KbArticle> {
-    const [newArticle] = await db.insert(kbArticles).values(article).returning();
-    return newArticle;
+    const [createdArticle] = await db.insert(kbArticles).values(article).returning();
+    return createdArticle;
   }
 
   async updateKbArticle(id: number, article: Partial<InsertKbArticle>): Promise<KbArticle | undefined> {
-    const [updatedArticle] = await db.update(kbArticles)
+    const [updatedArticle] = await db
+      .update(kbArticles)
       .set(article)
       .where(eq(kbArticles.id, id))
       .returning();
-    return updatedArticle || undefined;
+    return updatedArticle;
   }
 
   async deleteKbArticle(id: number): Promise<boolean> {
     await db.delete(kbArticles).where(eq(kbArticles.id, id));
     return true;
   }
+
+  // Uploaded Files
+  async getUploadedFile(id: number): Promise<UploadedFile | undefined> {
+    const [file] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, id));
+    return file;
+  }
+
+  async getUploadedFiles(): Promise<UploadedFile[]> {
+    return await db.select().from(uploadedFiles);
+  }
+
+  async createUploadedFile(file: InsertUploadedFile): Promise<UploadedFile> {
+    const [createdFile] = await db.insert(uploadedFiles).values(file).returning();
+    return createdFile;
+  }
+
+  async updateUploadedFile(id: number, file: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined> {
+    const [updatedFile] = await db
+      .update(uploadedFiles)
+      .set(file)
+      .where(eq(uploadedFiles.id, id))
+      .returning();
+    return updatedFile;
+  }
+
+  async deleteUploadedFile(id: number): Promise<boolean> {
+    // First delete all document attachments that reference this file
+    await this.deleteDocumentAttachmentsByFile(id);
+    await db.delete(uploadedFiles).where(eq(uploadedFiles.id, id));
+    return true;
+  }
+
+  // Document Attachments
+  async getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined> {
+    const [attachment] = await db.select().from(documentAttachments).where(eq(documentAttachments.id, id));
+    return attachment;
+  }
+
+  async getDocumentAttachments(): Promise<DocumentAttachment[]> {
+    return await db.select().from(documentAttachments);
+  }
+
+  async getDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<DocumentAttachment[]> {
+    return await db.select().from(documentAttachments)
+      .where(and(
+        eq(documentAttachments.entityType, entityType),
+        eq(documentAttachments.entityId, entityId)
+      ));
+  }
+
+  async getDocumentAttachmentsByFile(fileId: number): Promise<DocumentAttachment[]> {
+    return await db.select().from(documentAttachments).where(eq(documentAttachments.fileId, fileId));
+  }
+
+  async createDocumentAttachment(attachment: InsertDocumentAttachment): Promise<DocumentAttachment> {
+    const [createdAttachment] = await db.insert(documentAttachments).values(attachment).returning();
+    return createdAttachment;
+  }
+
+  async deleteDocumentAttachment(id: number): Promise<boolean> {
+    await db.delete(documentAttachments).where(eq(documentAttachments.id, id));
+    return true;
+  }
+
+  async deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean> {
+    await db.delete(documentAttachments)
+      .where(and(
+        eq(documentAttachments.entityType, entityType),
+        eq(documentAttachments.entityId, entityId)
+      ));
+    return true;
+  }
+
+  async deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean> {
+    await db.delete(documentAttachments).where(eq(documentAttachments.fileId, fileId));
+    return true;
+  }
 }
 
+// Use DatabaseStorage implementation by default
 export const storage = new DatabaseStorage();

@@ -16,6 +16,8 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 import path from "path";
+import authRoutes from './routes/auth';
+import uploadRoutes from './routes/uploads';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -972,6 +974,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const registerUrl = `${baseUrl}/register?source=qrcode`;
     res.json({ url: registerUrl });
   });
+
+  // Use route modules
+  app.use('/api/auth', authRoutes);
+  app.use('/api/uploads', uploadRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);
