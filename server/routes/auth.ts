@@ -56,6 +56,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         console.log('Login request received:', req.body);
+        
+        // Parse and validate the login data
         const data = loginSchema.parse(req.body);
         
         // Find user by username
@@ -69,60 +71,56 @@ router.post('/login', async (req, res) => {
         
         console.log('User found:', user.username, 'with ID:', user.id);
         
+        let authenticated = false;
+        
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
-            console.log('Admin credentials match, setting session');
+            console.log('Admin credentials match');
+            authenticated = true;
+        } else {
+            // Verify password for normal users
+            const isMatch = await bcrypt.compare(data.password, user.password);
+            authenticated = isMatch;
             
-            // Set session - save both userId and loggedIn flag
-            req.session.userId = user.id;
-            req.session.loggedIn = true;
-            console.log('Admin login successful, session:', req.session);
-            
-            // Explicitly save session to force persistence
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Error saving session:', err);
-                } else {
-                    console.log('Session saved successfully for admin user, session ID:', req.sessionID);
-                }
-            });
-            
-            // Remove password from response
-            const { password, ...userWithoutPassword } = user;
-            
-            return res.status(200).json({
-                message: 'Login successful',
-                user: userWithoutPassword
-            });
-        }
-        
-        // Verify password for normal users
-        const isMatch = await bcrypt.compare(data.password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid username or password' });
-        }
-        
-        // Set session - save both userId and loggedIn flag
-        req.session.userId = user.id;
-        req.session.loggedIn = true;
-        console.log('User login successful, session:', req.session);
-        
-        // Explicitly save session to force persistence
-        req.session.save((err) => {
-            if (err) {
-                console.error('Error saving session:', err);
-            } else {
-                console.log('Session saved successfully for user:', user.username);
+            if (!authenticated) {
+                console.log('Password mismatch for user:', data.username);
+                return res.status(401).json({ message: 'Invalid username or password' });
             }
-        });
+        }
         
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        
-        return res.status(200).json({
-            message: 'Login successful',
-            user: userWithoutPassword
-        });
+        if (authenticated) {
+            // Clear any existing session
+            req.session.regenerate((regenerateErr) => {
+                if (regenerateErr) {
+                    console.error('Error regenerating session:', regenerateErr);
+                    return res.status(500).json({ message: 'Session error during login' });
+                }
+                
+                // Set user information in session
+                req.session.userId = user.id;
+                req.session.loggedIn = true;
+                
+                // Save the session
+                req.session.save((saveErr) => {
+                    if (saveErr) {
+                        console.error('Error saving session:', saveErr);
+                        return res.status(500).json({ message: 'Session error during login' });
+                    }
+                    
+                    console.log('Login successful, user ID saved in session:', req.session.userId);
+                    console.log('Session ID:', req.sessionID);
+                    
+                    // Remove password from response
+                    const { password, ...userWithoutPassword } = user;
+                    
+                    // Send success response with user data
+                    return res.status(200).json({
+                        message: 'Login successful',
+                        user: userWithoutPassword
+                    });
+                });
+            });
+        }
     } catch (error) {
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
@@ -161,34 +159,44 @@ router.get('/me', async (req, res) => {
         console.log('Session ID:', req.sessionID);
         console.log('Session cookie:', req.headers.cookie);
         
-        const userId = req.session?.userId;
-        const loggedIn = req.session?.loggedIn;
-        console.log('Get /me - userId from session:', userId, 'loggedIn:', loggedIn);
-        
-        if (!userId || !loggedIn) {
-            console.log('No user ID or loggedIn flag in session');
+        // Check if this is a valid session with user data
+        if (!req.session || !req.session.userId || req.session.userId <= 0 || req.session.loggedIn !== true) {
+            console.log('No valid user session found');
             return res.status(200).json({ authenticated: false });
         }
         
-        const user = await storage.getUser(userId);
-        console.log('Get /me - found user:', user ? user.username : 'no');
-        
-        if (!user) {
-            console.log('User not found in database');
-            return res.status(200).json({ authenticated: false });
+        // Try to get the user from the database
+        try {
+            const user = await storage.getUser(req.session.userId);
+            
+            if (!user) {
+                console.log('User not found in database for ID:', req.session.userId);
+                
+                // Clear the invalid session
+                req.session.userId = undefined;
+                req.session.loggedIn = false;
+                
+                return res.status(200).json({ authenticated: false });
+            }
+            
+            // User found, strip sensitive data
+            const { password, ...userWithoutPassword } = user;
+            
+            console.log('User authenticated:', user.username);
+            return res.status(200).json({
+                authenticated: true,
+                user: userWithoutPassword
+            });
+        } catch (dbError) {
+            console.error('Database error while checking user:', dbError);
+            return res.status(200).json({ 
+                authenticated: false,
+                error: 'Database error'
+            });
         }
-        
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        
-        console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
-        return res.status(200).json({ 
-            authenticated: true,
-            user: userWithoutPassword
-        });
     } catch (error) {
-        console.error('Error in /me endpoint:', error);
-        return res.status(500).json({ message: 'Server error' });
+        console.error('Unexpected error in /me endpoint:', error);
+        return res.status(500).json({ message: 'Server error', authenticated: false });
     }
 });
 
