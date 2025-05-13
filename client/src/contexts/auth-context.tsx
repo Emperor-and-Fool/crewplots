@@ -85,14 +85,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       console.log("Attempting to log in with:", username);
       
-      const response = await fetch("/api/auth/login", {
+      console.log("Preparing login request to:", "/api/auth/login");
+      
+      // Log request details (without password)
+      const requestBody = { username, password: "***" };
+      console.log("Request body:", requestBody);
+      
+      // Build actual request with real password
+      const requestInit = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
-        credentials: "include",
+        credentials: "include" as RequestCredentials,
+      };
+      
+      console.log("Request headers:", requestInit.headers);
+      console.log("Request credentials mode:", requestInit.credentials);
+      
+      // Add a timeout to see if request is hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error("Fetch request timeout after 10 seconds");
+        controller.abort();
+      }, 10000);
+      
+      console.log("Sending fetch request...");
+      const response = await fetch("/api/auth/login", {
+        ...requestInit,
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      
+      console.log("Fetch request completed successfully");
 
       console.log("Login response status:", response.status);
       const data = await response.json();
@@ -124,10 +150,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       return true;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error details:", {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
+      
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      
+      // Provide more specific error messages based on error type
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        errorMessage = "Network error: Could not connect to server";
+        console.error("Network connection error detected");
+      } else if (error instanceof SyntaxError) {
+        errorMessage = "Invalid response from server";
+        console.error("JSON parsing error detected");
+      }
+      
       toast({
         title: "Login failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
