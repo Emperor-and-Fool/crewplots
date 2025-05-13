@@ -210,6 +210,53 @@ router.post('/logout', (req, res) => {
     });
 });
 
+// Development direct HTML logout
+router.get('/dev-logout', (req, res) => {
+    console.log('Direct server-side logout, sessionID:', req.sessionID);
+    
+    // Clear the session variables first
+    req.session.userId = undefined;
+    req.session.loggedIn = false;
+    
+    // Save the changes before destroying
+    req.session.save((saveErr) => {
+        if (saveErr) {
+            console.error('Error saving session before logout:', saveErr);
+        }
+        
+        // Then destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err);
+                return res.status(500).send('Error logging out');
+            }
+            
+            // Clear the session cookie
+            res.clearCookie('connect.sid');
+            console.log('User logged out successfully with direct approach');
+            
+            // Serve HTML with a redirect to login page
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Logout Successful</title>
+                    <meta http-equiv="refresh" content="0;url=/login" />
+                </head>
+                <body>
+                    <h1>Logout Successful</h1>
+                    <p>You are being redirected to the login page...</p>
+                    <script>
+                        // Force reload to login and clear history
+                        window.location.replace('/login');
+                    </script>
+                </body>
+                </html>
+            `);
+        });
+    });
+});
+
 // Change password
 router.post('/change-password', authenticateUser, async (req, res) => {
     try {

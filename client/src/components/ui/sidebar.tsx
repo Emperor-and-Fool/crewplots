@@ -45,8 +45,11 @@ export function Sidebar({ className }: SidebarProps) {
     ).join(" ");
   };
   
-  const handleLogout = async () => {
-    await logout();
+  // Direct server-side logout that bypasses the React state issues
+  const handleLogout = () => {
+    console.log("Using direct server-side logout");
+    // Navigate directly to the dev-logout endpoint
+    window.location.href = "/api/auth/dev-logout";
   };
 
   return (
