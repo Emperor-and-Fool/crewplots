@@ -13,18 +13,26 @@ declare global {
 declare module 'express-session' {
     interface SessionData {
         userId: number;
+        loggedIn: boolean;
     }
 }
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        if (!req.session.userId) {
+        console.log('Authentication middleware - session:', req.session);
+        console.log('Authentication middleware - userId:', req.session.userId, 'loggedIn:', req.session.loggedIn);
+        
+        if (!req.session.userId || !req.session.loggedIn) {
+            console.log('Authentication failed - Missing userId or loggedIn flag');
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
 
         const user = await storage.getUser(req.session.userId);
+        console.log('Authentication middleware - Found user:', !!user);
+        
         if (!user) {
+            console.log('Authentication failed - User not found in database');
             req.session.destroy((err) => {
                 if (err) {
                     console.error("Error destroying session:", err);
@@ -36,6 +44,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
         // Attach the user to the request
         req.user = user;
+        console.log('Authentication successful for user:', user.username);
         next();
     } catch (error) {
         console.error("Authentication error:", error);
