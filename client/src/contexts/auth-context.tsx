@@ -40,17 +40,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
           console.log("User data:", data);
-          if (data && data.user) {
+          
+          // If authenticated and user data exists, set the user
+          if (data && data.authenticated && data.user) {
             setUser(data.user);
             console.log("User authenticated:", data.user.username);
           } else {
-            console.log("Response OK but no user data found");
+            // Not authenticated or no user data
+            console.log("Not authenticated or no user data found");
+            setUser(null);
           }
         } else {
-          console.log("Not authenticated, redirecting to login");
+          console.log("Error response, not authenticated");
+          setUser(null);
         }
       } catch (error) {
         console.error("Error checking authentication status:", error);
+        setUser(null);
       } finally {
         console.log("Setting isLoading to false");
         setIsLoading(false);
