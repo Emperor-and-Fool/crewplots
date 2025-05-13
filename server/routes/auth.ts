@@ -203,7 +203,7 @@ router.post('/logout', (req, res) => {
             }
             
             // Clear the session cookie
-            res.clearCookie('shiftpro.sid');
+            res.clearCookie('connect.sid');
             console.log('User logged out successfully');
             return res.status(200).json({ message: 'Logged out successfully' });
         });

@@ -36,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: false, // Set to false in development for http://localhost
+        secure: false, // Must be false for non-HTTPS development environments
         httpOnly: true,
         sameSite: 'lax',
         path: '/'
@@ -47,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       resave: true, // Changed to true to ensure session is saved back to store
       saveUninitialized: true, // Changed to true to create session by default
       secret: "shiftpro-secret-key",
-      name: 'shiftpro.sid', // Custom cookie name to avoid defaults
+      name: 'connect.sid', // Using default name for better compatibility
     })
   );
 
