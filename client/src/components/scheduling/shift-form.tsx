@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,8 +51,8 @@ const parseQueryParams = () => {
 
 export function ShiftForm({ shift, isEditing = false }: ShiftFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [location] = useLocation();
-  const [, navigate] = useNavigate();
+  const [location, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
