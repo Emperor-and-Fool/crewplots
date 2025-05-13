@@ -69,7 +69,7 @@ export function Sidebar({ className }: SidebarProps) {
               href="/dashboard" 
               className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
+                isActive("/dashboard") ? "bg-gray-700" : "hover:bg-gray-700"
               )}
             >
               <LayoutDashboard className="h-5 w-5 mr-3" />
@@ -83,7 +83,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/locations") ? "bg-primary-700" : "hover:bg-primary-700"
+                      isActive("/locations") ? "bg-gray-700" : "hover:bg-gray-700"
                     )}>
                       <MapPin className="h-5 w-5 mr-3" />
                       Locations
@@ -120,7 +120,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
+                      isActive("/staff-management") ? "bg-gray-700" : "hover:bg-gray-700"
                     )}>
                       <Users className="h-5 w-5 mr-3" />
                       Staff Management
@@ -165,7 +165,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/scheduling") ? "bg-primary-700" : "hover:bg-primary-700"
+                      isActive("/scheduling") ? "bg-gray-700" : "hover:bg-gray-700"
                     )}>
                       <Calendar className="h-5 w-5 mr-3" />
                       Scheduling
@@ -209,7 +209,7 @@ export function Sidebar({ className }: SidebarProps) {
                 href="/applicants"
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
+                  isActive("/applicants") ? "bg-gray-700" : "hover:bg-gray-700"
                 )}
               >
                 <UserPlus className="h-5 w-5 mr-3" />
@@ -223,7 +223,7 @@ export function Sidebar({ className }: SidebarProps) {
                 href="/cash-management"
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
+                  isActive("/cash-management") ? "bg-gray-700" : "hover:bg-gray-700"
                 )}
               >
                 <DollarSign className="h-5 w-5 mr-3" />
@@ -236,7 +236,7 @@ export function Sidebar({ className }: SidebarProps) {
               href="/knowledge-base"
               className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                isActive("/knowledge-base") ? "bg-primary-700" : "hover:bg-primary-700"
+                isActive("/knowledge-base") ? "bg-gray-700" : "hover:bg-gray-700"
               )}
             >
               <Book className="h-5 w-5 mr-3" />
