@@ -2,6 +2,7 @@ import { Switch, Route, Router, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import * as React from "react";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -53,9 +54,38 @@ function App() {
 
   // Debug logging to see what state we're in
   console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user });
+  
+  // Force state transition after a timeout if getting stuck
+  React.useEffect(() => {
+    let timeoutId: number;
+    
+    if (isLoading) {
+      // If still loading after 3 seconds, force a state change by refetching
+      timeoutId = window.setTimeout(() => {
+        console.log("Loading timeout reached - forcing refresh");
+        window.location.reload();
+      }, 3000);
+    }
+    
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isLoading]);
 
+  // Show login page directly if not authenticated and not loading
+  if (!user && !isLoading) {
+    console.log("Not authenticated and not loading - showing login page");
+    return <Route path="*" component={Login} />;
+  }
+  
+  // Show loading indicator
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center">
+      <div className="text-center">
+        <div className="mb-4">Loading...</div>
+        <div className="text-sm text-gray-500">If this persists, please refresh the page</div>
+      </div>
+    </div>;
   }
 
   return (
