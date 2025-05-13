@@ -65,8 +65,19 @@ router.post('/login', async (req, res) => {
         
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
-            // Set session
+            // Set session - save both userId and loggedIn flag
             req.session.userId = user.id;
+            req.session.loggedIn = true;
+            console.log('Admin login successful, session:', req.session);
+            
+            // Explicitly save session to force persistence
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Error saving session:', err);
+                } else {
+                    console.log('Session saved successfully for admin user');
+                }
+            });
             
             // Remove password from response
             const { password, ...userWithoutPassword } = user;
@@ -83,8 +94,19 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         
-        // Set session
+        // Set session - save both userId and loggedIn flag
         req.session.userId = user.id;
+        req.session.loggedIn = true;
+        console.log('User login successful, session:', req.session);
+        
+        // Explicitly save session to force persistence
+        req.session.save((err) => {
+            if (err) {
+                console.error('Error saving session:', err);
+            } else {
+                console.log('Session saved successfully for user:', user.username);
+            }
+        });
         
         // Remove password from response
         const { password, ...userWithoutPassword } = user;
@@ -129,10 +151,11 @@ router.get('/me', async (req, res) => {
     try {
         console.log('Session data:', req.session);
         const userId = req.session?.userId;
-        console.log('Get /me - userId from session:', userId);
+        const loggedIn = req.session?.loggedIn;
+        console.log('Get /me - userId from session:', userId, 'loggedIn:', loggedIn);
         
-        if (!userId) {
-            console.log('No user ID in session');
+        if (!userId || !loggedIn) {
+            console.log('No user ID or loggedIn flag in session');
             return res.status(200).json({ authenticated: false });
         }
         
@@ -160,14 +183,30 @@ router.get('/me', async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.error('Error destroying session:', err);
-            return res.status(500).json({ message: 'Error logging out' });
+    console.log('Logging out user, sessionID:', req.sessionID);
+    
+    // Clear the session variables first
+    req.session.userId = undefined;
+    req.session.loggedIn = false;
+    
+    // Save the changes before destroying
+    req.session.save((saveErr) => {
+        if (saveErr) {
+            console.error('Error saving session before logout:', saveErr);
         }
         
-        res.clearCookie('connect.sid');
-        return res.status(200).json({ message: 'Logged out successfully' });
+        // Then destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err);
+                return res.status(500).json({ message: 'Error logging out' });
+            }
+            
+            // Clear the session cookie
+            res.clearCookie('shiftpro.sid');
+            console.log('User logged out successfully');
+            return res.status(200).json({ message: 'Logged out successfully' });
+        });
     });
 });
 

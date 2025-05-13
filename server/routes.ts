@@ -34,13 +34,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
   app.use(
     session({
-      cookie: { maxAge: 86400000 }, // 24 hours
+      cookie: { 
+        maxAge: 86400000, // 24 hours
+        secure: false, // Set to false in development for http://localhost
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/'
+      },
       store: new MemoryStoreSession({
         checkPeriod: 86400000, // prune expired entries every 24h
       }),
-      resave: false,
-      saveUninitialized: false,
+      resave: true, // Changed to true to ensure session is saved back to store
+      saveUninitialized: true, // Changed to true to create session by default
       secret: "shiftpro-secret-key",
+      name: 'shiftpro.sid', // Custom cookie name to avoid defaults
     })
   );
 
@@ -78,14 +85,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serialize and deserialize user for session
   passport.serializeUser((user: any, done) => {
+    console.log("Serializing user:", user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log("Deserializing user:", id);
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log("User not found during deserialization");
+        return done(null, false);
+      }
+      console.log("User deserialized successfully:", user.username);
       done(null, user);
     } catch (err) {
+      console.error("Error deserializing user:", err);
       done(err);
     }
   });
