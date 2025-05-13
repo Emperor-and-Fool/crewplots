@@ -116,68 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(403).json({ message: "Forbidden - Insufficient permissions" });
   };
 
-  // Authentication Routes
-  app.post(
-    "/api/auth/login",
-    validateRequest(loginSchema),
-    passport.authenticate("local"),
-    (req, res) => {
-      res.json({ user: req.user });
-    }
-  );
-
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout(function(err) {
-      if (err) {
-        return res.status(500).json({ message: "Error during logout" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  app.get("/api/auth/me", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    res.json({ user: req.user });
-  });
-
-  // Register new user (public applicants registration)
-  app.post("/api/auth/register", validateRequest(registerSchema), async (req, res) => {
-    const { username, password, email, name, positionApplied, phone } = req.body;
-    
-    try {
-      // Check if username already exists
-      const existingUsername = await storage.getUserByUsername(username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      // Check if email already exists
-      const existingEmail = await storage.getUserByEmail(email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      
-      // Create user with staff role
-      const user = await storage.createUser({
-        username,
-        password,
-        email,
-        name,
-        role: "staff",
-        locationId: null
-      });
-      
-      // Create applicant record
-      const applicant = await storage.createApplicant({
-        name,
-        email,
-        phone,
-        positionApplied,
-        status: "new",
-        resumeUrl: null,
-        notes: `Applied through website registration. User ID: ${user.id}`,
+  // Authentication routes moved to server/routes/auth.ts and registered at the end of this file
+  // Location Management Routes
         locationId: null
       });
       
