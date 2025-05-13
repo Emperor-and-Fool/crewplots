@@ -69,7 +69,7 @@ export function Sidebar({ className }: SidebarProps) {
               href="/dashboard" 
               className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                isActive("/dashboard") ? "bg-gray-700" : "hover:bg-gray-700"
+                isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
               )}
             >
               <LayoutDashboard className="h-5 w-5 mr-3" />
@@ -83,7 +83,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/locations") ? "bg-gray-700" : "hover:bg-gray-700"
+                      isActive("/locations") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <MapPin className="h-5 w-5 mr-3" />
                       Locations
@@ -94,7 +94,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/locations/create"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Create Location
                         </Link>
@@ -102,7 +102,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/locations"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Manage Locations
                         </Link>
@@ -120,7 +120,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/staff-management") ? "bg-gray-700" : "hover:bg-gray-700"
+                      isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Users className="h-5 w-5 mr-3" />
                       Staff Management
@@ -131,7 +131,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/staff-management/create"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Add Staff
                         </Link>
@@ -139,7 +139,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/staff-management/competencies"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Competencies
                         </Link>
@@ -147,7 +147,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/staff-management"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Staff List
                         </Link>
@@ -165,7 +165,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/scheduling") ? "bg-gray-700" : "hover:bg-gray-700"
+                      isActive("/scheduling") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Calendar className="h-5 w-5 mr-3" />
                       Scheduling
@@ -176,7 +176,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/scheduling/templates"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Templates
                         </Link>
@@ -184,7 +184,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/scheduling/new"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           Create Schedule
                         </Link>
@@ -192,7 +192,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <li>
                         <Link 
                           href="/scheduling"
-                          className="block py-1 text-sm text-gray-300 hover:text-white"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
                           View Calendar
                         </Link>
@@ -209,7 +209,7 @@ export function Sidebar({ className }: SidebarProps) {
                 href="/applicants"
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/applicants") ? "bg-gray-700" : "hover:bg-gray-700"
+                  isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
               >
                 <UserPlus className="h-5 w-5 mr-3" />
@@ -223,7 +223,7 @@ export function Sidebar({ className }: SidebarProps) {
                 href="/cash-management"
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/cash-management") ? "bg-gray-700" : "hover:bg-gray-700"
+                  isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
               >
                 <DollarSign className="h-5 w-5 mr-3" />
@@ -236,7 +236,7 @@ export function Sidebar({ className }: SidebarProps) {
               href="/knowledge-base"
               className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                isActive("/knowledge-base") ? "bg-gray-700" : "hover:bg-gray-700"
+                isActive("/knowledge-base") ? "bg-primary-700" : "hover:bg-primary-700"
               )}
             >
               <Book className="h-5 w-5 mr-3" />
@@ -249,7 +249,7 @@ export function Sidebar({ className }: SidebarProps) {
                 href="/reports"
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/reports") ? "bg-gray-700" : "hover:bg-gray-700"
+                  isActive("/reports") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
               >
                 <BarChart className="h-5 w-5 mr-3" />
@@ -260,7 +260,7 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
       </div>
       
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-primary-700">
         <div className="flex items-center">
           <Avatar className="h-8 w-8">
             <AvatarImage src={`https://ui-avatars.com/api/?name=${user?.name}`} alt={user?.name || "User"} />
@@ -268,14 +268,14 @@ export function Sidebar({ className }: SidebarProps) {
           </Avatar>
           <div className="ml-3">
             <p className="text-sm font-medium text-white">{user?.name}</p>
-            <p className="text-xs font-medium text-gray-300">
+            <p className="text-xs font-medium text-primary-200">
               {user?.role ? formatRole(user.role) : ""}
             </p>
           </div>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="ml-auto text-gray-300 hover:text-white hover:bg-gray-700"
+            className="ml-auto text-primary-200 hover:text-white hover:bg-primary-700"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
