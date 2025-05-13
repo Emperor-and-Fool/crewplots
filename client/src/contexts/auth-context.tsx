@@ -113,6 +113,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Set the user in state
       setUser(data.user);
       
+      // After successful login, immediately verify the session
+      try {
+        console.log("Verifying session after login...");
+        const meResponse = await fetch("/api/auth/me", {
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        const meData = await meResponse.json();
+        console.log("Session verification response:", meData);
+        
+        if (meData.authenticated && meData.user) {
+          console.log("Session verified successfully");
+        } else {
+          console.warn("Session verification failed after login");
+        }
+      } catch (verifyError) {
+        console.error("Error verifying session:", verifyError);
+      }
+      
       // Show success toast
       toast({
         title: "Login successful",
