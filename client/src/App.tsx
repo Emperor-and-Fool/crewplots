@@ -51,11 +51,23 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 
 function App() {
   const { isLoading, user } = useAuth();
+  const [forcedLoad, setForcedLoad] = React.useState(false);
 
   // Debug logging to see what state we're in
-  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user });
+  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user, forcedLoad });
   
-  if (isLoading) {
+  // If still loading after 2 seconds, force the login page
+  React.useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        console.log("Loading timeout - forcing login page display");
+        setForcedLoad(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+  
+  if (isLoading && !forcedLoad) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
