@@ -3,7 +3,7 @@ import WebSocket from 'ws';
 import { log } from './vite';
 
 export function setupWebSocketServer(server: Server) {
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocket.Server({ server });
   
   wss.on('connection', (ws: WebSocket) => {
     log('WebSocket client connected', 'ws');

@@ -46,7 +46,8 @@ export default function KnowledgeBase() {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<KbArticle | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
@@ -35,8 +35,8 @@ import { Loader2, QrCode } from "lucide-react";
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
-  const [location] = useLocation();
-  const [, navigate] = useNavigate();
+  const [location, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { register } = useAuth();
   const { toast } = useToast();
   

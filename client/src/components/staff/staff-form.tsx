@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +34,8 @@ interface StaffFormProps {
 
 export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

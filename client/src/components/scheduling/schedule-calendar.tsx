@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, parseISO } from "date-fns";
@@ -76,7 +76,8 @@ export function ScheduleCalendar({
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

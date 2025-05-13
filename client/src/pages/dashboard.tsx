@@ -16,11 +16,12 @@ import {
   UserPlus 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [selectedLocation, setSelectedLocation] = useState<number>(0);
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
 
   // Fetch statistics data
   const { data: staffStats } = useQuery({

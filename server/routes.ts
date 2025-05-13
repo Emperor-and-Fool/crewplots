@@ -16,7 +16,6 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 import path from "path";
-import { setupWebSocketServer } from "./ws-handler";
 
 // Setup multer for file uploads
 const upload = multer({
@@ -976,9 +975,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create HTTP server
   const httpServer = createServer(app);
-  
-  // Set up WebSocket server for real-time notifications
-  const wss = setupWebSocketServer(httpServer);
 
   return httpServer;
 }

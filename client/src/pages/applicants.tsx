@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
@@ -46,7 +46,8 @@ export default function Applicants() {
   const [hireDialogOpen, setHireDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();

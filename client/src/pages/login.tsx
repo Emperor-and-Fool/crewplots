@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,7 +28,8 @@ import { Loader2 } from "lucide-react";
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
 
   // Form definition
   const form = useForm<Login>({

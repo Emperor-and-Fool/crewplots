@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
@@ -11,7 +11,8 @@ import { ShiftForm } from "@/components/scheduling/shift-form";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Scheduling() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const [selectedLocation, setSelectedLocation] = useState<number>(0);
   const [isAddingShift, setIsAddingShift] = useState(false);
   const [isEditingShift, setIsEditingShift] = useState(false);

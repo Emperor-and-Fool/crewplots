@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
@@ -31,7 +31,8 @@ export default function Reports() {
   const [selectedLocation, setSelectedLocation] = useState<number>(0);
   const [selectedReport, setSelectedReport] = useState<string>("sales");
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>("weekly");
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
+  const navigate = (to: string) => setLocation(to);
   const { user } = useAuth();
 
   // Check if user has management role
