@@ -55,16 +55,21 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
+        console.log('Login request received:', req.body);
         const data = loginSchema.parse(req.body);
         
         // Find user by username
         const user = await storage.getUserByUsername(data.username);
+        console.log('User found?', !!user);
+        
         if (!user) {
+            console.log('User not found in database');
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
+            console.log('Admin credentials match, setting up session');
             // Set session - save both userId and loggedIn flag
             req.session.userId = user.id;
             req.session.loggedIn = true;
@@ -89,11 +94,16 @@ router.post('/login', async (req, res) => {
         }
         
         // Verify password for normal users
+        console.log('Checking password for non-admin user:', data.username);
         const isMatch = await bcrypt.compare(data.password, user.password);
+        console.log('Password match?', isMatch);
+        
         if (!isMatch) {
+            console.log('Password does not match');
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         
+        console.log('Password matches, setting up session');
         // Set session - save both userId and loggedIn flag
         req.session.userId = user.id;
         req.session.loggedIn = true;
@@ -116,7 +126,10 @@ router.post('/login', async (req, res) => {
             user: userWithoutPassword
         });
     } catch (error) {
+        console.error('Login route caught an error:', error);
+        
         if (error instanceof ZodError) {
+            console.log('Validation error in login request');
             const validationError = fromZodError(error);
             return res.status(400).json({ 
                 message: 'Validation error', 
@@ -124,8 +137,8 @@ router.post('/login', async (req, res) => {
             });
         }
         
-        console.error('Login error:', error);
-        return res.status(500).json({ message: 'Error logging in' });
+        console.error('Unexpected login error:', error);
+        return res.status(500).json({ message: 'Error logging in', error: error.message });
     }
 });
 
