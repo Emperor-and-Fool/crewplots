@@ -248,7 +248,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Applicants */}
-            {canAccessManagementPages && (
+            {(canAccessManagementPages || forceEnableAll) && (
               <Link 
                 href="/applicants"
                 className={cn(
@@ -262,7 +262,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Cash Management */}
-            {canAccessManagementPages && (
+            {(canAccessManagementPages || forceEnableAll) && (
               <Link 
                 href="/cash-management"
                 className={cn(
