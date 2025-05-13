@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -18,6 +18,7 @@ import multer from "multer";
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
+import { pool } from "./db";
 
 // Setup multer for file uploads
 const upload = multer({
@@ -27,8 +28,8 @@ const upload = multer({
   },
 });
 
-// Setup memory store for sessions
-const MemoryStoreSession = MemoryStore(session);
+// Setup PostgreSQL session store
+const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -41,11 +42,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax',
         path: '/'
       },
-      store: new MemoryStoreSession({
-        checkPeriod: 86400000, // prune expired entries every 24h
+      store: new PgStore({
+        pool, // Use the existing database pool
+        tableName: 'sessions', // Use the sessions table we created
+        createTableIfMissing: false, // Table is already created
       }),
-      resave: true, // Changed to true to ensure session is saved back to store
-      saveUninitialized: true, // Changed to true to create session by default
+      resave: false, // Set to false as PostgreSQL has reliable TTL
+      saveUninitialized: false, // Don't create session until data is stored
       secret: "shiftpro-secret-key",
       name: 'connect.sid', // Using default name for better compatibility
     })
