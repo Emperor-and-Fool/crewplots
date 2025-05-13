@@ -1,6 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { ensureAdminUserExists } from "./init-db";
+
+// Initialize admin user on startup
+ensureAdminUserExists().catch(err => {
+  console.error("Failed to create admin user:", err);
+});
 
 const app = express();
 app.use(express.json());
