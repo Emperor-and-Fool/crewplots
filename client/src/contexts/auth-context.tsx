@@ -85,18 +85,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       console.log("Attempting to log in with:", username);
       
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: "include",
+      // Using XMLHttpRequest to handle cookies better
+      return new Promise<boolean>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/auth/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        
+        xhr.onload = async function() {
+          console.log("XHR Status:", xhr.status);
+          console.log("XHR Response:", xhr.responseText);
+          console.log("XHR Cookies:", document.cookie);
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const data = JSON.parse(xhr.responseText);
+            console.log("Login response data:", data);
+            
+            // Immediately verify session with a follow-up request
+            try {
+              console.log("Verifying session after login...");
+              const verifyResponse = await fetch(`/api/auth/me?cacheBuster=${Date.now()}`, {
+                credentials: "include",
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                }
+              });
+              
+              const verifyData = await verifyResponse.json();
+              console.log("Session verification:", verifyData);
+              
+              if (verifyData && verifyData.authenticated && verifyData.user) {
+                setUser(verifyData.user);
+                resolve(true);
+              } else {
+                console.error("Login succeeded but session verification failed");
+                setUser(null);
+                resolve(false);
+              }
+            } catch (verifyErr) {
+              console.error("Error verifying session:", verifyErr);
+              setUser(null);
+              resolve(false);
+            }
+          } else {
+            console.error("Login request failed with status:", xhr.status);
+            setUser(null);
+            resolve(false);
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error("XHR network error during login");
+          setUser(null);
+          resolve(false);
+        };
+        
+        xhr.send(JSON.stringify({ username, password }));
       });
-
-      console.log("Login response status:", response.status);
-      const data = await response.json();
-      console.log("Login response data:", data);
       
       if (!response.ok) {
         console.error("Login failed:", data);
