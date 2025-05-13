@@ -54,10 +54,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "hidden md:flex md:flex-col w-64 bg-primary-800 text-white",
+      "hidden md:flex md:flex-col w-64 bg-gray-800 text-white",
       className
     )}>
-      <div className="p-4 flex items-center border-b border-primary-700">
+      <div className="p-4 flex items-center border-b border-gray-700">
         <h1 className="text-xl font-bold">ShiftPro</h1>
       </div>
       
@@ -65,14 +65,15 @@ export function Sidebar({ className }: SidebarProps) {
         <nav className="mt-5 px-2">
           <div className="space-y-1">
             {/* Dashboard */}
-            <Link href="/dashboard">
-              <a className={cn(
+            <Link 
+              href="/dashboard" 
+              className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                 isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
-              )}>
-                <LayoutDashboard className="h-5 w-5 mr-3" />
-                Dashboard
-              </a>
+              )}
+            >
+              <LayoutDashboard className="h-5 w-5 mr-3" />
+              Dashboard
             </Link>
             
             {/* Locations - Manager only */}
@@ -91,17 +92,19 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link href="/locations/create">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Create Location
-                          </a>
+                        <Link 
+                          href="/locations/create"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Create Location
                         </Link>
                       </li>
                       <li>
-                        <Link href="/locations">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Manage Locations
-                          </a>
+                        <Link 
+                          href="/locations"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Manage Locations
                         </Link>
                       </li>
                     </ul>
@@ -126,24 +129,27 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link href="/staff-management/create">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Add Staff
-                          </a>
+                        <Link 
+                          href="/staff-management/create"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Add Staff
                         </Link>
                       </li>
                       <li>
-                        <Link href="/staff-management/competencies">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Competencies
-                          </a>
+                        <Link 
+                          href="/staff-management/competencies"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Competencies
                         </Link>
                       </li>
                       <li>
-                        <Link href="/staff-management">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Staff List
-                          </a>
+                        <Link 
+                          href="/staff-management"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Staff List
                         </Link>
                       </li>
                     </ul>
@@ -168,24 +174,27 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link href="/scheduling/templates">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Templates
-                          </a>
+                        <Link 
+                          href="/scheduling/templates"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Templates
                         </Link>
                       </li>
                       <li>
-                        <Link href="/scheduling/new">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            Create Schedule
-                          </a>
+                        <Link 
+                          href="/scheduling/new"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          Create Schedule
                         </Link>
                       </li>
                       <li>
-                        <Link href="/scheduling">
-                          <a className="block py-1 text-sm text-primary-200 hover:text-white">
-                            View Calendar
-                          </a>
+                        <Link 
+                          href="/scheduling"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          View Calendar
                         </Link>
                       </li>
                     </ul>
@@ -196,51 +205,55 @@ export function Sidebar({ className }: SidebarProps) {
             
             {/* Applicants */}
             {canAccessManagementPages && (
-              <Link href="/applicants">
-                <a className={cn(
+              <Link 
+                href="/applicants"
+                className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                   isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
-                )}>
-                  <UserPlus className="h-5 w-5 mr-3" />
-                  Applicants
-                </a>
+                )}
+              >
+                <UserPlus className="h-5 w-5 mr-3" />
+                Applicants
               </Link>
             )}
             
             {/* Cash Management */}
             {canAccessManagementPages && (
-              <Link href="/cash-management">
-                <a className={cn(
+              <Link 
+                href="/cash-management"
+                className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                   isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
-                )}>
-                  <DollarSign className="h-5 w-5 mr-3" />
-                  Cash Management
-                </a>
+                )}
+              >
+                <DollarSign className="h-5 w-5 mr-3" />
+                Cash Management
               </Link>
             )}
             
             {/* Knowledge Base */}
-            <Link href="/knowledge-base">
-              <a className={cn(
+            <Link 
+              href="/knowledge-base"
+              className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                 isActive("/knowledge-base") ? "bg-primary-700" : "hover:bg-primary-700"
-              )}>
-                <Book className="h-5 w-5 mr-3" />
-                Knowledge Base
-              </a>
+              )}
+            >
+              <Book className="h-5 w-5 mr-3" />
+              Knowledge Base
             </Link>
             
             {/* Reports */}
             {canAccessManagementPages && (
-              <Link href="/reports">
-                <a className={cn(
+              <Link 
+                href="/reports"
+                className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
                   isActive("/reports") ? "bg-primary-700" : "hover:bg-primary-700"
-                )}>
-                  <BarChart className="h-5 w-5 mr-3" />
-                  Reports
-                </a>
+                )}
+              >
+                <BarChart className="h-5 w-5 mr-3" />
+                Reports
               </Link>
             )}
           </div>
