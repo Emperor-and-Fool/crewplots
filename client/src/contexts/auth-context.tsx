@@ -29,18 +29,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
+      console.log("Checking authentication status...");
       try {
         const response = await fetch("/api/auth/me", {
           credentials: "include",
         });
 
+        console.log("Auth response status:", response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log("User data:", data);
           setUser(data.user);
+        } else {
+          console.log("Not authenticated, redirecting to login");
         }
       } catch (error) {
         console.error("Error checking authentication status:", error);
       } finally {
+        console.log("Setting isLoading to false");
         setIsLoading(false);
       }
     };

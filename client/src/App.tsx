@@ -18,18 +18,24 @@ import NotFound from "@/pages/not-found";
 const ProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
   const { user, isLoading } = useAuth();
   
+  console.log("ProtectedRoute - isLoading:", isLoading, "user:", user);
+  
   if (isLoading) {
+    console.log("Still loading auth state, showing loading screen");
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
   if (!user) {
+    console.log("No user found, redirecting to login");
     return <Redirect to="/login" />;
   }
   
   if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+    console.log("User role not allowed:", user.role, "required:", requiredRoles);
     return <Redirect to="/dashboard" />;
   }
   
+  console.log("User authenticated, rendering component");
   return <Component {...rest} />;
 };
 
