@@ -32,27 +32,11 @@ const MemoryStoreSession = MemoryStore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
-  // Add CORS headers before session middleware - must be specific origin when using credentials
-  app.use((req, res, next) => {
-    // For credentials to work, we need a specific origin, not '*'
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-      return res.status(200).end();
-    }
-    next();
-  });
-
   app.use(
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: false, // Set to false for development in Replit
+        secure: false, // Must be false for non-HTTPS development environments
         httpOnly: true,
         sameSite: 'lax',
         path: '/'

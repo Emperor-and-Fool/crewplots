@@ -34,10 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Add cache-busting parameter to prevent browser caching
         const cacheBuster = new Date().getTime();
         const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
-          method: "GET",
           credentials: "include",
           headers: {
-            'Accept': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
@@ -91,20 +89,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
         },
         body: JSON.stringify({ username, password }),
         credentials: "include",
       });
 
       console.log("Login response status:", response.status);
-      
-      // Check for cookies in the response
-      console.log("Login response has cookies?", document.cookie.length > 0 ? "Yes" : "No", document.cookie.includes("connect.sid") ? "Found connect.sid" : "No connect.sid");
-      
       const data = await response.json();
       console.log("Login response data:", data);
       
