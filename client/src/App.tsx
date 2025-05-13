@@ -14,37 +14,44 @@ import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 
-// Protected route component
-const ProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
+// Protected route component that only checks if user is authenticated
+const ProtectedRoute = ({ component: Component, ...rest }: any) => {
   const { user, isLoading } = useAuth();
   
-  console.log("ProtectedRoute - isLoading:", isLoading, "user:", user);
-  
   if (isLoading) {
-    console.log("Still loading auth state, showing loading screen");
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
   if (!user) {
-    console.log("No user found, redirecting to login");
+    return <Redirect to="/login" />;
+  }
+  
+  return <Component {...rest} />;
+};
+
+// Role-based protected route that also checks user roles
+const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+  
+  if (!user) {
     return <Redirect to="/login" />;
   }
   
   if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-    console.log("User role not allowed:", user.role, "required:", requiredRoles);
     return <Redirect to="/dashboard" />;
   }
   
-  console.log("User authenticated, rendering component");
   return <Component {...rest} />;
 };
 
 function App() {
-  const { isLoading, user } = useAuth();
-  console.log("App rendering - isLoading:", isLoading, "user:", user);
+  const { isLoading } = useAuth();
 
   if (isLoading) {
-    console.log("App is still loading auth state");
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
@@ -59,41 +66,36 @@ function App() {
             <ProtectedRoute component={Dashboard} />
           </Route>
           
-          {/* This should be the last route as a fallback */}
-          <Route path="/">
-            {user ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
-          </Route>
-          
           <Route path="/locations">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={Locations} 
               requiredRoles={["manager"]} 
             />
           </Route>
           
           <Route path="/staff-management">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={StaffManagement} 
               requiredRoles={["manager", "floor_manager"]} 
             />
           </Route>
           
           <Route path="/scheduling">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={Scheduling} 
               requiredRoles={["manager", "floor_manager"]} 
             />
           </Route>
           
           <Route path="/applicants">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={Applicants} 
               requiredRoles={["manager", "floor_manager"]} 
             />
           </Route>
           
           <Route path="/cash-management">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={CashManagement} 
               requiredRoles={["manager", "floor_manager"]} 
             />
@@ -104,12 +106,18 @@ function App() {
           </Route>
           
           <Route path="/reports">
-            <ProtectedRoute 
+            <RoleProtectedRoute 
               component={Reports} 
               requiredRoles={["manager", "floor_manager"]} 
             />
           </Route>
           
+          {/* Default route - should be after all other routes */}
+          <Route path="/">
+            <Redirect to="/login" />
+          </Route>
+          
+          {/* Not found - should be the very last */}
           <Route component={NotFound} />
         </Switch>
       </Router>
