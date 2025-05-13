@@ -152,6 +152,29 @@ export const kbArticles = pgTable("kb_articles", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Uploaded Files
+export const uploadedFiles = pgTable("uploaded_files", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Document Attachments - for linking files to different entities
+export const documentAttachments = pgTable("document_attachments", {
+  id: serial("id").primaryKey(),
+  fileId: integer("file_id").references(() => uploadedFiles.id).notNull(),
+  entityType: text("entity_type", { 
+    enum: ["applicant", "staff", "location", "kb_article", "cash_count"] 
+  }).notNull(),
+  entityId: integer("entity_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
@@ -166,6 +189,8 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, cre
 export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: true, createdAt: true });
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
+export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -197,6 +222,8 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertCashCount = z.infer<typeof insertCashCountSchema>;
 export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
+export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
+export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
@@ -213,3 +240,5 @@ export type Shift = typeof shifts.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
+export type UploadedFile = typeof uploadedFiles.$inferSelect;
+export type DocumentAttachment = typeof documentAttachments.$inferSelect;
