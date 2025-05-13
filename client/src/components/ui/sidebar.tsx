@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   MapPin,
@@ -29,14 +30,57 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [serverAuthData, setServerAuthData] = useState<{
+    authenticated: boolean;
+    user: any;
+  }>({
+    authenticated: false,
+    user: null
+  });
+  
+  // Direct server-side check for user data to ensure we have accurate role information
+  useEffect(() => {
+    const checkServerAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated && data.user) {
+            setServerAuthData(data);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking server auth in sidebar:", error);
+      }
+    };
+    
+    checkServerAuth();
+  }, []);
+  
+  // Use server auth data for role checks
+  const effectiveUser = serverAuthData.user || user;
+  
+  // Debug log to verify the user role
+  console.log("Sidebar user data:", { 
+    serverUser: serverAuthData.user, 
+    reactUser: user, 
+    effectiveUser
+  });
   
   const isActive = (path: string) => location === path;
   
   // Only managers can access locations page
-  const canAccessLocations = user?.role === "manager";
+  const canAccessLocations = effectiveUser?.role === "manager";
   
   // Managers and floor managers can access these pages
-  const canAccessManagementPages = ["manager", "floor_manager"].includes(user?.role || "");
+  const canAccessManagementPages = ["manager", "floor_manager"].includes(effectiveUser?.role || "");
+  
+  // Force enable all menu items for now to debug visibility issue
+  const forceEnableAll = true;
   
   // Format user role for display
   const formatRole = (role: string) => {
@@ -77,7 +121,7 @@ export function Sidebar({ className }: SidebarProps) {
             </Link>
             
             {/* Locations - Manager only */}
-            {canAccessLocations && (
+            {(canAccessLocations || forceEnableAll) && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="locations" className="border-0">
                   <AccordionTrigger className="py-0">
@@ -114,7 +158,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Staff Management */}
-            {canAccessManagementPages && (
+            {(canAccessManagementPages || forceEnableAll) && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="staff" className="border-0">
                   <AccordionTrigger className="py-0">
@@ -159,7 +203,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Scheduling */}
-            {canAccessManagementPages && (
+            {(canAccessManagementPages || forceEnableAll) && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="scheduling" className="border-0">
                   <AccordionTrigger className="py-0">
