@@ -55,16 +55,24 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
+        console.log('Login request received:', req.body);
         const data = loginSchema.parse(req.body);
         
         // Find user by username
+        console.log('Finding user with username:', data.username);
         const user = await storage.getUserByUsername(data.username);
+        
         if (!user) {
+            console.log('User not found:', data.username);
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         
+        console.log('User found:', user.username, 'with ID:', user.id);
+        
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
+            console.log('Admin credentials match, setting session');
+            
             // Set session - save both userId and loggedIn flag
             req.session.userId = user.id;
             req.session.loggedIn = true;
@@ -75,7 +83,7 @@ router.post('/login', async (req, res) => {
                 if (err) {
                     console.error('Error saving session:', err);
                 } else {
-                    console.log('Session saved successfully for admin user');
+                    console.log('Session saved successfully for admin user, session ID:', req.sessionID);
                 }
             });
             
@@ -150,6 +158,9 @@ router.get('/user', authenticateUser, (req, res) => {
 router.get('/me', async (req, res) => {
     try {
         console.log('Session data:', req.session);
+        console.log('Session ID:', req.sessionID);
+        console.log('Session cookie:', req.headers.cookie);
+        
         const userId = req.session?.userId;
         const loggedIn = req.session?.loggedIn;
         console.log('Get /me - userId from session:', userId, 'loggedIn:', loggedIn);
@@ -160,7 +171,7 @@ router.get('/me', async (req, res) => {
         }
         
         const user = await storage.getUser(userId);
-        console.log('Get /me - found user:', user ? 'yes' : 'no');
+        console.log('Get /me - found user:', user ? user.username : 'no');
         
         if (!user) {
             console.log('User not found in database');
