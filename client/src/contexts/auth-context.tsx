@@ -31,8 +31,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       console.log("Checking authentication status...");
       try {
-        const response = await fetch("/api/auth/me", {
+        // Add cache-busting parameter to prevent browser caching
+        const cacheBuster = new Date().getTime();
+        const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
           credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
 
         console.log("Auth response status:", response.status);
@@ -49,14 +56,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Not authenticated or no user data
             console.log("Not authenticated or no user data found");
             setUser(null);
+            // Clear any cached queries that might depend on authentication
+            queryClient.clear();
           }
         } else {
           console.log("Error response, not authenticated");
           setUser(null);
+          // Clear any cached queries that might depend on authentication
+          queryClient.clear();
         }
       } catch (error) {
         console.error("Error checking authentication status:", error);
         setUser(null);
+        // Clear any cached queries that might depend on authentication
+        queryClient.clear();
       } finally {
         console.log("Setting isLoading to false");
         setIsLoading(false);
@@ -64,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkAuth();
-  }, []);
+  }, [queryClient]);
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {

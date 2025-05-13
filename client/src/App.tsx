@@ -55,29 +55,11 @@ function App() {
   // Debug logging to see what state we're in
   console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user });
   
-  // Force state transition after a timeout if getting stuck
+  // Log auth state changes
   React.useEffect(() => {
-    let timeoutId: number;
-    
-    if (isLoading) {
-      // If still loading after 3 seconds, force a state change by refetching
-      timeoutId = window.setTimeout(() => {
-        console.log("Loading timeout reached - forcing refresh");
-        window.location.reload();
-      }, 3000);
-    }
-    
-    return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [isLoading]);
+    console.log("Auth state changed:", { isLoading, isAuthenticated: !!user });
+  }, [isLoading, user]);
 
-  // Show login page directly if not authenticated and not loading
-  if (!user && !isLoading) {
-    console.log("Not authenticated and not loading - showing login page");
-    return <Route path="*" component={Login} />;
-  }
-  
   // Show loading indicator
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
@@ -86,6 +68,21 @@ function App() {
         <div className="text-sm text-gray-500">If this persists, please refresh the page</div>
       </div>
     </div>;
+  }
+  
+  // If not authenticated, redirect to login
+  if (!user) {
+    console.log("Not authenticated - redirecting to login page");
+    return (
+      <Router>
+        <Switch>
+          <Route path="/login" component={Login} />
+          <Route path="*">
+            <Redirect to="/login" />
+          </Route>
+        </Switch>
+      </Router>
+    );
   }
 
   return (
