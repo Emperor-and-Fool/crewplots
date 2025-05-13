@@ -27,188 +27,135 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       console.log("Checking authentication status...");
-      const xhr = new XMLHttpRequest();
-      const cacheBuster = new Date().getTime();
-      xhr.open("GET", `/api/auth/me?_=${cacheBuster}`, true);
-      xhr.withCredentials = true;
-      xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      xhr.setRequestHeader("Pragma", "no-cache");
-      xhr.setRequestHeader("Expires", "0");
+      try {
+        // Add cache-busting parameter to prevent browser caching
+        const cacheBuster = new Date().getTime();
+        const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
 
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-          console.log("Auth response status:", xhr.status);
+        console.log("Auth response status:", response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("User data:", data);
           
-          if (xhr.status === 200) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              console.log("User data:", data);
-              
-              if (data && data.authenticated && data.user) {
-                setUser(data.user);
-                console.log("User authenticated:", data.user.username);
-              } else {
-                console.log("Not authenticated or no user data found");
-                setUser(null);
-                queryClient.clear();
-              }
-            } catch (e) {
-              console.error("Error parsing authentication response:", e);
-              setUser(null);
-              queryClient.clear();
-            }
+          // If authenticated and user data exists, set the user
+          if (data && data.authenticated && data.user) {
+            setUser(data.user);
+            console.log("User authenticated:", data.user.username);
           } else {
-            console.log("Error response, not authenticated");
+            // Not authenticated or no user data
+            console.log("Not authenticated or no user data found");
             setUser(null);
+            // Clear any cached queries that might depend on authentication
             queryClient.clear();
           }
-          
-          console.log("Setting isLoading to false");
-          setIsLoading(false);
+        } else {
+          console.log("Error response, not authenticated");
+          setUser(null);
+          // Clear any cached queries that might depend on authentication
+          queryClient.clear();
         }
-      };
-      
-      xhr.onerror = function() {
-        console.error("Error checking authentication status");
+      } catch (error) {
+        console.error("Error checking authentication status:", error);
         setUser(null);
+        // Clear any cached queries that might depend on authentication
         queryClient.clear();
+      } finally {
+        console.log("Setting isLoading to false");
         setIsLoading(false);
-      };
-      
-      xhr.send();
+      }
     };
-    
+
     checkAuth();
   }, [queryClient]);
 
-  // Login function
+  // Login function - direct form submission to ensure cookie handling
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Attempting login...");
+      console.log("Attempting to log in with:", username);
       
-      return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/auth/login", true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.withCredentials = true;
-        
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            console.log("Login response status:", xhr.status);
-            
-            if (xhr.status === 200) {
-              try {
-                const responseData = JSON.parse(xhr.responseText);
-                console.log("Login response data:", responseData);
-                
-                // Check auth after successful login
-                const verifyXhr = new XMLHttpRequest();
-                verifyXhr.open("GET", `/api/auth/me?cacheBuster=${Date.now()}`, true);
-                verifyXhr.withCredentials = true;
-                verifyXhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-                verifyXhr.setRequestHeader("Pragma", "no-cache");
-                verifyXhr.setRequestHeader("Expires", "0");
-                
-                verifyXhr.onreadystatechange = function() {
-                  if (verifyXhr.readyState === 4) {
-                    if (verifyXhr.status === 200) {
-                      try {
-                        const verifyData = JSON.parse(verifyXhr.responseText);
-                        console.log("Session verification:", verifyData);
-                        
-                        if (verifyData && verifyData.authenticated && verifyData.user) {
-                          setUser(verifyData.user);
-                          
-                          toast({
-                            title: "Login successful",
-                            description: `Welcome back, ${verifyData.user.name || username}!`,
-                          });
-                          
-                          queryClient.invalidateQueries();
-                          
-                          resolve(true);
-                        } else {
-                          console.error("Login succeeded but session verification failed");
-                          toast({
-                            title: "Login error",
-                            description: "Session verification failed. Please try again.",
-                            variant: "destructive",
-                          });
-                          setUser(null);
-                          resolve(false);
-                        }
-                      } catch (e) {
-                        console.error("Error parsing verification response:", e);
-                        toast({
-                          title: "Login error",
-                          description: "Error processing verification response. Please try again.",
-                          variant: "destructive",
-                        });
-                        setUser(null);
-                        resolve(false);
-                      }
-                    } else {
-                      console.error("Verification request failed, status:", verifyXhr.status);
-                      toast({
-                        title: "Login error",
-                        description: "Session verification failed. Please try again.",
-                        variant: "destructive",
-                      });
-                      setUser(null);
-                      resolve(false);
-                    }
-                  }
-                };
-                
-                verifyXhr.send();
-              } catch (e) {
-                console.error("Error parsing login response:", e);
-                toast({
-                  title: "Login error",
-                  description: "Error processing login response. Please try again.",
-                  variant: "destructive",
-                });
-                resolve(false);
-              }
-            } else {
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                console.error("Login failed:", errorData);
-                toast({
-                  title: "Login failed",
-                  description: errorData.message || "Invalid username or password",
-                  variant: "destructive",
-                });
-              } catch (e) {
-                toast({
-                  title: "Login failed",
-                  description: "Unknown error occurred. Please try again.",
-                  variant: "destructive",
-                });
-              }
-              resolve(false);
-            }
-            
-            setIsLoading(false);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include",
+      });
+
+      console.log("Login response status:", response.status);
+      const responseData = await response.json();
+      console.log("Login response data:", responseData);
+      
+      if (!response.ok) {
+        console.error("Login failed:", responseData);
+        toast({
+          title: "Login failed",
+          description: responseData.message || "Invalid username or password",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Verify session with a follow-up request
+      try {
+        console.log("Verifying session after login...");
+        const verifyResponse = await fetch(`/api/auth/me?cacheBuster=${Date.now()}`, {
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
-        };
+        });
         
-        xhr.onerror = function() {
-          console.error("Network error during login");
+        const verifyData = await verifyResponse.json();
+        console.log("Session verification:", verifyData);
+        
+        if (verifyData && verifyData.authenticated && verifyData.user) {
+          // Set the user in state
+          setUser(verifyData.user);
+          
+          // Show success toast
           toast({
-            title: "Login failed",
-            description: "Network error. Please try again.",
+            title: "Login successful",
+            description: `Welcome back, ${verifyData.user.name || username}!`,
+          });
+          
+          // Invalidate all queries to ensure fresh data
+          await queryClient.invalidateQueries();
+          
+          return true;
+        } else {
+          console.error("Login succeeded but session verification failed");
+          toast({
+            title: "Login error",
+            description: "Session verification failed. Please try again.",
             variant: "destructive",
           });
-          setIsLoading(false);
-          resolve(false);
-        };
-        
-        xhr.send(JSON.stringify({ username, password }));
-      });
+          setUser(null);
+          return false;
+        }
+      } catch (verifyErr) {
+        console.error("Error verifying session:", verifyErr);
+        toast({
+          title: "Login error",
+          description: "Session verification failed. Please try again.",
+          variant: "destructive",
+        });
+        setUser(null);
+        return false;
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -216,8 +163,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -225,47 +173,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      setUser(null);
       
-      return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/auth/logout", true);
-        xhr.withCredentials = true;
-        
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            setUser(null);
-            queryClient.clear();
-            
-            toast({
-              title: "Logged out",
-              description: "You have been successfully logged out",
-            });
-            
-            setIsLoading(false);
-            resolve();
-          }
-        };
-        
-        xhr.onerror = function() {
-          console.error("Network error during logout");
-          setUser(null);
-          queryClient.clear();
-          
-          toast({
-            title: "Logout issue",
-            description: "There was an issue during logout, but you've been logged out of this session.",
-          });
-          
-          setIsLoading(false);
-          resolve();
-        };
-        
-        xhr.send();
+      // Clear all query caches
+      queryClient.clear();
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
       });
     } catch (error) {
       console.error("Logout error:", error);
-      setUser(null);
-      queryClient.clear();
+      toast({
+        title: "Logout failed",
+        description: "An error occurred during logout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -274,56 +202,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: any): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/auth/register", true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.withCredentials = true;
-        
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            if (xhr.status === 201) {
-              toast({
-                title: "Registration successful",
-                description: "Your account has been created. You can now login.",
-              });
-              resolve(true);
-            } else {
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                toast({
-                  title: "Registration failed",
-                  description: errorData.message || "Unable to create account",
-                  variant: "destructive",
-                });
-              } catch (e) {
-                toast({
-                  title: "Registration failed",
-                  description: "Unknown error occurred. Please try again.",
-                  variant: "destructive",
-                });
-              }
-              resolve(false);
-            }
-            
-            setIsLoading(false);
-          }
-        };
-        
-        xhr.onerror = function() {
-          console.error("Network error during registration");
-          toast({
-            title: "Registration failed",
-            description: "Network error. Please try again.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          resolve(false);
-        };
-        
-        xhr.send(JSON.stringify(userData));
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          title: "Registration failed",
+          description: errorData.message || "Unable to create account",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created. You can now login.",
+      });
+      
+      return true;
     } catch (error) {
       console.error("Registration error:", error);
       toast({
@@ -331,8 +234,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
