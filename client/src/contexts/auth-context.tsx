@@ -85,44 +85,101 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       console.log("Attempting to log in with:", username);
       
-      const response = await fetch("/api/auth/login", {
+      // Debug logging to see what's happening with the fetch request
+      console.log("Sending fetch request to /api/auth/login with:", { username, password: "********" });
+      
+      // For debug purposes, let's log the request details
+      const requestOptions = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
-        credentials: "include",
+        credentials: "include" as RequestCredentials,
+      };
+      
+      console.log("Request options:", JSON.stringify(requestOptions, (key, value) => 
+        key === 'body' ? JSON.stringify(JSON.parse(value as string), (k, v) => k === 'password' ? '********' : v) : value
+      ));
+      
+      // Try using XMLHttpRequest instead of fetch
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/auth/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        
+        xhr.onreadystatechange = function() {
+          console.log(`XHR state change: readyState=${xhr.readyState}, status=${xhr.status}`);
+          
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                console.log("Login successful, user data:", data);
+                
+                // Set the user in state
+                setUser(data.user);
+                
+                // Show success toast
+                toast({
+                  title: "Login successful",
+                  description: `Welcome back, ${data.user?.name || username}!`,
+                });
+                
+                // Invalidate all queries to ensure fresh data
+                queryClient.invalidateQueries();
+                
+                setIsLoading(false);
+                resolve(true);
+              } catch (e) {
+                console.error("Error parsing response:", e);
+                toast({
+                  title: "Login failed",
+                  description: "Error processing server response",
+                  variant: "destructive",
+                });
+                setIsLoading(false);
+                resolve(false);
+              }
+            } else {
+              try {
+                const errorData = JSON.parse(xhr.responseText);
+                console.error("Login failed:", errorData);
+                toast({
+                  title: "Login failed",
+                  description: errorData.message || "Invalid username or password",
+                  variant: "destructive",
+                });
+              } catch (e) {
+                console.error("Error handling login failure:", e);
+                toast({
+                  title: "Login failed",
+                  description: "An unexpected error occurred. Please try again.",
+                  variant: "destructive",
+                });
+              }
+              setIsLoading(false);
+              resolve(false);
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error("XHR error during login request");
+          toast({
+            title: "Connection error",
+            description: "Could not connect to the server. Please check your network connection.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          resolve(false);
+        };
+        
+        const requestBody = JSON.stringify({ username, password });
+        console.log("Sending XHR request with body:", JSON.stringify({ username, password: "********" }));
+        xhr.send(requestBody);
       });
-
-      console.log("Login response status:", response.status);
-      const data = await response.json();
-      console.log("Login response data:", data);
-      
-      if (!response.ok) {
-        console.error("Login failed:", data);
-        toast({
-          title: "Login failed",
-          description: data.message || "Invalid username or password",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log("Login successful, user data:", data);
-      
-      // Set the user in state
-      setUser(data.user);
-      
-      // Show success toast
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.user?.name || username}!`,
-      });
-      
-      // Invalidate all queries to ensure fresh data
-      await queryClient.invalidateQueries();
-      
-      return true;
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -130,9 +187,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
