@@ -59,6 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log("Attempting to log in with:", username);
+      
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -68,8 +70,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         credentials: "include",
       });
 
+      console.log("Login response status:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Login failed:", errorData);
         toast({
           title: "Login failed",
           description: errorData.message || "Invalid username or password",
@@ -79,6 +84,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await response.json();
+      console.log("Login successful, user data:", data);
+      
+      // Set the user in state
       setUser(data.user);
       
       // Invalidate all queries to ensure fresh data

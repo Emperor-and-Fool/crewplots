@@ -40,6 +40,14 @@ const ProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: a
 };
 
 function App() {
+  const { isLoading, user } = useAuth();
+  console.log("App rendering - isLoading:", isLoading, "user:", user);
+
+  if (isLoading) {
+    console.log("App is still loading auth state");
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
   return (
     <TooltipProvider>
       <Router>
@@ -47,12 +55,13 @@ function App() {
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           
-          <Route path="/">
-            <Redirect to="/dashboard" />
-          </Route>
-          
           <Route path="/dashboard">
             <ProtectedRoute component={Dashboard} />
+          </Route>
+          
+          {/* This should be the last route as a fallback */}
+          <Route path="/">
+            {user ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
           </Route>
           
           <Route path="/locations">

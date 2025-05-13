@@ -43,13 +43,21 @@ export default function Login() {
   // Form submission handler
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
+    console.log("Login form submitted with username:", data.username);
     
     try {
+      console.log("Attempting login...");
       const success = await login(data.username, data.password);
       
+      console.log("Login result:", success);
       if (success) {
+        console.log("Login successful, navigating to dashboard");
         navigate("/dashboard");
+      } else {
+        console.log("Login failed");
       }
+    } catch (error) {
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
