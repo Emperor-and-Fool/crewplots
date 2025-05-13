@@ -44,8 +44,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new MemoryStoreSession({
         checkPeriod: 86400000, // prune expired entries every 24h
       }),
-      resave: true, // Changed to true to ensure session is saved back to store
-      saveUninitialized: true, // Changed to true to create session by default
+      resave: true, // Keep true to ensure session is saved back to store
+      saveUninitialized: true, // Keep true to create session by default
+      rolling: true, // Reset expiration countdown on every response
       secret: "shiftpro-secret-key",
       name: 'connect.sid', // Using default name for better compatibility
     })
