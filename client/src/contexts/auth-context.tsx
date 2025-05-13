@@ -81,101 +81,105 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    console.log("Attempting to log in with:", username);
+    console.log("Using XMLHttpRequest for login request");
+    
     try {
-      setIsLoading(true);
-      console.log("Attempting to log in with:", username);
-      
-      console.log("Preparing login request to:", "/api/auth/login");
-      
-      // Log request details (without password)
-      const requestBody = { username, password: "***" };
-      console.log("Request body:", requestBody);
-      
-      // Build actual request with real password
-      const requestInit = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: "include" as RequestCredentials,
-      };
-      
-      console.log("Request headers:", requestInit.headers);
-      console.log("Request credentials mode:", requestInit.credentials);
-      
-      // Add a timeout to see if request is hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.error("Fetch request timeout after 10 seconds");
-        controller.abort();
-      }, 10000);
-      
-      console.log("Sending fetch request...");
-      const response = await fetch("/api/auth/login", {
-        ...requestInit,
-        signal: controller.signal
+      return await new Promise<boolean>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/auth/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        
+        xhr.onreadystatechange = function() {
+          console.log(`XHR state changed: readyState=${xhr.readyState}, status=${xhr.status}`);
+          
+          if (xhr.readyState === 4) {
+            console.log(`XHR completed with status: ${xhr.status}`);
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+              console.log("XHR response text:", xhr.responseText);
+              try {
+                const data = JSON.parse(xhr.responseText);
+                console.log("Login successful, user data:", data);
+                
+                // Set the user in state
+                setUser(data.user);
+                
+                // Show success toast
+                toast({
+                  title: "Login successful",
+                  description: `Welcome back, ${data.user?.name || username}!`,
+                });
+                
+                // Invalidate all queries to ensure fresh data
+                queryClient.invalidateQueries();
+                
+                setIsLoading(false);
+                resolve(true);
+              } catch (parseError) {
+                console.error("Error parsing response:", parseError);
+                toast({
+                  title: "Login failed",
+                  description: "Could not process server response",
+                  variant: "destructive",
+                });
+                setIsLoading(false);
+                resolve(false);
+              }
+            } else {
+              console.error("Login failed with status:", xhr.status);
+              console.log("Response text:", xhr.responseText);
+              
+              let errorMessage = "Invalid username or password";
+              try {
+                const errorData = JSON.parse(xhr.responseText);
+                errorMessage = errorData.message || errorMessage;
+              } catch (e) {
+                // Ignore parse errors
+              }
+              
+              toast({
+                title: "Login failed",
+                description: errorMessage,
+                variant: "destructive",
+              });
+              setIsLoading(false);
+              resolve(false);
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error("XHR network error during login");
+          toast({
+            title: "Login failed",
+            description: "Network error, could not connect to server",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          resolve(false);
+        };
+        
+        console.log("Sending XHR request...");
+        xhr.send(JSON.stringify({ username, password }));
       });
-      clearTimeout(timeoutId);
-      
-      console.log("Fetch request completed successfully");
-
-      console.log("Login response status:", response.status);
-      const data = await response.json();
-      console.log("Login response data:", data);
-      
-      if (!response.ok) {
-        console.error("Login failed:", data);
-        toast({
-          title: "Login failed",
-          description: data.message || "Invalid username or password",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log("Login successful, user data:", data);
-      
-      // Set the user in state
-      setUser(data.user);
-      
-      // Show success toast
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.user?.name || username}!`,
-      });
-      
-      // Invalidate all queries to ensure fresh data
-      await queryClient.invalidateQueries();
-      
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error details:", {
         name: error?.name,
         message: error?.message,
-        stack: error?.stack,
-        errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        stack: error?.stack
       });
-      
-      let errorMessage = "An unexpected error occurred. Please try again.";
-      
-      // Provide more specific error messages based on error type
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        errorMessage = "Network error: Could not connect to server";
-        console.error("Network connection error detected");
-      } else if (error instanceof SyntaxError) {
-        errorMessage = "Invalid response from server";
-        console.error("JSON parsing error detected");
-      }
       
       toast({
         title: "Login failed",
-        description: errorMessage,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return false;
-    } finally {
+      
       setIsLoading(false);
+      return false;
     }
   };
 
