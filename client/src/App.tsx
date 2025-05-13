@@ -18,34 +18,161 @@ import NotFound from "@/pages/not-found";
 // Protected route component that only checks if user is authenticated
 const ProtectedRoute = ({ component: Component, ...rest }: any) => {
   const { user, isLoading } = useAuth();
+  const [serverAuthState, setServerAuthState] = React.useState<{
+    loading: boolean;
+    authenticated: boolean;
+    user: any;
+  }>({
+    loading: true,
+    authenticated: false,
+    user: null
+  });
+
+  // Direct server-side authentication check that bypasses the React state issues
+  React.useEffect(() => {
+    const checkServerAuth = async () => {
+      try {
+        console.log("Checking server-side authentication directly");
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store' // Prevent caching
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Server auth check response:", data);
+          
+          setServerAuthState({
+            loading: false,
+            authenticated: data.authenticated,
+            user: data.user || null
+          });
+          
+          // If server says we're authenticated but React state doesn't know it yet,
+          // this will help update the React state for future checks
+          if (data.authenticated && !user) {
+            console.log("Server says authenticated but React state doesn't know it - forcing page refresh");
+            // window.location.reload();
+          }
+        } else {
+          console.error("Server auth check failed with status:", response.status);
+          setServerAuthState({
+            loading: false,
+            authenticated: false,
+            user: null
+          });
+        }
+      } catch (error) {
+        console.error("Error checking server auth:", error);
+        setServerAuthState({
+          loading: false,
+          authenticated: false,
+          user: null
+        });
+      }
+    };
+    
+    checkServerAuth();
+  }, []);
   
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // Show loading indicator while checking server-side auth
+  if (serverAuthState.loading) {
+    return <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-col items-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <p className="mt-4">Checking server authentication...</p>
+      </div>
+    </div>;
   }
   
-  if (!user) {
-    return <Redirect to="/login" />;
+  // DEVELOPMENT MODE: Use the server's authentication status rather than React state
+  // This bypasses any potential React state issues since we know the server has the correct state
+  if (serverAuthState.authenticated) {
+    console.log("Server says we're authenticated - showing protected content");
+    return <Component {...rest} />;
   }
   
-  return <Component {...rest} />;
+  // If server says we're not authenticated, redirect to login
+  return <Redirect to="/login" />;
 };
 
 // Role-based protected route that also checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
   const { user, isLoading } = useAuth();
+  const [serverAuthState, setServerAuthState] = React.useState<{
+    loading: boolean;
+    authenticated: boolean;
+    user: any;
+  }>({
+    loading: true,
+    authenticated: false,
+    user: null
+  });
+
+  // Direct server-side authentication check that bypasses the React state issues
+  React.useEffect(() => {
+    const checkServerAuth = async () => {
+      try {
+        console.log("Checking server-side authentication directly for role check");
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store' // Prevent caching
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Server auth check response (role):", data);
+          
+          setServerAuthState({
+            loading: false,
+            authenticated: data.authenticated,
+            user: data.user || null
+          });
+        } else {
+          console.error("Server auth check failed with status:", response.status);
+          setServerAuthState({
+            loading: false,
+            authenticated: false,
+            user: null
+          });
+        }
+      } catch (error) {
+        console.error("Error checking server auth:", error);
+        setServerAuthState({
+          loading: false,
+          authenticated: false,
+          user: null
+        });
+      }
+    };
+    
+    checkServerAuth();
+  }, []);
   
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // Show loading indicator while checking server-side auth
+  if (serverAuthState.loading) {
+    return <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-col items-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <p className="mt-4">Checking server authentication...</p>
+      </div>
+    </div>;
   }
   
-  if (!user) {
+  // If not authenticated according to the server, redirect to login
+  if (!serverAuthState.authenticated || !serverAuthState.user) {
+    console.log("Server says we're not authenticated - redirecting to login");
     return <Redirect to="/login" />;
   }
   
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+  // Check role requirements against the server's user data
+  if (requiredRoles.length > 0 && !requiredRoles.includes(serverAuthState.user.role)) {
+    console.log("User does not have required role - redirecting to dashboard");
     return <Redirect to="/dashboard" />;
   }
   
+  // User is authenticated and has the required role
+  console.log("Server says authenticated with correct role - showing protected content");
   return <Component {...rest} />;
 };
 
@@ -53,55 +180,102 @@ function App() {
   const { isLoading, user } = useAuth();
   const [forcedLoad, setForcedLoad] = React.useState(false);
   const [autoLoginAttempted, setAutoLoginAttempted] = React.useState(false);
+  const [serverAuthState, setServerAuthState] = React.useState<{
+    loading: boolean;
+    authenticated: boolean;
+    user: any;
+  }>({
+    loading: true,
+    authenticated: false,
+    user: null
+  });
+
+  // Direct server-side authentication check that bypasses the React state issues
+  React.useEffect(() => {
+    const checkServerAuth = async () => {
+      try {
+        console.log("Checking server-side authentication directly in App");
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store' // Prevent caching
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Server auth check response (App):", data);
+          
+          setServerAuthState({
+            loading: false,
+            authenticated: data.authenticated,
+            user: data.user || null
+          });
+        } else {
+          console.error("Server auth check failed with status:", response.status);
+          setServerAuthState({
+            loading: false,
+            authenticated: false,
+            user: null
+          });
+        }
+      } catch (error) {
+        console.error("Error checking server auth:", error);
+        setServerAuthState({
+          loading: false,
+          authenticated: false,
+          user: null
+        });
+      }
+    };
+    
+    checkServerAuth();
+  }, []);
 
   // Debug logging to see what state we're in
-  console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user, forcedLoad, autoLoginAttempted });
+  console.log("App.tsx - Auth state:", { 
+    reactState: { isLoading, isAuthenticated: !!user, forcedLoad, autoLoginAttempted },
+    serverState: serverAuthState
+  });
   
   // Auto-login for development
   React.useEffect(() => {
-    // Only attempt auto-login once and if no user is already logged in
-    if (!autoLoginAttempted && !user && !isLoading) {
+    // Only attempt auto-login once and if no user is already logged in and not authenticated according to server
+    if (!autoLoginAttempted && !serverAuthState.authenticated && !serverAuthState.loading) {
       setAutoLoginAttempted(true);
       console.log("Attempting auto-login...");
       
-      fetch('/api/auth/autologin')
-        .then(response => {
-          console.log("Auto-login response status:", response.status);
-          if (response.ok) {
-            return response.json();
-          }
-          throw new Error('Auto-login failed');
-        })
-        .then(data => {
-          console.log("Auto-login successful:", data);
-          // Force a page reload to reflect logged-in state
-          window.location.href = '/dashboard';
-        })
-        .catch(error => {
-          console.error("Auto-login error:", error);
-          // Continue with normal login flow if auto-login fails
-        });
+      // Directly navigate to the dev-login endpoint for a cleaner experience
+      window.location.href = '/api/auth/dev-login';
+      
+      // We're using the direct endpoint now, so we don't need the fetch call
+      // fetch('/api/auth/autologin')
+      //   .then(response => { ... })
     }
-  }, [user, isLoading, autoLoginAttempted]);
+  }, [autoLoginAttempted, serverAuthState]);
   
   // If still loading after 2 seconds, force the login page
   React.useEffect(() => {
-    if (isLoading) {
+    if (serverAuthState.loading) {
       const timer = setTimeout(() => {
         console.log("Loading timeout - forcing login page display");
         setForcedLoad(true);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [serverAuthState.loading]);
   
-  if (isLoading && !forcedLoad) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // Show loading while checking server authentication
+  if (serverAuthState.loading && !forcedLoad) {
+    return <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-col items-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <p className="mt-4 text-lg">Checking authentication...</p>
+      </div>
+    </div>;
   }
   
-  // Show login page directly if not authenticated and not loading
-  if (!user) {
-    console.log("Not authenticated - showing login page");
+  // Show login page directly if not authenticated according to server
+  if (!serverAuthState.authenticated) {
+    console.log("Not authenticated (server check) - showing login page");
     return <Login />;
   }
 
