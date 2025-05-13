@@ -55,19 +55,8 @@ function App() {
   // Debug logging to see what state we're in
   console.log("App.tsx - Auth state:", { isLoading, isAuthenticated: !!user });
   
-  // Log auth state changes
-  React.useEffect(() => {
-    console.log("Auth state changed:", { isLoading, isAuthenticated: !!user });
-  }, [isLoading, user]);
-
-  // Show loading indicator
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mb-4">Loading...</div>
-        <div className="text-sm text-gray-500">If this persists, please refresh the page</div>
-      </div>
-    </div>;
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
   // Show login page directly if not authenticated and not loading
