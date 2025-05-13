@@ -85,89 +85,78 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       console.log("Attempting to log in with:", username);
       
-      // Using XMLHttpRequest to handle cookies better
-      return new Promise<boolean>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/auth/login", true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.withCredentials = true;
-        
-        xhr.onload = async function() {
-          console.log("XHR Status:", xhr.status);
-          console.log("XHR Response:", xhr.responseText);
-          console.log("XHR Cookies:", document.cookie);
-          
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const data = JSON.parse(xhr.responseText);
-            console.log("Login response data:", data);
-            
-            // Immediately verify session with a follow-up request
-            try {
-              console.log("Verifying session after login...");
-              const verifyResponse = await fetch(`/api/auth/me?cacheBuster=${Date.now()}`, {
-                credentials: "include",
-                headers: {
-                  'Cache-Control': 'no-cache, no-store, must-revalidate',
-                }
-              });
-              
-              const verifyData = await verifyResponse.json();
-              console.log("Session verification:", verifyData);
-              
-              if (verifyData && verifyData.authenticated && verifyData.user) {
-                setUser(verifyData.user);
-                resolve(true);
-              } else {
-                console.error("Login succeeded but session verification failed");
-                setUser(null);
-                resolve(false);
-              }
-            } catch (verifyErr) {
-              console.error("Error verifying session:", verifyErr);
-              setUser(null);
-              resolve(false);
-            }
-          } else {
-            console.error("Login request failed with status:", xhr.status);
-            setUser(null);
-            resolve(false);
-          }
-        };
-        
-        xhr.onerror = function() {
-          console.error("XHR network error during login");
-          setUser(null);
-          resolve(false);
-        };
-        
-        xhr.send(JSON.stringify({ username, password }));
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include",
       });
+
+      console.log("Login response status:", response.status);
+      const responseData = await response.json();
+      console.log("Login response data:", responseData);
       
       if (!response.ok) {
-        console.error("Login failed:", data);
+        console.error("Login failed:", responseData);
         toast({
           title: "Login failed",
-          description: data.message || "Invalid username or password",
+          description: responseData.message || "Invalid username or password",
           variant: "destructive",
         });
         return false;
       }
 
-      console.log("Login successful, user data:", data);
-      
-      // Set the user in state
-      setUser(data.user);
-      
-      // Show success toast
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.user?.name || username}!`,
-      });
-      
-      // Invalidate all queries to ensure fresh data
-      await queryClient.invalidateQueries();
-      
-      return true;
+      // Verify session with a follow-up request
+      try {
+        console.log("Verifying session after login...");
+        const verifyResponse = await fetch(`/api/auth/me?cacheBuster=${Date.now()}`, {
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        const verifyData = await verifyResponse.json();
+        console.log("Session verification:", verifyData);
+        
+        if (verifyData && verifyData.authenticated && verifyData.user) {
+          // Set the user in state
+          setUser(verifyData.user);
+          
+          // Show success toast
+          toast({
+            title: "Login successful",
+            description: `Welcome back, ${verifyData.user.name || username}!`,
+          });
+          
+          // Invalidate all queries to ensure fresh data
+          await queryClient.invalidateQueries();
+          
+          return true;
+        } else {
+          console.error("Login succeeded but session verification failed");
+          toast({
+            title: "Login error",
+            description: "Session verification failed. Please try again.",
+            variant: "destructive",
+          });
+          setUser(null);
+          return false;
+        }
+      } catch (verifyErr) {
+        console.error("Error verifying session:", verifyErr);
+        toast({
+          title: "Login error",
+          description: "Session verification failed. Please try again.",
+          variant: "destructive",
+        });
+        setUser(null);
+        return false;
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast({
