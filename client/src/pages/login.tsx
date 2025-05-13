@@ -53,64 +53,13 @@ export default function Login() {
       setAutoLoginLoading(true);
       console.log("Clicking auto-login button");
       
-      // Create a script element to make the request
-      // This is a more direct way to make a request that bypasses potential fetch/XHR issues
-      const script = document.createElement('script');
-      script.innerHTML = `
-        console.log("Auto-login script executing");
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", "/api/auth/autologin", true);
-        xhr.withCredentials = true;
-        xhr.onreadystatechange = function() {
-          console.log("XHR readyState change: " + xhr.readyState + ", status: " + (xhr.readyState === 4 ? xhr.status : "N/A"));
-          if (xhr.readyState === 4) {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              console.log("Auto-login successful, response: " + xhr.responseText);
-              window.location.href = "/dashboard";
-            } else {
-              console.error("Auto-login failed with status: " + xhr.status);
-              if (xhr.responseText) {
-                console.error("Error response: " + xhr.responseText);
-              }
-            }
-          }
-        };
-        xhr.onerror = function(e) {
-          console.error("XHR error during auto-login:", e);
-        };
-        console.log("Sending XHR request to /api/auth/autologin");
-        xhr.send();
-      `;
-      document.body.appendChild(script);
-      
-      // Alternative approach using a direct form submission
-      setTimeout(() => {
-        console.log("Trying alternative approach - direct form submission");
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/api/auth/login';
-        
-        const usernameInput = document.createElement('input');
-        usernameInput.type = 'hidden';
-        usernameInput.name = 'username';
-        usernameInput.value = 'admin';
-        form.appendChild(usernameInput);
-        
-        const passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password';
-        passwordInput.value = 'adminpass123';
-        form.appendChild(passwordInput);
-        
-        document.body.appendChild(form);
-        console.log("Submitting form directly to backend");
-        form.submit();
-      }, 1000);
+      // Instead of doing XHR or fetch, just directly navigate to the dev-login URL
+      console.log("Redirecting to dev-login endpoint");
+      window.location.href = '/api/auth/dev-login';
       
     } catch (error) {
       console.error("Auto-login error:", error);
-    } finally {
-      // We don't set loading to false because we're either redirecting or failing
+      setAutoLoginLoading(false);
     }
   };
   

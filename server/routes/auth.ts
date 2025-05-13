@@ -285,4 +285,55 @@ router.get('/autologin', async (req, res) => {
     }
 });
 
+// Development direct login with HTML response
+router.get('/dev-login', async (req, res) => {
+    try {
+        console.log('Attempting dev-login with admin credentials');
+        
+        // Find the admin user
+        const user = await storage.getUserByUsername('admin');
+        if (!user) {
+            console.error('Admin user not found');
+            return res.status(404).send('Admin user not found');
+        }
+        
+        // Set session data
+        req.session.userId = user.id;
+        req.session.loggedIn = true;
+        console.log('Dev-login successful, session:', req.session);
+        
+        // Explicitly save session and redirect with HTML
+        req.session.save((err) => {
+            if (err) {
+                console.error('Error saving session:', err);
+                return res.status(500).send('Error saving session');
+            }
+            
+            console.log('Session saved successfully for dev-login');
+            
+            // Send an HTML response that redirects to the dashboard
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Login Successful</title>
+                    <meta http-equiv="refresh" content="0;url=/dashboard" />
+                </head>
+                <body>
+                    <h1>Login Successful</h1>
+                    <p>You are being redirected to the dashboard...</p>
+                    <script>
+                        // Force reload to dashboard and clear history
+                        window.location.replace('/dashboard');
+                    </script>
+                </body>
+                </html>
+            `);
+        });
+    } catch (error) {
+        console.error('Dev-login error:', error);
+        return res.status(500).send('Error in dev-login');
+    }
+});
+
 export default router;
