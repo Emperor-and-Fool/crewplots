@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,10 +26,16 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export default function Login() {
+  console.log("Login component rendering");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
+  
+  // Log when component mounts
+  useEffect(() => {
+    console.log("Login component mounted");
+  }, []);
 
   // Form definition
   const form = useForm<Login>({
@@ -67,11 +73,11 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md px-4">
         <Card className="shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-primary-600">
-              ShiftPro
+          <CardHeader className="space-y-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-md">
+            <CardTitle className="text-2xl font-bold text-center">
+              ShiftPro - Login Page
             </CardTitle>
-            <CardDescription className="text-center">
+            <CardDescription className="text-center text-white opacity-90">
               Sign in to your account to continue
             </CardDescription>
           </CardHeader>
