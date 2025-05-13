@@ -51,10 +51,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "hidden md:flex md:flex-col w-64 bg-blue-800 text-white shadow-lg",
+      "hidden md:flex md:flex-col w-64 bg-primary-800 text-white",
       className
     )}>
-      <div className="p-4 flex items-center border-b border-blue-700">
+      <div className="p-4 flex items-center border-b border-primary-700">
         <h1 className="text-xl font-bold">ShiftPro</h1>
       </div>
       
@@ -65,7 +65,7 @@ export function Sidebar({ className }: SidebarProps) {
             <Link href="/dashboard">
               <a className={cn(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                isActive("/dashboard") ? "bg-blue-700" : "hover:bg-blue-700"
+                isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
               )}>
                 <LayoutDashboard className="h-5 w-5 mr-3" />
                 Dashboard
@@ -79,7 +79,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/locations") ? "bg-blue-700" : "hover:bg-blue-700"
+                      isActive("/locations") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <MapPin className="h-5 w-5 mr-3" />
                       Locations
@@ -114,7 +114,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/staff-management") ? "bg-blue-700" : "hover:bg-blue-700"
+                      isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Users className="h-5 w-5 mr-3" />
                       Staff Management
@@ -156,7 +156,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/scheduling") ? "bg-blue-700" : "hover:bg-blue-700"
+                      isActive("/scheduling") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Calendar className="h-5 w-5 mr-3" />
                       Scheduling
@@ -196,7 +196,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link href="/applicants">
                 <a className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/applicants") ? "bg-blue-700" : "hover:bg-blue-700"
+                  isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}>
                   <UserPlus className="h-5 w-5 mr-3" />
                   Applicants
@@ -209,7 +209,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Link href="/cash-management">
                 <a className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  isActive("/cash-management") ? "bg-blue-700" : "hover:bg-blue-700"
+                  isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}>
                   <DollarSign className="h-5 w-5 mr-3" />
                   Cash Management
