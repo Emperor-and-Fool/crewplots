@@ -73,6 +73,7 @@ export default function Register() {
     setIsLoading(true);
     
     try {
+      // Send registration data to the server
       const success = await register(data);
       
       if (success) {
@@ -82,28 +83,36 @@ export default function Register() {
           variant: "default",
         });
         
+        // If registration was successful, redirect to login page
         navigate("/login");
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration Failed",
+        description: "There was a problem submitting your application. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 py-10">
       <div className="w-full max-w-md px-4">
-        <Card className="shadow-lg">
+        <Card className="shadow-xl border-blue-100">
           <CardHeader className="space-y-1 relative">
             {isFromQRCode && (
-              <div className="absolute -top-3 -right-3 bg-primary-600 text-white px-2 py-1 rounded-full text-xs flex items-center">
+              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-3 py-1 rounded-full text-xs flex items-center shadow-md">
                 <QrCode className="h-3 w-3 mr-1" />
                 QR Application
               </div>
             )}
-            <CardTitle className="text-2xl font-bold text-center text-primary-600">
+            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
               Join ShiftPro
             </CardTitle>
-            <CardDescription className="text-center">
+            <CardDescription className="text-center text-gray-600">
               Apply for a position in our team
             </CardDescription>
           </CardHeader>
@@ -217,7 +226,7 @@ export default function Register() {
                 />
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -233,10 +242,10 @@ export default function Register() {
             </Form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <div className="text-sm text-center text-gray-500">
+            <div className="text-sm text-center text-gray-600">
               Already have an account?{" "}
               <Link href="/login">
-                <a className="font-medium text-primary-600 hover:text-primary-500">
+                <a className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
                   Sign in
                 </a>
               </Link>
