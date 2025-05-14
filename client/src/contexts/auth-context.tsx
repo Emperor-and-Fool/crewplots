@@ -222,31 +222,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: Register): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast({
-          title: "Registration failed",
-          description: errorData.message || "Unable to create account",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created. You can now login.",
-      });
+      console.log("Registration data:", JSON.stringify(userData, (key, value) => 
+        key === 'password' ? '********' : value
+      ));
       
-      return true;
+      // Return a Promise to handle asynchronous XMLHttpRequest
+      return new Promise<boolean>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/auth/register", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        
+        xhr.onreadystatechange = function() {
+          console.log(`Registration XHR state change: readyState=${xhr.readyState}, status=${xhr.status}`);
+          
+          if (xhr.readyState === 4) {
+            setIsLoading(false);
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+              // Registration successful
+              toast({
+                title: "Registration successful",
+                description: "Your account has been created. You can now login.",
+              });
+              resolve(true);
+            } else {
+              // Registration failed
+              try {
+                const errorData = JSON.parse(xhr.responseText);
+                toast({
+                  title: "Registration failed",
+                  description: errorData.message || "Unable to create account",
+                  variant: "destructive",
+                });
+              } catch (e) {
+                toast({
+                  title: "Registration failed",
+                  description: "An unexpected error occurred. Please try again.",
+                  variant: "destructive",
+                });
+                console.error("Error parsing registration error response:", e);
+              }
+              resolve(false);
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error("Registration request failed");
+          toast({
+            title: "Registration failed",
+            description: "Network error. Please check your connection and try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          resolve(false);
+        };
+        
+        // Send the request
+        xhr.send(JSON.stringify(userData));
+      });
     } catch (error) {
       console.error("Registration error:", error);
       toast({
@@ -254,9 +289,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 

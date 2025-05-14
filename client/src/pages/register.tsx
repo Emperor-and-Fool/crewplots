@@ -87,8 +87,10 @@ export default function Register() {
           variant: "default",
         });
         
-        // If registration was successful, redirect to login page
-        navigate("/login");
+        // If registration was successful, redirect to login page after a short delay
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -122,7 +124,11 @@ export default function Register() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form 
+                onSubmit={form.handleSubmit(onSubmit)} 
+                className="space-y-4"
+                noValidate // Prevents browser's native validation
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
