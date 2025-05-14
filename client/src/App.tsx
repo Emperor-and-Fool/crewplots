@@ -271,81 +271,107 @@ function App() {
     </div>;
   }
   
-  // Show login page directly if not authenticated according to server
-  if (!serverAuthState.authenticated) {
-    console.log("Not authenticated (server check) - showing login page");
-    return <Login />;
-  }
-
+  // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
         <div className="flex-grow">
           <Router>
             <Switch>
-              <Route path="/login" component={Login} />
-              <Route path="/register" component={Register} />
+              {/* PUBLIC ROUTES - accessible without authentication */}
+              <Route path="/login">
+                {serverAuthState.authenticated ? <Redirect to="/dashboard" /> : <Login />}
+              </Route>
               
+              <Route path="/register">
+                {serverAuthState.authenticated ? <Redirect to="/dashboard" /> : <Register />}
+              </Route>
+              
+              {/* PROTECTED ROUTES - require authentication */}
               <Route path="/dashboard">
-                <ProtectedRoute component={Dashboard} />
+                {serverAuthState.authenticated ? <Dashboard /> : <Redirect to="/login" />}
               </Route>
               
               <Route path="/locations">
-                <RoleProtectedRoute 
-                  component={Locations} 
-                  requiredRoles={["manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={Locations} 
+                    requiredRoles={["manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/staff-management">
-                <RoleProtectedRoute 
-                  component={StaffManagement} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={StaffManagement} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/scheduling">
-                <RoleProtectedRoute 
-                  component={Scheduling} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={Scheduling} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/view-calendar">
-                <RoleProtectedRoute 
-                  component={ViewCalendar} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={ViewCalendar} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/applicants">
-                <RoleProtectedRoute 
-                  component={Applicants} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={Applicants} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/cash-management">
-                <RoleProtectedRoute 
-                  component={CashManagement} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={CashManagement} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/knowledge-base">
-                <ProtectedRoute component={KnowledgeBase} />
+                {serverAuthState.authenticated ? 
+                  <ProtectedRoute component={KnowledgeBase} /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/reports">
-                <RoleProtectedRoute 
-                  component={Reports} 
-                  requiredRoles={["manager", "floor_manager"]} 
-                />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={Reports} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               {/* Default route - should be after all other routes */}
-              <Route path="/">
-                <Redirect to="/login" />
+              <Route path="/" exact>
+                <Redirect to={serverAuthState.authenticated ? "/dashboard" : "/login"} />
               </Route>
               
               {/* Not found - should be the very last */}
