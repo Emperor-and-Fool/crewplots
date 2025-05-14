@@ -271,10 +271,17 @@ function App() {
     </div>;
   }
   
-  // Show login page directly if not authenticated according to server
+  // When not authenticated, handle public routes (login & register) via Router
   if (!serverAuthState.authenticated) {
-    console.log("Not authenticated (server check) - showing login page");
-    return <Login />;
+    console.log("Not authenticated (server check) - showing public routes");
+    return (
+      <Router>
+        <Switch>
+          <Route path="/register" component={Register} />
+          <Route path="/:rest*" component={Login} />
+        </Switch>
+      </Router>
+    );
   }
 
   return (
