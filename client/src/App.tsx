@@ -16,6 +16,7 @@ import CashManagement from "@/pages/cash-management";
 import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
+import RegistrationSuccess from "@/pages/registration-success";
 
 // Protected route component that only checks if user is authenticated
 const ProtectedRoute = ({ component: Component, ...rest }: any) => {
@@ -367,6 +368,11 @@ function App() {
                   /> : 
                   <Redirect to="/login" />
                 }
+              </Route>
+              
+              {/* Public registration success page */}
+              <Route path="/registration-success">
+                <RegistrationSuccess />
               </Route>
               
               {/* Default route - should be after all other routes */}
