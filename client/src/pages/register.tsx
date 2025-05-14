@@ -83,14 +83,17 @@ export default function Register() {
       if (success) {
         toast({
           title: "Registration Successful",
-          description: "Your account has been created successfully. You can now log in.",
+          description: "Your account has been created successfully.",
           variant: "default",
         });
         
-        // If registration was successful, redirect to login page after a short delay
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
+        // If registration was successful, redirect to success page with user details
+        const params = new URLSearchParams();
+        if (data.email) params.append("email", data.email);
+        if (data.username) params.append("username", data.username);
+        
+        // Redirect to success page
+        navigate(`/registration-success?${params.toString()}`);
       }
     } catch (error) {
       console.error("Registration error:", error);
