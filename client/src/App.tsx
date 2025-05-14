@@ -288,6 +288,10 @@ function App() {
                 {serverAuthState.authenticated ? <Redirect to="/dashboard" /> : <Register />}
               </Route>
               
+              <Route path="/registration-success">
+                <RegistrationSuccess />
+              </Route>
+              
               {/* PROTECTED ROUTES - require authentication */}
               <Route path="/dashboard">
                 {serverAuthState.authenticated ? <Dashboard /> : <Redirect to="/login" />}

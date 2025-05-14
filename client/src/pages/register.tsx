@@ -56,6 +56,7 @@ export default function Register() {
       password: "",
       confirmPassword: "",
       phone: "",
+      countryCode: "+31", // Default to Netherlands
     },
   });
 
@@ -78,22 +79,33 @@ export default function Register() {
       console.log("Submitting registration form:", data);
       
       // Send registration data to the server
-      const success = await register(data);
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
       
-      if (success) {
+      const result = await response.json();
+      
+      if (response.ok) {
         toast({
           title: "Registration Successful",
           description: "Your account has been created successfully.",
           variant: "default",
         });
         
-        // If registration was successful, redirect to success page with user details
-        const params = new URLSearchParams();
-        if (data.email) params.append("email", data.email);
-        if (data.username) params.append("username", data.username);
-        
-        // Redirect to success page
-        navigate(`/registration-success?${params.toString()}`);
+        // Use the redirectUrl from the server response if available
+        if (result.redirectUrl) {
+          setLocation(result.redirectUrl);
+        } else {
+          // Fallback to manual redirect with params
+          const params = new URLSearchParams();
+          if (data.email) params.append("email", data.email);
+          if (data.username) params.append("username", data.username);
+          setLocation(`/registration-success?${params.toString()}`);
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
