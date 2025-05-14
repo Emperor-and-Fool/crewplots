@@ -100,7 +100,7 @@ export function LocationForm({ location, isEditing = false }: LocationFormProps)
                 <FormItem>
                   <FormLabel>Location Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Downtown Bar" {...field} />
+                    <Input placeholder="Café de Tulp" {...field} />
                   </FormControl>
                   <FormDescription>
                     The name of the bar or restaurant
@@ -164,7 +164,7 @@ export function LocationForm({ location, isEditing = false }: LocationFormProps)
                   <FormItem>
                     <FormLabel>Contact Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
+                      <Input placeholder="612345678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
