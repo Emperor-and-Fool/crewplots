@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -27,8 +28,8 @@ const upload = multer({
   },
 });
 
-// Setup memory store for sessions
-const MemoryStoreSession = MemoryStore(session);
+// Setup PostgreSQL session store
+const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -41,12 +42,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax',
         path: '/'
       },
-      store: new MemoryStoreSession({
-        checkPeriod: 86400000, // prune expired entries every 24h
+      store: new PgStore({
+        pool: pool,
+        tableName: 'sessions',
+        createTableIfMissing: false,
+        ttl: 86400000 // 24 hours - same as cookie maxAge
       }),
       resave: true, // Changed to true to ensure session is saved back to store
       saveUninitialized: true, // Changed to true to create session by default
-      secret: "shiftpro-secret-key",
+      secret: process.env.SESSION_SECRET || "shiftpro-random-key-" + Math.random().toString(36).substring(2, 15),
       name: 'connect.sid', // Using default name for better compatibility
     })
   );

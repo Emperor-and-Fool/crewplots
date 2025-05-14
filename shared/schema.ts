@@ -1,4 +1,16 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, foreignKey, varchar, decimal } from "drizzle-orm/pg-core";
+import { 
+  pgTable, 
+  text, 
+  serial, 
+  integer, 
+  boolean, 
+  timestamp, 
+  json, 
+  foreignKey, 
+  varchar, 
+  decimal,
+  index
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -242,3 +254,18 @@ export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
+
+// Session storage for database sessions
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => {
+    return {
+      expireIdx: index("sessions_expire_idx").on(table.expire),
+    };
+  }
+);
