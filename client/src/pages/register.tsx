@@ -96,13 +96,16 @@ export default function Register() {
           variant: "default",
         });
         
-        // Create URL parameters
-        const params = new URLSearchParams();
-        params.append("email", data.email);
-        params.append("username", data.username);
-        
-        // Redirect to success page with parameters
-        setLocation(`/registration-success?${params.toString()}`);
+        // Use the redirectUrl from the server response if available
+        if (result.redirectUrl) {
+          setLocation(result.redirectUrl);
+        } else {
+          // Fallback to manual redirect with params
+          const params = new URLSearchParams();
+          if (data.email) params.append("email", data.email);
+          if (data.username) params.append("username", data.username);
+          setLocation(`/registration-success?${params.toString()}`);
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
