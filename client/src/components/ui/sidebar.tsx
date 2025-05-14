@@ -98,10 +98,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "hidden md:flex md:flex-col w-64 bg-gray-800 text-white",
+      "hidden md:flex md:flex-col w-64 bg-primary-900 text-white",
       className
     )}>
-      <div className="p-4 flex items-center border-b border-gray-700">
+      <div className="p-4 flex items-center border-b border-primary-700">
         <h1 className="text-xl font-bold">ShiftPro</h1>
       </div>
       
