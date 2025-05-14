@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new PgStore({
         pool: pool,
         tableName: 'sessions',
-        createTableIfMissing: false,
+        createTableIfMissing: true,
         ttl: 86400000 // 24 hours - same as cookie maxAge
       }),
       resave: true, // Changed to true to ensure session is saved back to store
