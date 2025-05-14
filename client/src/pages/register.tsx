@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, QrCode } from "lucide-react";
+import { Loader2, QrCode, CheckCircle, XCircle } from "lucide-react";
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
@@ -202,11 +202,33 @@ export default function Register() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>Confirm Password<span className="text-red-500 ml-1">*</span></FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <div className="relative">
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••" 
+                              {...field} 
+                              className={
+                                field.value && form.getValues("password") !== field.value
+                                  ? "border-red-500 pr-10" 
+                                  : field.value 
+                                    ? "border-green-500 pr-10"
+                                    : ""
+                              }
+                            />
+                            {field.value && (
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                {form.getValues("password") === field.value ? (
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-5 w-5 text-red-500" />
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500" />
                       </FormItem>
                     )}
                   />
