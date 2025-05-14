@@ -192,7 +192,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="wvanburen" {...field} />
+                        <Input placeholder="Prinspils67" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
