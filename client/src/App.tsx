@@ -370,7 +370,7 @@ function App() {
               </Route>
               
               {/* Default route - should be after all other routes */}
-              <Route path="/" exact>
+              <Route path="/">
                 <Redirect to={serverAuthState.authenticated ? "/dashboard" : "/login"} />
               </Route>
               
