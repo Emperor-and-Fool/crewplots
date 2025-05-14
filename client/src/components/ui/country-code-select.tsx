@@ -39,10 +39,10 @@ export function CountryCodeSelect({ form, name, label = "Country Code", required
     setFilteredCountries(filtered);
   }, [searchQuery]);
 
-  // Default to United States (+1)
+  // Default to Netherlands (+31)
   useEffect(() => {
     if (!form.getValues(name)) {
-      const defaultCountry = countryCodes.find(country => country.code === "US");
+      const defaultCountry = countryCodes.find(country => country.code === "NL");
       if (defaultCountry) {
         form.setValue(name, defaultCountry.dialCode);
       }
