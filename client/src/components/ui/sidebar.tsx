@@ -238,7 +238,15 @@ export function Sidebar({ className }: SidebarProps) {
                           href="/scheduling"
                           className="block py-1 text-sm text-primary-200 hover:text-white"
                         >
-                          View Calendar
+                          Manage Shifts
+                        </Link>
+                      </li>
+                      <li>
+                        <Link 
+                          href="/view-calendar"
+                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        >
+                          3-Week Calendar
                         </Link>
                       </li>
                     </ul>

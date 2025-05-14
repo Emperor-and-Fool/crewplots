@@ -9,6 +9,7 @@ import Register from "@/pages/register";
 import Locations from "@/pages/locations";
 import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
+import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
 import CashManagement from "@/pages/cash-management";
 import KnowledgeBase from "@/pages/knowledge-base";
@@ -307,6 +308,13 @@ function App() {
           <Route path="/scheduling">
             <RoleProtectedRoute 
               component={Scheduling} 
+              requiredRoles={["manager", "floor_manager"]} 
+            />
+          </Route>
+          
+          <Route path="/view-calendar">
+            <RoleProtectedRoute 
+              component={ViewCalendar} 
               requiredRoles={["manager", "floor_manager"]} 
             />
           </Route>
