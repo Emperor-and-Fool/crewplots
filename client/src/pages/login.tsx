@@ -87,12 +87,12 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 flex-col">
+      <div className="w-full max-w-md px-4 flex-grow flex items-center justify-center">
         <Card className="shadow-lg">
           <CardHeader className="space-y-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-md">
             <CardTitle className="text-2xl font-bold text-center">
-              ShiftPro - Login Page
+              crewe.nl - Login Page
             </CardTitle>
             <CardDescription className="text-center text-white opacity-90">
               Sign in to your account to continue
@@ -177,6 +177,9 @@ export default function Login() {
             </div>
           </CardFooter>
         </Card>
+      </div>
+      <div className="w-full text-center py-4 text-sm text-gray-500 bg-gray-100 border-t border-gray-200">
+        Powered by <a href="https://foolproductions.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">foolproductions.nl</a>
       </div>
     </div>
   );

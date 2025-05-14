@@ -99,8 +99,8 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 py-10">
-      <div className="w-full max-w-md px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 py-10 flex-col">
+      <div className="w-full max-w-md px-4 flex-grow flex items-center justify-center">
         <Card className="shadow-xl border-blue-100">
           <CardHeader className="space-y-1 relative">
             {isFromQRCode && (
@@ -110,7 +110,7 @@ export default function Register() {
               </div>
             )}
             <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              Join ShiftPro
+              Join crewe.nl
             </CardTitle>
             <CardDescription className="text-center text-gray-600">
               Apply for a position in our team
@@ -255,6 +255,9 @@ export default function Register() {
             </div>
           </CardFooter>
         </Card>
+      </div>
+      <div className="w-full text-center py-4 text-sm text-gray-500 bg-gray-100 border-t border-gray-200">
+        Powered by <a href="https://foolproductions.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">foolproductions.nl</a>
       </div>
     </div>
   );
