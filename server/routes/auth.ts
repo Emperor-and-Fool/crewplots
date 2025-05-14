@@ -49,6 +49,7 @@ router.post('/register', async (req, res) => {
 
         return res.status(201).json({
             message: 'User registered successfully',
+            redirectUrl: `/registration-success?email=${encodeURIComponent(user.email)}&username=${encodeURIComponent(user.username)}`,
             user: userWithoutPassword
         });
     } catch (error) {
