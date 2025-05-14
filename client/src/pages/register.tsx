@@ -53,7 +53,7 @@ export default function Register() {
       email: "",
       username: "",
       password: "",
-      positionApplied: "",
+      confirmPassword: "",
       phone: "",
     },
   });
@@ -161,20 +161,20 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="johndoe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="johndoe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   <FormField
                     control={form.control}
                     name="password"
@@ -188,30 +188,20 @@ export default function Register() {
                       </FormItem>
                     )}
                   />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="positionApplied"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Position Applied For</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a position" />
-                          </SelectTrigger>
+                          <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Bar Staff">Bar Staff</SelectItem>
-                          <SelectItem value="Floor Staff">Floor Staff</SelectItem>
-                          <SelectItem value="Bartender">Bartender</SelectItem>
-                          <SelectItem value="Floor Manager">Floor Manager</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
                   name="phone"

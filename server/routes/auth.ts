@@ -18,18 +18,27 @@ router.post('/register', async (req, res) => {
         if (existingUser) {
             return res.status(400).json({ message: 'Username already exists' });
         }
+        
+        // Check if email already exists
+        const emailUser = await storage.getUserByEmail(data.email);
+        if (emailUser) {
+            return res.status(400).json({ message: 'Email already exists' });
+        }
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
+        // Remove confirmPassword before saving
+        const { confirmPassword, ...userDataWithoutConfirm } = data;
+        
         // Create user with hashed password
         const user = await storage.createUser({
-            ...data,
+            ...userDataWithoutConfirm,
             // Combine firstName and lastName to maintain the name field for backwards compatibility
             name: `${data.firstName} ${data.lastName}`,
             password: hashedPassword,
-            role: 'administrator', // Temporary: giving admin access to all new users for testing
+            role: 'applicant', // Set all new registrations as applicants
             locationId: null // Will be assigned by manager later
         });
 
