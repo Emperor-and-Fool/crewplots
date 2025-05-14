@@ -29,7 +29,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
     user: any;
