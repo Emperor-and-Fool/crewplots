@@ -39,7 +39,10 @@ router.post('/register', async (req, res) => {
             name: `${data.firstName} ${data.lastName}`,
             password: hashedPassword,
             role: 'applicant', // Set all new registrations as applicants
-            locationId: null // Will be assigned by manager later
+            locationId: null, // Will be assigned by manager later
+            // Store full phone with country code for WhatsApp
+            phone: data.phone,
+            countryCode: data.countryCode
         });
 
         // Remove password from response

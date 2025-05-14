@@ -78,7 +78,7 @@ export function CountryCodeSelect({ form, name, label = "Country Code", required
                   </div>
                   <div className="max-h-[300px] overflow-y-auto">
                     {filteredCountries.map((country) => (
-                      <SelectItem key={country.code} value={country.dialCode}>
+                      <SelectItem key={`${country.code}-${country.dialCode}`} value={country.dialCode}>
                         <div className="flex items-center gap-2">
                           <span>{country.flag}</span>
                           <span>{country.name}</span>
