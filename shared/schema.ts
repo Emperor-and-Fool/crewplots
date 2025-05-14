@@ -9,25 +9,11 @@ import {
   foreignKey, 
   varchar, 
   decimal,
-  index
+  index,
+  primaryKey
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-// Users & Auth
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  firstName: text("first_name"),            // Add firstName field (nullable for migration)
-  lastName: text("last_name"),              // Add lastName field (nullable for migration)
-  name: text("name").notNull(),             // Keep for backwards compatibility
-  role: text("role", { enum: ["manager", "floor_manager", "staff"] }).notNull(),
-  locationId: integer("location_id").references(() => locations.id),
-  phone: text("phone"),                     // Add phone field
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 // Locations (different bars/restaurants)
 export const locations = pgTable("locations", {
@@ -38,15 +24,95 @@ export const locations = pgTable("locations", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  ownerId: integer("owner_id"), // Set after user creation to avoid circular reference
 });
 
-// Competencies
+// Roles table
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Permissions table
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Role Permissions junction table
+export const rolePermissions = pgTable("role_permissions", {
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  permissionId: integer("permission_id").references(() => permissions.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
+  };
+});
+
+// Users & Auth
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name"),            // Add firstName field (nullable for migration)
+  lastName: text("last_name"),              // Add lastName field (nullable for migration)
+  name: text("name").notNull(),             // Keep for backwards compatibility
+  // Default role for backward compatibility, will be replaced by user_locations table
+  role: text("role", { enum: ["administrator", "manager", "crew_manager", "crew_member", "applicant"] }).notNull(),
+  // locationId kept for backward compatibility
+  locationId: integer("location_id").references(() => locations.id),
+  phone: text("phone"),                     // Add phone field
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User Locations - junction table mapping users to locations with specific roles
+export const userLocations = pgTable("user_locations", {
+  userId: integer("user_id").references(() => users.id).notNull(),
+  locationId: integer("location_id").references(() => locations.id).notNull(),
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.locationId] }),
+  };
+});
+
+// Competencies - now explicitly associated with locations
 export const competencies = pgTable("competencies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  locationId: integer("location_id").references(() => locations.id).notNull(), // Each competency belongs to a specific location
+  createdBy: integer("created_by").references(() => users.id), // Track who created the competency
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
+});
+
+// Positions/Functions - defined by crew managers for their location
+export const positions = pgTable("positions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  locationId: integer("location_id").references(() => locations.id).notNull(), // Each position belongs to a specific location
+  createdBy: integer("created_by").references(() => users.id), // Track who created the position
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Position Required Competencies - mapping positions to required competencies with minimum levels
+export const positionCompetencies = pgTable("position_competencies", {
+  positionId: integer("position_id").references(() => positions.id).notNull(),
+  competencyId: integer("competency_id").references(() => competencies.id).notNull(),
+  minimumLevel: integer("minimum_level").default(1).notNull(), // 0-5 scale, default to 1
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.positionId, table.competencyId] }),
+  };
 });
 
 // Staff (people who are hired and working)
@@ -54,17 +120,21 @@ export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
-  position: text("position").notNull(),
+  positionId: integer("position_id").references(() => positions.id), // Link to a defined position
+  position: text("position").notNull(), // Keep for backward compatibility
   wantedHours: integer("wanted_hours").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Staff Competencies (junction table)
+// Staff Competencies (junction table with assessment tracking)
 export const staffCompetencies = pgTable("staff_competencies", {
   id: serial("id").primaryKey(),
   staffId: integer("staff_id").references(() => staff.id).notNull(),
   competencyId: integer("competency_id").references(() => competencies.id).notNull(),
   level: integer("level").notNull(), // 0-5 scale
+  assessedBy: integer("assessed_by").references(() => users.id), // Who assessed this competency
+  assessedAt: timestamp("assessed_at"), // When the assessment was done
+  notes: text("notes"), // Optional assessment notes
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -193,6 +263,12 @@ export const documentAttachments = pgTable("document_attachments", {
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
+export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
+export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({ createdAt: true });
+export const insertUserLocationSchema = createInsertSchema(userLocations).omit({ createdAt: true });
+export const insertPositionSchema = createInsertSchema(positions).omit({ id: true, createdAt: true });
+export const insertPositionCompetencySchema = createInsertSchema(positionCompetencies).omit({ createdAt: true });
 export const insertCompetencySchema = createInsertSchema(competencies).omit({ id: true, createdAt: true });
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
 export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
@@ -227,6 +303,12 @@ export const registerSchema = z.object({
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type InsertUserLocation = z.infer<typeof insertUserLocationSchema>;
+export type InsertPosition = z.infer<typeof insertPositionSchema>;
+export type InsertPositionCompetency = z.infer<typeof insertPositionCompetencySchema>;
 export type InsertCompetency = z.infer<typeof insertCompetencySchema>;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type InsertStaffCompetency = z.infer<typeof insertStaffCompetencySchema>;
@@ -245,6 +327,12 @@ export type Register = z.infer<typeof registerSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Location = typeof locations.$inferSelect;
+export type Role = typeof roles.$inferSelect;
+export type Permission = typeof permissions.$inferSelect;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type UserLocation = typeof userLocations.$inferSelect;
+export type Position = typeof positions.$inferSelect;
+export type PositionCompetency = typeof positionCompetencies.$inferSelect;
 export type Competency = typeof competencies.$inferSelect;
 export type Staff = typeof staff.$inferSelect;
 export type StaffCompetency = typeof staffCompetencies.$inferSelect;
