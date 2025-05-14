@@ -74,13 +74,15 @@ export default function Register() {
     setIsLoading(true);
     
     try {
+      console.log("Submitting registration form:", data);
+      
       // Send registration data to the server
       const success = await register(data);
       
       if (success) {
         toast({
-          title: "Application Submitted",
-          description: "Your application has been submitted successfully. You can now log in.",
+          title: "Registration Successful",
+          description: "Your account has been created successfully. You can now log in.",
           variant: "default",
         });
         
@@ -91,7 +93,7 @@ export default function Register() {
       console.error("Registration error:", error);
       toast({
         title: "Registration Failed",
-        description: "There was a problem submitting your application. Please try again.",
+        description: "There was a problem creating your account. Please try again.",
         variant: "destructive",
       });
     } finally {

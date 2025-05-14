@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { User } from "@shared/schema";
+import { User, Register } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Register function
-  const register = async (userData: any): Promise<boolean> => {
+  const register = async (userData: Register): Promise<boolean> => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/auth/register", {
