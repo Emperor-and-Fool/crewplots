@@ -67,7 +67,8 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["administrator", "manager", "crew_manager", "crew_member", "applicant"] }).notNull(),
   // locationId kept for backward compatibility
   locationId: integer("location_id").references(() => locations.id),
-  phone: text("phone"),                     // Add phone field
+  countryCode: text("country_code"),        // Country code for phone number
+  phone: text("phone"),                     // Phone number field
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
