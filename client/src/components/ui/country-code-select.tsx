@@ -100,9 +100,9 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
                     }
                   }}
                 >
-                  <SelectTrigger className="h-10 border-0 !bg-transparent w-[110px] pl-3 pr-0 focus:ring-0">
+                  <SelectTrigger className="h-10 border-0 !bg-transparent w-[100px] pl-3 pr-0 focus:ring-0">
                     <div className="flex items-center space-x-1 text-xs font-medium">
-                      <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md font-bold text-xs">{selectedCountry?.code}</span>
+                      <span className="text-lg">{selectedCountry?.flag}</span>
                       <span className="ml-1">{selectedCountry?.dialCode}</span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </div>
@@ -122,8 +122,8 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
                         {filteredCountries.map((country) => (
                           <SelectItem key={`${country.code}-${country.dialCode}`} value={country.dialCode}>
                             <div className="flex items-center gap-2">
-                              <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md font-bold text-xs min-w-[2rem] text-center">{country.code}</span>
-                              <span>{country.name}</span>
+                              <span className="text-lg mr-1">{country.flag}</span>
+                              <span className="text-sm">{country.name}</span>
                               <span className="text-gray-500 ml-1">{country.dialCode}</span>
                             </div>
                           </SelectItem>
