@@ -53,7 +53,7 @@ export default function RegistrationSuccess() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button asChild className="w-full">
-            <Link href="/login">Go to Login</Link>
+            <Link to="/login">Go to Login</Link>
           </Button>
           <p className="text-xs text-center text-gray-500">
             Redirecting to login in {countdown} seconds...
