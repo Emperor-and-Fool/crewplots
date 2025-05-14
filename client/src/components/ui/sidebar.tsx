@@ -102,7 +102,7 @@ export function Sidebar({ className }: SidebarProps) {
       className
     )}>
       <div className="p-4 flex items-center border-b border-primary-700">
-        <h1 className="text-xl font-bold">ShiftPro</h1>
+        <h1 className="text-xl font-bold">Crew Plots Pro</h1>
       </div>
       
       <div className="overflow-y-auto flex-grow scrollbar-hide">

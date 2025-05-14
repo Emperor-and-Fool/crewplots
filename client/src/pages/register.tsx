@@ -111,7 +111,7 @@ export default function Register() {
               </div>
             )}
             <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              Join crewe.nl
+              Join Crew Plots Pro
             </CardTitle>
             <CardDescription className="text-center text-gray-600">
               Apply for a position in our team

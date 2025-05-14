@@ -93,7 +93,7 @@ export default function Login() {
         <Card className="shadow-lg">
           <CardHeader className="space-y-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-md">
             <CardTitle className="text-2xl font-bold text-center">
-              crewe.nl - Login Page
+              Crew Plots Pro - Login Page
             </CardTitle>
             <CardDescription className="text-center text-white opacity-90">
               Sign in to your account to continue
