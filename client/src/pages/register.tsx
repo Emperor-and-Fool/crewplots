@@ -96,25 +96,13 @@ export default function Register() {
           variant: "default",
         });
         
-        console.log("Registration success response:", result);
+        // Create URL parameters
+        const params = new URLSearchParams();
+        params.append("email", data.email);
+        params.append("username", data.username);
         
-        try {
-          // Manually construct the redirect URL with the user information
-          const params = new URLSearchParams();
-          params.append("email", data.email);
-          params.append("username", data.username);
-          const redirectUrl = `/registration-success?${params.toString()}`;
-          
-          console.log("Redirecting to:", redirectUrl);
-          
-          // Force a small delay to ensure the toast is shown
-          setTimeout(() => {
-            setLocation(redirectUrl);
-          }, 500);
-        } catch (redirectError) {
-          console.error("Error during redirect:", redirectError);
-          // If redirection fails, stay on current page
-        }
+        // Redirect to success page with parameters
+        setLocation(`/registration-success?${params.toString()}`);
       }
     } catch (error) {
       console.error("Registration error:", error);
