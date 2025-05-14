@@ -237,19 +237,15 @@ function App() {
     serverState: serverAuthState
   });
   
-  // Auto-login for development
+  // Auto-login for development - disabled to allow manual logout
   React.useEffect(() => {
-    // Only attempt auto-login once and if no user is already logged in and not authenticated according to server
+    // Auto-login is now disabled to allow manual logout
     if (!autoLoginAttempted && !serverAuthState.authenticated && !serverAuthState.loading) {
       setAutoLoginAttempted(true);
-      console.log("Attempting auto-login...");
+      console.log("Auto-login is disabled to allow manual logout");
       
-      // Directly navigate to the dev-login endpoint for a cleaner experience
-      window.location.href = '/api/auth/dev-login';
-      
-      // We're using the direct endpoint now, so we don't need the fetch call
-      // fetch('/api/auth/autologin')
-      //   .then(response => { ... })
+      // Comment out the auto-login redirect
+      // window.location.href = '/api/auth/dev-login';
     }
   }, [autoLoginAttempted, serverAuthState]);
   
