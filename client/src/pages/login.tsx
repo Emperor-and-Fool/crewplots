@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import Footer from "@/components/ui/footer";
 
 export default function Login() {
   console.log("Login component rendering");
@@ -178,9 +179,7 @@ export default function Login() {
           </CardFooter>
         </Card>
       </div>
-      <div className="w-full text-center py-4 text-sm text-gray-500 bg-gray-100 border-t border-gray-200">
-        Powered by <a href="https://foolproductions.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">foolproductions.nl</a>
-      </div>
+      <Footer />
     </div>
   );
 }

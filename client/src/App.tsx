@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import * as React from "react";
+import Footer from "@/components/ui/footer";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -278,77 +279,85 @@ function App() {
 
   return (
     <TooltipProvider>
-      <Router>
-        <Switch>
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          
-          <Route path="/dashboard">
-            <ProtectedRoute component={Dashboard} />
-          </Route>
-          
-          <Route path="/locations">
-            <RoleProtectedRoute 
-              component={Locations} 
-              requiredRoles={["manager"]} 
-            />
-          </Route>
-          
-          <Route path="/staff-management">
-            <RoleProtectedRoute 
-              component={StaffManagement} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          <Route path="/scheduling">
-            <RoleProtectedRoute 
-              component={Scheduling} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          <Route path="/view-calendar">
-            <RoleProtectedRoute 
-              component={ViewCalendar} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          <Route path="/applicants">
-            <RoleProtectedRoute 
-              component={Applicants} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          <Route path="/cash-management">
-            <RoleProtectedRoute 
-              component={CashManagement} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          <Route path="/knowledge-base">
-            <ProtectedRoute component={KnowledgeBase} />
-          </Route>
-          
-          <Route path="/reports">
-            <RoleProtectedRoute 
-              component={Reports} 
-              requiredRoles={["manager", "floor_manager"]} 
-            />
-          </Route>
-          
-          {/* Default route - should be after all other routes */}
-          <Route path="/">
-            <Redirect to="/login" />
-          </Route>
-          
-          {/* Not found - should be the very last */}
-          <Route component={NotFound} />
-        </Switch>
-      </Router>
+      <div className="flex flex-col min-h-screen">
+        <div className="flex-grow">
+          <Router>
+            <Switch>
+              <Route path="/login" component={Login} />
+              <Route path="/register" component={Register} />
+              
+              <Route path="/dashboard">
+                <ProtectedRoute component={Dashboard} />
+              </Route>
+              
+              <Route path="/locations">
+                <RoleProtectedRoute 
+                  component={Locations} 
+                  requiredRoles={["manager"]} 
+                />
+              </Route>
+              
+              <Route path="/staff-management">
+                <RoleProtectedRoute 
+                  component={StaffManagement} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              <Route path="/scheduling">
+                <RoleProtectedRoute 
+                  component={Scheduling} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              <Route path="/view-calendar">
+                <RoleProtectedRoute 
+                  component={ViewCalendar} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              <Route path="/applicants">
+                <RoleProtectedRoute 
+                  component={Applicants} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              <Route path="/cash-management">
+                <RoleProtectedRoute 
+                  component={CashManagement} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              <Route path="/knowledge-base">
+                <ProtectedRoute component={KnowledgeBase} />
+              </Route>
+              
+              <Route path="/reports">
+                <RoleProtectedRoute 
+                  component={Reports} 
+                  requiredRoles={["manager", "floor_manager"]} 
+                />
+              </Route>
+              
+              {/* Default route - should be after all other routes */}
+              <Route path="/">
+                <Redirect to="/login" />
+              </Route>
+              
+              {/* Not found - should be the very last */}
+              <Route component={NotFound} />
+            </Switch>
+          </Router>
+        </div>
+        {/* Only show footer on non-login/register pages to avoid duplicating it */}
+        {window.location.pathname !== '/login' && window.location.pathname !== '/register' && (
+          <Footer />
+        )}
+      </div>
     </TooltipProvider>
   );
 }

@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import Footer from "@/components/ui/footer";
 
 import {
   Card,
@@ -256,9 +257,7 @@ export default function Register() {
           </CardFooter>
         </Card>
       </div>
-      <div className="w-full text-center py-4 text-sm text-gray-500 bg-gray-100 border-t border-gray-200">
-        Powered by <a href="https://foolproductions.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">foolproductions.nl</a>
-      </div>
+      <Footer />
     </div>
   );
 }
