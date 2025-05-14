@@ -252,25 +252,12 @@ export default function Register() {
                   <CountryCodeSelect 
                     form={form}
                     name="countryCode"
-                    label="Country Code"
+                    label="Phone Number"
                     required={true}
                   />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number<span className="text-red-500 ml-1">*</span></FormLabel>
-                        <FormControl>
-                          <Input placeholder="123456789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Required for WhatsApp communication with your team
-                        </p>
-                      </FormItem>
-                    )}
-                  />
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Required for WhatsApp communication with your team
+                  </p>
                 </div>
                 <Button
                   type="submit"
