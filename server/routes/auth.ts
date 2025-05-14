@@ -32,6 +32,26 @@ router.post('/register', async (req, res) => {
         // Remove confirmPassword before saving
         const { confirmPassword, ...userDataWithoutConfirm } = data;
         
+        // Generate a unique code for the user (username + random 4 chars)
+        const generateUniqueCode = () => {
+            const baseCode = data.username.substring(0, 6).toLowerCase().replace(/[^a-z0-9]/g, '');
+            const randomChars = Math.random().toString(36).substring(2, 6);
+            return `${baseCode}${randomChars}`;
+        };
+
+        // Format phone with country code in the required format: +xx xxxxxxx
+        const formatPhoneNumber = (countryCode: string, phone: string) => {
+            // Remove any leading zeros from the phone number
+            const cleanedPhone = phone.replace(/^0+/, '');
+            // Remove any non-digit characters from country code and ensure it starts with +
+            const cleanedCountryCode = countryCode.replace(/[^0-9+]/g, '');
+            const formattedCountryCode = cleanedCountryCode.startsWith('+') 
+                ? cleanedCountryCode 
+                : `+${cleanedCountryCode}`;
+            
+            return `${formattedCountryCode} ${cleanedPhone}`;
+        };
+
         // Create user with hashed password
         const user = await storage.createUser({
             ...userDataWithoutConfirm,
@@ -40,9 +60,10 @@ router.post('/register', async (req, res) => {
             password: hashedPassword,
             role: 'applicant', // Set all new registrations as applicants
             locationId: null, // Will be assigned by manager later
-            // Store country code and phone separately
-            countryCode: data.countryCode,
-            phone: data.phone
+            // Store combined phone number in the required format
+            phoneNumber: formatPhoneNumber(data.countryCode, data.phone),
+            // Generate unique code
+            uniqueCode: generateUniqueCode()
         });
 
         // Remove password from response
