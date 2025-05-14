@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export function MobileNavbar() {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   
   const isActive = (path: string) => location === path;
   
@@ -39,9 +39,11 @@ export function MobileNavbar() {
     ).join(" ");
   };
   
-  const handleLogout = async () => {
-    await logout();
-    setOpen(false);
+  // Direct server-side logout that bypasses the React state issues
+  const handleLogout = () => {
+    console.log("Using direct server-side logout from mobile navbar");
+    // Navigate directly to the dev-logout endpoint
+    window.location.href = "/api/auth/dev-logout";
   };
 
   return (

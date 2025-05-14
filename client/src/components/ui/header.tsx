@@ -28,8 +28,15 @@ interface HeaderProps {
 }
 
 export function Header({ className, onLocationChange }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState<string>("");
+  
+  // Direct server-side logout that bypasses the React state issues
+  const handleLogout = () => {
+    console.log("Using direct server-side logout from header");
+    // Navigate directly to the dev-logout endpoint
+    window.location.href = "/api/auth/dev-logout";
+  };
 
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
@@ -145,7 +152,7 @@ export function Header({ className, onLocationChange }: HeaderProps) {
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => logout()}>
+              <DropdownMenuItem onClick={handleLogout}>
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
