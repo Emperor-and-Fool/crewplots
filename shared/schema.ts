@@ -20,9 +20,12 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
-  name: text("name").notNull(),
+  firstName: text("first_name"),            // Add firstName field (nullable for migration)
+  lastName: text("last_name"),              // Add lastName field (nullable for migration)
+  name: text("name").notNull(),             // Keep for backwards compatibility
   role: text("role", { enum: ["manager", "floor_manager", "staff"] }).notNull(),
   locationId: integer("location_id").references(() => locations.id),
+  phone: text("phone"),                     // Add phone field
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -212,7 +215,8 @@ export const loginSchema = z.object({
 
 // User registration schema (for applicants)
 export const registerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
