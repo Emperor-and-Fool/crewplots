@@ -135,7 +135,7 @@ export function LocationForm({ location, isEditing = false }: LocationFormProps)
                 <FormItem>
                   <FormLabel>Contact Person</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Pieter de Jong" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,7 +150,7 @@ export function LocationForm({ location, isEditing = false }: LocationFormProps)
                   <FormItem>
                     <FormLabel>Contact Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="contact@example.com" {...field} />
+                      <Input type="email" placeholder="p.dejong@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

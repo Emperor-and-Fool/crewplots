@@ -115,7 +115,7 @@ export function ApplicantForm({ applicant, isEditing = false }: ApplicantFormPro
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Willem van Buren" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,7 +130,7 @@ export function ApplicantForm({ applicant, isEditing = false }: ApplicantFormPro
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="john.doe@example.com" {...field} />
+                      <Input type="email" placeholder="willem.vanburen@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -144,7 +144,7 @@ export function ApplicantForm({ applicant, isEditing = false }: ApplicantFormPro
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
+                      <Input placeholder="612345678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
