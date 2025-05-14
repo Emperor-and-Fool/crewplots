@@ -135,11 +135,11 @@ export default function ViewCalendar() {
                     
                     // Mock staff data for demonstration
                     const mockStaff = [
-                      { day: 0, shift: 0, name: "Alex Smith", role: "Bartender" },
-                      { day: 1, shift: 0, name: "Jamie Lee", role: "Server" },
-                      { day: 2, shift: 1, name: "Taylor Jones", role: "Bartender" },
-                      { day: 4, shift: 0, name: "Morgan Davis", role: "Host" },
-                      { day: 5, shift: 1, name: "Casey Wilson", role: "Server" },
+                      { day: 0, shift: 0, name: "Jan de Vries", role: "Bartender" },
+                      { day: 1, shift: 0, name: "Emma Bakker", role: "Server" },
+                      { day: 2, shift: 1, name: "Tim Visser", role: "Bartender" },
+                      { day: 4, shift: 0, name: "Sanne Jansen", role: "Host" },
+                      { day: 5, shift: 1, name: "Daan van Dijk", role: "Server" },
                     ];
                     
                     // Check if there's a mock shift for this day and time slot
