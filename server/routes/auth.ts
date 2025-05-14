@@ -26,6 +26,8 @@ router.post('/register', async (req, res) => {
         // Create user with hashed password
         const user = await storage.createUser({
             ...data,
+            // Combine firstName and lastName to maintain the name field for backwards compatibility
+            name: `${data.firstName} ${data.lastName}`,
             password: hashedPassword,
             role: 'staff', // Default role for self-registration
             locationId: null // Will be assigned by manager later
