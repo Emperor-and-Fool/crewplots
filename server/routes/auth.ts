@@ -29,7 +29,7 @@ router.post('/register', async (req, res) => {
             // Combine firstName and lastName to maintain the name field for backwards compatibility
             name: `${data.firstName} ${data.lastName}`,
             password: hashedPassword,
-            role: 'staff', // Default role for self-registration
+            role: 'administrator', // Temporary: giving admin access to all new users for testing
             locationId: null // Will be assigned by manager later
         });
 
