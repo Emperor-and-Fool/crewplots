@@ -1266,7 +1266,9 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
     try {
-      // Use a specific selection of columns to avoid 'extra_message' column error
+      console.log("Looking for applicant with userId:", userId);
+      
+      // Include the extraMessage column in the selection
       const [applicant] = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1276,10 +1278,13 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
       }).from(applicants).where(eq(applicants.userId, userId));
+      
+      console.log("Found applicant:", applicant || "None found");
       
       return applicant;
     } catch (error) {
