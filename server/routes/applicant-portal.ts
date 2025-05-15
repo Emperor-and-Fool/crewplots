@@ -63,40 +63,29 @@ const isApplicant = async (req: any, res: any, next: any) => {
 // Get applicant data for the logged-in user
 router.get('/my-profile', isApplicant, async (req: any, res) => {
   try {
-    const userId = req.user?.id;
-    console.log(`[Applicant Portal] Fetching applicant profile for user ID: ${userId}`);
-    console.log(`[Applicant Portal] User details:`, JSON.stringify({
-      id: req.user?.id,
-      role: req.user?.role,
-      username: req.user?.username
-    }));
+    console.log('Fetching applicant profile for user ID:', req.user.id);
+    console.log('User details:', req.user);
     
-    if (!userId) {
-      console.error('[Applicant Portal] No user ID available in the request');
-      return res.status(400).json({ error: 'Invalid user session' });
-    }
+    const applicant = await storage.getApplicantByUserId(req.user.id);
     
-    // Use the database storage implementation
-    const applicant = await storage.getApplicantByUserId(userId);
-    
-    console.log(`[Applicant Portal] Applicant lookup result: ${applicant ? `Found ID: ${applicant.id}` : 'None found'}`);
+    console.log('Applicant record found:', applicant || 'None found');
     
     if (!applicant) {
-      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId}, returning 404`);
+      console.log('Applicant not found, returning 404');
       return res.status(404).json({ 
         error: 'Applicant profile not found',
-        userId: userId,
+        userId: req.user.id,
         debug: 'If you recently created this user, there might be a mismatch between the user ID and applicant record.'
       });
     }
     
-    console.log(`[Applicant Portal] Successfully returning applicant data for ID: ${applicant.id}`);
+    console.log('Returning applicant data');
     res.json(applicant);
-  } catch (error: any) {
-    console.error('[Applicant Portal] Error fetching applicant profile:', error);
+  } catch (error) {
+    console.error('Error fetching applicant profile:', error);
     res.status(500).json({ 
       error: 'Failed to fetch applicant profile', 
-      message: error?.message || 'Unknown error' 
+      message: error.message || 'Unknown error' 
     });
   }
 });
@@ -109,78 +98,44 @@ const updateMessageSchema = z.object({
 // Update additional message for applicant
 router.put('/message', isApplicant, async (req: any, res) => {
   try {
-    const userId = req.user?.id;
-    console.log(`[Applicant Portal] Updating message for user ID: ${userId}`);
-    
-    if (!userId) {
-      console.error('[Applicant Portal] No user ID available in the update message request');
-      return res.status(400).json({ error: 'Invalid user session' });
-    }
-    
     // Validate input
-    try {
-      const validatedData = updateMessageSchema.parse(req.body);
-      
-      console.log(`[Applicant Portal] Looking up applicant for user ID: ${userId} to update message`);
-      // Get the applicant
-      const applicant = await storage.getApplicantByUserId(userId);
-      
-      if (!applicant) {
-        console.log(`[Applicant Portal] Applicant not found for user ID: ${userId} when updating message`);
-        return res.status(404).json({ error: 'Applicant profile not found' });
-      }
-      
-      console.log(`[Applicant Portal] Updating message for applicant ID: ${applicant.id}`);
-      // Update the message
-      const updatedApplicant = await storage.updateApplicant(applicant.id, {
-        extraMessage: validatedData.message
-      });
-      
-      console.log(`[Applicant Portal] Message updated successfully for applicant ID: ${applicant.id}`);
-      res.json({ success: true, applicant: updatedApplicant });
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        console.log('[Applicant Portal] Validation error in message update:', validationError.message);
-        const formattedError = fromZodError(validationError);
-        return res.status(400).json({ error: formattedError.message });
-      }
-      throw validationError; // Re-throw if it's not a validation error
+    const validatedData = updateMessageSchema.parse(req.body);
+    
+    // Get the applicant
+    const applicant = await storage.getApplicantByUserId(req.user.id);
+    
+    if (!applicant) {
+      return res.status(404).json({ error: 'Applicant profile not found' });
     }
-  } catch (error: any) {
-    console.error('[Applicant Portal] Error updating applicant message:', error);
-    res.status(500).json({ 
-      error: 'Failed to update message',
-      message: error?.message || 'Unknown error'
+    
+    // Update the message
+    const updatedApplicant = await storage.updateApplicant(applicant.id, {
+      extraMessage: validatedData.message
     });
+    
+    res.json({ success: true, applicant: updatedApplicant });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const validationError = fromZodError(error);
+      return res.status(400).json({ error: validationError.message });
+    }
+    
+    console.error('Error updating applicant message:', error);
+    res.status(500).json({ error: 'Failed to update message' });
   }
 });
 
 // Upload document
 router.post('/documents', isApplicant, upload.single('document'), async (req: any, res) => {
   try {
-    const userId = req.user?.id;
-    console.log(`[Applicant Portal] Document upload request from user ID: ${userId}`);
-    
-    if (!userId) {
-      console.error('[Applicant Portal] No user ID available in document upload request');
-      // Clean up file if it was uploaded
-      if (req.file?.path && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      return res.status(400).json({ error: 'Invalid user session' });
-    }
-    
     if (!req.file) {
-      console.log('[Applicant Portal] No file provided in upload request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
     
-    console.log(`[Applicant Portal] File received: ${req.file.originalname}, looking up applicant record`);
     // Get the applicant
-    const applicant = await storage.getApplicantByUserId(userId);
+    const applicant = await storage.getApplicantByUserId(req.user.id);
     
     if (!applicant) {
-      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId}, cleaning up uploaded file`);
       // Clean up the uploaded file if applicant not found
       if (req.file.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -189,75 +144,52 @@ router.post('/documents', isApplicant, upload.single('document'), async (req: an
     }
     
     // Save document reference to database
-    console.log(`[Applicant Portal] Creating document record for applicant ID: ${applicant.id}`);
     const documentUrl = `/uploads/documents/${req.file.filename}`;
-    try {
-      const document = await storage.createApplicantDocument({
-        applicantId: applicant.id,
-        documentName: req.body.documentName || req.file.originalname,
-        documentUrl: documentUrl,
-        fileType: req.file.mimetype
-      });
-      
-      console.log(`[Applicant Portal] Document successfully uploaded with ID: ${document.id}`);
-      res.status(201).json({ success: true, document });
-    } catch (docError: any) {
-      console.error(`[Applicant Portal] Failed to create document record:`, docError);
-      // Clean up file if there was an error
-      if (req.file.path && fs.existsSync(req.file.path)) {
-        console.log(`[Applicant Portal] Cleaning up file after database error: ${req.file.path}`);
-        fs.unlinkSync(req.file.path);
-      }
-      throw docError; // Let the outer catch handler format the response
-    }
-  } catch (error: any) {
-    console.error('[Applicant Portal] Error uploading document:', error);
+    const document = await storage.createApplicantDocument({
+      applicantId: applicant.id,
+      documentName: req.body.documentName || req.file.originalname,
+      documentUrl: documentUrl,
+      fileType: req.file.mimetype
+    });
+    
+    res.status(201).json({ success: true, document });
+  } catch (error) {
+    console.error('Error uploading document:', error);
     // Clean up file if there was an error
     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-      console.log(`[Applicant Portal] Cleaning up file after general error: ${req.file.path}`);
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ 
-      error: 'Failed to upload document',
-      message: error?.message || 'Unknown error'
-    });
+    res.status(500).json({ error: 'Failed to upload document' });
   }
 });
 
 // Get documents for the logged-in applicant
 router.get('/documents', isApplicant, async (req: any, res) => {
   try {
-    const userId = req.user?.id;
-    console.log(`[Applicant Portal] Fetching documents for user ID: ${userId}`);
+    console.log('Fetching documents for user ID:', req.user.id);
     
-    if (!userId) {
-      console.error('[Applicant Portal] No user ID available in the request for documents');
-      return res.status(400).json({ error: 'Invalid user session' });
-    }
+    const applicant = await storage.getApplicantByUserId(req.user.id);
     
-    // Get the applicant record first
-    const applicant = await storage.getApplicantByUserId(userId);
-    
-    console.log(`[Applicant Portal] Applicant lookup for documents: ${applicant ? `Found ID: ${applicant.id}` : 'None found'}`);
+    console.log('Applicant found for documents endpoint:', applicant || 'None found');
     
     if (!applicant) {
-      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId}, cannot retrieve documents`);
+      console.log('Applicant not found, returning 404 for documents');
       return res.status(404).json({ 
         error: 'Applicant profile not found',
-        userId: userId
+        userId: req.user.id
       });
     }
     
-    console.log(`[Applicant Portal] Getting documents for applicant ID: ${applicant.id}`);
+    console.log('Getting documents for applicant ID:', applicant.id);
     const documents = await storage.getApplicantDocuments(applicant.id);
-    console.log(`[Applicant Portal] Retrieved ${documents.length} documents`);
+    console.log('Retrieved documents:', documents);
     
     res.json(documents);
-  } catch (error: any) {
-    console.error('[Applicant Portal] Error fetching applicant documents:', error);
+  } catch (error) {
+    console.error('Error fetching applicant documents:', error);
     res.status(500).json({ 
       error: 'Failed to fetch documents',
-      message: error?.message || 'Unknown error' 
+      message: error.message || 'Unknown error' 
     });
   }
 });
@@ -265,42 +197,27 @@ router.get('/documents', isApplicant, async (req: any, res) => {
 // Delete document
 router.delete('/documents/:id', isApplicant, async (req: any, res) => {
   try {
-    const userId = req.user?.id;
     const documentId = parseInt(req.params.id);
-    
-    console.log(`[Applicant Portal] Delete document request: Document ID ${documentId} from user ID ${userId}`);
-    
-    if (!userId) {
-      console.error('[Applicant Portal] No user ID available in document delete request');
-      return res.status(400).json({ error: 'Invalid user session' });
-    }
-    
     if (isNaN(documentId)) {
-      console.log(`[Applicant Portal] Invalid document ID format: ${req.params.id}`);
       return res.status(400).json({ error: 'Invalid document ID' });
     }
     
     // Get the applicant
-    console.log(`[Applicant Portal] Looking up applicant for user ID: ${userId} for document deletion`);
-    const applicant = await storage.getApplicantByUserId(userId);
+    const applicant = await storage.getApplicantByUserId(req.user.id);
     
     if (!applicant) {
-      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId} when deleting document`);
       return res.status(404).json({ error: 'Applicant profile not found' });
     }
     
     // Fetch the document to check ownership
-    console.log(`[Applicant Portal] Fetching document ${documentId} to verify ownership`);
     const document = await storage.getApplicantDocument(documentId);
     
     if (!document) {
-      console.log(`[Applicant Portal] Document ${documentId} not found in database`);
       return res.status(404).json({ error: 'Document not found' });
     }
     
     // Check if the document belongs to the current applicant
     if (document.applicantId !== applicant.id) {
-      console.log(`[Applicant Portal] Permission denied: Document ${documentId} belongs to applicant ${document.applicantId}, not ${applicant.id}`);
       return res.status(403).json({ error: 'You do not have permission to delete this document' });
     }
     
@@ -308,32 +225,22 @@ router.delete('/documents/:id', isApplicant, async (req: any, res) => {
     const filename = path.basename(document.documentUrl);
     const filePath = path.join(uploadsDir, filename);
     
-    console.log(`[Applicant Portal] Attempting to delete physical file: ${filePath}`);
     // Delete the physical file if it exists
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`[Applicant Portal] Physical file deleted: ${filePath}`);
-    } else {
-      console.log(`[Applicant Portal] Physical file not found: ${filePath}`);
     }
     
     // Delete document record from database
-    console.log(`[Applicant Portal] Deleting document ${documentId} from database`);
     const success = await storage.deleteApplicantDocument(documentId);
     
     if (success) {
-      console.log(`[Applicant Portal] Document ${documentId} successfully deleted`);
       res.json({ success: true, message: 'Document deleted successfully' });
     } else {
-      console.error(`[Applicant Portal] Database failed to delete document ${documentId}`);
       res.status(500).json({ error: 'Failed to delete document record' });
     }
-  } catch (error: any) {
-    console.error('[Applicant Portal] Error deleting document:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete document',
-      message: error?.message || 'Unknown error'
-    });
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
   }
 });
 

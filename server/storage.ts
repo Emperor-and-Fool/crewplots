@@ -499,10 +499,11 @@ export class MemStorage implements IStorage {
     return this.applicants.delete(id);
   }
 
-  // Memory storage implementation
+  // This is the MemStorage implementation
   async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
-    console.log(`[MemStorage] getApplicantByUserId called with userId: ${userId}, but this storage should not be used.`);
-    return undefined;
+    // Log for debugging
+    console.log("MemStorage.getApplicantByUserId called with userId:", userId);
+    return Array.from(this.applicants.values()).find(applicant => applicant.userId === userId);
   }
 
   async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any> {
@@ -1268,24 +1269,30 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
     try {
-      console.log("[DatabaseStorage] Looking for applicant with userId:", userId);
+      console.log("Looking for applicant with userId:", userId);
       
-      if (!userId) {
-        console.log("[DatabaseStorage] Invalid userId provided:", userId);
-        return undefined;
-      }
+      // Include the extraMessage column in the selection
+      const [applicant] = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants).where(eq(applicants.userId, userId));
       
-      // Include all applicant columns, especially the extraMessage
-      const [applicant] = await db
-        .select()
-        .from(applicants)
-        .where(eq(applicants.userId, userId));
-      
-      console.log("[DatabaseStorage] Found applicant:", applicant ? `ID: ${applicant.id}` : "None found");
+      console.log("Found applicant:", applicant || "None found");
       
       return applicant;
     } catch (error) {
-      console.error("[DatabaseStorage] Error in getApplicantByUserId:", error);
+      console.error("Error in getApplicantByUserId:", error);
+      // Return undefined on error
       return undefined;
     }
   }
