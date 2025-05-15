@@ -19,7 +19,6 @@ import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 import ApplicantsTest from "@/pages/applicants-test";
-import ClearSessions from "@/pages/clear-sessions";
 
 // Protected route component that only checks if user is authenticated
 const ProtectedRoute = ({ component: Component, ...rest }: any) => {
@@ -353,10 +352,6 @@ function App() {
               
               <Route path="/registration-success">
                 <RegistrationSuccess />
-              </Route>
-              
-              <Route path="/clear-sessions">
-                <ClearSessions />
               </Route>
               
               {/* PROTECTED ROUTES - require authentication */}
