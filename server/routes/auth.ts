@@ -308,58 +308,68 @@ router.get('/me', async (req, res) => {
     }
 });
 
-// Logout
+// Enhanced logout using Passport
 router.post('/logout', (req, res) => {
     console.log('Logging out user, sessionID:', req.sessionID);
+    console.log('Current authentication status:', req.isAuthenticated());
     
-    // Clear the session variables first
-    req.session.userId = undefined;
-    req.session.loggedIn = false;
-    
-    // Save the changes before destroying
-    req.session.save((saveErr) => {
-        if (saveErr) {
-            console.error('Error saving session before logout:', saveErr);
+    // Use Passport's logout method
+    req.logout((err) => {
+        if (err) {
+            console.error('Error during Passport logout:', err);
+            return res.status(500).json({ message: 'Error logging out' });
         }
         
-        // Then destroy the session
+        // Then destroy the session to be thorough
         req.session.destroy((err) => {
             if (err) {
                 console.error('Error destroying session:', err);
-                return res.status(500).json({ message: 'Error logging out' });
+                return res.status(500).json({ message: 'Error during logout' });
             }
             
-            // Clear the session cookie
+            // Clear cookies
             res.clearCookie('connect.sid');
+            res.clearCookie('login-timestamp');
+            res.clearCookie('debug-auth-check');
+            res.clearCookie('admin-login');
+            
             console.log('User logged out successfully');
-            return res.status(200).json({ message: 'Logged out successfully' });
+            return res.status(200).json({ 
+                message: 'Logged out successfully',
+                debug: {
+                    sessionDestroyed: true,
+                    timestamp: new Date().toISOString()
+                }
+            });
         });
     });
 });
 
-// Development direct HTML logout
+// Development direct HTML logout with Passport
 router.get('/dev-logout', (req, res) => {
     console.log('Direct server-side logout, sessionID:', req.sessionID);
+    console.log('Current authentication status:', req.isAuthenticated());
     
-    // Clear the session variables first
-    req.session.userId = undefined;
-    req.session.loggedIn = false;
-    
-    // Save the changes before destroying
-    req.session.save((saveErr) => {
-        if (saveErr) {
-            console.error('Error saving session before logout:', saveErr);
+    // Use Passport's logout method
+    req.logout((err) => {
+        if (err) {
+            console.error('Error during Passport logout:', err);
+            return res.status(500).send('Error during logout process');
         }
         
-        // Then destroy the session
+        // Then destroy the session to be thorough
         req.session.destroy((err) => {
             if (err) {
                 console.error('Error destroying session:', err);
-                return res.status(500).send('Error logging out');
+                return res.status(500).send('Error destroying session');
             }
             
-            // Clear the session cookie
+            // Clear cookies
             res.clearCookie('connect.sid');
+            res.clearCookie('login-timestamp');
+            res.clearCookie('debug-auth-check');
+            res.clearCookie('admin-login');
+            
             console.log('User logged out successfully with direct approach');
             
             // Serve HTML with a redirect to login page
@@ -368,7 +378,23 @@ router.get('/dev-logout', (req, res) => {
                 <html>
                 <head>
                     <title>Logout Successful</title>
-                    <meta http-equiv="refresh" content="0;url=/login" />
+                    <meta http-equiv="refresh" content="3;url=/login" />
+                    <style>
+                        body {
+                            font-family: system-ui, -apple-system, sans-serif;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            height: 100vh;
+                            margin: 0;
+                            text-align: center;
+                            background-color: #f9f9f9;
+                        }
+                        h1 {
+                            color: #0070f3;
+                        }
+                    </style>
                 </head>
                 <body>
                     <h1>Logout Successful</h1>
