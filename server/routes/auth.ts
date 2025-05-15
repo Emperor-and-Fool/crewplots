@@ -327,8 +327,8 @@ router.get('/me', async (req, res) => {
     }
 });
 
-// Enhanced logout using Passport
-router.post('/logout', (req, res) => {
+// Enhanced logout using Passport - support both POST and GET
+const logoutHandler = (req, res) => {
     console.log('Logging out user, sessionID:', req.sessionID);
     console.log('Current authentication status:', req.isAuthenticated());
     
@@ -346,13 +346,26 @@ router.post('/logout', (req, res) => {
                 return res.status(500).json({ message: 'Error during logout' });
             }
             
-            // Clear cookies
+            // Clear ALL cookies
             res.clearCookie('connect.sid');
             res.clearCookie('login-timestamp');
             res.clearCookie('debug-auth-check');
             res.clearCookie('admin-login');
             
-            console.log('User logged out successfully');
+            // Clear additional cookies that might exist
+            const cookieNames = Object.keys(req.cookies || {});
+            cookieNames.forEach(name => {
+                res.clearCookie(name);
+            });
+            
+            console.log('User logged out successfully, redirecting to login');
+            
+            // For GET requests, redirect to login page
+            if (req.method === 'GET') {
+                return res.redirect('/login');
+            }
+            
+            // For POST requests, return JSON
             return res.status(200).json({ 
                 message: 'Logged out successfully',
                 debug: {
@@ -362,7 +375,11 @@ router.post('/logout', (req, res) => {
             });
         });
     });
-});
+};
+
+// Support both POST and GET for logout
+router.post('/logout', logoutHandler);
+router.get('/logout', logoutHandler);
 
 // Development direct HTML logout with Passport
 router.get('/dev-logout', (req, res) => {
