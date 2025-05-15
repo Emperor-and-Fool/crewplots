@@ -64,24 +64,47 @@ export default function Login() {
     }
   };
   
-  // Form submission handler
+  // Form submission handler using direct fetch approach
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
     console.log("Login form submitted with username:", data.username);
     
     try {
-      console.log("Attempting login...");
-      const success = await login(data.username, data.password);
+      console.log("Attempting login directly...");
       
-      console.log("Login result:", success);
-      if (success) {
-        console.log("Login successful, navigating to dashboard");
-        navigate("/dashboard");
+      // Use the FormData API to ensure proper form submission
+      const formData = new FormData();
+      formData.append('username', data.username);
+      formData.append('password', data.password);
+      
+      // Manual fetch implementation
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Important for cookies
+      });
+      
+      console.log("Login response status:", response.status);
+      
+      if (response.ok) {
+        // Parse the response
+        const result = await response.json();
+        console.log("Login successful, result:", result);
+        
+        // Refresh the auth state
+        window.location.href = '/dashboard';
       } else {
-        console.log("Login failed");
+        console.log("Login failed with status:", response.status);
+        
+        try {
+          const errorData = await response.json();
+          console.error("Error details:", errorData);
+        } catch (e) {
+          console.error("No error details available");
+        }
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login fetch error:", error);
     } finally {
       setIsLoading(false);
     }
