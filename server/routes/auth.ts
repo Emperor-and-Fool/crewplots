@@ -533,19 +533,22 @@ router.get('/dev-login', async (req, res) => {
             return res.status(404).send('Admin user not found');
         }
         
-        // Set session data
-        req.session.userId = user.id;
-        req.session.loggedIn = true;
-        console.log('Dev-login successful, session:', req.session);
-        
-        // Explicitly save session and redirect with HTML
-        req.session.save((err) => {
+        // Use Passport login method which will handle both session and user serialization
+        req.login(user, (err) => {
             if (err) {
-                console.error('Error saving session:', err);
-                return res.status(500).send('Error saving session');
+                console.error('Error during Passport login:', err);
+                return res.status(500).send('Error during login process');
             }
             
-            console.log('Session saved successfully for dev-login');
+            console.log('Passport login successful for admin');
+            console.log('Session ID after login:', req.sessionID);
+            
+            // Set a regular cookie for debugging
+            res.cookie('admin-login', 'true', { 
+                maxAge: 86400000,
+                httpOnly: true,
+                sameSite: 'lax'
+            });
             
             // Send an HTML response that redirects to the dashboard
             res.send(`
