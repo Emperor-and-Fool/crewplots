@@ -28,7 +28,6 @@ interface ApplicantProfile {
   name: string;
   email: string;
   phone: string;
-  positionApplied: string;
   status: string;
   resumeUrl: string | null;
   notes: string | null;
@@ -388,10 +387,7 @@ function ApplicantPortal() {
                   <p className="text-sm font-medium text-gray-500">Phone</p>
                   <p className="text-lg">{profile.phone}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Position Applied</p>
-                  <p className="text-lg">{profile.positionApplied}</p>
-                </div>
+
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="text-lg">
@@ -498,7 +494,6 @@ function ApplicantPortal() {
                         <TableHead>ID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Position</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>User ID</TableHead>
                       </TableRow>
@@ -509,7 +504,6 @@ function ApplicantPortal() {
                           <TableCell>{applicant.id}</TableCell>
                           <TableCell>{applicant.name}</TableCell>
                           <TableCell>{applicant.email}</TableCell>
-                          <TableCell>{applicant.positionApplied}</TableCell>
                           <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(applicant.status)}`}>
                             {applicant.status}

@@ -145,7 +145,6 @@ export const applicants = pgTable("applicants", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
-  positionApplied: text("position_applied").notNull(),
   status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected"] }).default("new").notNull(),
   resumeUrl: text("resume_url"),
   notes: text("notes"),
