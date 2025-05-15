@@ -63,16 +63,35 @@ const isApplicant = async (req: any, res: any, next: any) => {
 // Get applicant data for the logged-in user
 router.get('/my-profile', isApplicant, async (req: any, res) => {
   try {
+    console.log('Fetching applicant profile for user ID:', req.user.id);
+    
+    // Add a 500ms delay to ensure database connection is ready (helps with race conditions)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const applicant = await storage.getApplicantByUserId(req.user.id);
     
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
+      console.log('No applicant profile found for user ID:', req.user.id);
+      return res.status(404).json({ 
+        error: 'Applicant profile not found',
+        message: 'Your user account exists but no applicant profile is linked to it.'
+      });
     }
     
+    console.log('Successfully retrieved applicant profile:', 
+      { id: applicant.id, name: applicant.name, email: applicant.email });
+    
+    // Send complete applicant data
     res.json(applicant);
   } catch (error) {
     console.error('Error fetching applicant profile:', error);
-    res.status(500).json({ error: 'Failed to fetch applicant profile' });
+    
+    // More detailed error response
+    res.status(500).json({ 
+      error: 'Failed to fetch applicant profile',
+      message: 'There was a problem retrieving your profile data. Please try again later.',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -152,17 +171,38 @@ router.post('/documents', isApplicant, upload.single('document'), async (req: an
 // Get documents for the logged-in applicant
 router.get('/documents', isApplicant, async (req: any, res) => {
   try {
+    console.log('Fetching documents for user ID:', req.user.id);
+    
+    // Add a small delay to ensure database connection is ready (helps with race conditions)
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     const applicant = await storage.getApplicantByUserId(req.user.id);
     
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
+      console.log('No applicant profile found for user ID when fetching documents:', req.user.id);
+      return res.status(404).json({ 
+        error: 'Applicant profile not found',
+        message: 'Your user account exists but no applicant profile is linked to it.' 
+      });
     }
     
+    console.log('Fetching documents for applicant ID:', applicant.id);
+    
     const documents = await storage.getApplicantDocuments(applicant.id);
+    
+    console.log(`Successfully retrieved ${documents.length} documents for applicant ID ${applicant.id}`);
+    
+    // Send document data
     res.json(documents);
   } catch (error) {
     console.error('Error fetching applicant documents:', error);
-    res.status(500).json({ error: 'Failed to fetch documents' });
+    
+    // More detailed error response
+    res.status(500).json({ 
+      error: 'Failed to fetch documents',
+      message: 'There was a problem retrieving your documents. Please try again later.',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
