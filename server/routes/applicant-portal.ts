@@ -63,29 +63,40 @@ const isApplicant = async (req: any, res: any, next: any) => {
 // Get applicant data for the logged-in user
 router.get('/my-profile', isApplicant, async (req: any, res) => {
   try {
-    console.log('Fetching applicant profile for user ID:', req.user.id);
-    console.log('User details:', req.user);
+    const userId = req.user?.id;
+    console.log(`[Applicant Portal] Fetching applicant profile for user ID: ${userId}`);
+    console.log(`[Applicant Portal] User details:`, JSON.stringify({
+      id: req.user?.id,
+      role: req.user?.role,
+      username: req.user?.username
+    }));
     
-    const applicant = await storage.getApplicantByUserId(req.user.id);
+    if (!userId) {
+      console.error('[Applicant Portal] No user ID available in the request');
+      return res.status(400).json({ error: 'Invalid user session' });
+    }
     
-    console.log('Applicant record found:', applicant || 'None found');
+    // Use the database storage implementation
+    const applicant = await storage.getApplicantByUserId(userId);
+    
+    console.log(`[Applicant Portal] Applicant lookup result: ${applicant ? `Found ID: ${applicant.id}` : 'None found'}`);
     
     if (!applicant) {
-      console.log('Applicant not found, returning 404');
+      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId}, returning 404`);
       return res.status(404).json({ 
         error: 'Applicant profile not found',
-        userId: req.user.id,
+        userId: userId,
         debug: 'If you recently created this user, there might be a mismatch between the user ID and applicant record.'
       });
     }
     
-    console.log('Returning applicant data');
+    console.log(`[Applicant Portal] Successfully returning applicant data for ID: ${applicant.id}`);
     res.json(applicant);
-  } catch (error) {
-    console.error('Error fetching applicant profile:', error);
+  } catch (error: any) {
+    console.error('[Applicant Portal] Error fetching applicant profile:', error);
     res.status(500).json({ 
       error: 'Failed to fetch applicant profile', 
-      message: error.message || 'Unknown error' 
+      message: error?.message || 'Unknown error' 
     });
   }
 });
@@ -166,30 +177,37 @@ router.post('/documents', isApplicant, upload.single('document'), async (req: an
 // Get documents for the logged-in applicant
 router.get('/documents', isApplicant, async (req: any, res) => {
   try {
-    console.log('Fetching documents for user ID:', req.user.id);
+    const userId = req.user?.id;
+    console.log(`[Applicant Portal] Fetching documents for user ID: ${userId}`);
     
-    const applicant = await storage.getApplicantByUserId(req.user.id);
+    if (!userId) {
+      console.error('[Applicant Portal] No user ID available in the request for documents');
+      return res.status(400).json({ error: 'Invalid user session' });
+    }
     
-    console.log('Applicant found for documents endpoint:', applicant || 'None found');
+    // Get the applicant record first
+    const applicant = await storage.getApplicantByUserId(userId);
+    
+    console.log(`[Applicant Portal] Applicant lookup for documents: ${applicant ? `Found ID: ${applicant.id}` : 'None found'}`);
     
     if (!applicant) {
-      console.log('Applicant not found, returning 404 for documents');
+      console.log(`[Applicant Portal] Applicant not found for user ID: ${userId}, cannot retrieve documents`);
       return res.status(404).json({ 
         error: 'Applicant profile not found',
-        userId: req.user.id
+        userId: userId
       });
     }
     
-    console.log('Getting documents for applicant ID:', applicant.id);
+    console.log(`[Applicant Portal] Getting documents for applicant ID: ${applicant.id}`);
     const documents = await storage.getApplicantDocuments(applicant.id);
-    console.log('Retrieved documents:', documents);
+    console.log(`[Applicant Portal] Retrieved ${documents.length} documents`);
     
     res.json(documents);
-  } catch (error) {
-    console.error('Error fetching applicant documents:', error);
+  } catch (error: any) {
+    console.error('[Applicant Portal] Error fetching applicant documents:', error);
     res.status(500).json({ 
       error: 'Failed to fetch documents',
-      message: error.message || 'Unknown error' 
+      message: error?.message || 'Unknown error' 
     });
   }
 });
