@@ -79,23 +79,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, [queryClient]);
 
-  // Login function using JSON for reliable authentication
+  // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Attempting to log in with JSON approach:", username);
+      console.log("Attempting to log in with URLSearchParams approach:", username);
       
-      // Use fetch with proper JSON content type
+      // Use URLSearchParams for reliable form data submission
+      const urlencoded = new URLSearchParams();
+      urlencoded.append('username', username);
+      urlencoded.append('password', password);
+      
+      // Use fetch with proper content type
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify({
-            username,
-            password
-          }),
+          body: urlencoded.toString(),
           credentials: 'include' // Important for cookies
         });
         

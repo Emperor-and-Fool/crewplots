@@ -66,24 +66,26 @@ export default function Login() {
     }
   };
   
-  // Form submission handler using JSON for reliable form data submission
+  // Form submission handler using URLSearchParams for reliable form data submission
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
     console.log("Login form submitted with username:", data.username);
     
     try {
-      console.log("Attempting login with JSON data...");
+      console.log("Attempting login with URLSearchParams...");
       
-      // Manual fetch implementation with proper content type (JSON)
+      // Use URLSearchParams instead of FormData
+      const urlencoded = new URLSearchParams();
+      urlencoded.append('username', data.username);
+      urlencoded.append('password', data.password);
+      
+      // Manual fetch implementation with proper content type
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password
-        }),
+        body: urlencoded.toString(),
         credentials: 'include', // Important for cookies
       });
       
@@ -100,28 +102,17 @@ export default function Login() {
           description: `Welcome back, ${result.user?.name || data.username}!`,
         });
         
-        // Determine where to redirect based on user role
+        // Navigate to dashboard using a simpler approach that doesn't cause race conditions
         try {
-          const userRole = result.user?.role;
-          console.log("User role for redirect:", userRole);
-          
           // Show a message to the user before redirecting
           toast({
             title: "Redirecting...",
-            description: userRole === 'applicant' 
-              ? "Taking you to the applicant portal" 
-              : "Taking you to the dashboard",
+            description: "Taking you to the dashboard",
           });
           
           // Use setTimeout to allow the toast to display
           setTimeout(() => {
-            if (userRole === 'applicant') {
-              console.log("Redirecting to applicant portal");
-              window.location.href = '/applicant-portal';
-            } else {
-              console.log("Redirecting to dashboard");
-              window.location.href = '/dashboard';
-            }
+            window.location.href = '/dashboard';
           }, 500);
         } catch (e) {
           console.error("Redirect error:", e);
