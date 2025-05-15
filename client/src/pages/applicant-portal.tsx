@@ -59,6 +59,8 @@ function ApplicantPortal() {
   const [message, setMessage] = useState('');
   const [docName, setDocName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [requestTimeoutId, setRequestTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [isSessionHanging, setIsSessionHanging] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -66,6 +68,65 @@ function ApplicantPortal() {
   const isAuthenticated = !!user;
   const isApplicant = user?.role === 'applicant';
 
+  // Function to clear session and redirect to login
+  const clearSessionAndRedirect = async () => {
+    try {
+      setIsSessionHanging(true);
+      toast({
+        title: "Session Issue Detected",
+        description: "Clearing session data and redirecting to login...",
+        variant: "destructive"
+      });
+      
+      // Attempt to clear the session via API
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      // As a fallback, try to clear with a GET request too
+      await fetch('/api/auth/logout', {
+        credentials: 'include',
+      });
+      
+      // Clear any local session data
+      localStorage.removeItem('auth_timestamp');
+      sessionStorage.clear();
+      
+      // Redirect to login
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } catch (error) {
+      console.error("Error clearing session:", error);
+      // Force redirect to login even if clearing failed
+      window.location.href = '/login';
+    }
+  };
+
+  // Effect to check for hung sessions
+  React.useEffect(() => {
+    if (authLoading) {
+      // Start a timeout to detect hung sessions
+      const timeoutId = setTimeout(() => {
+        // If still loading after 8 seconds, assume session is hung
+        if (authLoading) {
+          clearSessionAndRedirect();
+        }
+      }, 8000);
+      
+      setRequestTimeoutId(timeoutId);
+      
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    } else if (requestTimeoutId) {
+      clearTimeout(requestTimeoutId);
+      setRequestTimeoutId(null);
+    }
+  }, [authLoading]);
+
+  // Redirect if not authenticated or not an applicant
   React.useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isApplicant)) {
       toast({
