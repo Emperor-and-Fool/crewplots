@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { loginSchema, type Login } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Card,
@@ -33,6 +34,7 @@ export default function Login() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
+  const { toast } = useToast();
   
   // Log when component mounts
   useEffect(() => {
