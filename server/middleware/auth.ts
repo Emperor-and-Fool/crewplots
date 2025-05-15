@@ -19,13 +19,20 @@ declare module 'express-session' {
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        if (!req.session.userId) {
+        console.log("Auth middleware - Session data:", req.session);
+        
+        // Check both userId and loggedIn flag
+        if (!req.session.userId || req.session.loggedIn !== true) {
+            console.log("Session missing userId or loggedIn flag");
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
 
+        console.log("Looking up user with ID:", req.session.userId);
         const user = await storage.getUser(req.session.userId);
+        
         if (!user) {
+            console.log("User not found in database for ID:", req.session.userId);
             req.session.destroy((err) => {
                 if (err) {
                     console.error("Error destroying session:", err);
@@ -35,6 +42,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             return;
         }
 
+        console.log("User authenticated:", user.username);
         // Attach the user to the request
         req.user = user;
         next();

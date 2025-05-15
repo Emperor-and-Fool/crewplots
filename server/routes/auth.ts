@@ -95,65 +95,106 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
+        console.log('Login attempt - body:', JSON.stringify(req.body, (k, v) => k === 'password' ? '******' : v));
+        console.log('Login attempt - session ID:', req.sessionID);
+        console.log('Login attempt - cookies:', req.cookies);
+        
+        // Parse and validate the login data
         const data = loginSchema.parse(req.body);
         
         // Find user by username
         const user = await storage.getUserByUsername(data.username);
         if (!user) {
+            console.log('Login failed - user not found:', data.username);
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         
+        console.log('User found:', user.username, 'with ID:', user.id);
+        
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
-            // Set session - save both userId and loggedIn flag
+            console.log('Admin login detected, using development credentials');
+            
+            // Set session data with both userId and loggedIn flag
             req.session.userId = user.id;
             req.session.loggedIn = true;
-            console.log('Admin login successful, session:', req.session);
+            console.log('Admin login successful, session data set, session ID:', req.sessionID);
             
             // Explicitly save session to force persistence
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Error saving session:', err);
-                } else {
-                    console.log('Session saved successfully for admin user');
-                }
-            });
-            
-            // Remove password from response
-            const { password, ...userWithoutPassword } = user;
-            
-            return res.status(200).json({
-                message: 'Login successful',
-                user: userWithoutPassword
+            return new Promise<void>((resolve, reject) => {
+                req.session.save((err) => {
+                    if (err) {
+                        console.error('Error saving admin session:', err);
+                        reject(err);
+                        return res.status(500).json({ message: 'Error saving session' });
+                    } else {
+                        console.log('Session saved successfully for admin user, session ID:', req.sessionID);
+                        
+                        // Remove password from response
+                        const { password, ...userWithoutPassword } = user;
+                        
+                        res.status(200).json({
+                            message: 'Login successful',
+                            user: userWithoutPassword,
+                            sessionId: req.sessionID,
+                            debug: {
+                                sessionSaved: true,
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+                        resolve();
+                    }
+                });
             });
         }
         
         // Verify password for normal users
+        console.log('Verifying password for standard user:', user.username);
         const isMatch = await bcrypt.compare(data.password, user.password);
         if (!isMatch) {
+            console.log('Login failed - password mismatch for user:', user.username);
             return res.status(401).json({ message: 'Invalid username or password' });
         }
+        
+        console.log('Password verified for user:', user.username);
         
         // Set session - save both userId and loggedIn flag
         req.session.userId = user.id;
         req.session.loggedIn = true;
-        console.log('User login successful, session:', req.session);
+        console.log('User login successful, session data set, session ID:', req.sessionID);
         
         // Explicitly save session to force persistence
-        req.session.save((err) => {
-            if (err) {
-                console.error('Error saving session:', err);
-            } else {
-                console.log('Session saved successfully for user:', user.username);
-            }
-        });
-        
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        
-        return res.status(200).json({
-            message: 'Login successful',
-            user: userWithoutPassword
+        return new Promise<void>((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Error saving session:', err);
+                    reject(err);
+                    return res.status(500).json({ message: 'Error saving session' });
+                } else {
+                    console.log('Session saved successfully for user:', user.username, 'session ID:', req.sessionID);
+                    
+                    // Set a regular cookie to test cookie functionality
+                    res.cookie('login-timestamp', new Date().toISOString(), { 
+                        maxAge: 86400000,
+                        httpOnly: true,
+                        sameSite: 'lax'
+                    });
+                    
+                    // Remove password from response
+                    const { password, ...userWithoutPassword } = user;
+                    
+                    res.status(200).json({
+                        message: 'Login successful',
+                        user: userWithoutPassword,
+                        sessionId: req.sessionID,
+                        debug: {
+                            sessionSaved: true,
+                            timestamp: new Date().toISOString()
+                        }
+                    });
+                    resolve();
+                }
+            });
         });
     } catch (error) {
         if (error instanceof ZodError) {
@@ -190,21 +231,42 @@ router.get('/user', authenticateUser, (req, res) => {
 router.get('/me', async (req, res) => {
     try {
         console.log('Session data:', req.session);
+        console.log('Session ID:', req.sessionID);
+        console.log('Cookies:', req.cookies);
+        console.log('Headers:', req.headers);
+        
         const userId = req.session?.userId;
         const loggedIn = req.session?.loggedIn;
         console.log('Get /me - userId from session:', userId, 'loggedIn:', loggedIn);
         
-        if (!userId || !loggedIn) {
+        if (!userId || loggedIn !== true) {
             console.log('No user ID or loggedIn flag in session');
-            return res.status(200).json({ authenticated: false });
+            // Set debug cookie to see if cookies are being maintained
+            res.cookie('debug-auth-check', 'was-checked', { 
+                maxAge: 3600000, 
+                httpOnly: true,
+                sameSite: 'lax'
+            });
+            return res.status(200).json({ 
+                authenticated: false,
+                debug: {
+                    sessionExists: !!req.session,
+                    sessionId: req.sessionID,
+                    hasCookies: !!req.cookies['connect.sid'],
+                }
+            });
         }
         
+        console.log('Looking up user with ID:', userId);
         const user = await storage.getUser(userId);
         console.log('Get /me - found user:', user ? 'yes' : 'no');
         
         if (!user) {
             console.log('User not found in database');
-            return res.status(200).json({ authenticated: false });
+            return res.status(200).json({ 
+                authenticated: false,
+                reason: 'user_not_found'
+            });
         }
         
         // Remove password from response
