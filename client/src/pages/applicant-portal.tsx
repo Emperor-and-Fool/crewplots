@@ -6,6 +6,30 @@ import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { ExternalLink, File, Trash } from 'lucide-react';
 
+// Define types for API responses
+type ApplicantProfile = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  positionApplied: string;
+  status: "new" | "contacted" | "interviewed" | "hired" | "rejected";
+  resumeUrl: string | null;
+  notes: string | null;
+  extraMessage: string | null;
+  userId: number | null;
+  locationId: number | null;
+  createdAt: string;
+};
+
+type Document = {
+  id: number;
+  name: string;
+  fileUrl: string;
+  applicantId: number;
+  createdAt: string;
+};
+
 import { 
   Card, 
   CardContent, 
@@ -58,7 +82,7 @@ function ApplicantPortal() {
     data: profile, 
     isLoading: profileLoading, 
     error: profileError 
-  } = useQuery({
+  } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
   });
@@ -68,7 +92,7 @@ function ApplicantPortal() {
     data: documents, 
     isLoading: docsLoading, 
     error: docsError 
-  } = useQuery({
+  } = useQuery<Document[]>({
     queryKey: ['/api/applicant-portal/documents'],
     enabled: isAuthenticated && isApplicant,
   });
@@ -150,7 +174,8 @@ function ApplicantPortal() {
     mutationFn: async (id: number) => {
       // Custom fetch instead of apiRequest
       const response = await fetch(`/api/applicant-portal/documents/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -268,27 +293,33 @@ function ApplicantPortal() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Name</p>
-                <p className="text-lg">{profile && profile.name ? profile.name : 'Loading...'}</p>
+                <p className="text-lg">{profile?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-lg">{profile && profile.email ? profile.email : 'Loading...'}</p>
+                <p className="text-lg">{profile?.email || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Phone</p>
-                <p className="text-lg">{profile && profile.phone ? profile.phone : 'Not provided'}</p>
+                <p className="text-lg">{profile?.phone || 'Not provided'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Position Applied</p>
-                <p className="text-lg">{profile && profile.positionApplied ? profile.positionApplied : 'Loading...'}</p>
+                <p className="text-lg">{profile?.positionApplied || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Status</p>
-                <div className="mt-1">{profile && profile.status ? getStatusBadge(profile.status) : 'Loading...'}</div>
+                <div className="mt-1">
+                  {profile?.status ? getStatusBadge(profile.status) : 'Loading...'}
+                </div>
               </div>
               <div>
                 <p className="text-sm font-medium">Application Date</p>
-                <p className="text-lg">{profile && profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Loading...'}</p>
+                <p className="text-lg">
+                  {profile?.createdAt ? 
+                    new Date(profile.createdAt).toLocaleDateString() : 
+                    'Loading...'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -310,12 +341,12 @@ function ApplicantPortal() {
                   id="message"
                   placeholder="Type your message here (maximum 2000 characters)"
                   className="min-h-[150px]"
-                  value={message || (profile && profile.extraMessage) || ''}
+                  value={message || profile?.extraMessage || ''}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={2000}
                 />
                 <p className="text-xs text-right text-gray-500">
-                  {(message || (profile && profile.extraMessage) || '').length}/2000 characters
+                  {(message || profile?.extraMessage || '').length}/2000 characters
                 </p>
               </div>
               <Button 
