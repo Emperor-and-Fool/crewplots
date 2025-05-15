@@ -95,14 +95,43 @@ function ApplicantPortal() {
   
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (authLoading || applicantsLoading) {
+      if (authLoading || profileLoading || docsLoading || applicantsLoading) {
         setLoadingTimeout(true);
       }
     }, 8000); // 8 seconds timeout
     
     return () => clearTimeout(timeoutId);
-  }, [authLoading, applicantsLoading]);
+  }, [authLoading, profileLoading, docsLoading, applicantsLoading]);
 
+  // Log all errors and data for debugging
+  React.useEffect(() => {
+    if (isProfileError) {
+      console.error("Error loading profile:", profileError);
+    }
+    if (isDocsError) {
+      console.error("Error loading documents:", docsError);
+    }
+    if (isApplicantsError) {
+      console.error("Error loading applicants:", applicantsError);
+    }
+
+    // Log data when it's available
+    if (profile) {
+      console.log("Profile data loaded:", profile);
+    }
+    if (documents) {
+      console.log("Documents data loaded:", documents);
+    }
+    if (applicants) {
+      console.log("All applicants loaded:", applicants);
+    }
+  }, [
+    profile, documents, applicants,
+    isProfileError, isDocsError, isApplicantsError,
+    profileError, docsError, applicantsError
+  ]);
+  
+  // Timeout reached - show user-friendly message
   if (loadingTimeout) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -127,7 +156,10 @@ function ApplicantPortal() {
     );
   }
 
-  if (isApplicantsError) {
+  // Handle specific API errors
+  if (isProfileError || isDocsError || isApplicantsError) {
+    const errorMessage = profileError?.message || docsError?.message || applicantsError?.message || 'Unknown error';
+    
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
@@ -135,7 +167,7 @@ function ApplicantPortal() {
           <div className="flex items-center">
             <div className="text-red-700">
               <p className="font-bold">Error loading data</p>
-              <p>There was a problem fetching your information: {applicantsError?.message || 'Unknown error'}</p>
+              <p>There was a problem fetching your information: {errorMessage}</p>
               <div className="mt-4">
                 <Button onClick={() => window.location.reload()}>Try Again</Button>
               </div>
@@ -146,42 +178,47 @@ function ApplicantPortal() {
     );
   }
 
-  if (authLoading || applicantsLoading) {
+  // Show loading state
+  if (authLoading || profileLoading || docsLoading || applicantsLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
         <p>Loading application data...</p>
+        <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
+          <div className="h-full bg-primary animate-pulse"></div>
+        </div>
       </div>
     );
   }
 
   // Get the applicant status badge color
+  // Function to get the class name for status badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
-        return <Badge variant="secondary">New</Badge>;
+        return 'bg-slate-200 text-slate-800';
       case 'contacted':
-        return <Badge variant="outline">Contacted</Badge>;
+        return 'bg-blue-100 text-blue-800';
       case 'interviewed':
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Interviewed</Badge>;
+        return 'bg-blue-500 text-white';
       case 'hired':
-        return <Badge className="bg-green-500 hover:bg-green-600">Hired</Badge>;
+        return 'bg-green-500 text-white';
       case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
+        return 'bg-red-500 text-white';
       default:
-        return <Badge>{status}</Badge>;
+        return 'bg-gray-200 text-gray-800';
     }
   };
 
   return (
     <div className="container mx-auto py-10 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Applicant Portal - Test Page</h1>
+        <h1 className="text-3xl font-bold">Applicant Portal</h1>
         <div>
-          <p className="text-sm mb-2">Logged in as: <strong>{user?.username}</strong> (ID: {user?.id})</p>
+          <p className="text-sm mb-2">Logged in as: <strong>{user?.username}</strong></p>
           <Button 
             variant="outline" 
-            onClick={() => window.location.href = '/api/auth/dev-logout'}
+            onClick={() => window.location.href = '/api/auth/logout'}
           >
             Logout
           </Button>
@@ -189,88 +226,166 @@ function ApplicantPortal() {
       </div>
       
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>User Information</CardTitle>
-          <CardDescription>Your account details from the database</CardDescription>
+        <CardHeader className="pb-2">
+          <CardTitle>Your Application</CardTitle>
+          <CardDescription>Details of your job application</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium">Username</p>
-                <p className="text-lg">{user?.username}</p>
+          {profile ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Name</p>
+                  <p className="text-lg">{profile.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Email</p>
+                  <p className="text-lg">{profile.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Phone</p>
+                  <p className="text-lg">{profile.phone}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Position Applied</p>
+                  <p className="text-lg">{profile.positionApplied}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <p className="text-lg">
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(profile.status)}`}>
+                      {profile.status}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Application Date</p>
+                  <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">User ID</p>
-                <p className="text-lg">{user?.id}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Name</p>
-                <p className="text-lg">{user?.firstName} {user?.lastName}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-lg">{user?.email}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Role</p>
-                <p className="text-lg">{user?.role}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Phone</p>
-                <p className="text-lg">{user?.phoneNumber || 'Not provided'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Unique Code</p>
-                <p className="text-lg">{user?.uniqueCode || 'Not available'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Created At</p>
-                <p className="text-lg">{user?.createdAt ? new Date(user.createdAt).toLocaleString() : 'Unknown'}</p>
+              
+              <div className="pt-4 border-t">
+                <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
+                {profile.extraMessage ? (
+                  <p className="text-gray-700">{profile.extraMessage}</p>
+                ) : (
+                  <p className="text-gray-400 italic">No additional message provided</p>
+                )}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Database Test: Applicants Table</CardTitle>
-          <CardDescription>Direct view of the applicants table from the database</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {applicants && applicants.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>User ID</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {applicants.map((applicant: any) => (
-                  <TableRow key={applicant.id}>
-                    <TableCell>{applicant.id}</TableCell>
-                    <TableCell>{applicant.name}</TableCell>
-                    <TableCell>{applicant.email}</TableCell>
-                    <TableCell>{applicant.phone}</TableCell>
-                    <TableCell>{applicant.positionApplied}</TableCell>
-                    <TableCell>{getStatusBadge(applicant.status)}</TableCell>
-                    <TableCell>{applicant.userId}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           ) : (
-            <p className="text-gray-500">No applicant records found in the database.</p>
+            <div className="py-4">
+              <p className="text-gray-500">Loading application details...</p>
+            </div>
           )}
         </CardContent>
       </Card>
+      
+      <Card className="mb-8">
+        <CardHeader className="pb-2">
+          <CardTitle>Documents</CardTitle>
+          <CardDescription>Documents you've submitted with your application</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {documents && Array.isArray(documents) ? (
+            documents.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Document Name</TableHead>
+                      <TableHead>Date Uploaded</TableHead>
+                      <TableHead>File Type</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc: any) => (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          <a 
+                            href={doc.documentUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {doc.documentName}
+                          </a>
+                        </TableCell>
+                        <TableCell>{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
+                        <TableCell>{doc.fileType}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-4">
+                <p className="text-gray-500">You haven't uploaded any documents yet.</p>
+              </div>
+            )
+          ) : (
+            <div className="py-4">
+              <p className="text-gray-500">Loading documents...</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Debug Information - Only visible in development */}
+      {process.env.NODE_ENV !== 'production' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Information</CardTitle>
+            <CardDescription>Application debugging data (only visible in development)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-2">User Account</h3>
+                <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
+                  {JSON.stringify(user, null, 2)}
+                </pre>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Applicants Table Data</h3>
+                {Array.isArray(applicants) && applicants.length > 0 ? (
+                  <Table className="border border-gray-200 rounded-md">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>User ID</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {applicants.map((applicant: any) => (
+                        <TableRow key={applicant.id}>
+                          <TableCell>{applicant.id}</TableCell>
+                          <TableCell>{applicant.name}</TableCell>
+                          <TableCell>{applicant.email}</TableCell>
+                          <TableCell>{applicant.positionApplied}</TableCell>
+                          <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(applicant.status)}`}>
+                            {applicant.status}
+                          </span>
+                        </TableCell>
+                          <TableCell>{applicant.userId}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-gray-500">No applicant records found in the database.</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
