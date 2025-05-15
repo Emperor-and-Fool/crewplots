@@ -155,6 +155,18 @@ export const applicants = pgTable("applicants", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Applicant Documents
+export const applicantDocuments = pgTable("applicant_documents", {
+  id: serial("id").primaryKey(),
+  applicantId: integer("applicant_id").references(() => applicants.id, { onDelete: 'cascade' }).notNull(),
+  documentName: text("document_name").notNull(),
+  documentUrl: text("document_url").notNull(),
+  fileType: text("file_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  verifiedAt: timestamp("verified_at"),
+  notes: text("notes"),
+});
+
 // Schedule Templates
 export const scheduleTemplates = pgTable("schedule_templates", {
   id: serial("id").primaryKey(),
@@ -276,6 +288,7 @@ export const insertCompetencySchema = createInsertSchema(competencies).omit({ id
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
 export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
 export const insertApplicantSchema = createInsertSchema(applicants).omit({ id: true, createdAt: true });
+export const insertApplicantDocumentSchema = createInsertSchema(applicantDocuments).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
@@ -311,6 +324,10 @@ export const registerSchema = z.object({
 });
 
 // Types
+export type User = typeof users.$inferSelect;
+export type Applicant = typeof applicants.$inferSelect;
+export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -323,6 +340,7 @@ export type InsertCompetency = z.infer<typeof insertCompetencySchema>;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type InsertStaffCompetency = z.infer<typeof insertStaffCompetencySchema>;
 export type InsertApplicant = z.infer<typeof insertApplicantSchema>;
+export type InsertApplicantDocument = z.infer<typeof insertApplicantDocumentSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;
