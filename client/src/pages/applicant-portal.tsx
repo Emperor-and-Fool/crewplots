@@ -45,16 +45,79 @@ function ApplicantPortal() {
   // Direct database check - no API needed for testing
   const { 
     data: applicants, 
-    isLoading: applicantsLoading 
+    isLoading: applicantsLoading,
+    error: applicantsError,
+    isError: isApplicantsError
   } = useQuery({
     queryKey: ['/api/applicants'],
     enabled: isAuthenticated,
+    staleTime: 60000, // 1 minute
+    retry: 2,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    gcTime: 300000 // 5 minutes
   });
+
+  // Set a timeout to prevent infinite loading
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false);
+  
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (authLoading || applicantsLoading) {
+        setLoadingTimeout(true);
+      }
+    }, 8000); // 8 seconds timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [authLoading, applicantsLoading]);
+
+  if (loadingTimeout) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div className="flex items-center">
+            <div className="text-yellow-700">
+              <p className="font-bold">Loading is taking longer than expected</p>
+              <p>This could be due to network issues or server delays. You can:</p>
+              <ul className="list-disc ml-5 mt-2">
+                <li>Wait a bit longer</li>
+                <li>Try refreshing the page</li>
+                <li>Check your internet connection</li>
+              </ul>
+              <div className="mt-4">
+                <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isApplicantsError) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+          <div className="flex items-center">
+            <div className="text-red-700">
+              <p className="font-bold">Error loading data</p>
+              <p>There was a problem fetching your information: {applicantsError?.message || 'Unknown error'}</p>
+              <div className="mt-4">
+                <Button onClick={() => window.location.reload()}>Try Again</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || applicantsLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
-        <h1 className="text-2xl font-bold mb-4">Applicant Portal - Test Page</h1>
+        <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
         <p>Loading application data...</p>
       </div>
     );
