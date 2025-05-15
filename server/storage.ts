@@ -1293,6 +1293,31 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+  
+  async getAllApplicants(): Promise<Applicant[]> {
+    try {
+      // Include all needed columns in the selection
+      const allApplicants = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants);
+      
+      return allApplicants;
+    } catch (error) {
+      console.error("Error in getAllApplicants:", error);
+      return [];
+    }
+  }
 
   async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<ApplicantDocument> {
     const [newDoc] = await db

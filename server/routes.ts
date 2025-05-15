@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test route for getting all applicants (for testing purposes)
   app.get("/api/applicants", async (req, res) => {
     try {
-      const applicants = await storage.getAllApplicants();
+      const applicants = await storage.getApplicants();
       res.json(applicants);
     } catch (error) {
       console.error("Error fetching applicants:", error);
