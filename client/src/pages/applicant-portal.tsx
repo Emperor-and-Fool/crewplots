@@ -386,8 +386,9 @@ function ApplicantPortal() {
                             variant="outline"
                             size="sm"
                             onClick={() => window.open(doc.documentUrl, '_blank')}
+                            className="flex gap-1 items-center"
                           >
-                            View
+                            <File size={16} /> View
                           </Button>
                           <Button
                             variant="destructive"
