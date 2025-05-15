@@ -27,8 +27,22 @@ interface SidebarProps {
   className?: string;
 }
 
+// Custom navigation item that works with Accordion
+const NavItem = ({ icon, label, isActive, onClick }) => (
+  <div
+    className={cn(
+      "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
+      isActive ? "bg-primary-700" : "hover:bg-primary-700"
+    )}
+    onClick={onClick}
+  >
+    {icon}
+    <span>{label}</span>
+  </div>
+);
+
 export function Sidebar({ className }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user } = useAuth();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
@@ -109,16 +123,16 @@ export function Sidebar({ className }: SidebarProps) {
         <nav className="mt-5 px-2">
           <div className="space-y-1">
             {/* Dashboard */}
-            <Link 
-              href="/dashboard" 
+            <div 
               className={cn(
-                "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                 isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
               )}
+              onClick={() => navigate("/dashboard")}
             >
               <LayoutDashboard className="h-5 w-5 mr-3" />
               Dashboard
-            </Link>
+            </div>
             
             {/* Locations - Manager only */}
             {(canAccessLocations || forceEnableAll) && (
@@ -136,20 +150,20 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link 
-                          href="/locations/create"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/locations/create")}
                         >
                           Create Location
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/locations"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/locations")}
                         >
                           Manage Locations
-                        </Link>
+                        </div>
                       </li>
                     </ul>
                   </AccordionContent>
@@ -173,28 +187,28 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link 
-                          href="/staff-management/create"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/staff-management/create")}
                         >
                           Add Staff
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/staff-management/competencies"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/staff-management/competencies")}
                         >
                           Competencies
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/staff-management"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/staff-management")}
                         >
                           Staff List
-                        </Link>
+                        </div>
                       </li>
                     </ul>
                   </AccordionContent>
@@ -218,36 +232,36 @@ export function Sidebar({ className }: SidebarProps) {
                   <AccordionContent className="pt-0 pb-1 px-2">
                     <ul className="pl-8">
                       <li>
-                        <Link 
-                          href="/scheduling/templates"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/scheduling/templates")}
                         >
                           Templates
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/scheduling/new"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/scheduling/new")}
                         >
                           Create Schedule
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/scheduling"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/scheduling")}
                         >
                           Manage Shifts
-                        </Link>
+                        </div>
                       </li>
                       <li>
-                        <Link 
-                          href="/view-calendar"
-                          className="block py-1 text-sm text-primary-200 hover:text-white"
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/view-calendar")}
                         >
                           3-Week Calendar
-                        </Link>
+                        </div>
                       </li>
                     </ul>
                   </AccordionContent>
@@ -257,56 +271,56 @@ export function Sidebar({ className }: SidebarProps) {
             
             {/* Applicants */}
             {(canAccessManagementPages || forceEnableAll) && (
-              <Link 
-                href="/applicants"
+              <div
                 className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                   isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
+                onClick={() => navigate("/applicants")}
               >
                 <UserPlus className="h-5 w-5 mr-3" />
                 Applicants
-              </Link>
+              </div>
             )}
             
             {/* Cash Management */}
             {(canAccessManagementPages || forceEnableAll) && (
-              <Link 
-                href="/cash-management"
+              <div
                 className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                   isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
+                onClick={() => navigate("/cash-management")}
               >
                 <DollarSign className="h-5 w-5 mr-3" />
                 Cash Management
-              </Link>
+              </div>
             )}
             
             {/* Knowledge Base */}
-            <Link 
-              href="/knowledge-base"
+            <div
               className={cn(
-                "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                 isActive("/knowledge-base") ? "bg-primary-700" : "hover:bg-primary-700"
               )}
+              onClick={() => navigate("/knowledge-base")}
             >
               <Book className="h-5 w-5 mr-3" />
               Knowledge Base
-            </Link>
+            </div>
             
             {/* Reports */}
-            {canAccessManagementPages && (
-              <Link 
-                href="/reports"
+            {(canAccessManagementPages || forceEnableAll) && (
+              <div
                 className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                   isActive("/reports") ? "bg-primary-700" : "hover:bg-primary-700"
                 )}
+                onClick={() => navigate("/reports")}
               >
                 <BarChart className="h-5 w-5 mr-3" />
                 Reports
-              </Link>
+              </div>
             )}
           </div>
         </nav>
