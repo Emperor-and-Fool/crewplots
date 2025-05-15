@@ -42,7 +42,39 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Direct database check - no API needed for testing
+  // Fetch applicant portal data with improved error handling
+  const { 
+    data: profile, 
+    isLoading: profileLoading,
+    error: profileError,
+    isError: isProfileError 
+  } = useQuery({
+    queryKey: ['/api/applicant-portal/my-profile'],
+    enabled: isAuthenticated && isApplicant,
+    staleTime: 60000, // 1 minute
+    retry: 2,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    gcTime: 300000 // 5 minutes
+  });
+
+  // Fetch applicant documents
+  const { 
+    data: documents, 
+    isLoading: docsLoading,
+    error: docsError,
+    isError: isDocsError 
+  } = useQuery({
+    queryKey: ['/api/applicant-portal/documents'],
+    enabled: isAuthenticated && isApplicant,
+    staleTime: 60000, // 1 minute
+    retry: 2,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    gcTime: 300000 // 5 minutes
+  });
+  
+  // Fetch all applicants for comparison (for debugging only)
   const { 
     data: applicants, 
     isLoading: applicantsLoading,
