@@ -1186,8 +1186,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
-    const [applicant] = await db.select().from(applicants).where(eq(applicants.userId, userId));
-    return applicant;
+    try {
+      // Use a specific selection of columns to avoid 'extra_message' column error
+      const [applicant] = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants).where(eq(applicants.userId, userId));
+      
+      return applicant;
+    } catch (error) {
+      console.error("Error in getApplicantByUserId:", error);
+      // Return undefined on error
+      return undefined;
+    }
   }
 
   async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any> {
@@ -1218,23 +1238,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicantDocuments(applicantId: number): Promise<any[]> {
-    const documents = await db
-      .select()
-      .from({
-        table: "applicant_documents"
-      })
-      .where(eq({ column: "applicant_id", table: "applicant_documents" }, applicantId));
-    
-    return documents.map(doc => ({
-      id: doc.id,
-      applicantId: doc.applicant_id,
-      documentName: doc.document_name, 
-      documentUrl: doc.document_url,
-      fileType: doc.file_type,
-      uploadedAt: doc.uploaded_at,
-      verifiedAt: doc.verified_at,
-      notes: doc.notes
-    }));
+    try {
+      const documents = await db
+        .select()
+        .from({
+          table: "applicant_documents"
+        })
+        .where(eq({ column: "applicant_id", table: "applicant_documents" }, applicantId));
+      
+      return documents.map(doc => ({
+        id: doc.id,
+        applicantId: doc.applicant_id,
+        documentName: doc.document_name, 
+        documentUrl: doc.document_url,
+        fileType: doc.file_type,
+        uploadedAt: doc.uploaded_at,
+        verifiedAt: doc.verified_at,
+        notes: doc.notes
+      }));
+    } catch (error) {
+      console.error("Error in getApplicantDocuments:", error);
+      return [];
+    }
   }
 
   async getApplicantDocument(id: number): Promise<any | undefined> {
