@@ -232,7 +232,16 @@ function ApplicantPortal() {
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-8">Applicant Portal</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Applicant Portal</h1>
+        <Button 
+          variant="outline" 
+          onClick={() => window.location.href = '/api/logout'}
+          className="flex items-center gap-2"
+        >
+          Logout
+        </Button>
+      </div>
       
       <div className="grid gap-6 md:grid-cols-2">
         {/* Profile Information */}
