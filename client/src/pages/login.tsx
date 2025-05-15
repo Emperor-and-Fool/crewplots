@@ -175,6 +175,28 @@ export default function Login() {
               <div className="mt-2 text-xs text-center text-gray-500">
                 This will automatically log you in with admin credentials for development purposes.
               </div>
+              
+              <div className="mt-4 border-t pt-4">
+                <h3 className="font-medium text-center mb-2">Direct Login Form (Debug)</h3>
+                <form
+                  action="/api/auth/login"
+                  method="post"
+                  className="space-y-2"
+                  encType="application/x-www-form-urlencoded"
+                >
+                  <div>
+                    <label className="text-xs text-gray-700">Username</label>
+                    <Input name="username" defaultValue="admin" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-700">Password</label>
+                    <Input name="password" type="password" defaultValue="adminpass123" />
+                  </div>
+                  <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                    Direct Form Submit (Debug)
+                  </Button>
+                </form>
+              </div>
             </div>
           </CardFooter>
         </Card>

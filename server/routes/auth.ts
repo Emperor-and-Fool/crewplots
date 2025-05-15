@@ -98,11 +98,24 @@ router.post('/login', async (req, res, next) => {
         console.log('Login attempt - body:', JSON.stringify(req.body, (k, v) => k === 'password' ? '******' : v));
         console.log('Login attempt - session ID:', req.sessionID || 'none');
         console.log('Login attempt - cookies:', req.cookies ? 'present' : 'none');
+        console.log('Login attempt - content type:', req.get('Content-Type') || 'none');
         
-        // Parse and validate the login data
-        const data = loginSchema.parse(req.body);
-        const identifier = data.username;
-        const password = data.password;
+        // Handle both form submissions and JSON
+        let username, password;
+        
+        if (req.body && typeof req.body === 'object') {
+            username = req.body.username;
+            password = req.body.password;
+        } else {
+            return res.status(400).json({ message: 'Invalid request format' });
+        }
+        
+        if (!username || !password) {
+            return res.status(400).json({ message: 'Username and password are required' });
+        }
+        
+        console.log(`Login attempt with username: ${username}, password: ******`);
+        const identifier = username;
         
         // For email login, we'll handle the lookup ourselves and then pass to Passport
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');

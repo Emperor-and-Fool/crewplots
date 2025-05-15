@@ -3,8 +3,29 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Debug middleware for request bodies
+app.use((req, res, next) => {
+  if (req.path.includes('login')) {
+    console.log('DEBUG Request headers:', JSON.stringify(req.headers, null, 2));
+  }
+  next();
+});
+
+// Body parsing middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
+
+// Debug middleware for parsed request body
+app.use((req, res, next) => {
+  if (req.path.includes('login')) {
+    console.log('DEBUG Request body after parsing:', req.body);
+    console.log('DEBUG Request cookies:', req.cookies);
+    console.log('DEBUG Content-Type:', req.get('Content-Type'));
+    console.log('DEBUG Request method:', req.method);
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
