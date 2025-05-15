@@ -42,9 +42,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: process.env.NODE_ENV === 'production', // Only secure in production
+        secure: false, // Allow non-HTTPS for development environments
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none', // Allow cross-domain cookies (needed for Replit environment)
         path: '/'
       },
       store: new PgStore({
@@ -54,9 +54,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ttl: 86400000 // 24 hours - same as cookie maxAge
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: false, // Don't save session if unmodified
-      saveUninitialized: false, // Don't create session until something stored
-      name: 'connect.sid', // Using default name for better compatibility
+      resave: true, // Force session save on each request to ensure cross-frame compatibility
+      saveUninitialized: true, // Create session for tracking before user logs in
+      name: 'crewplots.sid', // Custom name to avoid conflicts
+      rolling: true, // Force cookies to be set on every response
     })
   );
 

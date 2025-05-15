@@ -266,19 +266,28 @@ router.get('/user', authenticateUser, (req, res) => {
 // Enhanced /me endpoint that uses Passport's isAuthenticated
 router.get('/me', async (req, res) => {
     try {
+        // Enable CORS for all origins in development
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+        
         console.log('Session data:', req.session);
         console.log('Session ID:', req.sessionID || 'none');
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
         
-        // Set debug cookie to verify cookie functionality
+        // Set debug cookie for testing - use SameSite=None for cross-domain cookies
         res.cookie('debug-auth-check', 'was-checked', { 
             maxAge: 3600000, 
             httpOnly: true,
-            sameSite: 'lax'
+            sameSite: 'none',
+            secure: false // Important: Allow insecure cookies in development
         });
         
-        // Use Passport's isAuthenticated() method
+        // Force cookie to be visible in response
+        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=None; Max-Age=3600`);
+        
+        // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
             console.log('Not authenticated according to Passport');
             return res.status(200).json({ 
@@ -288,7 +297,8 @@ router.get('/me', async (req, res) => {
                     sessionId: req.sessionID || 'none',
                     hasCookies: !!(req.cookies && req.cookies['connect.sid']),
                     hasAnyHeaders: !!req.headers,
-                    hasAnyCookies: !!(req.cookies && Object.keys(req.cookies).length > 0)
+                    hasAnyCookies: !!(req.cookies && Object.keys(req.cookies).length > 0),
+                    cookieHeader: req.headers.cookie || 'none'
                 }
             });
         }

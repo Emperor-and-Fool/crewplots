@@ -36,16 +36,30 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
   // Direct server-side authentication check that bypasses the React state issues
   React.useEffect(() => {
     const checkServerAuth = async () => {
+      // Create an AbortController for the timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       try {
-        console.log("Checking server-side authentication directly");
+        console.log("Checking server-side authentication directly in App");
         const response = await fetch('/api/auth/me', {
           credentials: 'include',
-          cache: 'no-store' // Prevent caching
+          cache: 'no-store', // Prevent caching
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
         });
+        
+        // Clear the timeout since the request completed
+        clearTimeout(timeoutId);
+        
+        console.log("Auth response status:", response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log("Server auth check response:", data);
+          console.log("Server auth check response (App):", data);
           
           setServerAuthState({
             loading: false,
@@ -53,11 +67,20 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
             user: data.user || null
           });
           
-          // If server says we're authenticated but React state doesn't know it yet,
-          // this will help update the React state for future checks
-          if (data.authenticated && !user) {
-            console.log("Server says authenticated but React state doesn't know it - forcing page refresh");
-            // window.location.reload();
+          if (data.authenticated) {
+            console.log("User data:", data);
+            
+            // If authenticated but React context doesn't have it
+            if (!user) {
+              console.log("User authenticated:", data.user.username);
+            }
+            
+            // Check if user is applicant
+            if (data.user && data.user.role === 'applicant') {
+              console.log("User is applicant, redirecting to applicant portal");
+            }
+          } else {
+            console.log("Not authenticated or no user data found");
           }
         } else {
           console.error("Server auth check failed with status:", response.status);
@@ -67,8 +90,15 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
             user: null
           });
         }
-      } catch (error) {
-        console.error("Error checking server auth:", error);
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        if (error?.name === 'AbortError') {
+          console.error("Authentication request timed out after 5 seconds");
+        } else {
+          console.error("Error checking server auth:", error);
+        }
+        
         setServerAuthState({
           loading: false,
           authenticated: false,

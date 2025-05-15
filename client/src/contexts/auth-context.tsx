@@ -30,17 +30,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       console.log("Checking authentication status...");
+      
+      // Set up timeout to avoid infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       try {
         // Add cache-busting parameter to prevent browser caching
         const cacheBuster = new Date().getTime();
         const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
           credentials: "include",
+          signal: controller.signal,
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
           }
         });
+        
+        // Clear the timeout since the request completed
+        clearTimeout(timeoutId);
 
         console.log("Auth response status:", response.status);
         
@@ -65,8 +74,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Clear any cached queries that might depend on authentication
           queryClient.clear();
         }
-      } catch (error) {
-        console.error("Error checking authentication status:", error);
+      } catch (error: any) {
+        // Clear the timeout if there was an error
+        clearTimeout(timeoutId);
+        
+        if (error?.name === 'AbortError') {
+          console.error("Authentication request timed out after 5 seconds");
+        } else {
+          console.error("Error checking authentication status:", error);
+        }
+        
         setUser(null);
         // Clear any cached queries that might depend on authentication
         queryClient.clear();
