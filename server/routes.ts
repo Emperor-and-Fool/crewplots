@@ -42,9 +42,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: false, // Allow non-HTTPS for development environments
+        secure: true, // We're on HTTPS in Replit
         httpOnly: true,
-        sameSite: 'none', // Allow cross-domain cookies (needed for Replit environment)
+        sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
       store: new PgStore({
