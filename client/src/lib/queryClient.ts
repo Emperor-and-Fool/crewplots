@@ -90,8 +90,11 @@ export const queryClient = new QueryClient({
       }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: 1, // One retry with exponential backoff
+      // Set staleTime to 2 minutes instead of Infinity to allow for periodic refreshes
+      // that will prevent session timeouts but won't constantly refresh
+      staleTime: 120000, // 2 minutes
+      gcTime: 3600000, // 1 hour
+      retry: 2, // Retry twice with exponential backoff
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
     mutations: {

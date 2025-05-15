@@ -118,9 +118,24 @@ function ApplicantPortal() {
     gcTime: 300000 // 5 minutes
   });
 
-  // Set up more sophisticated timeout handling
+  // Set up more sophisticated timeout and keep-alive handling
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   const [timeoutReason, setTimeoutReason] = React.useState<string>('');
+  
+  // Create a keep-alive refresh mechanism to prevent stale data
+  React.useEffect(() => {
+    // Only set up keep-alive if we have data already
+    if (profile && documents) {
+      // Set up a periodic refresh every 30 seconds to keep the session fresh
+      const keepAliveInterval = setInterval(() => {
+        // Silent refresh without showing loading states
+        refetchProfile();
+        refetchDocs();
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(keepAliveInterval);
+    }
+  }, [profile, documents, refetchProfile, refetchDocs]);
   
   // Function to retry all queries
   const handleRetry = () => {
@@ -128,7 +143,7 @@ function ApplicantPortal() {
     setLoadingTimeout(false);
     setTimeoutReason('');
     
-    // Refetch data
+    // Refetch data with force refresh
     refetchProfile();
     refetchDocs();
     
@@ -144,7 +159,28 @@ function ApplicantPortal() {
       duration: 3000,
     });
   };
+
+  // Improved auto-retry mechanism that will retry loading if data is missing
+  React.useEffect(() => {
+    let retryTimeoutId: NodeJS.Timeout | null = null;
+    
+    // If we have auth but no profile data yet, try to auto-retry once after delay
+    if (!loadingTimeout && isAuthenticated && isApplicant && 
+        !profileLoading && !docsLoading && (!profile || !documents)) {
+      retryTimeoutId = setTimeout(() => {
+        console.log("Auto-retrying data fetch because data is missing");
+        refetchProfile();
+        refetchDocs();
+      }, 1500); // 1.5 second delay before auto-retry
+    }
+    
+    return () => {
+      if (retryTimeoutId) clearTimeout(retryTimeoutId);
+    };
+  }, [isAuthenticated, isApplicant, profile, documents, 
+      profileLoading, docsLoading, loadingTimeout, refetchProfile, refetchDocs]);
   
+  // Set up timeout detection for loading states
   React.useEffect(() => {
     // Set different timeouts for different loading states
     let timeoutId: NodeJS.Timeout | null = null;
@@ -153,17 +189,17 @@ function ApplicantPortal() {
       timeoutId = setTimeout(() => {
         setLoadingTimeout(true);
         setTimeoutReason('Authentication is taking longer than expected. This could be due to session issues.');
-      }, 7000); // 7 seconds for auth timeout
+      }, 10000); // 10 seconds for auth timeout - extended from 7s
     } else if (profileLoading) {
       timeoutId = setTimeout(() => {
         setLoadingTimeout(true);
         setTimeoutReason('Loading your profile data is taking longer than expected. This may be due to database connectivity issues.');
-      }, 7000); // 7 seconds for profile timeout
+      }, 10000); // 10 seconds for profile timeout - extended from 7s
     } else if (docsLoading) {
       timeoutId = setTimeout(() => {
         setLoadingTimeout(true);
         setTimeoutReason('Loading your documents is taking longer than expected. This may be due to server performance issues.');
-      }, 7000); // 7 seconds for docs timeout
+      }, 10000); // 10 seconds for docs timeout - extended from 7s
     }
     
     return () => {
@@ -171,7 +207,7 @@ function ApplicantPortal() {
         clearTimeout(timeoutId);
       }
     };
-  }, [authLoading, profileLoading, docsLoading, applicantsLoading]);
+  }, [authLoading, profileLoading, docsLoading]);
 
   // Log all errors and data for debugging
   React.useEffect(() => {
