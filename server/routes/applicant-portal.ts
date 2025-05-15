@@ -63,16 +63,30 @@ const isApplicant = async (req: any, res: any, next: any) => {
 // Get applicant data for the logged-in user
 router.get('/my-profile', isApplicant, async (req: any, res) => {
   try {
+    console.log('Fetching applicant profile for user ID:', req.user.id);
+    console.log('User details:', req.user);
+    
     const applicant = await storage.getApplicantByUserId(req.user.id);
     
+    console.log('Applicant record found:', applicant || 'None found');
+    
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
+      console.log('Applicant not found, returning 404');
+      return res.status(404).json({ 
+        error: 'Applicant profile not found',
+        userId: req.user.id,
+        debug: 'If you recently created this user, there might be a mismatch between the user ID and applicant record.'
+      });
     }
     
+    console.log('Returning applicant data');
     res.json(applicant);
   } catch (error) {
     console.error('Error fetching applicant profile:', error);
-    res.status(500).json({ error: 'Failed to fetch applicant profile' });
+    res.status(500).json({ 
+      error: 'Failed to fetch applicant profile', 
+      message: error.message || 'Unknown error' 
+    });
   }
 });
 
@@ -152,17 +166,31 @@ router.post('/documents', isApplicant, upload.single('document'), async (req: an
 // Get documents for the logged-in applicant
 router.get('/documents', isApplicant, async (req: any, res) => {
   try {
+    console.log('Fetching documents for user ID:', req.user.id);
+    
     const applicant = await storage.getApplicantByUserId(req.user.id);
     
+    console.log('Applicant found for documents endpoint:', applicant || 'None found');
+    
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
+      console.log('Applicant not found, returning 404 for documents');
+      return res.status(404).json({ 
+        error: 'Applicant profile not found',
+        userId: req.user.id
+      });
     }
     
+    console.log('Getting documents for applicant ID:', applicant.id);
     const documents = await storage.getApplicantDocuments(applicant.id);
+    console.log('Retrieved documents:', documents);
+    
     res.json(documents);
   } catch (error) {
     console.error('Error fetching applicant documents:', error);
-    res.status(500).json({ error: 'Failed to fetch documents' });
+    res.status(500).json({ 
+      error: 'Failed to fetch documents',
+      message: error.message || 'Unknown error' 
+    });
   }
 });
 
