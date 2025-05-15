@@ -102,14 +102,36 @@ router.post('/login', async (req, res) => {
         // Parse and validate the login data
         const data = loginSchema.parse(req.body);
         
-        // Find user by username
-        const user = await storage.getUserByUsername(data.username);
-        if (!user) {
-            console.log('Login failed - user not found:', data.username);
-            return res.status(401).json({ message: 'Invalid username or password' });
+        // First, check if input contains @ - if so, treat as email
+        let user;
+        const identifier = data.username;
+        
+        console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
+        
+        // Try to find user by username or email
+        if (identifier.includes('@')) {
+            console.log('Attempting to find user by email:', identifier);
+            user = await storage.getUserByEmail(identifier);
+        } else {
+            console.log('Attempting to find user by username:', identifier);
+            user = await storage.getUserByUsername(identifier);
         }
         
-        console.log('User found:', user.username, 'with ID:', user.id);
+        // If no user found, try the other lookup method as fallback
+        if (!user && !identifier.includes('@')) {
+            console.log('Username lookup failed, trying as email:', identifier);
+            user = await storage.getUserByEmail(identifier);
+        } else if (!user && identifier.includes('@')) {
+            console.log('Email lookup failed, trying as username:', identifier);
+            user = await storage.getUserByUsername(identifier);
+        }
+        
+        if (!user) {
+            console.log('Login failed - user not found with identifier:', identifier);
+            return res.status(401).json({ message: 'Invalid username/email or password' });
+        }
+        
+        console.log('User found:', user.username, 'with ID:', user.id, 'Email:', user.email);
         
         // Special case for admin user during development
         if (data.username === 'admin' && data.password === 'adminpass123') {
