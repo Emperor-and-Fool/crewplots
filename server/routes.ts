@@ -34,11 +34,15 @@ const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
+  // Setup session middleware
+  app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
+  
+  // Configure session middleware
   app.use(
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: false, // Must be false for non-HTTPS development environments
+        secure: process.env.NODE_ENV === 'production', // Only secure in production
         httpOnly: true,
         sameSite: 'lax',
         path: '/'
@@ -46,12 +50,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new PgStore({
         pool: pool,
         tableName: 'sessions',
-        createTableIfMissing: false,
+        createTableIfMissing: true, // Auto-create the table
         ttl: 86400000 // 24 hours - same as cookie maxAge
       }),
-      resave: true, // Changed to true to ensure session is saved back to store
-      saveUninitialized: true, // Changed to true to create session by default
-      secret: process.env.SESSION_SECRET || "shiftpro-random-key-" + Math.random().toString(36).substring(2, 15),
+      secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
+      resave: false, // Don't save session if unmodified
+      saveUninitialized: false, // Don't create session until something stored
       name: 'connect.sid', // Using default name for better compatibility
     })
   );
@@ -89,19 +93,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Serialize and deserialize user for session
+  // This tells Passport.js how to store the user in the session
   passport.serializeUser((user: any, done) => {
-    console.log("Serializing user:", user.id);
-    done(null, user.id);
+    console.log("Serializing user with ID:", user.id, "Type:", typeof user.id);
+    
+    // In Express session, store both the user ID and a flag to indicate the user is logged in
+    // This simplifies our auth check logic
+    done(null, { 
+      id: user.id,
+      loggedIn: true
+    });
   });
 
-  passport.deserializeUser(async (id: number, done) => {
+  // This tells Passport.js how to retrieve the user from the session
+  passport.deserializeUser(async (sessionData: { id: number, loggedIn: boolean }, done) => {
     try {
-      console.log("Deserializing user:", id);
-      const user = await storage.getUser(id);
-      if (!user) {
-        console.log("User not found during deserialization");
+      console.log("Deserializing session data:", sessionData);
+      
+      // If we don't have both id and loggedIn flag, authentication fails
+      if (!sessionData || !sessionData.id || !sessionData.loggedIn) {
+        console.log("Invalid session data during deserialization");
         return done(null, false);
       }
+      
+      // Look up the user by ID
+      const user = await storage.getUser(sessionData.id);
+      if (!user) {
+        console.log("User not found during deserialization, ID:", sessionData.id);
+        return done(null, false);
+      }
+      
       console.log("User deserialized successfully:", user.username);
       done(null, user);
     } catch (err) {

@@ -19,32 +19,33 @@ declare module 'express-session' {
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        console.log("Auth middleware - Session data:", req.session);
+        console.log("Auth middleware - Checking authentication");
+        console.log("Auth middleware - isAuthenticated:", req.isAuthenticated());
+        console.log("Auth middleware - Session:", req.session);
+        console.log("Auth middleware - User:", req.user ? `Found: ${req.user.username}` : 'None');
         
-        // Check both userId and loggedIn flag
-        if (!req.session.userId || req.session.loggedIn !== true) {
-            console.log("Session missing userId or loggedIn flag");
+        // When using passport, we can simply use isAuthenticated() method
+        if (!req.isAuthenticated()) {
+            console.log("Not authenticated with Passport");
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
 
-        console.log("Looking up user with ID:", req.session.userId);
-        const user = await storage.getUser(req.session.userId);
-        
-        if (!user) {
-            console.log("User not found in database for ID:", req.session.userId);
-            req.session.destroy((err) => {
+        // Passport already attaches the user to req.user
+        // We just need to verify it's valid
+        if (!req.user || !req.user.id) {
+            console.log("Invalid user object in session");
+            req.logout((err) => {
                 if (err) {
-                    console.error("Error destroying session:", err);
+                    console.error("Error logging out:", err);
                 }
             });
             res.status(401).json({ message: "Invalid session - Please log in again" });
             return;
         }
 
-        console.log("User authenticated:", user.username);
-        // Attach the user to the request
-        req.user = user;
+        console.log("User authenticated successfully:", req.user.username);
+        // User is already attached to the request by Passport
         next();
     } catch (error) {
         console.error("Authentication error:", error);

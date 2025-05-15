@@ -92,23 +92,68 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// Enhanced login endpoint using Passport.js
+router.post('/login', async (req, res, next) => {
     try {
         console.log('Login attempt - body:', JSON.stringify(req.body, (k, v) => k === 'password' ? '******' : v));
-        console.log('Login attempt - session ID:', req.sessionID);
-        console.log('Login attempt - cookies:', req.cookies);
+        console.log('Login attempt - session ID:', req.sessionID || 'none');
+        console.log('Login attempt - cookies:', req.cookies ? 'present' : 'none');
         
         // Parse and validate the login data
         const data = loginSchema.parse(req.body);
-        
-        // First, check if input contains @ - if so, treat as email
-        let user;
         const identifier = data.username;
+        const password = data.password;
         
+        // For email login, we'll handle the lookup ourselves and then pass to Passport
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
-        // Try to find user by username or email
+        // Special case for admin development login
+        if (identifier === 'admin' && password === 'adminpass123') {
+            console.log('Admin login detected using development credentials');
+            
+            // Look up the admin user first
+            const adminUser = await storage.getUserByUsername('admin');
+            if (!adminUser) {
+                console.log('Admin user not found, cannot proceed with admin login');
+                return res.status(401).json({ message: 'Invalid credentials' });
+            }
+            
+            // Manually log in the admin user using Passport's login method
+            req.login(adminUser, { session: true }, (err) => {
+                if (err) {
+                    console.error('Admin login error:', err);
+                    return res.status(500).json({ message: 'Error during login process' });
+                }
+                
+                console.log('Admin login successful, session established with ID:', req.sessionID);
+                
+                // Set a debug cookie to test cookie functionality
+                res.cookie('admin-login', new Date().toISOString(), { 
+                    maxAge: 86400000,
+                    httpOnly: true,
+                    sameSite: 'lax'
+                });
+                
+                // Return success with user data (excluding password)
+                const { password, ...userWithoutPassword } = adminUser;
+                return res.status(200).json({
+                    message: 'Login successful',
+                    user: userWithoutPassword,
+                    debug: {
+                        adminBypass: true,
+                        sessionId: req.sessionID,
+                        timestamp: new Date().toISOString()
+                    }
+                });
+            });
+            
+            return; // End execution here for admin login
+        }
+        
+        // For email login or username login, we need to find the correct user first
+        let user = null;
+        
+        // First attempt - check if this is an email login
         if (identifier.includes('@')) {
             console.log('Attempting to find user by email:', identifier);
             user = await storage.getUserByEmail(identifier);
@@ -117,104 +162,54 @@ router.post('/login', async (req, res) => {
             user = await storage.getUserByUsername(identifier);
         }
         
-        // If no user found, try the other lookup method as fallback
+        // Fallback attempt - try the other lookup method
         if (!user && !identifier.includes('@')) {
-            console.log('Username lookup failed, trying as email:', identifier);
+            console.log('Username lookup failed, trying as email fallback:', identifier);
             user = await storage.getUserByEmail(identifier);
         } else if (!user && identifier.includes('@')) {
-            console.log('Email lookup failed, trying as username:', identifier);
+            console.log('Email lookup failed, trying as username fallback:', identifier);
             user = await storage.getUserByUsername(identifier);
         }
         
         if (!user) {
-            console.log('Login failed - user not found with identifier:', identifier);
+            console.log('User not found with any identifier method:', identifier);
             return res.status(401).json({ message: 'Invalid username/email or password' });
         }
         
-        console.log('User found:', user.username, 'with ID:', user.id, 'Email:', user.email);
+        console.log('User found:', user.username, 'with ID:', user.id);
         
-        // Special case for admin user during development
-        if (data.username === 'admin' && data.password === 'adminpass123') {
-            console.log('Admin login detected, using development credentials');
-            
-            // Set session data with both userId and loggedIn flag
-            req.session.userId = user.id;
-            req.session.loggedIn = true;
-            console.log('Admin login successful, session data set, session ID:', req.sessionID);
-            
-            // Explicitly save session to force persistence
-            return new Promise<void>((resolve, reject) => {
-                req.session.save((err) => {
-                    if (err) {
-                        console.error('Error saving admin session:', err);
-                        reject(err);
-                        return res.status(500).json({ message: 'Error saving session' });
-                    } else {
-                        console.log('Session saved successfully for admin user, session ID:', req.sessionID);
-                        
-                        // Remove password from response
-                        const { password, ...userWithoutPassword } = user;
-                        
-                        res.status(200).json({
-                            message: 'Login successful',
-                            user: userWithoutPassword,
-                            sessionId: req.sessionID,
-                            debug: {
-                                sessionSaved: true,
-                                timestamp: new Date().toISOString()
-                            }
-                        });
-                        resolve();
-                    }
-                });
-            });
-        }
-        
-        // Verify password for normal users
-        console.log('Verifying password for standard user:', user.username);
-        const isMatch = await bcrypt.compare(data.password, user.password);
+        // Now we need to verify the password
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.log('Login failed - password mismatch for user:', user.username);
-            return res.status(401).json({ message: 'Invalid username or password' });
+            console.log('Password verification failed for user:', user.username);
+            return res.status(401).json({ message: 'Invalid username/email or password' });
         }
         
-        console.log('Password verified for user:', user.username);
-        
-        // Set session - save both userId and loggedIn flag
-        req.session.userId = user.id;
-        req.session.loggedIn = true;
-        console.log('User login successful, session data set, session ID:', req.sessionID);
-        
-        // Explicitly save session to force persistence
-        return new Promise<void>((resolve, reject) => {
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Error saving session:', err);
-                    reject(err);
-                    return res.status(500).json({ message: 'Error saving session' });
-                } else {
-                    console.log('Session saved successfully for user:', user.username, 'session ID:', req.sessionID);
-                    
-                    // Set a regular cookie to test cookie functionality
-                    res.cookie('login-timestamp', new Date().toISOString(), { 
-                        maxAge: 86400000,
-                        httpOnly: true,
-                        sameSite: 'lax'
-                    });
-                    
-                    // Remove password from response
-                    const { password, ...userWithoutPassword } = user;
-                    
-                    res.status(200).json({
-                        message: 'Login successful',
-                        user: userWithoutPassword,
-                        sessionId: req.sessionID,
-                        debug: {
-                            sessionSaved: true,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                    resolve();
+        // If we get here, credentials are correct - use Passport to log in
+        req.login(user, { session: true }, (err) => {
+            if (err) {
+                console.error('Login error:', err);
+                return res.status(500).json({ message: 'Error during login process' });
+            }
+            
+            console.log('Passport login successful for user:', user.username);
+            console.log('Session established with ID:', req.sessionID);
+            
+            // Set a regular cookie for debugging
+            res.cookie('login-timestamp', new Date().toISOString(), { 
+                maxAge: 86400000,
+                httpOnly: true,
+                sameSite: 'lax'
+            });
+            
+            // Return success with user data (excluding password)
+            const { password, ...userWithoutPassword } = user;
+            return res.status(200).json({
+                message: 'Login successful',
+                user: userWithoutPassword,
+                debug: {
+                    sessionId: req.sessionID,
+                    timestamp: new Date().toISOString()
                 }
             });
         });
@@ -249,29 +244,24 @@ router.get('/user', authenticateUser, (req, res) => {
     }
 });
 
-// Get current user - session check endpoint
+// Enhanced /me endpoint that uses Passport's isAuthenticated
 router.get('/me', async (req, res) => {
     try {
         console.log('Session data:', req.session);
         console.log('Session ID:', req.sessionID || 'none');
-        // Safe access to cookies
-        console.log('Cookies:', req.cookies ? JSON.stringify(req.cookies) : 'no cookies');
-        // Log only essential headers to avoid clutter
-        console.log('Headers present:', !!req.headers);
-        console.log('Cookie header:', req.headers?.cookie || 'none');
+        console.log('Is authenticated (Passport):', req.isAuthenticated());
+        console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
         
-        const userId = req.session?.userId;
-        const loggedIn = req.session?.loggedIn;
-        console.log('Get /me - userId from session:', userId, 'loggedIn:', loggedIn);
+        // Set debug cookie to verify cookie functionality
+        res.cookie('debug-auth-check', 'was-checked', { 
+            maxAge: 3600000, 
+            httpOnly: true,
+            sameSite: 'lax'
+        });
         
-        if (!userId || loggedIn !== true) {
-            console.log('No user ID or loggedIn flag in session');
-            // Set debug cookie to see if cookies are being maintained
-            res.cookie('debug-auth-check', 'was-checked', { 
-                maxAge: 3600000, 
-                httpOnly: true,
-                sameSite: 'lax'
-            });
+        // Use Passport's isAuthenticated() method
+        if (!req.isAuthenticated()) {
+            console.log('Not authenticated according to Passport');
             return res.status(200).json({ 
                 authenticated: false,
                 debug: {
@@ -284,19 +274,17 @@ router.get('/me', async (req, res) => {
             });
         }
         
-        console.log('Looking up user with ID:', userId);
-        const user = await storage.getUser(userId);
-        console.log('Get /me - found user:', user ? 'yes' : 'no');
-        
-        if (!user) {
-            console.log('User not found in database');
+        // At this point, req.user should have the user data
+        if (!req.user) {
+            console.log('Missing user object despite being authenticated');
             return res.status(200).json({ 
                 authenticated: false,
-                reason: 'user_not_found'
+                reason: 'user_object_missing'
             });
         }
         
-        // Remove password from response
+        // Remove sensitive data before returning the user
+        const user = req.user as any; // Type assertion needed for password property
         const { password, ...userWithoutPassword } = user;
         
         console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
@@ -313,7 +301,8 @@ router.get('/me', async (req, res) => {
             error: {
                 message: 'Error checking authentication status',
                 hasSession: !!req.session,
-                sessionID: req.sessionID || 'none'
+                sessionID: req.sessionID || 'none',
+                isPassportInitialized: !!req.isAuthenticated
             } 
         });
     }
