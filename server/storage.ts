@@ -1150,20 +1150,99 @@ export class DatabaseStorage implements IStorage {
 
   // Applicants
   async getApplicant(id: number): Promise<Applicant | undefined> {
-    const [applicant] = await db.select().from(applicants).where(eq(applicants.id, id));
-    return applicant;
+    try {
+      // Select specific columns to avoid extraMessage issues
+      const [applicant] = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants).where(eq(applicants.id, id));
+      
+      return applicant;
+    } catch (error) {
+      console.error("Error in getApplicant:", error);
+      return undefined;
+    }
   }
 
   async getApplicants(): Promise<Applicant[]> {
-    return await db.select().from(applicants);
+    try {
+      // Select specific columns to avoid extraMessage issues
+      const result = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants);
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getApplicants:", error);
+      return [];
+    }
   }
 
   async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
-    return await db.select().from(applicants).where(eq(applicants.locationId, locationId));
+    try {
+      // Select specific columns to avoid extraMessage issues
+      const result = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants).where(eq(applicants.locationId, locationId));
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getApplicantsByLocation:", error);
+      return [];
+    }
   }
 
   async getApplicantsByStatus(status: string): Promise<Applicant[]> {
-    return await db.select().from(applicants).where(eq(applicants.status, status));
+    try {
+      // Select specific columns to avoid extraMessage issues
+      const result = await db.select({
+        id: applicants.id,
+        name: applicants.name,
+        email: applicants.email,
+        phone: applicants.phone,
+        positionApplied: applicants.positionApplied,
+        status: applicants.status,
+        resumeUrl: applicants.resumeUrl,
+        notes: applicants.notes,
+        userId: applicants.userId,
+        locationId: applicants.locationId,
+        createdAt: applicants.createdAt
+      }).from(applicants).where(eq(applicants.status, status));
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getApplicantsByStatus:", error);
+      return [];
+    }
   }
 
   async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
@@ -1263,32 +1342,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicantDocument(id: number): Promise<any | undefined> {
-    const [document] = await db
-      .select()
-      .from({
-        table: "applicant_documents"
-      })
-      .where(eq({ column: "id", table: "applicant_documents" }, id));
-    
-    if (!document) return undefined;
-    
-    return {
-      id: document.id,
-      applicantId: document.applicant_id,
-      documentName: document.document_name,
-      documentUrl: document.document_url,
-      fileType: document.file_type,
-      uploadedAt: document.uploaded_at,
-      verifiedAt: document.verified_at,
-      notes: document.notes
-    };
+    try {
+      const [document] = await db
+        .select()
+        .from({
+          table: "applicant_documents"
+        })
+        .where(eq({ column: "id", table: "applicant_documents" }, id));
+      
+      if (!document) return undefined;
+      
+      return {
+        id: document.id,
+        applicantId: document.applicant_id,
+        documentName: document.document_name,
+        documentUrl: document.document_url,
+        fileType: document.file_type,
+        uploadedAt: document.uploaded_at,
+        verifiedAt: document.verified_at,
+        notes: document.notes
+      };
+    } catch (error) {
+      console.error("Error in getApplicantDocument:", error);
+      return undefined;
+    }
   }
 
   async deleteApplicantDocument(id: number): Promise<boolean> {
-    await db.delete({
-      table: "applicant_documents"
-    }).where(eq({ column: "id", table: "applicant_documents" }, id));
-    return true;
+    try {
+      await db.delete({
+        table: "applicant_documents"
+      }).where(eq({ column: "id", table: "applicant_documents" }, id));
+      return true;
+    } catch (error) {
+      console.error("Error in deleteApplicantDocument:", error);
+      return false;
+    }
   }
 
   // Schedule Templates
