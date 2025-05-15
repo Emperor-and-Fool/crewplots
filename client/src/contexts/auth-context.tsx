@@ -159,20 +159,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Logout function
+  // Logout function with better error handling
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      await apiRequest("POST", "/api/auth/logout", {});
-      setUser(null);
       
-      // Clear all query caches
-      queryClient.clear();
-      
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
+      // Use fetch directly with appropriate error handling
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
       });
+      
+      if (response.ok) {
+        setUser(null);
+        
+        // Clear all query caches
+        queryClient.clear();
+        
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out",
+        });
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 500);
+      } else {
+        console.error("Logout failed with status:", response.status);
+        toast({
+          title: "Logout failed",
+          description: "An error occurred during logout. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Logout error:", error);
       toast({

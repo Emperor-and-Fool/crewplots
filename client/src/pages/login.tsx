@@ -100,11 +100,21 @@ export default function Login() {
           description: `Welcome back, ${result.user?.name || data.username}!`,
         });
         
-        // Refresh the auth context state before redirecting
-        await checkAuth();
-        
-        // Navigate to dashboard
-        window.location.href = '/dashboard';
+        // Navigate to dashboard using a simpler approach that doesn't cause race conditions
+        try {
+          // Show a message to the user before redirecting
+          toast({
+            title: "Redirecting...",
+            description: "Taking you to the dashboard",
+          });
+          
+          // Use setTimeout to allow the toast to display
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
+        } catch (e) {
+          console.error("Redirect error:", e);
+        }
       } else {
         console.log("Login failed with status:", response.status);
         
