@@ -1,13 +1,13 @@
 import {
-  users, locations, competencies, staff, staffCompetencies, applicants,
+  users, locations, competencies, staff, staffCompetencies, applicants, applicantDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
-  type Applicant, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
+  type Applicant, type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
   type Shift, type CashCount, type KbCategory, type KbArticle, 
   type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
-  type InsertStaffCompetency, type InsertApplicant, type InsertScheduleTemplate,
+  type InsertStaffCompetency, type InsertApplicant, type InsertApplicantDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
   type InsertCashCount, type InsertKbCategory, type InsertKbArticle,
   type InsertUploadedFile, type InsertDocumentAttachment
@@ -1294,31 +1294,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any> {
+  async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<ApplicantDocument> {
     const [newDoc] = await db
-      .insert({
-        table: "applicant_documents",
-        values: {
-          applicant_id: document.applicantId,
-          document_name: document.documentName,
-          document_url: document.documentUrl,
-          file_type: document.fileType || null,
-          uploaded_at: new Date()
-        },
-        returning: true
+      .insert(applicantDocuments)
+      .values({
+        applicantId: document.applicantId,
+        documentName: document.documentName,
+        documentUrl: document.documentUrl,
+        fileType: document.fileType || null,
+        uploadedAt: new Date(),
       })
-      .values();
+      .returning();
     
-    return {
-      id: newDoc.id,
-      applicantId: newDoc.applicant_id,
-      documentName: newDoc.document_name,
-      documentUrl: newDoc.document_url,
-      fileType: newDoc.file_type,
-      uploadedAt: newDoc.uploaded_at,
-      verifiedAt: newDoc.verified_at,
-      notes: newDoc.notes
-    };
+    return newDoc;
   }
 
   async getApplicantDocuments(applicantId: number): Promise<any[]> {

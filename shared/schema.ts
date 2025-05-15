@@ -323,9 +323,7 @@ export const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// Types
-export type User = typeof users.$inferSelect;
-export type Applicant = typeof applicants.$inferSelect;
+// Types for drizzle tables
 export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
