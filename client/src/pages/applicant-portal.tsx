@@ -447,9 +447,9 @@ function ApplicantPortal() {
                           >
                             <Trash size={16} />
                           </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
