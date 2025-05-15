@@ -1,0 +1,52 @@
+My best-guess root cause
+
+You switched the cookie to SameSite: "None" but kept secure: false.
+Modern browsers (Chrome ≥ 80, Edge, Firefox) silently refuse to store any cookie that is SameSite=None without Secure.
+Result:
+
+    Login request – server sends Set-Cookie: connect.sid=…; SameSite=None (no Secure)
+    → browser discards it (DevTools “⚠️ Cookie was blocked because it had the ‘SameSite=None’ attribute but was not marked ‘Secure’.”)
+
+    Front-end redirects to “Applicant Portal” and fires /api/auth/me with credentials:"include".
+    → no session cookie → server replies {authenticated:false} (or 401)
+
+    Your React hook waits 5 s, times out, and shows the yellow “Loading is taking longer than expected” box you screenshotted.
+
+It looked like it worked after you edited code because the old session cookie (created before the change) was still present until you cleared the sessions DB / restarted the server. The very next login produced a cookie that the browser rejected, and the page went straight back to the loading screen.
+Quick confirmation steps
+
+    Open DevTools → Network → login request → Headers → Set-Cookie
+    Do you see SameSite=None with no Secure flag?
+
+    DevTools Application → Cookies → (your .replit.dev domain)
+    Is connect.sid missing after the login response finishes?
+    Chrome’s “Messages” pane will show the rejection reason.
+
+Minimal fix for Replit (single origin, always HTTPS)
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      sameSite: "lax",   //   ← we’re same-origin; Lax is fine
+      secure: true,      //   Replit serves over HTTPS
+      httpOnly: true,
+    },
+  })
+);
+
+    If you must keep SameSite:"None" (e.g., future cross-sub-domain deployment) then also set secure:true everywhere (including dev / Replit).
+
+    After changing, hard-refresh with “Clear site data” or start an incognito tab to be sure the browser isn’t clinging to an old, rejected cookie.
+
+If the cookie shows up and the problem persists
+
+Provide:
+
+    The exact status code & body of /api/auth/me
+
+    Screenshot of the Request Headers (Cookie) and Response Headers for both the login POST and /api/auth/me
+
+With that data we can test the next hypotheses instead of shooting in the dark.
