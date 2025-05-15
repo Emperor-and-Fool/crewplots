@@ -8,7 +8,7 @@ import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
 import { ApplicantsSummary } from "@/components/dashboard/applicants-summary";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import { 
   Users, 
   Calendar, 
@@ -17,11 +17,62 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [selectedLocation, setSelectedLocation] = useState<number>(0);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isClearing, setIsClearing] = useState(false);
+  
+  // Function to clear all sessions (admin only)
+  const clearAllSessions = async () => {
+    if (!user || user.role !== 'administrator') {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can clear sessions",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (confirm("Are you sure you want to clear ALL sessions? This will log out all users.")) {
+      setIsClearing(true);
+      try {
+        const response = await fetch('/api/auth/clear-sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          toast({
+            title: "Success",
+            description: "All sessions have been cleared",
+            variant: "default"
+          });
+        } else {
+          throw new Error(data.message || 'Failed to clear sessions');
+        }
+      } catch (error) {
+        console.error('Error clearing sessions:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : 'Failed to clear sessions',
+          variant: "destructive"
+        });
+      } finally {
+        setIsClearing(false);
+      }
+    }
+  };
 
   // Fetch statistics data
   const { data: staffStats } = useQuery({
@@ -97,6 +148,17 @@ export default function Dashboard() {
                   <PlusCircle className="h-4 w-4 mr-2" />
                   New Shift
                 </Button>
+                {user?.role === 'administrator' && (
+                  <Button 
+                    variant="destructive" 
+                    className="ml-3"
+                    onClick={clearAllSessions}
+                    disabled={isClearing}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {isClearing ? "Clearing..." : "Clear Sessions"}
+                  </Button>
+                )}
               </div>
             </div>
 

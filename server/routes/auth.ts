@@ -396,7 +396,7 @@ router.get('/logout', logoutHandler);
 // Admin route to clear all sessions from the database
 router.post('/clear-sessions', authenticateUser, async (req: Request, res: Response) => {
     // Only allow admins to clear sessions
-    if (!req.user || req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== 'administrator') {
         return res.status(403).json({ message: 'Only administrators can clear sessions' });
     }
     
