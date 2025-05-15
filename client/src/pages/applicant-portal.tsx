@@ -67,36 +67,98 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Fetch applicant portal data with improved error handling
+  // Fetch applicant portal data with improved error handling and timeout
   const { 
     data: profile, 
     isLoading: profileLoading,
     error: profileError,
-    isError: isProfileError 
+    isError: isProfileError,
+    refetch: refetchProfile 
   } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
     staleTime: 60000, // 1 minute
-    retry: 2,
-    retryDelay: 1000,
+    retry: 1, // Only retry once to prevent long delays
+    retryDelay: 2000,
     refetchOnWindowFocus: false,
-    gcTime: 300000 // 5 minutes
+    gcTime: 300000, // 5 minutes
+    // Individual query settings to override defaults in queryClient
+    queryFn: async ({ queryKey }) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      try {
+        const res = await fetch(queryKey[0] as string, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          const text = (await res.text()) || res.statusText;
+          throw new Error(`${res.status}: ${text}`);
+        }
+        
+        return await res.json();
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        // Customize timeout message
+        if (error.name === 'AbortError') {
+          throw new Error('Profile data request timed out. The server is taking too long to respond.');
+        }
+        
+        throw error;
+      }
+    }
   });
 
-  // Fetch applicant documents
+  // Fetch applicant documents with improved timeout handling
   const { 
     data: documents, 
     isLoading: docsLoading,
     error: docsError,
-    isError: isDocsError 
+    isError: isDocsError,
+    refetch: refetchDocs 
   } = useQuery<ApplicantDocument[]>({
     queryKey: ['/api/applicant-portal/documents'],
     enabled: isAuthenticated && isApplicant,
     staleTime: 60000, // 1 minute
-    retry: 2,
-    retryDelay: 1000,
+    retry: 1, // Only retry once
+    retryDelay: 2000,
     refetchOnWindowFocus: false,
-    gcTime: 300000 // 5 minutes
+    gcTime: 300000, // 5 minutes
+    // Individual query settings to override defaults in queryClient
+    queryFn: async ({ queryKey }) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+      
+      try {
+        const res = await fetch(queryKey[0] as string, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          const text = (await res.text()) || res.statusText;
+          throw new Error(`${res.status}: ${text}`);
+        }
+        
+        return await res.json();
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        // Customize timeout message
+        if (error.name === 'AbortError') {
+          throw new Error('Documents request timed out. The server is taking too long to respond.');
+        }
+        
+        throw error;
+      }
+    }
   });
   
   // Fetch all applicants for comparison (for debugging only)
@@ -104,28 +166,71 @@ function ApplicantPortal() {
     data: applicants, 
     isLoading: applicantsLoading,
     error: applicantsError,
-    isError: isApplicantsError
+    isError: isApplicantsError,
+    refetch: refetchApplicants
   } = useQuery<ApplicantProfile[]>({
     queryKey: ['/api/applicants'],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && process.env.NODE_ENV !== 'production', // Only fetch in development
     staleTime: 60000, // 1 minute
-    retry: 2,
-    retryDelay: 1000,
+    retry: 1, // Only retry once
+    retryDelay: 2000,
     refetchOnWindowFocus: false,
     gcTime: 300000 // 5 minutes
   });
 
-  // Set a timeout to prevent infinite loading
+  // Set up more sophisticated timeout handling
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
+  const [timeoutReason, setTimeoutReason] = React.useState<string>('');
+  
+  // Function to retry all queries
+  const handleRetry = () => {
+    // Reset timeout state
+    setLoadingTimeout(false);
+    setTimeoutReason('');
+    
+    // Refetch data
+    refetchProfile();
+    refetchDocs();
+    
+    // Only refetch debug data in development
+    if (process.env.NODE_ENV !== 'production') {
+      refetchApplicants?.();
+    }
+    
+    // Show toast to indicate retry
+    toast({
+      title: "Retrying",
+      description: "Attempting to load your data again...",
+      duration: 3000,
+    });
+  };
   
   React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (authLoading || profileLoading || docsLoading || applicantsLoading) {
-        setLoadingTimeout(true);
-      }
-    }, 8000); // 8 seconds timeout
+    // Set different timeouts for different loading states
+    let timeoutId: NodeJS.Timeout | null = null;
     
-    return () => clearTimeout(timeoutId);
+    if (authLoading) {
+      timeoutId = setTimeout(() => {
+        setLoadingTimeout(true);
+        setTimeoutReason('Authentication is taking longer than expected. This could be due to session issues.');
+      }, 7000); // 7 seconds for auth timeout
+    } else if (profileLoading) {
+      timeoutId = setTimeout(() => {
+        setLoadingTimeout(true);
+        setTimeoutReason('Loading your profile data is taking longer than expected. This may be due to database connectivity issues.');
+      }, 7000); // 7 seconds for profile timeout
+    } else if (docsLoading) {
+      timeoutId = setTimeout(() => {
+        setLoadingTimeout(true);
+        setTimeoutReason('Loading your documents is taking longer than expected. This may be due to server performance issues.');
+      }, 7000); // 7 seconds for docs timeout
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [authLoading, profileLoading, docsLoading, applicantsLoading]);
 
   // Log all errors and data for debugging
@@ -156,23 +261,52 @@ function ApplicantPortal() {
     profileError, docsError, applicantsError
   ]);
   
-  // Timeout reached - show user-friendly message
+  // Timeout reached - show user-friendly message with specific reason
   if (loadingTimeout) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex items-center">
+          <div className="flex flex-col">
             <div className="text-yellow-700">
-              <p className="font-bold">Loading is taking longer than expected</p>
-              <p>This could be due to network issues or server delays. You can:</p>
+              <p className="font-bold text-lg">Loading is taking longer than expected</p>
+              
+              {timeoutReason ? (
+                <p className="mt-2">{timeoutReason}</p>
+              ) : (
+                <p className="mt-2">This could be due to network issues or server delays.</p>
+              )}
+              
+              <p className="mt-4 font-medium">You can try:</p>
               <ul className="list-disc ml-5 mt-2">
                 <li>Wait a bit longer</li>
-                <li>Try refreshing the page</li>
+                <li>Try refreshing your data</li>
                 <li>Check your internet connection</li>
+                <li>Log out and log back in if the issue persists</li>
               </ul>
-              <div className="mt-4">
-                <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+              
+              <div className="mt-6 space-x-3">
+                <Button 
+                  onClick={handleRetry}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  Retry Loading Data
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/api/auth/logout'}
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  Logout
+                </Button>
               </div>
             </div>
           </div>
