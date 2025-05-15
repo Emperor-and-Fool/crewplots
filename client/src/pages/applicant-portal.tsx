@@ -67,7 +67,7 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Fetch applicant portal data with improved error handling and timeout
+  // Fetch applicant portal data - simplified to use the default queryFn from QueryClient
   const { 
     data: profile, 
     isLoading: profileLoading,
@@ -82,39 +82,9 @@ function ApplicantPortal() {
     retryDelay: 2000,
     refetchOnWindowFocus: false,
     gcTime: 300000, // 5 minutes
-    // Individual query settings to override defaults in queryClient
-    queryFn: async ({ queryKey }) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      try {
-        const res = await fetch(queryKey[0] as string, {
-          credentials: "include",
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!res.ok) {
-          const text = (await res.text()) || res.statusText;
-          throw new Error(`${res.status}: ${text}`);
-        }
-        
-        return await res.json();
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        // Customize timeout message
-        if (error.name === 'AbortError') {
-          throw new Error('Profile data request timed out. The server is taking too long to respond.');
-        }
-        
-        throw error;
-      }
-    }
   });
 
-  // Fetch applicant documents with improved timeout handling
+  // Fetch applicant documents - simplified to use the default queryFn from QueryClient
   const { 
     data: documents, 
     isLoading: docsLoading,
@@ -129,36 +99,6 @@ function ApplicantPortal() {
     retryDelay: 2000,
     refetchOnWindowFocus: false,
     gcTime: 300000, // 5 minutes
-    // Individual query settings to override defaults in queryClient
-    queryFn: async ({ queryKey }) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-      
-      try {
-        const res = await fetch(queryKey[0] as string, {
-          credentials: "include",
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!res.ok) {
-          const text = (await res.text()) || res.statusText;
-          throw new Error(`${res.status}: ${text}`);
-        }
-        
-        return await res.json();
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        // Customize timeout message
-        if (error.name === 'AbortError') {
-          throw new Error('Documents request timed out. The server is taking too long to respond.');
-        }
-        
-        throw error;
-      }
-    }
   });
   
   // Fetch all applicants for comparison (for debugging only)
@@ -337,14 +277,21 @@ function ApplicantPortal() {
     );
   }
 
-  // Show loading state
-  if (authLoading || profileLoading || docsLoading || applicantsLoading) {
+  // Show loading state for React Query operations, but not for auth anymore
+  // This prevents race conditions where auth state is ready but profile/docs are not
+  if (profileLoading || docsLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
         <p>Loading application data...</p>
         <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
           <div className="h-full bg-primary animate-pulse"></div>
+        </div>
+        {/* Debug info */}
+        <div className="mt-8 text-xs text-gray-500">
+          <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+          <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
+          <p>Documents Loading: {docsLoading ? 'Yes' : 'No'}</p>
         </div>
       </div>
     );
