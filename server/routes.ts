@@ -142,6 +142,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const registerUrl = `${baseUrl}/register?source=qrcode`;
     res.json({ url: registerUrl });
   });
+  
+  // Test route for getting all applicants (for testing purposes)
+  app.get("/api/applicants", async (req, res) => {
+    try {
+      const applicants = await storage.getAllApplicants();
+      res.json(applicants);
+    } catch (error) {
+      console.error("Error fetching applicants:", error);
+      res.status(500).json({ error: "Failed to fetch applicants" });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);
