@@ -65,9 +65,14 @@ export interface IStorage {
   getApplicants(): Promise<Applicant[]>;
   getApplicantsByLocation(locationId: number): Promise<Applicant[]>;
   getApplicantsByStatus(status: string): Promise<Applicant[]>;
+  getApplicantByUserId(userId: number): Promise<Applicant | undefined>;
   createApplicant(applicant: InsertApplicant): Promise<Applicant>;
   updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined>;
   deleteApplicant(id: number): Promise<boolean>;
+  createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any>;
+  getApplicantDocuments(applicantId: number): Promise<any[]>;
+  getApplicantDocument(id: number): Promise<any | undefined>;
+  deleteApplicantDocument(id: number): Promise<boolean>;
 
   // Schedule Templates
   getScheduleTemplate(id: number): Promise<ScheduleTemplate | undefined>;
@@ -165,6 +170,7 @@ export class MemStorage implements IStorage {
   private kbArticles: Map<number, KbArticle>;
   private uploadedFiles: Map<number, UploadedFile>;
   private documentAttachments: Map<number, DocumentAttachment>;
+  private _applicantDocuments: Map<number, any>;
 
   private currentUserId: number;
   private currentLocationId: number;
@@ -198,6 +204,7 @@ export class MemStorage implements IStorage {
     this.kbArticles = new Map();
     this.uploadedFiles = new Map();
     this.documentAttachments = new Map();
+    this._applicantDocuments = new Map();
 
     this.currentUserId = 1;
     this.currentLocationId = 1;
@@ -490,6 +497,56 @@ export class MemStorage implements IStorage {
 
   async deleteApplicant(id: number): Promise<boolean> {
     return this.applicants.delete(id);
+  }
+
+  async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
+    return Array.from(this.applicants.values()).find(applicant => applicant.userId === userId);
+  }
+
+  async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any> {
+    const newDocument = {
+      id: this.currentDocumentAttachmentId++,
+      applicantId: document.applicantId,
+      documentName: document.documentName,
+      documentUrl: document.documentUrl,
+      fileType: document.fileType || null,
+      uploadedAt: new Date(),
+      verifiedAt: null,
+      notes: null
+    };
+    
+    // For in-memory storage, we'll use a Map to store the documents
+    if (!this._applicantDocuments) {
+      this._applicantDocuments = new Map();
+    }
+    
+    this._applicantDocuments.set(newDocument.id, newDocument);
+    return newDocument;
+  }
+
+  async getApplicantDocuments(applicantId: number): Promise<any[]> {
+    if (!this._applicantDocuments) {
+      return [];
+    }
+    
+    return Array.from(this._applicantDocuments.values())
+      .filter(doc => doc.applicantId === applicantId);
+  }
+
+  async getApplicantDocument(id: number): Promise<any | undefined> {
+    if (!this._applicantDocuments) {
+      return undefined;
+    }
+    
+    return this._applicantDocuments.get(id);
+  }
+
+  async deleteApplicantDocument(id: number): Promise<boolean> {
+    if (!this._applicantDocuments) {
+      return false;
+    }
+    
+    return this._applicantDocuments.delete(id);
   }
 
   // Schedule Templates
@@ -1125,6 +1182,87 @@ export class DatabaseStorage implements IStorage {
 
   async deleteApplicant(id: number): Promise<boolean> {
     await db.delete(applicants).where(eq(applicants.id, id));
+    return true;
+  }
+
+  async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
+    const [applicant] = await db.select().from(applicants).where(eq(applicants.userId, userId));
+    return applicant;
+  }
+
+  async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any> {
+    const [newDoc] = await db
+      .insert({
+        table: "applicant_documents",
+        values: {
+          applicant_id: document.applicantId,
+          document_name: document.documentName,
+          document_url: document.documentUrl,
+          file_type: document.fileType || null,
+          uploaded_at: new Date()
+        },
+        returning: true
+      })
+      .values();
+    
+    return {
+      id: newDoc.id,
+      applicantId: newDoc.applicant_id,
+      documentName: newDoc.document_name,
+      documentUrl: newDoc.document_url,
+      fileType: newDoc.file_type,
+      uploadedAt: newDoc.uploaded_at,
+      verifiedAt: newDoc.verified_at,
+      notes: newDoc.notes
+    };
+  }
+
+  async getApplicantDocuments(applicantId: number): Promise<any[]> {
+    const documents = await db
+      .select()
+      .from({
+        table: "applicant_documents"
+      })
+      .where(eq({ column: "applicant_id", table: "applicant_documents" }, applicantId));
+    
+    return documents.map(doc => ({
+      id: doc.id,
+      applicantId: doc.applicant_id,
+      documentName: doc.document_name, 
+      documentUrl: doc.document_url,
+      fileType: doc.file_type,
+      uploadedAt: doc.uploaded_at,
+      verifiedAt: doc.verified_at,
+      notes: doc.notes
+    }));
+  }
+
+  async getApplicantDocument(id: number): Promise<any | undefined> {
+    const [document] = await db
+      .select()
+      .from({
+        table: "applicant_documents"
+      })
+      .where(eq({ column: "id", table: "applicant_documents" }, id));
+    
+    if (!document) return undefined;
+    
+    return {
+      id: document.id,
+      applicantId: document.applicant_id,
+      documentName: document.document_name,
+      documentUrl: document.document_url,
+      fileType: document.file_type,
+      uploadedAt: document.uploaded_at,
+      verifiedAt: document.verified_at,
+      notes: document.notes
+    };
+  }
+
+  async deleteApplicantDocument(id: number): Promise<boolean> {
+    await db.delete({
+      table: "applicant_documents"
+    }).where(eq({ column: "id", table: "applicant_documents" }, id));
     return true;
   }
 
