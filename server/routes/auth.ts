@@ -361,6 +361,8 @@ const logoutHandler = (req, res) => {
             res.clearCookie('login-timestamp');
             res.clearCookie('debug-auth-check');
             res.clearCookie('admin-login');
+            res.clearCookie('crewplots.sid');
+            res.clearCookie('connect.sid-refreshed');
             
             // Clear additional cookies that might exist
             const cookieNames = Object.keys(req.cookies || {});
@@ -390,6 +392,37 @@ const logoutHandler = (req, res) => {
 // Support both POST and GET for logout
 router.post('/logout', logoutHandler);
 router.get('/logout', logoutHandler);
+
+// Admin route to clear all sessions from the database
+router.post('/clear-sessions', authenticateUser, async (req: Request, res: Response) => {
+    // Only allow admins to clear sessions
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only administrators can clear sessions' });
+    }
+    
+    try {
+        console.log('Admin is clearing all sessions from the database');
+        
+        // Use the database connection from the pool
+        const { db } = require('../db');
+        
+        // Truncate the sessions table
+        await db.query('TRUNCATE TABLE sessions');
+        
+        console.log('All sessions cleared successfully');
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: 'All sessions cleared from the database'
+        });
+    } catch (error) {
+        console.error('Error clearing sessions:', error);
+        return res.status(500).json({ 
+            message: 'Failed to clear sessions', 
+            error: String(error)
+        });
+    }
+});
 
 // Development direct HTML logout with Passport
 router.get('/dev-logout', (req, res) => {
