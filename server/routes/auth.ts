@@ -585,4 +585,38 @@ router.get('/dev-login', async (req, res) => {
     }
 });
 
+// Clear all sessions (admin only) - for development and testing
+router.get('/clear-all-sessions', async (req, res) => {
+    try {
+        // Import sessions table from shared/schema.ts
+        const { sessions } = require('@shared/schema');
+        const { db } = require('../db');
+        
+        // Delete all sessions from the database
+        await db.delete(sessions);
+        
+        console.log('All sessions cleared successfully');
+        
+        // Clear all cookies in the current response
+        const cookies = req.headers.cookie?.split(';') || [];
+        cookies.forEach(cookie => {
+            const cookieName = cookie.split('=')[0]?.trim();
+            if (cookieName) {
+                res.clearCookie(cookieName);
+            }
+        });
+        
+        return res.status(200).json({ 
+            message: 'All sessions cleared successfully',
+            redirectUrl: '/login'
+        });
+    } catch (error) {
+        console.error('Error clearing sessions:', error);
+        return res.status(500).json({ 
+            message: 'Failed to clear sessions', 
+            error: error instanceof Error ? error.message : String(error)
+        });
+    }
+});
+
 export default router;
