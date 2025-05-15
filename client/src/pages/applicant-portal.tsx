@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { ExternalLink, File, Trash } from 'lucide-react';
 
 // Define types for API responses
 type ApplicantProfile = {
@@ -19,14 +17,6 @@ type ApplicantProfile = {
   extraMessage: string | null;
   userId: number | null;
   locationId: number | null;
-  createdAt: string;
-};
-
-type Document = {
-  id: number;
-  name: string;
-  fileUrl: string;
-  applicantId: number;
   createdAt: string;
 };
 
@@ -56,9 +46,6 @@ import {
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
-  const [message, setMessage] = useState('');
-  const [docName, setDocName] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [requestTimeoutId, setRequestTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [isSessionHanging, setIsSessionHanging] = useState(false);
   const [, navigate] = useLocation();
@@ -147,150 +134,6 @@ function ApplicantPortal() {
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
   });
-
-  // Fetch applicant documents
-  const { 
-    data: documents, 
-    isLoading: docsLoading, 
-    error: docsError 
-  } = useQuery<Document[]>({
-    queryKey: ['/api/applicant-portal/documents'],
-    enabled: isAuthenticated && isApplicant,
-  });
-
-  // Update message mutation
-  const updateMessage = useMutation({
-    mutationFn: async (messageText: string) => {
-      // Custom fetch with proper headers for JSON
-      const response = await fetch('/api/applicant-portal/message', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message: messageText }),
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update message');
-      }
-      
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Message Updated",
-        description: "Your message has been saved successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/my-profile'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update message. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Upload document mutation
-  const uploadDocument = useMutation({
-    mutationFn: async (formData: FormData) => {
-      // Custom fetch instead of apiRequest for FormData
-      const response = await fetch('/api/applicant-portal/documents', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload document');
-      }
-      
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Document Uploaded",
-        description: "Your document has been uploaded successfully.",
-      });
-      setDocName('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/documents'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload document. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Delete document mutation
-  const deleteDocument = useMutation({
-    mutationFn: async (id: number) => {
-      // Custom fetch instead of apiRequest
-      const response = await fetch(`/api/applicant-portal/documents/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete document');
-      }
-      
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Document Deleted",
-        description: "Your document has been deleted successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/documents'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete document. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Handle message submission
-  const handleMessageSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      updateMessage.mutate(message);
-    }
-  };
-
-  // Handle document upload
-  const handleDocumentUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const file = fileInputRef.current?.files?.[0];
-    
-    if (!file) {
-      toast({
-        title: "Error",
-        description: "Please select a file to upload.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const name = docName.trim() || file.name;
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('documentName', name);
-    
-    uploadDocument.mutate(formData);
-  };
 
   if (authLoading || profileLoading) {
     return (

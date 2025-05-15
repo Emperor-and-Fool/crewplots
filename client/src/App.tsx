@@ -12,7 +12,7 @@ import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
-import ApplicantPortal from "@/pages/applicant-portal";
+import ApplicantPortal from "@/pages/applicant-portal-new";
 import CashManagement from "@/pages/cash-management";
 import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
