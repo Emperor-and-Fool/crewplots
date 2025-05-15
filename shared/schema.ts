@@ -301,8 +301,8 @@ export const registerSchema = z.object({
     .max(100, "Password must be less than 100 characters"),
   confirmPassword: z.string()
     .min(1, "Please confirm your password"),
-  countryCode: z.string().min(1, "Country code is required"),
-  phone: z.string().min(1, "Phone number is required"),
+  phoneNumber: z.string().min(1, "Phone number is required")
+    .regex(/^\+\d{1,4}\s\d{5,12}$/, "Phone number must be in format +xx xxxxxxx"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
