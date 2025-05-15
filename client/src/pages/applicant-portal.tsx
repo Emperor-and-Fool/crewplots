@@ -410,57 +410,47 @@ function ApplicantPortal() {
               <p>Loading documents...</p>
             ) : docsError ? (
               <p className="text-red-500">Error loading documents.</p>
-            ) : documents && Array.isArray(documents) && documents.length > 0 ? (
+            ) : documents && documents.length > 0 ? (
               <Table>
                 <TableCaption>Your uploaded documents</TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Document Name</TableHead>
                     <TableHead>Uploaded Date</TableHead>
-                    <TableHead>Verification</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {documents.map((doc: any) => {
-                    return doc ? (
-                      <TableRow key={doc.id}>
-                        <TableCell className="font-medium">{doc.documentName}</TableCell>
-                        <TableCell>{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          {doc.verified_at ? (
-                            <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
-                          ) : (
-                            <Badge variant="outline">Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(doc.documentUrl, '_blank')}
-                              className="flex gap-1 items-center"
-                            >
-                              <File size={16} /> View
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this document?')) {
-                                  deleteDocument.mutate(doc.id);
-                                }
-                              }}
-                              disabled={deleteDocument.isPending}
-                            >
-                              <Trash size={16} />
-                            </Button>
+                  {documents.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">{doc.name}</TableCell>
+                      <TableCell>{new Date(doc.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(doc.fileUrl, '_blank')}
+                            className="flex gap-1 items-center"
+                          >
+                            <File size={16} /> View
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this document?')) {
+                                deleteDocument.mutate(doc.id);
+                              }
+                            }}
+                            disabled={deleteDocument.isPending}
+                          >
+                            <Trash size={16} />
+                          </Button>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : null;
-                  })}
+                  ))}
                 </TableBody>
               </Table>
             ) : (
