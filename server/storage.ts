@@ -1277,7 +1277,6 @@ export class DatabaseStorage implements IStorage {
         name: applicants.name,
         email: applicants.email,
         phone: applicants.phone,
-        positionApplied: applicants.positionApplied,
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
