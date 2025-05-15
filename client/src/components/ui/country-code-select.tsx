@@ -26,7 +26,7 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
   const [filteredCountries, setFilteredCountries] = useState(countryCodes);
   const [selectedCountry, setSelectedCountry] = useState<CountryCode | null>(null);
   const [phoneValue, setPhoneValue] = useState("");
-  const phoneFieldName = "phone"; // The actual phone number field name
+  const [countryCodeValue, setCountryCodeValue] = useState("+31"); // Default to Netherlands
 
   // Filter countries based on search query
   useEffect(() => {
@@ -47,23 +47,39 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
   useEffect(() => {
     const defaultCountry = countryCodes.find(country => country.code === "NL");
     if (defaultCountry) {
-      if (!form.getValues(name)) {
-        form.setValue(name, defaultCountry.dialCode);
-      }
+      setCountryCodeValue(defaultCountry.dialCode);
       setSelectedCountry(defaultCountry);
+    }
+  }, []);
+
+  // Get existing phone number if it exists
+  useEffect(() => {
+    const currentPhoneNumber = form.getValues(name);
+    if (currentPhoneNumber) {
+      // Parse the existing phone number format: +xx xxxxxxx
+      const parts = currentPhoneNumber.split(' ');
+      if (parts.length === 2) {
+        // Extract country code from the formatted number
+        const extractedCountryCode = parts[0];
+        const country = countryCodes.find(c => c.dialCode === extractedCountryCode);
+        if (country) {
+          setSelectedCountry(country);
+          setCountryCodeValue(extractedCountryCode);
+        }
+        // Extract the phone part
+        setPhoneValue(parts[1]);
+      }
     }
   }, [form, name]);
 
-  // Get selected country based on form value
+  // Update the form value when either country code or phone changes
   useEffect(() => {
-    const countryCode = form.getValues(name);
-    if (countryCode) {
-      const country = countryCodes.find(c => c.dialCode === countryCode);
-      if (country) {
-        setSelectedCountry(country);
-      }
+    if (selectedCountry && phoneValue) {
+      // Format: +xx xxxxxxx
+      const formattedPhoneNumber = `${countryCodeValue} ${phoneValue}`;
+      form.setValue(name, formattedPhoneNumber);
     }
-  }, [form, name]);
+  }, [countryCodeValue, phoneValue, form, name, selectedCountry]);
 
   // Handle phone input change
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,28 +93,30 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
     }
     
     setPhoneValue(sanitized);
-    form.setValue(phoneFieldName, sanitized);
+  };
+
+  // Handle country code selection
+  const handleCountryCodeChange = (value: string) => {
+    setCountryCodeValue(value);
+    const country = countryCodes.find(c => c.dialCode === value);
+    if (country) {
+      setSelectedCountry(country);
+    }
   };
 
   return (
-    <FormItem className="space-y-2">
-      {label && <FormLabel>{label}{required && <span className="text-red-500 ml-1">*</span>}</FormLabel>}
-      <div className="flex">
-        <FormField
-          control={form.control}
-          name={name}
-          render={({ field }) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="space-y-2">
+          {label && <FormLabel>{label}{required && <span className="text-red-500 ml-1">*</span>}</FormLabel>}
+          <div className="flex">
             <div className="relative flex items-center w-full">
               <div className="absolute left-0 top-0 bottom-0 flex items-center">
                 <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    const country = countryCodes.find(c => c.dialCode === value);
-                    if (country) {
-                      setSelectedCountry(country);
-                    }
-                  }}
+                  value={countryCodeValue}
+                  onValueChange={handleCountryCodeChange}
                 >
                   <SelectTrigger className="h-10 border-0 !bg-transparent w-[100px] pl-3 pr-0 focus:ring-0">
                     <div className="flex items-center space-x-1 text-xs font-medium">
@@ -134,27 +152,21 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
                 </Select>
               </div>
 
-              <FormField
-                control={form.control}
-                name={phoneFieldName}
-                render={({ field }) => (
-                  <FormControl>
-                    <Input
-                      placeholder="612345678"
-                      className="pl-[90px] h-10"
-                      value={phoneValue}
-                      onChange={handlePhoneChange}
-                      onBlur={field.onBlur}
-                      type="tel"
-                    />
-                  </FormControl>
-                )}
-              />
+              <FormControl>
+                <Input
+                  placeholder="612345678"
+                  className="pl-[90px] h-10"
+                  value={phoneValue}
+                  onChange={handlePhoneChange}
+                  onBlur={field.onBlur}
+                  type="tel"
+                />
+              </FormControl>
             </div>
-          )}
-        />
-      </div>
-      <FormMessage />
-    </FormItem>
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }

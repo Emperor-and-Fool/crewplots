@@ -1,10 +1,27 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
-import { insertUserSchema, loginSchema, registerSchema } from '@shared/schema';
+import { insertUserSchema, loginSchema, registerSchema, User } from '@shared/schema';
 import { ZodError } from 'zod';
 import bcrypt from 'bcryptjs';
 import { fromZodError } from 'zod-validation-error';
 import { authenticateUser } from '../middleware/auth';
+
+// Extend express-session types
+declare module 'express-session' {
+    interface SessionData {
+        userId?: number;
+        loggedIn?: boolean;
+    }
+}
+
+// Extend express Request type
+declare global {
+    namespace Express {
+        interface Request {
+            user?: User;
+        }
+    }
+}
 
 const router = express.Router();
 
@@ -39,19 +56,6 @@ router.post('/register', async (req, res) => {
             return `${baseCode}${randomChars}`;
         };
 
-        // Format phone with country code in the required format: +xx xxxxxxx
-        const formatPhoneNumber = (countryCode: string, phone: string) => {
-            // Remove any leading zeros from the phone number
-            const cleanedPhone = phone.replace(/^0+/, '');
-            // Remove any non-digit characters from country code and ensure it starts with +
-            const cleanedCountryCode = countryCode.replace(/[^0-9+]/g, '');
-            const formattedCountryCode = cleanedCountryCode.startsWith('+') 
-                ? cleanedCountryCode 
-                : `+${cleanedCountryCode}`;
-            
-            return `${formattedCountryCode} ${cleanedPhone}`;
-        };
-
         // Create user with hashed password
         const user = await storage.createUser({
             ...userDataWithoutConfirm,
@@ -60,8 +64,8 @@ router.post('/register', async (req, res) => {
             password: hashedPassword,
             role: 'applicant', // Set all new registrations as applicants
             locationId: null, // Will be assigned by manager later
-            // Store combined phone number in the required format
-            phoneNumber: formatPhoneNumber(data.countryCode, data.phone),
+            // Phone number is already in the required format: +xx xxxxxxx
+            phoneNumber: data.phoneNumber,
             // Generate unique code
             uniqueCode: generateUniqueCode()
         });

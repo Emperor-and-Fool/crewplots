@@ -55,8 +55,7 @@ export default function Register() {
       username: "",
       password: "",
       confirmPassword: "",
-      phone: "",
-      countryCode: "+31", // Default to Netherlands
+      phoneNumber: "", // Combined phone number field in format +xx xxxxxxx
     },
   });
 
@@ -251,7 +250,7 @@ export default function Register() {
                 <div className="space-y-4">
                   <CountryCodeSelect 
                     form={form}
-                    name="countryCode"
+                    name="phoneNumber"
                     label="Phone Number"
                     required={true}
                   />
