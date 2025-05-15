@@ -64,23 +64,26 @@ export default function Login() {
     }
   };
   
-  // Form submission handler using direct fetch approach
+  // Form submission handler using URLSearchParams for reliable form data submission
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
     console.log("Login form submitted with username:", data.username);
     
     try {
-      console.log("Attempting login directly...");
+      console.log("Attempting login with URLSearchParams...");
       
-      // Use the FormData API to ensure proper form submission
-      const formData = new FormData();
-      formData.append('username', data.username);
-      formData.append('password', data.password);
+      // Use URLSearchParams instead of FormData
+      const urlencoded = new URLSearchParams();
+      urlencoded.append('username', data.username);
+      urlencoded.append('password', data.password);
       
-      // Manual fetch implementation
+      // Manual fetch implementation with proper content type
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: urlencoded.toString(),
         credentials: 'include', // Important for cookies
       });
       
@@ -91,7 +94,16 @@ export default function Login() {
         const result = await response.json();
         console.log("Login successful, result:", result);
         
-        // Refresh the auth state
+        // Show success message
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${result.user?.name || data.username}!`,
+        });
+        
+        // Refresh the auth context state before redirecting
+        await checkAuth();
+        
+        // Navigate to dashboard
         window.location.href = '/dashboard';
       } else {
         console.log("Login failed with status:", response.status);
@@ -99,12 +111,29 @@ export default function Login() {
         try {
           const errorData = await response.json();
           console.error("Error details:", errorData);
+          
+          // Show error toast
+          toast({
+            title: "Login failed",
+            description: errorData.message || "Invalid username or password",
+            variant: "destructive",
+          });
         } catch (e) {
           console.error("No error details available");
+          toast({
+            title: "Login failed",
+            description: "An unexpected error occurred",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
       console.error("Login fetch error:", error);
+      toast({
+        title: "Login error",
+        description: "Could not connect to the server. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -12,9 +12,30 @@ app.use((req, res, next) => {
   next();
 });
 
-// Body parsing middleware
+// Body parsing middleware - adding multipart form support
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Add debugging middleware before our routes
+app.use((req, res, next) => {
+  // Special logging for login attempts with multipart form data
+  if (req.path.includes('login') && req.method === 'POST') {
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+      console.log('⚠️ MULTIPART FORM LOGIN DETECTED - body may not be parsed correctly');
+      
+      // For multipart form data, try to access form fields directly
+      if (req.body && Object.keys(req.body).length === 0) {
+        console.log('Empty body detected, original form data might not be parsed');
+        
+        // If we have no body data but do have the raw request, try to extract fields
+        if (req.headers['content-type']?.includes('multipart/form-data') && req.is('multipart/form-data')) {
+          console.log('Attempting to extract fields from multipart data');
+        }
+      }
+    }
+  }
+  next();
+});
 
 // Debug middleware for parsed request body
 app.use((req, res, next) => {

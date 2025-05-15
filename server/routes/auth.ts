@@ -92,29 +92,35 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Enhanced login endpoint using Passport.js
-router.post('/login', async (req, res, next) => {
+// Enhanced login endpoint using Passport.js with multer for multipart form handling
+import multer from 'multer';
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Handle login with multiple content types (JSON, urlencoded, multipart)
+router.post('/login', upload.none(), async (req, res, next) => {
     try {
-        console.log('Login attempt - body:', JSON.stringify(req.body, (k, v) => k === 'password' ? '******' : v));
-        console.log('Login attempt - session ID:', req.sessionID || 'none');
-        console.log('Login attempt - cookies:', req.cookies ? 'present' : 'none');
-        console.log('Login attempt - content type:', req.get('Content-Type') || 'none');
-        
-        // Handle both form submissions and JSON
-        let username, password;
-        
-        if (req.body && typeof req.body === 'object') {
-            username = req.body.username;
-            password = req.body.password;
+        // Safer logging that doesn't expose any sensitive data
+        console.log('Login attempt received');
+        console.log('Session ID:', req.sessionID || 'none');
+        console.log('Content type:', req.get('Content-Type') || 'none');
+
+        // Log the body keys we received without showing values
+        if (req.body) {
+            console.log('Body fields received:', Object.keys(req.body).join(', '));
         } else {
-            return res.status(400).json({ message: 'Invalid request format' });
+            console.log('No body received');
         }
+        
+        // Extract credentials regardless of content type
+        const username = req.body?.username || null;
+        const password = req.body?.password || null;
+        
+        console.log(`Extracted username: ${username ? username : 'missing'}, password: ${password ? '******' : 'missing'}`);
         
         if (!username || !password) {
             return res.status(400).json({ message: 'Username and password are required' });
         }
         
-        console.log(`Login attempt with username: ${username}, password: ******`);
         const identifier = username;
         
         // For email login, we'll handle the lookup ourselves and then pass to Passport

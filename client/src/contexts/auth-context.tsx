@@ -79,22 +79,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, [queryClient]);
 
-  // Login function using FormData for more reliable authentication
+  // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Attempting to log in with FormData approach:", username);
+      console.log("Attempting to log in with URLSearchParams approach:", username);
       
-      // Use FormData for better compatibility with server-side form processing
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+      // Use URLSearchParams for reliable form data submission
+      const urlencoded = new URLSearchParams();
+      urlencoded.append('username', username);
+      urlencoded.append('password', password);
       
-      // Use fetch with FormData 
+      // Use fetch with proper content type
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: urlencoded.toString(),
           credentials: 'include' // Important for cookies
         });
         
