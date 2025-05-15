@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Upload, File, Trash, X } from 'lucide-react';
 
 import { 
   Card, 
@@ -19,7 +20,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, File } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -399,7 +399,7 @@ function ApplicantPortal() {
                             }}
                             disabled={deleteDocument.isPending}
                           >
-                            <X size={16} />
+                            <Trash size={16} />
                           </Button>
                         </div>
                       </TableCell>
