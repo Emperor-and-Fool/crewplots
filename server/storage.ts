@@ -1309,52 +1309,28 @@ export class DatabaseStorage implements IStorage {
     return newDoc;
   }
 
-  async getApplicantDocuments(applicantId: number): Promise<any[]> {
+  async getApplicantDocuments(applicantId: number): Promise<ApplicantDocument[]> {
     try {
       const documents = await db
         .select()
-        .from({
-          table: "applicant_documents"
-        })
-        .where(eq({ column: "applicant_id", table: "applicant_documents" }, applicantId));
+        .from(applicantDocuments)
+        .where(eq(applicantDocuments.applicantId, applicantId));
       
-      return documents.map(doc => ({
-        id: doc.id,
-        applicantId: doc.applicant_id,
-        documentName: doc.document_name, 
-        documentUrl: doc.document_url,
-        fileType: doc.file_type,
-        uploadedAt: doc.uploaded_at,
-        verifiedAt: doc.verified_at,
-        notes: doc.notes
-      }));
+      return documents;
     } catch (error) {
       console.error("Error in getApplicantDocuments:", error);
       return [];
     }
   }
 
-  async getApplicantDocument(id: number): Promise<any | undefined> {
+  async getApplicantDocument(id: number): Promise<ApplicantDocument | undefined> {
     try {
       const [document] = await db
         .select()
-        .from({
-          table: "applicant_documents"
-        })
-        .where(eq({ column: "id", table: "applicant_documents" }, id));
+        .from(applicantDocuments)
+        .where(eq(applicantDocuments.id, id));
       
-      if (!document) return undefined;
-      
-      return {
-        id: document.id,
-        applicantId: document.applicant_id,
-        documentName: document.document_name,
-        documentUrl: document.document_url,
-        fileType: document.file_type,
-        uploadedAt: document.uploaded_at,
-        verifiedAt: document.verified_at,
-        notes: document.notes
-      };
+      return document;
     } catch (error) {
       console.error("Error in getApplicantDocument:", error);
       return undefined;
@@ -1363,9 +1339,9 @@ export class DatabaseStorage implements IStorage {
 
   async deleteApplicantDocument(id: number): Promise<boolean> {
     try {
-      await db.delete({
-        table: "applicant_documents"
-      }).where(eq({ column: "id", table: "applicant_documents" }, id));
+      await db
+        .delete(applicantDocuments)
+        .where(eq(applicantDocuments.id, id));
       return true;
     } catch (error) {
       console.error("Error in deleteApplicantDocument:", error);
