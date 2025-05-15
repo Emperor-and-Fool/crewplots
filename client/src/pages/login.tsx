@@ -66,26 +66,24 @@ export default function Login() {
     }
   };
   
-  // Form submission handler using URLSearchParams for reliable form data submission
+  // Form submission handler using JSON for reliable form data submission
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
     console.log("Login form submitted with username:", data.username);
     
     try {
-      console.log("Attempting login with URLSearchParams...");
+      console.log("Attempting login with JSON data...");
       
-      // Use URLSearchParams instead of FormData
-      const urlencoded = new URLSearchParams();
-      urlencoded.append('username', data.username);
-      urlencoded.append('password', data.password);
-      
-      // Manual fetch implementation with proper content type
+      // Manual fetch implementation with proper content type (JSON)
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: urlencoded.toString(),
+        body: JSON.stringify({
+          username: data.username,
+          password: data.password
+        }),
         credentials: 'include', // Important for cookies
       });
       
