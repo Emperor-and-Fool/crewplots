@@ -22,6 +22,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Define interfaces for strong typing
+interface ApplicantProfile {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  positionApplied: string;
+  status: string;
+  resumeUrl: string | null;
+  notes: string | null;
+  extraMessage: string | null;
+  userId: number;
+  locationId: number | null;
+  createdAt: string;
+}
+
+interface ApplicantDocument {
+  id: number;
+  applicantId: number;
+  documentName: string;
+  documentUrl: string;
+  fileType: string;
+  uploadedAt: string;
+}
+
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
@@ -48,7 +73,7 @@ function ApplicantPortal() {
     isLoading: profileLoading,
     error: profileError,
     isError: isProfileError 
-  } = useQuery({
+  } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
     staleTime: 60000, // 1 minute
@@ -64,7 +89,7 @@ function ApplicantPortal() {
     isLoading: docsLoading,
     error: docsError,
     isError: isDocsError 
-  } = useQuery({
+  } = useQuery<ApplicantDocument[]>({
     queryKey: ['/api/applicant-portal/documents'],
     enabled: isAuthenticated && isApplicant,
     staleTime: 60000, // 1 minute
@@ -80,7 +105,7 @@ function ApplicantPortal() {
     isLoading: applicantsLoading,
     error: applicantsError,
     isError: isApplicantsError
-  } = useQuery({
+  } = useQuery<ApplicantProfile[]>({
     queryKey: ['/api/applicants'],
     enabled: isAuthenticated,
     staleTime: 60000, // 1 minute
