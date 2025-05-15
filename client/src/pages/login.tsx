@@ -100,17 +100,28 @@ export default function Login() {
           description: `Welcome back, ${result.user?.name || data.username}!`,
         });
         
-        // Navigate to dashboard using a simpler approach that doesn't cause race conditions
+        // Determine where to redirect based on user role
         try {
+          const userRole = result.user?.role;
+          console.log("User role for redirect:", userRole);
+          
           // Show a message to the user before redirecting
           toast({
             title: "Redirecting...",
-            description: "Taking you to the dashboard",
+            description: userRole === 'applicant' 
+              ? "Taking you to the applicant portal" 
+              : "Taking you to the dashboard",
           });
           
           // Use setTimeout to allow the toast to display
           setTimeout(() => {
-            window.location.href = '/dashboard';
+            if (userRole === 'applicant') {
+              console.log("Redirecting to applicant portal");
+              window.location.href = '/applicant-portal';
+            } else {
+              console.log("Redirecting to dashboard");
+              window.location.href = '/dashboard';
+            }
           }, 500);
         } catch (e) {
           console.error("Redirect error:", e);

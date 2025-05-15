@@ -76,10 +76,22 @@ function ApplicantPortal() {
   // Update message mutation
   const updateMessage = useMutation({
     mutationFn: async (messageText: string) => {
-      return await apiRequest('/api/applicant-portal/message', {
+      // Custom fetch with proper headers for JSON
+      const response = await fetch('/api/applicant-portal/message', {
         method: 'PUT',
-        body: JSON.stringify({ message: messageText })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: messageText }),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update message');
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
