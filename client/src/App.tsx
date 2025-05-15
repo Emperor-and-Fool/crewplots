@@ -175,6 +175,15 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
     return <Redirect to="/dashboard" />;
   }
   
+  // If user is specifically an 'applicant', only allow access to the applicant portal
+  if (serverAuthState.user?.role === 'applicant' && 
+      requiredRoles.length > 0 && 
+      requiredRoles.includes('applicant') && 
+      Component !== ApplicantPortal) {
+    console.log("User is an applicant but trying to access a non-applicant page - redirecting to applicant portal");
+    return <Redirect to="/applicant-portal" />;
+  }
+  
   // User is authenticated and has the required role
   console.log("Server says authenticated with correct role - showing protected content");
   return <Component {...rest} />;
@@ -213,6 +222,17 @@ function App() {
             authenticated: data.authenticated,
             user: data.user || null
           });
+          
+          // If user is applicant, redirect them to applicant portal if they're not already there
+          if (data.authenticated && 
+              data.user?.role === 'applicant' && 
+              window.location.pathname !== '/applicant-portal' &&
+              window.location.pathname !== '/login' &&
+              window.location.pathname !== '/register' &&
+              window.location.pathname !== '/registration-success') {
+            console.log("User is applicant, redirecting to applicant portal");
+            window.location.href = '/applicant-portal';
+          }
         } else {
           console.error("Server auth check failed with status:", response.status);
           setServerAuthState({
@@ -273,6 +293,8 @@ function App() {
     </div>;
   }
   
+  // Moving this logic to the existing useEffect to avoid React Hooks order issues
+
   // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
     <TooltipProvider>
@@ -282,11 +304,19 @@ function App() {
             <Switch>
               {/* PUBLIC ROUTES - accessible without authentication */}
               <Route path="/login">
-                {serverAuthState.authenticated ? <Redirect to="/dashboard" /> : <Login />}
+                {serverAuthState.authenticated ? 
+                  (serverAuthState.user?.role === 'applicant' ? 
+                    <Redirect to="/applicant-portal" /> : 
+                    <Redirect to="/dashboard" />) : 
+                  <Login />}
               </Route>
               
               <Route path="/register">
-                {serverAuthState.authenticated ? <Redirect to="/dashboard" /> : <Register />}
+                {serverAuthState.authenticated ? 
+                  (serverAuthState.user?.role === 'applicant' ? 
+                    <Redirect to="/applicant-portal" /> : 
+                    <Redirect to="/dashboard" />) : 
+                  <Register />}
               </Route>
               
               <Route path="/registration-success">
@@ -295,7 +325,11 @@ function App() {
               
               {/* PROTECTED ROUTES - require authentication */}
               <Route path="/dashboard">
-                {serverAuthState.authenticated ? <Dashboard /> : <Redirect to="/login" />}
+                {serverAuthState.authenticated ? 
+                  (serverAuthState.user?.role === 'applicant' ? 
+                    <Redirect to="/applicant-portal" /> : 
+                    <Dashboard />) : 
+                  <Redirect to="/login" />}
               </Route>
               
               <Route path="/locations">
@@ -392,7 +426,11 @@ function App() {
               
               {/* Default route - should be after all other routes */}
               <Route path="/">
-                <Redirect to={serverAuthState.authenticated ? "/dashboard" : "/login"} />
+                {serverAuthState.authenticated ? 
+                  (serverAuthState.user?.role === 'applicant' ? 
+                    <Redirect to="/applicant-portal" /> : 
+                    <Redirect to="/dashboard" />) : 
+                  <Redirect to="/login" />}
               </Route>
               
               {/* Not found - should be the very last */}
