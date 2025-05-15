@@ -499,7 +499,10 @@ export class MemStorage implements IStorage {
     return this.applicants.delete(id);
   }
 
+  // This is the MemStorage implementation
   async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
+    // Log for debugging
+    console.log("MemStorage.getApplicantByUserId called with userId:", userId);
     return Array.from(this.applicants.values()).find(applicant => applicant.userId === userId);
   }
 
