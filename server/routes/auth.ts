@@ -253,9 +253,12 @@ router.get('/user', authenticateUser, (req, res) => {
 router.get('/me', async (req, res) => {
     try {
         console.log('Session data:', req.session);
-        console.log('Session ID:', req.sessionID);
-        console.log('Cookies:', req.cookies);
-        console.log('Headers:', req.headers);
+        console.log('Session ID:', req.sessionID || 'none');
+        // Safe access to cookies
+        console.log('Cookies:', req.cookies ? JSON.stringify(req.cookies) : 'no cookies');
+        // Log only essential headers to avoid clutter
+        console.log('Headers present:', !!req.headers);
+        console.log('Cookie header:', req.headers?.cookie || 'none');
         
         const userId = req.session?.userId;
         const loggedIn = req.session?.loggedIn;
@@ -273,8 +276,10 @@ router.get('/me', async (req, res) => {
                 authenticated: false,
                 debug: {
                     sessionExists: !!req.session,
-                    sessionId: req.sessionID,
-                    hasCookies: !!req.cookies['connect.sid'],
+                    sessionId: req.sessionID || 'none',
+                    hasCookies: !!(req.cookies && req.cookies['connect.sid']),
+                    hasAnyHeaders: !!req.headers,
+                    hasAnyCookies: !!(req.cookies && Object.keys(req.cookies).length > 0)
                 }
             });
         }
@@ -301,7 +306,16 @@ router.get('/me', async (req, res) => {
         });
     } catch (error) {
         console.error('Error in /me endpoint:', error);
-        return res.status(500).json({ message: 'Server error' });
+        
+        // Return a more detailed error response for debugging
+        return res.status(200).json({ 
+            authenticated: false,
+            error: {
+                message: 'Error checking authentication status',
+                hasSession: !!req.session,
+                sessionID: req.sessionID || 'none'
+            } 
+        });
     }
 });
 
