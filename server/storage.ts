@@ -1175,7 +1175,7 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicants(): Promise<Applicant[]> {
     try {
-      // Select specific columns to avoid extraMessage issues
+      // Include extraMessage field to match the expected Applicant type
       const result = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1185,6 +1185,7 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
@@ -1199,7 +1200,7 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
     try {
-      // Select specific columns to avoid extraMessage issues
+      // Include extraMessage field to match the expected Applicant type
       const result = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1209,6 +1210,7 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
@@ -1223,7 +1225,7 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicantsByStatus(status: string): Promise<Applicant[]> {
     try {
-      // Select specific columns to avoid extraMessage issues
+      // Include extraMessage field to match the expected Applicant type
       const result = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1233,6 +1235,7 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
