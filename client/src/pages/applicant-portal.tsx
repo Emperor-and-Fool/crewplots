@@ -136,9 +136,17 @@ function ApplicantPortal() {
   // Delete document mutation
   const deleteDocument = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/applicant-portal/documents/${id}`, {
+      // Custom fetch instead of apiRequest
+      const response = await fetch(`/api/applicant-portal/documents/${id}`, {
         method: 'DELETE'
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete document');
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -212,7 +220,8 @@ function ApplicantPortal() {
       case 'in_progress':
         return <Badge variant="outline">In Progress</Badge>;
       case 'accepted':
-        return <Badge variant="success">Accepted</Badge>;
+      case 'hired':
+        return <Badge className="bg-green-500 hover:bg-green-600">Accepted</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       default:
@@ -336,7 +345,7 @@ function ApplicantPortal() {
                 disabled={uploadDocument.isPending}
                 className="flex gap-2"
               >
-                <FileUpload size={16} /> 
+                <Upload size={16} /> 
                 {uploadDocument.isPending ? 'Uploading...' : 'Upload Document'}
               </Button>
             </div>
@@ -366,7 +375,7 @@ function ApplicantPortal() {
                       <TableCell>{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {doc.verified_at ? (
-                          <Badge variant="success">Verified</Badge>
+                          <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
                         ) : (
                           <Badge variant="outline">Pending</Badge>
                         )}
