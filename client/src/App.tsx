@@ -355,6 +355,10 @@ function App() {
                 <RegistrationSuccess />
               </Route>
               
+              <Route path="/clear-sessions">
+                <ClearSessions />
+              </Route>
+              
               {/* PROTECTED ROUTES - require authentication */}
               <Route path="/dashboard">
                 {serverAuthState.authenticated ? 
