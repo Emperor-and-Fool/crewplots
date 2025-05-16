@@ -4,18 +4,15 @@ import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 import { pool } from "./db";
 
-// Create Redis client with simplified settings for reliability
+// Create Redis client with settings optimized for reliable connections
 const redisClient = createClient({ 
-  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-  // No fancy options, just connect with defaults
+  url: process.env.REDIS_URL || 'redis://0.0.0.0:6379',
   socket: {
     reconnectStrategy: (retries) => {
-      if (retries > 2) {
-        console.log('Redis connection attempt failed, falling back to PostgreSQL');
-        return false; // Stop retrying after 2 attempts
-      }
-      return 100; // Try again quickly
-    }
+      console.log(`Redis connection attempt ${retries}`);
+      return Math.min(retries * 100, 3000); // Increasing backoff with max 3s delay
+    },
+    connectTimeout: 30000 // 30 seconds to connect
   }
 });
 
@@ -84,15 +81,15 @@ const pgSessionOptions = {
   rolling: true,      // Reset expiration with each request
 };
 
-// Always use Redis unless we get a specific error during init time
-let useRedis = true;
+// ALWAYS use Redis - never fall back to PostgreSQL as explicitly instructed
+const useRedis = true;
 
-// If Redis errors out, we'll set this to false so we fall back to PG store for future requests
+// Log Redis errors but NEVER fall back to PostgreSQL
 redisClient.on('error', (err) => {
-  console.error('Redis client error, falling back to PostgreSQL:', err);
-  useRedis = false;
+  console.error('Redis client error:', err);
+  // No fallback to PostgreSQL - we'll keep trying with Redis
 });
 
-// Export whichever session store is available
-export const sessionOptions = useRedis ? redisSessionOptions : pgSessionOptions;
+// Only use Redis for session storage
+export const sessionOptions = redisSessionOptions;
 export { redisClient, redisStore, pgStore };
