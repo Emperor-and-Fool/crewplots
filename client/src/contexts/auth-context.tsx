@@ -319,14 +319,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Implement refreshAuth function to manually recheck authentication
+  const refreshAuth = async (): Promise<boolean> => {
+    console.log("Manually refreshing authentication state");
+    setIsLoading(true);
+    
+    try {
+      // Add cache-busting parameter to prevent browser caching
+      const cacheBuster = new Date().getTime();
+      const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
+        credentials: "include",
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data && data.authenticated && data.user) {
+          setUser(data.user);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return true;
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return false;
+        }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error refreshing authentication:", error);
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
+        isAuthenticated,
+        authInitialized,
         login,
         logout,
         register,
+        refreshAuth,
       }}
     >
       {children}
