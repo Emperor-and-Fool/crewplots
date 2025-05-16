@@ -276,16 +276,16 @@ router.get('/me', async (req, res) => {
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
         
-        // Set debug cookie for testing - use SameSite=None for cross-domain cookies
+        // Set debug cookie for testing with proper secure settings
         res.cookie('debug-auth-check', 'was-checked', { 
             maxAge: 3600000, 
             httpOnly: true,
-            sameSite: 'none',
-            secure: false // Important: Allow insecure cookies in development
+            sameSite: 'lax',
+            secure: true // CRITICAL: Must be secure when using HTTPS
         });
         
-        // Force cookie to be visible in response
-        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=None; Max-Age=3600`);
+        // Force cookie to be visible in response with proper secure settings
+        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600`);
         
         // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
