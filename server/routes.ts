@@ -4,8 +4,10 @@ import { storage } from "./storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import connectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
+import multer from "multer";
+import path from "path";
+import { ZodError } from "zod";
+import { fromZodError } from "zod-validation-error";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -13,10 +15,10 @@ import {
   insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
 } from "@shared/schema";
-import { ZodError } from "zod";
-import { fromZodError } from "zod-validation-error";
-import multer from "multer";
-import path from "path";
+import { pool } from "./db";
+import redisClient from "./redis";
+import { createClient } from "redis";
+import { RedisStore } from "connect-redis";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
@@ -28,9 +30,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
-
-// Setup PostgreSQL session store
-const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -47,15 +46,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new PgStore({
-        pool: pool,
-        tableName: 'sessions',
-        createTableIfMissing: true, // Auto-create the table
-        ttl: 86400000 // 24 hours - same as cookie maxAge
+      store: new RedisStore({ 
+        client: redisClient,
+        prefix: "session:",
+        ttl: 86400, // 24 hours in seconds
+        disableTouch: false, // Keep updating TTL on session access
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: true, // Force session save on each request to ensure cross-frame compatibility
-      saveUninitialized: true, // Create session for tracking before user logs in
+      resave: false, // No need to resave with Redis
+      saveUninitialized: false, // Don't create session until something stored
       name: 'crewplots.sid', // Custom name to avoid conflicts
       rolling: true, // Force cookies to be set on every response
     })
