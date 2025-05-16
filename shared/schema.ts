@@ -658,9 +658,19 @@ export const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// Types for drizzle tables
-export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
-
+/**
+ * Type Definitions for Data Insertion
+ * 
+ * These types are derived from the Zod schemas using z.infer<>.
+ * They represent the shape of data required when inserting new records
+ * into the database tables. The types exclude auto-generated fields
+ * like ids and timestamps.
+ * 
+ * Used throughout the application for:
+ * - Form submission typing
+ * - API request body validation
+ * - Storage interface parameters
+ */
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -683,9 +693,32 @@ export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
 export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
+
+/**
+ * Authentication Form Types
+ * 
+ * These types define the shape of authentication-related data.
+ * They're used for login and registration form handling.
+ */
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
+/**
+ * Database Record Types
+ * 
+ * These types represent the complete data structure of records retrieved
+ * from the database, including all fields (auto-generated and manually entered).
+ * 
+ * They are used for:
+ * - API response typing
+ * - Storage interface return types
+ * - Component props that display database records
+ * - Type safety throughout the application
+ * 
+ * These types are derived directly from the Drizzle table definitions
+ * using the $inferSelect utility, which ensures they stay in sync with
+ * the actual database schema.
+ */
 export type User = typeof users.$inferSelect;
 export type Location = typeof locations.$inferSelect;
 export type Role = typeof roles.$inferSelect;
@@ -708,7 +741,24 @@ export type KbArticle = typeof kbArticles.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
 
-// Session storage for database sessions
+/**
+ * Session Storage Table
+ * 
+ * This table is used for storing session data when using PostgreSQL
+ * as a session store with express-session and connect-pg-simple.
+ * 
+ * The structure follows connect-pg-simple's requirements:
+ * - sid: Unique session ID (primary key)
+ * - sess: JSON blob containing session data
+ * - expire: Timestamp when the session expires
+ * 
+ * The table has an index on the expire column to improve query performance
+ * when cleaning up expired sessions.
+ * 
+ * Note: While the application preferentially uses Redis for session storage,
+ * this table serves as a fallback option when Redis is unavailable or for
+ * development environments.
+ */
 export const sessions = pgTable(
   "sessions",
   {
