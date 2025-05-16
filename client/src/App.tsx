@@ -234,56 +234,28 @@ function App() {
     user: null
   });
 
-  // Direct server-side authentication check that bypasses the React state issues
+  // Synchronize React Auth Context with our serverAuthState
   React.useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        console.log("Checking server-side authentication directly in App");
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          cache: 'no-store' // Prevent caching
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Server auth check response (App):", data);
-          
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-          
-          // If user is applicant, redirect them to applicant portal if they're not already there
-          if (data.authenticated && 
-              data.user?.role === 'applicant' && 
-              window.location.pathname !== '/applicant-portal' &&
-              window.location.pathname !== '/login' &&
-              window.location.pathname !== '/register' &&
-              window.location.pathname !== '/registration-success') {
-            console.log("User is applicant, redirecting to applicant portal");
-            window.location.href = '/applicant-portal';
-          }
-        } else {
-          console.error("Server auth check failed with status:", response.status);
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error) {
-        console.error("Error checking server auth:", error);
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
+    // When React auth state is ready (not loading), update serverAuthState
+    if (!isLoading) {
+      setServerAuthState({
+        loading: false,
+        authenticated: !!user,
+        user: user
+      });
+      
+      // If user is applicant, redirect them to applicant portal if they're not already there
+      if (user && 
+          user.role === 'applicant' && 
+          window.location.pathname !== '/applicant-portal' &&
+          window.location.pathname !== '/login' &&
+          window.location.pathname !== '/register' &&
+          window.location.pathname !== '/registration-success') {
+        console.log("User is applicant, redirecting to applicant portal");
+        window.location.href = '/applicant-portal';
       }
-    };
-    
-    checkServerAuth();
-  }, []);
+    }
+  }, [isLoading, user]);
 
   // Debug logging to see what state we're in
   console.log("App.tsx - Auth state:", { 
