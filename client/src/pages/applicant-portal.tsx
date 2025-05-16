@@ -136,54 +136,41 @@ function ApplicantPortal() {
     }
   }, [profile, documents, refetchProfile, refetchDocs]);
   
-  // Function to retry all queries with multiple attempts
+  // Function to retry all queries
   const handleRetry = () => {
     // Reset timeout state
     setLoadingTimeout(false);
     setTimeoutReason('');
     
-    // Immediate first attempt
+    // Refetch data with force refresh
     refetchProfile();
     refetchDocs();
+    
+    // Only refetch debug data in development
+    if (process.env.NODE_ENV !== 'production') {
+      refetchApplicants?.();
+    }
     
     // Show toast to indicate retry
     toast({
       title: "Retrying",
-      description: "Attempting to load your data...",
+      description: "Attempting to load your data again...",
       duration: 3000,
     });
-    
-    // Second retry after a short delay
-    setTimeout(() => {
-      refetchProfile();
-      refetchDocs();
-      
-      // Only refetch debug data in development
-      if (process.env.NODE_ENV !== 'production') {
-        refetchApplicants?.();
-      }
-    }, 1000);
   };
 
   // Improved auto-retry mechanism that will retry loading if data is missing
   React.useEffect(() => {
     let retryTimeoutId: NodeJS.Timeout | null = null;
     
-    // If we have auth but no profile data yet, try to auto-retry multiple times
+    // If we have auth but no profile data yet, try to auto-retry once after delay
     if (!loadingTimeout && isAuthenticated && isApplicant && 
         !profileLoading && !docsLoading && (!profile || !documents)) {
-      console.log("Auto-retrying data fetch because data is missing");
-      
-      // Immediate first retry
-      refetchProfile();
-      refetchDocs();
-      
-      // Second retry after a delay
       retryTimeoutId = setTimeout(() => {
-        console.log("Second auto-retry attempt for data fetch");
+        console.log("Auto-retrying data fetch because data is missing");
         refetchProfile();
         refetchDocs();
-      }, 2000); // 2 second delay before second auto-retry
+      }, 1500); // 1.5 second delay before auto-retry
     }
     
     return () => {
