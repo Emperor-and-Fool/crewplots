@@ -26,170 +26,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Check if user is already logged in with retry logic and periodic refresh
+  // Simple check if user is already logged in
   useEffect(() => {
-    // Track if component is mounted to prevent state updates after unmount
     let isMounted = true;
-    let sessionCheckInterval: ReturnType<typeof setInterval> | null = null;
     
-    // Implement a reliable fetch with timeout
-    const fetchWithTimeout = async (url: string, options = {}, timeout = 3000) => {
-      const controller = new AbortController();
-      const { signal } = controller;
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
+    const checkAuth = async () => {
       try {
-        const response = await fetch(url, {
-          ...options,
-          signal,
+        setIsLoading(true);
+        const response = await fetch('/api/auth/me', {
           credentials: 'include',
           headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'Cache-Control': 'no-cache'
           }
         });
         
-        clearTimeout(timeoutId);
-        return response;
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        throw error;
-      }
-    };
-
-    // Authentication check with explicit retry logic and exponential backoff
-    const checkAuthWithRetry = async (maxRetries = 3, initialDelay = 500, isInitialCheck = false) => {
-      if (isInitialCheck) {
-        console.log("Starting authentication check with retry logic");
-      }
-      
-      let retries = 0;
-      let delay = initialDelay;
-      
-      // Start loading state only for initial check
-      if (isInitialCheck && isMounted) setIsLoading(true);
-      
-      while (retries <= maxRetries) {
-        try {
-          // Add cache-busting parameter
-          const cacheBuster = new Date().getTime();
-          const response = await fetchWithTimeout(`/api/auth/me?_=${cacheBuster}`, {}, 3000); 
+        if (response.ok) {
+          const data = await response.json();
           
-          if (isInitialCheck) {
-            console.log(`Auth response (attempt ${retries + 1}/${maxRetries + 1}):`, response.status);
-          }
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (isInitialCheck) {
-              console.log("User data received:", data);
-            }
-            
-            if (data && data.authenticated && data.user) {
-              if (isMounted) {
-                setUser(data.user);
-                if (isInitialCheck) {
-                  setIsLoading(false);
-                  console.log("Auth successful, user:", data.user.username);
-                }
-              }
-              // Success - exit the retry loop
-              return true;
-            } else {
-              if (isInitialCheck) {
-                console.log("Not authenticated or no user data");
-              } else if (user) {
-                // If this is a refresh check and we were previously authenticated,
-                // but now we're not, log the session expiry
-                console.warn("Session expired or user logged out on server");
-              }
-              
-              if (isMounted) {
-                setUser(null);
-                queryClient.clear();
-              }
-              // No need to retry - we got a valid response indicating not authenticated
-              return false;
+          if (data && data.authenticated && data.user) {
+            if (isMounted) {
+              setUser(data.user);
             }
           } else {
-            // Server responded with error - may need to retry
-            if (isInitialCheck) {
-              console.warn(`Auth check failed with status ${response.status}, retrying...`);
+            if (isMounted) {
+              setUser(null);
+              queryClient.clear();
             }
           }
-        } catch (error: any) {
-          // Request failed - abort or retry
-          if (error?.name === 'AbortError') {
-            if (isInitialCheck) {
-              console.warn(`Auth check timed out (attempt ${retries + 1}/${maxRetries + 1})`);
-            }
-          } else {
-            if (isInitialCheck) {
-              console.error(`Auth check error (attempt ${retries + 1}/${maxRetries + 1}):`, error);
-            } else {
-              console.error("Session refresh check error:", error);
-            }
-          }
-        }
-        
-        // If this was the last retry, set not authenticated
-        if (retries >= maxRetries) {
-          if (isInitialCheck) {
-            console.warn("Max retries reached, setting not authenticated");
-          }
-          
+        } else {
           if (isMounted) {
             setUser(null);
-            queryClient.clear();
           }
-          return false;
         }
-        
-        // Increment retry counter and delay for next attempt
-        retries++;
-        
-        // Wait with exponential backoff before retrying
-        if (isInitialCheck) {
-          console.log(`Waiting ${delay}ms before retry ${retries}/${maxRetries}`);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        if (isMounted) {
+          setUser(null);
         }
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Exponential backoff with jitter to avoid thundering herd
-        delay = Math.min(delay * 1.5, 5000) * (0.9 + Math.random() * 0.2);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      
-      // Ensure loading state is updated when done with all retries
-      if (isInitialCheck && isMounted) {
-        console.log("Setting isLoading to false after all retries");
-        setIsLoading(false);
-      }
-      
-      return false;
     };
-
-    // Start the initial authentication check process
-    checkAuthWithRetry(3, 500, true).then((authenticated) => {
-      // Set up periodic session check if authenticated
-      if (authenticated && isMounted) {
-        // Check session every 2 minutes to detect server-side expiration
-        sessionCheckInterval = setInterval(() => {
-          // No logging for periodic checks unless there's a change in status
-          checkAuthWithRetry(1, 1000, false);
-        }, 2 * 60 * 1000); // 2 minutes
-      }
-    });
     
-    // Cleanup function to prevent state updates after unmount
+    checkAuth();
+    
     return () => {
       isMounted = false;
-      if (sessionCheckInterval) {
-        clearInterval(sessionCheckInterval);
-      }
     };
-  }, [queryClient, user]);
+  }, [queryClient]);
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
