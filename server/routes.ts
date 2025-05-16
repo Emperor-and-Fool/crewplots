@@ -44,9 +44,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 86400000, // 24 hours
         secure: true, // We're on HTTPS in Replit
         httpOnly: true,
-        sameSite: 'none', // Allow cross-site requests safely since we're using HTTPS
+        sameSite: 'lax', // Changed to lax for same-origin deployments
         path: '/',
-        domain: undefined // Auto-detect domain, critical for correct cookie handling
+        // Removed domain setting completely to ensure host-only cookie
       },
       store: new PgStore({
         pool: pool,
