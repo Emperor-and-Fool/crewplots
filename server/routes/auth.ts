@@ -348,13 +348,9 @@ const logoutHandler = (req, res) => {
                 return res.status(500).json({ message: 'Error during logout' });
             }
             
-            // Clear the main session cookie with proper parameters
-            res.clearCookie('crewplots.sid', { 
-                path: '/',
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax'
-            });
+            // Clear the main session cookie with proper parameters matching our config
+            // No need to specify the cookie name as express-session handles this
+            // Let the session middleware handle cookie clearing
             
             console.log('User logged out successfully, redirecting to login');
             
