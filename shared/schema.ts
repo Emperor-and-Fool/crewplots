@@ -328,7 +328,20 @@ export const applicantDocuments = pgTable("applicant_documents", {
   notes: text("notes"),
 });
 
-// Schedule Templates
+/**
+ * Schedule Templates Table
+ * 
+ * Stores reusable schedule patterns that can be applied to create
+ * weekly schedules quickly and consistently.
+ * 
+ * Templates are location-specific and contain a collection of shift patterns
+ * that represent the typical staffing needs for that venue.
+ * 
+ * Key relationships:
+ * - Many-to-one with locations
+ * - One-to-many with template shifts
+ * - Referenced by weekly schedules when creating from a template
+ */
 export const scheduleTemplates = pgTable("schedule_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -336,7 +349,18 @@ export const scheduleTemplates = pgTable("schedule_templates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Template Shifts
+/**
+ * Template Shifts Table
+ * 
+ * Defines individual shift patterns within a schedule template.
+ * Each template shift represents a recurring shift on a specific day of the week.
+ * 
+ * Template shifts can optionally specify required competencies and levels
+ * to ensure proper skill matching when the template is used to create
+ * an actual schedule.
+ * 
+ * The dayOfWeek field uses 0-6 for Sunday through Saturday.
+ */
 export const templateShifts = pgTable("template_shifts", {
   id: serial("id").primaryKey(),
   templateId: integer("template_id").references(() => scheduleTemplates.id).notNull(),
@@ -349,7 +373,21 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Weekly Schedules
+/**
+ * Weekly Schedules Table
+ * 
+ * Represents a week's worth of shifts for a specific location.
+ * Weekly schedules can be created from templates or from scratch.
+ * 
+ * The isPublished flag controls visibility to staff members:
+ * - false: Draft mode, only visible to managers
+ * - true: Published and visible to all staff
+ * 
+ * Key relationships:
+ * - Many-to-one with locations
+ * - Many-to-one with schedule templates (optional)
+ * - One-to-many with individual shifts
+ */
 export const weeklySchedules = pgTable("weekly_schedules", {
   id: serial("id").primaryKey(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -359,7 +397,23 @@ export const weeklySchedules = pgTable("weekly_schedules", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Shifts (actual scheduled shifts)
+/**
+ * Shifts Table
+ * 
+ * Represents individual work assignments within a weekly schedule.
+ * Each shift can be assigned to a staff member or left unassigned.
+ * 
+ * Shifts can include competency requirements to ensure appropriate
+ * skill matching when assigning staff.
+ * 
+ * The system uses date + startTime/endTime rather than timestamp ranges
+ * to simplify time representation and UI handling.
+ * 
+ * Key relationships:
+ * - Many-to-one with weekly schedules
+ * - Many-to-one with staff (when assigned)
+ * - Many-to-one with competencies (optional requirement)
+ */
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   scheduleId: integer("schedule_id").references(() => weeklySchedules.id).notNull(),
@@ -374,7 +428,28 @@ export const shifts = pgTable("shifts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Cash Management
+/**
+ * Cash Counts Table
+ * 
+ * Records cash handling activities at different times of the business day.
+ * This table enables financial tracking and reconciliation across shifts.
+ * 
+ * Count types:
+ * - opening: Start of business day cash count
+ * - midday: Mid-shift cash handover count
+ * - closing: End of business day cash count
+ * 
+ * The system tracks:
+ * - Physical cash amount
+ * - Card payment totals
+ * - Float amount (starting cash)
+ * - Expected amounts based on sales
+ * - Discrepancies between expected and actual
+ * 
+ * Key relationships:
+ * - Many-to-one with locations
+ * - Many-to-one with users (who created and verified)
+ */
 export const cashCounts = pgTable("cash_counts", {
   id: serial("id").primaryKey(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -391,7 +466,23 @@ export const cashCounts = pgTable("cash_counts", {
   createdBy: integer("created_by").references(() => users.id).notNull(),
 });
 
-// Knowledge Base Categories
+/**
+ * Knowledge Base Categories Table
+ * 
+ * Organizes knowledge base articles into logical groupings.
+ * Categories are location-specific to allow different venues
+ * to maintain their own specialized knowledge repositories.
+ * 
+ * Examples of categories might include:
+ * - Operating Procedures
+ * - Menu Information
+ * - Health & Safety
+ * - Equipment Usage
+ * 
+ * Key relationships:
+ * - Many-to-one with locations
+ * - One-to-many with articles
+ */
 export const kbCategories = pgTable("kb_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -400,7 +491,22 @@ export const kbCategories = pgTable("kb_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Knowledge Base Articles
+/**
+ * Knowledge Base Articles Table
+ * 
+ * Stores training materials, procedures, and reference information
+ * for staff members to access.
+ * 
+ * Articles are organized by category and can include rich text content
+ * and images. Each article tracks creation and update information
+ * for audit purposes.
+ * 
+ * The images field stores an array of URLs to related images.
+ * 
+ * Key relationships:
+ * - Many-to-one with categories
+ * - Many-to-one with users (author/editor)
+ */
 export const kbArticles = pgTable("kb_articles", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").references(() => kbCategories.id).notNull(),
@@ -413,7 +519,24 @@ export const kbArticles = pgTable("kb_articles", {
   updatedAt: timestamp("updated_at"),
 });
 
-// Uploaded Files
+/**
+ * Uploaded Files Table
+ * 
+ * Central repository for all uploaded files in the system.
+ * Stores metadata about the files rather than the file contents themselves.
+ * 
+ * The actual file content is stored on the filesystem or cloud storage,
+ * while this table maintains metadata and references.
+ * 
+ * This design allows for:
+ * - Efficient file deduplication
+ * - Consistent file permission checking
+ * - Centralized file access audit
+ * 
+ * Key relationships:
+ * - Many-to-one with users (uploader)
+ * - One-to-many with document attachments
+ */
 export const uploadedFiles = pgTable("uploaded_files", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
@@ -425,7 +548,23 @@ export const uploadedFiles = pgTable("uploaded_files", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Document Attachments - for linking files to different entities
+/**
+ * Document Attachments Table
+ * 
+ * Links uploaded files to various entities in the system.
+ * This creates a flexible, polymorphic relationship between files
+ * and different parts of the application.
+ * 
+ * The entityType enum specifies what kind of record the file is attached to:
+ * - applicant: Resume, ID documents, etc.
+ * - staff: Certifications, training records, etc.
+ * - location: Floor plans, safety documents, etc.
+ * - kb_article: Illustrations, diagrams for knowledge base articles
+ * - cash_count: Receipt images, audit documentation
+ * 
+ * This design allows a single file to be referenced by multiple entities
+ * without duplication.
+ */
 export const documentAttachments = pgTable("document_attachments", {
   id: serial("id").primaryKey(),
   fileId: integer("file_id").references(() => uploadedFiles.id).notNull(),
@@ -436,7 +575,19 @@ export const documentAttachments = pgTable("document_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Insert Schemas
+/**
+ * Insert Schemas
+ * 
+ * These schemas are used to validate data before inserting into database tables.
+ * Each schema is derived from its corresponding table but omits auto-generated fields.
+ * 
+ * For example:
+ * - id fields are omitted because they are auto-incremented
+ * - createdAt fields are omitted because they have default values
+ * 
+ * These schemas are used with the Zod validator to ensure data integrity
+ * when handling form submissions and API requests.
+ */
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
@@ -460,13 +611,36 @@ export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: t
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
-// Login schema
+/**
+ * Authentication Schemas
+ * 
+ * These schemas validate user authentication-related data
+ * and provide specific error messages for form validation.
+ */
+
+/**
+ * Login Schema
+ * 
+ * Validates username and password for login attempts.
+ * Used in login forms and API endpoints.
+ */
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-// User registration schema (for applicants)
+/**
+ * Registration Schema
+ * 
+ * Comprehensive validation for new user registration.
+ * Includes validation for all required user profile fields
+ * and additional checks like password confirmation.
+ * 
+ * The phone number regex enforces international format with country code.
+ * 
+ * The refine method adds a custom validation rule to ensure
+ * password and confirmPassword fields match.
+ */
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
