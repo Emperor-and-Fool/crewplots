@@ -271,8 +271,20 @@ function App() {
     // We don't need a timeout anymore, the auth system is reliable now
   }, [isLoading, serverAuthState.loading]);
   
-  // If we're still in the initial loading state, show a loading indicator
-  if (isLoading || serverAuthState.loading) {
+  // Show loading indicator with 5-second timeout to prevent infinite loading
+  const [authTimeout, setAuthTimeout] = React.useState(false);
+  
+  React.useEffect(() => {
+    // If we're loading for more than 5 seconds, we'll show the login page anyway
+    const timer = setTimeout(() => {
+      setAuthTimeout(true);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // If we're still in the loading state but not timed out, show loading indicator
+  if ((isLoading || serverAuthState.loading) && !authTimeout && !user) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
