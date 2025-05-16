@@ -7,31 +7,22 @@ import { useToast } from "@/hooks/use-toast";
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
-  authInitialized: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
-  refreshAuth: () => Promise<boolean>;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  isAuthenticated: false,
-  authInitialized: false,
   login: async () => false,
   logout: async () => {},
   register: async () => false,
-  refreshAuth: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authInitialized, setAuthInitialized] = useState(false);
-  const authCheckRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -74,14 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (data && data.authenticated && data.user) {
             console.timeLog("auth:client-total", "before setState");
             setUser(data.user);
-            setIsAuthenticated(true);
             console.log("User authenticated:", data.user.username);
             console.timeLog("auth:client-total", "after setState");
           } else {
             // Not authenticated or no user data
             console.log("Not authenticated or no user data found");
             setUser(null);
-            setIsAuthenticated(false);
             // Clear any cached queries that might depend on authentication
             queryClient.clear();
             console.timeLog("auth:client-total", "after clearing state (not authenticated)");
