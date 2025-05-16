@@ -16,9 +16,7 @@ import {
   loginSchema, registerSchema
 } from "@shared/schema";
 import { pool } from "./db";
-import redisClient from "./redis";
-import { createClient } from "redis";
-import { RedisStore } from "connect-redis";
+import { sessionOptions } from "./redis-session";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
@@ -36,29 +34,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
-  // Configure session middleware
-  app.use(
-    session({
-      cookie: { 
-        maxAge: 86400000, // 24 hours
-        secure: true, // We're on HTTPS in Replit
-        httpOnly: true,
-        sameSite: 'lax', // More compatible and secure than 'none'
-        path: '/'
-      },
-      store: new RedisStore({ 
-        client: redisClient,
-        prefix: "session:",
-        ttl: 86400, // 24 hours in seconds
-        disableTouch: false, // Keep updating TTL on session access
-      }),
-      secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: false, // No need to resave with Redis
-      saveUninitialized: false, // Don't create session until something stored
-      name: 'crewplots.sid', // Custom name to avoid conflicts
-      rolling: true, // Force cookies to be set on every response
-    })
-  );
+  // Configure session middleware with Redis store
+  app.use(session(sessionOptions));
 
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());

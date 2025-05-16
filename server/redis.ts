@@ -1,21 +1,25 @@
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 
 // Create Redis client
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  keyPrefix: 'crewplots:',
-  retryStrategy: (times) => {
-    console.log(`Redis connection attempt ${times}`);
-    // Try to reconnect after 5 seconds
-    return Math.min(times * 1000, 5000);
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  socket: {
+    reconnectStrategy: (retries) => {
+      console.log(`Redis connection attempt ${retries}`);
+      return Math.min(retries * 1000, 5000);
+    }
   }
 });
 
-redisClient.on('connect', () => {
-  console.log('Connected to Redis successfully');
-});
+// Connect to Redis
+(async () => {
+  try {
+    await redisClient.connect();
+    console.log('Connected to Redis successfully');
+  } catch (err) {
+    console.error('Redis connection error:', err);
+  }
+})();
 
 redisClient.on('error', (err) => {
   console.error('Redis connection error:', err);
