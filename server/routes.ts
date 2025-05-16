@@ -29,7 +29,8 @@ import {
   loginSchema, registerSchema
 } from "@shared/schema";
 import { pool } from "./db";
-import { sessionOptions, redisClient, redisStore } from "./redis-session";
+// Temporarily using PostgreSQL sessions until Redis is properly configured
+import { sessionOptions } from "./pg-session";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
