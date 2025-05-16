@@ -266,6 +266,7 @@ router.get('/user', authenticateUser, (req, res) => {
 // Enhanced /me endpoint that uses Passport's isAuthenticated
 router.get('/me', async (req, res) => {
     try {
+        console.time("me:total");
         // Enable CORS for all origins in development
         res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
         res.header('Access-Control-Allow-Credentials', 'true');
@@ -275,6 +276,7 @@ router.get('/me', async (req, res) => {
         console.log('Session ID:', req.sessionID || 'none');
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
+        console.timeLog("me:total", "after initial auth check");
         
         // Set debug cookie for testing - use SameSite=None for cross-domain cookies
         res.cookie('debug-auth-check', 'was-checked', { 
@@ -290,6 +292,7 @@ router.get('/me', async (req, res) => {
         // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
             console.log('Not authenticated according to Passport');
+            console.timeLog("me:total", "authentication check failed");
             return res.status(200).json({ 
                 authenticated: false,
                 debug: {
@@ -302,6 +305,7 @@ router.get('/me', async (req, res) => {
                 }
             });
         }
+        console.timeLog("me:total", "after isAuthenticated check");
         
         // At this point, req.user should have the user data
         if (!req.user) {
@@ -317,12 +321,14 @@ router.get('/me', async (req, res) => {
         const { password, ...userWithoutPassword } = user;
         
         console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
+        console.timeEnd("me:total");
         return res.status(200).json({ 
             authenticated: true,
             user: userWithoutPassword
         });
     } catch (error) {
         console.error('Error in /me endpoint:', error);
+        console.timeLog("me:total", "error in auth processing");
         
         // Return a more detailed error response for debugging
         return res.status(200).json({ 

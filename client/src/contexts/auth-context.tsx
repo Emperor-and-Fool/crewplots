@@ -29,11 +29,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
+      console.time("auth:client-total");
       console.log("Checking authentication status...");
       
       // Set up timeout to avoid infinite loading
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      console.timeLog("auth:client-total", "setup complete, before fetch");
       
       try {
         // Add cache-busting parameter to prevent browser caching
@@ -52,21 +54,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearTimeout(timeoutId);
 
         console.log("Auth response status:", response.status);
+        console.timeLog("auth:client-total", "response received");
         
         if (response.ok) {
           const data = await response.json();
+          console.timeLog("auth:client-total", "response parsed");
           console.log("User data:", data);
           
           // If authenticated and user data exists, set the user
           if (data && data.authenticated && data.user) {
+            console.timeLog("auth:client-total", "before setState");
             setUser(data.user);
             console.log("User authenticated:", data.user.username);
+            console.timeLog("auth:client-total", "after setState");
           } else {
             // Not authenticated or no user data
             console.log("Not authenticated or no user data found");
             setUser(null);
             // Clear any cached queries that might depend on authentication
             queryClient.clear();
+            console.timeLog("auth:client-total", "after clearing state (not authenticated)");
           }
         } else {
           console.log("Error response, not authenticated");
@@ -90,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         console.log("Setting isLoading to false");
         setIsLoading(false);
+        console.timeEnd("auth:client-total");
       }
     };
 
