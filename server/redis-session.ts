@@ -2,15 +2,14 @@ import session from 'express-session';
 import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 
-// Create Redis client with settings optimized for reliable connections
+// Create Redis client with Replit-optimized settings
 const redisClient = createClient({ 
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
   socket: {
     reconnectStrategy: (retries) => {
       console.log(`Redis connection attempt ${retries}`);
       return Math.min(retries * 100, 3000); // Increasing backoff with max 3s delay
-    },
-    connectTimeout: 30000 // 30 seconds to connect
+    }
   }
 });
 
@@ -32,10 +31,12 @@ redisClient.on('ready', () => console.log('Redis client ready'));
 redisClient.on('error', (err) => console.error('Redis client error:', err));
 redisClient.on('reconnecting', () => console.log('Redis client reconnecting'));
 
-// Create Redis session store
+// Create Redis session store with optimized settings
 const redisStore = new RedisStore({
   client: redisClient,
   prefix: 'crewplots:sess:',
+  disableTouch: true, // Reduces writes
+  ttl: 1800 // 30 minutes in seconds
 });
 
 // Configure session options for Redis

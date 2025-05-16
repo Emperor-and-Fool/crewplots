@@ -1,0 +1,48 @@
+Bottom line upfront: Redis can run inside a Replit container, but three Replit-specific quirks commonly break it:
+
+    Background daemons are killed unless they run in the foreground (Redis’ default is to fork).
+
+    Only HTTP-proxy ports are exposed; a process that tries to grab 0.0.0.0:6379 will steal the repl’s public port and crash the proxy.
+
+    Past incidents and noisy neighbours on Replit’s shared Redis infrastructure sometimes cause “connection refused / timed-out”—see Replit status logs.
+
+Once you start Redis in the foreground (redis-server --port 6379 --daemonize no --bind 127.0.0.1) inside the same repl and point your Node session store at redis://127.0.0.1:6379, it usually “just works”. When that isn’t possible (e.g., free tier process limits) a managed Redis such as Upstash’s free tier is the next quickest fix—but you must accept WAN latency and the 256 MB / 500 k-cmd limits.
+1 · Why the stock “redis-server” command fails on Replit
+1.1 Redis daemonises by default
+
+redis-server forks and detaches (daemonize yes) on most OSes. Replit kills any process that detaches from the main job, so the server dies a few seconds after launch, leaving the client with ECONNREFUSED.
+Stack Overflow
+Stack Overflow
+1.2 Port-proxy collision
+
+Replit maps the first long-running process that binds a TCP port to the public https://<repl>.repl.co. If Redis binds 0.0.0.0:6379, it grabs the slot and the Express app can no longer listen, or vice-versa.
+Replit Blog
+1.3 Historic instability of Replit’s own Redis layer
+
+Replit’s status page shows multiple incidents (“Redis connections are timing out”, “Hosting is unstable”) that coincide with users seeing unexplained ECONNRESET / ECONNREFUSED.
+status.replit.com
+status.replit.com
+2 · Getting Redis working inside a repl
+Step	Command / setting	Why it matters
+Install (Nix repl)	pkgs.redis in replit.nix	Replit containers are immutable; you must declare the package.
+Replit Blog
+Run in foreground	redis-server --daemonize no --bind 127.0.0.1 --port 6379 (in start.sh before your Node command)	Keeps Redis in the same PID group so Replit doesn’t kill it.
+Replit Blog
+Bind to loopback only	--bind 127.0.0.1	Prevents Redis from taking the public port; your Node app still binds 0.0.0.0:3000.
+Node connection URL	redis://127.0.0.1:6379	Stays inside the container, no proxy hop needed.
+Session store config	connect-redis with disableTouch:true, ttl:1800	Minimises writes and avoids fork-bombing the tiny Redis instance.
+
+If you run the command manually in the shell you’ll see it stays in the foreground; pressing Run in the Replit UI should now start both Redis and your server without the connection-refused loop.
+3 · Troubleshooting checklist
+
+    Process list – ps aux | grep redis should show one redis-server PID after the repl boots.
+    If it flashes then disappears, it daemonised → add --daemonize no.
+    remarkablemark
+
+    Port check – lsof -i :6379 returns the Redis PID; lsof -i :3000 returns Node.
+
+    Client ping – redis-cli -h 127.0.0.1 ping should return PONG.
+
+    Log tail – Redis prints “Ready to accept connections” in the Replit Logs pane; if you see “Address already in use” it collided with the proxy.
+
+    Session timing – with Redis up, your /api/auth/me handler should drop from 300-700 ms to < 10 ms server-side (measure with console.time).
