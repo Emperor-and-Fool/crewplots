@@ -7,22 +7,27 @@ import { useToast } from "@/hooks/use-toast";
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
+  refreshAuth: () => Promise<boolean>;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  isAuthenticated: false,
   login: async () => false,
   logout: async () => {},
   register: async () => false,
+  refreshAuth: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -78,7 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           console.log("Error response, not authenticated");
           setUser(null);
-          setIsAuthenticated(false);
           // Clear any cached queries that might depend on authentication
           queryClient.clear();
         }
@@ -98,7 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         console.log("Setting isLoading to false");
         setIsLoading(false);
-        setAuthInitialized(true);
         console.timeEnd("auth:client-total");
       }
     };
@@ -330,25 +333,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (data && data.authenticated && data.user) {
           setUser(data.user);
-          setIsAuthenticated(true);
           setIsLoading(false);
           return true;
         } else {
           setUser(null);
-          setIsAuthenticated(false);
           setIsLoading(false);
           return false;
         }
       } else {
         setUser(null);
-        setIsAuthenticated(false);
         setIsLoading(false);
         return false;
       }
     } catch (error) {
       console.error("Error refreshing authentication:", error);
       setUser(null);
-      setIsAuthenticated(false);
       setIsLoading(false);
       return false;
     }
@@ -360,7 +359,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isLoading,
         isAuthenticated,
-        authInitialized,
         login,
         logout,
         register,
