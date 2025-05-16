@@ -1,12 +1,10 @@
 import session from 'express-session';
-import connectPgSimple from "connect-pg-simple";
 import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
-import { pool } from "./db";
 
 // Create Redis client with settings optimized for reliable connections
 const redisClient = createClient({ 
-  url: process.env.REDIS_URL || 'redis://0.0.0.0:6379',
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
   socket: {
     reconnectStrategy: (retries) => {
       console.log(`Redis connection attempt ${retries}`);
@@ -16,13 +14,15 @@ const redisClient = createClient({
   }
 });
 
-// Connect to Redis
-(async () => {
+// Connect to Redis with persistent retry mechanism
+(async function connectWithRetry() {
   try {
     await redisClient.connect();
-    console.log('Successfully connected to Redis');
+    console.log('✅ Successfully connected to Redis');
   } catch (err) {
-    console.error('Redis connection error:', err);
+    console.error('⚠️ Redis connection error, retrying in 2 seconds:', err);
+    // Keep trying to connect to Redis every 2 seconds
+    setTimeout(connectWithRetry, 2000);
   }
 })();
 
@@ -55,41 +55,14 @@ const redisSessionOptions = {
   rolling: true,      // Reset expiration with each request
 };
 
-// Create PostgreSQL session store as fallback
-const PgStore = connectPgSimple(session);
-const pgStore = new PgStore({
-  pool: pool,
-  tableName: 'sessions',
-  createTableIfMissing: true,
-  ttl: 86400 // 24 hours in seconds
-});
-
-// Configure fallback session options with PostgreSQL
-const pgSessionOptions = {
-  store: pgStore,
-  secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-  resave: true, // For PG store, need to force save
-  saveUninitialized: false,
-  name: 'crewplots.sid',
-  cookie: { 
-    maxAge: 86400000, // 24 hours
-    secure: true,     // HTTPS only
-    httpOnly: true,   // Not accessible via JavaScript
-    sameSite: 'lax' as const,  // More compatible and secure than 'none'
-    path: '/'
-  },
-  rolling: true,      // Reset expiration with each request
-};
-
-// ALWAYS use Redis - never fall back to PostgreSQL as explicitly instructed
-const useRedis = true;
+// Only use Redis for session storage as explicitly instructed
 
 // Log Redis errors but NEVER fall back to PostgreSQL
 redisClient.on('error', (err) => {
   console.error('Redis client error:', err);
-  // No fallback to PostgreSQL - we'll keep trying with Redis
+  // No fallback to PostgreSQL - we'll keep trying with Redis only
 });
 
-// Only use Redis for session storage
+// Only export Redis session options and related Redis components
 export const sessionOptions = redisSessionOptions;
-export { redisClient, redisStore, pgStore };
+export { redisClient, redisStore };
