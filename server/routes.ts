@@ -63,6 +63,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
+  // Add guard against duplicate session cookies
+  app.use((req, _res, next) => {
+    const cookieHeader = req.headers.cookie || '';
+    const sidMatches = (cookieHeader.match(/crewplots\.sid=/g) || []).length;
+    if (sidMatches > 1) {
+      console.warn('⚠️ Multiple session cookies detected:', cookieHeader);
+    }
+    next();
+  });
+
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());
   app.use(passport.session());

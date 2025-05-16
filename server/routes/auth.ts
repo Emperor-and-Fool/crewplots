@@ -276,16 +276,8 @@ router.get('/me', async (req, res) => {
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
         
-        // Set debug cookie for testing with proper secure settings
-        res.cookie('debug-auth-check', 'was-checked', { 
-            maxAge: 3600000, 
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: true // CRITICAL: Must be secure when using HTTPS
-        });
-        
-        // Force cookie to be visible in response with proper secure settings
-        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=3600`);
+        // We've removed all debug cookie setting to prevent cookie conflicts
+        // No manual cookie manipulation - let express-session handle it
         
         // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
