@@ -97,7 +97,21 @@ export const rolePermissions = pgTable("role_permissions", {
   };
 });
 
-// Users & Auth
+/**
+ * Users Table
+ * 
+ * Core user account information for all users in the system.
+ * Includes authentication data and basic profile information.
+ * 
+ * Note: Some fields (role, locationId) are maintained for backward 
+ * compatibility but will be replaced by the userLocations junction table
+ * in future updates for more flexible role management.
+ * 
+ * Key relationships:
+ * - Many-to-many with locations (via userLocations junction)
+ * - One-to-many with staff profiles
+ * - One-to-many with applicant profiles
+ */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -115,7 +129,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// User Locations - junction table mapping users to locations with specific roles
+/**
+ * User Locations Junction Table
+ * 
+ * Maps users to locations with specific roles, allowing a single user
+ * to have different roles at different locations.
+ * 
+ * This is a critical table for the multi-location management feature,
+ * enabling staff to work across multiple venues with appropriate permissions.
+ * 
+ * Example: A user could be a crew_manager at one location but a crew_member at another.
+ */
 export const userLocations = pgTable("user_locations", {
   userId: integer("user_id").references(() => users.id).notNull(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -127,7 +151,18 @@ export const userLocations = pgTable("user_locations", {
   };
 });
 
-// Competencies - now explicitly associated with locations
+/**
+ * Competencies Table
+ * 
+ * Defines skills, certifications, or qualifications needed for positions.
+ * Each competency is specific to a location, allowing different venues
+ * to define their own skill requirements.
+ * 
+ * Key relationships:
+ * - Many-to-many with positions (via positionCompetencies junction)
+ * - Many-to-many with staff (via staffCompetencies junction)
+ * - One-to-many with shifts (for required skill levels)
+ */
 export const competencies = pgTable("competencies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -137,7 +172,19 @@ export const competencies = pgTable("competencies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Positions/Functions - defined by crew managers for their location
+/**
+ * Positions Table
+ * 
+ * Defines job roles or functions that staff members can perform.
+ * Each position is specific to a location and may require different competencies.
+ * 
+ * Examples: Bartender, Server, Host, Kitchen Staff, etc.
+ * 
+ * Key relationships:
+ * - Many-to-many with competencies (via positionCompetencies junction)
+ * - One-to-many with staff members (assigned positions)
+ * - Referenced in scheduling templates and shifts
+ */
 export const positions = pgTable("positions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -147,7 +194,19 @@ export const positions = pgTable("positions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Position Required Competencies - mapping positions to required competencies with minimum levels
+/**
+ * Position Competencies Junction Table
+ * 
+ * Maps positions to required competencies with minimum proficiency levels.
+ * Defines what skills are needed for each position and at what level of expertise.
+ * 
+ * For example:
+ * - Bartender position might require Cocktail Making competency at level 3
+ * - Server position might require Menu Knowledge competency at level 2
+ * 
+ * This table is used when scheduling to ensure staff members have
+ * appropriate skills for assigned shifts.
+ */
 export const positionCompetencies = pgTable("position_competencies", {
   positionId: integer("position_id").references(() => positions.id).notNull(),
   competencyId: integer("competency_id").references(() => competencies.id).notNull(),
@@ -159,7 +218,21 @@ export const positionCompetencies = pgTable("position_competencies", {
   };
 });
 
-// Staff (people who are hired and working)
+/**
+ * Staff Table
+ * 
+ * Represents employees who are actively working at a location.
+ * Each staff record links a user to a specific location and position.
+ * 
+ * This table contains employment-specific details like position and 
+ * desired working hours that don't belong in the core user profile.
+ * 
+ * Key relationships:
+ * - Many-to-one with users (each staff record belongs to one user)
+ * - Many-to-one with locations (each staff member belongs to one location)
+ * - Many-to-one with positions (each staff member has one primary position)
+ * - Many-to-many with competencies (via staffCompetencies junction)
+ */
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -170,7 +243,24 @@ export const staff = pgTable("staff", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Staff Competencies (junction table with assessment tracking)
+/**
+ * Staff Competencies Junction Table
+ * 
+ * Tracks competency levels for each staff member with assessment history.
+ * This enables skill-based scheduling and training management.
+ * 
+ * Unlike positionCompetencies, this table tracks actual staff skills
+ * rather than required skills for positions. The assessment tracking
+ * creates an audit trail for skill verification.
+ * 
+ * The level field uses a 0-5 scale where:
+ * 0 = Not applicable/trained
+ * 1 = Basic awareness
+ * 2 = Beginner level
+ * 3 = Competent
+ * 4 = Advanced
+ * 5 = Expert/can train others
+ */
 export const staffCompetencies = pgTable("staff_competencies", {
   id: serial("id").primaryKey(),
   staffId: integer("staff_id").references(() => staff.id).notNull(),
@@ -182,7 +272,25 @@ export const staffCompetencies = pgTable("staff_competencies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Applicants (people who applied for a job)
+/**
+ * Applicants Table
+ * 
+ * Stores information about job applicants who haven't yet been hired.
+ * Applicants enter the system through the application portal and can
+ * be tracked through different stages of the hiring process.
+ * 
+ * The status field tracks progression:
+ * - new: Initial application
+ * - contacted: Initial outreach made
+ * - interviewed: Interview conducted
+ * - hired: Accepted and moved to staff
+ * - rejected: Not proceeding
+ * 
+ * Key relationships:
+ * - Many-to-one with locations (which venue they applied to)
+ * - Many-to-one with users (linked account if created)
+ * - One-to-many with applicant documents
+ */
 export const applicants = pgTable("applicants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -197,7 +305,18 @@ export const applicants = pgTable("applicants", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Applicant Documents
+/**
+ * Applicant Documents Table
+ * 
+ * Stores documents submitted by applicants for verification.
+ * This includes resumes, identity documents, certifications, etc.
+ * 
+ * The system tracks both the upload and verification processes with
+ * timestamps for audit purposes.
+ * 
+ * Document files are stored as URLs pointing to the actual file storage location.
+ * The cascade delete ensures all documents are removed when an applicant is deleted.
+ */
 export const applicantDocuments = pgTable("applicant_documents", {
   id: serial("id").primaryKey(),
   applicantId: integer("applicant_id").references(() => applicants.id, { onDelete: 'cascade' }).notNull(),
