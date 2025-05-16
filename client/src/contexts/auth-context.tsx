@@ -74,12 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (data && data.authenticated && data.user) {
             console.timeLog("auth:client-total", "before setState");
             setUser(data.user);
+            setIsAuthenticated(true);
             console.log("User authenticated:", data.user.username);
             console.timeLog("auth:client-total", "after setState");
           } else {
             // Not authenticated or no user data
             console.log("Not authenticated or no user data found");
             setUser(null);
+            setIsAuthenticated(false);
             // Clear any cached queries that might depend on authentication
             queryClient.clear();
             console.timeLog("auth:client-total", "after clearing state (not authenticated)");
@@ -87,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           console.log("Error response, not authenticated");
           setUser(null);
+          setIsAuthenticated(false);
           // Clear any cached queries that might depend on authentication
           queryClient.clear();
         }
@@ -106,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         console.log("Setting isLoading to false");
         setIsLoading(false);
+        setAuthInitialized(true);
         console.timeEnd("auth:client-total");
       }
     };
