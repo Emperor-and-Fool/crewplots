@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, useEffect, ReactNode, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Register } from "@shared/schema";
@@ -7,22 +7,31 @@ import { useToast } from "@/hooks/use-toast";
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  authInitialized: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
+  refreshAuth: () => Promise<boolean>;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  isAuthenticated: false,
+  authInitialized: false,
   login: async () => false,
   logout: async () => {},
   register: async () => false,
+  refreshAuth: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
+  const authCheckRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
