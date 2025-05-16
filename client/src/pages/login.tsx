@@ -66,45 +66,6 @@ export default function Login() {
     }
   };
   
-  // Helper function to ensure clean session state
-  const cleanSessionAndRedirect = (targetUrl: string) => {
-    try {
-      // Clear stale cache
-      queryClient.clear();
-      
-      // Set a cookie to indicate we're in a redirect process
-      document.cookie = `redirect_in_progress=true; path=/; max-age=60`;
-      
-      // Log all cookies for debugging
-      console.log("Cookies before redirect:", document.cookie);
-      
-      // Add a timestamp to help prevent caching
-      if (targetUrl.indexOf('?') === -1) {
-        targetUrl += `?_t=${Date.now()}`;
-      } else {
-        targetUrl += `&_t=${Date.now()}`;
-      }
-      
-      console.log(`Performing hard redirect to ${targetUrl} with cache busting`);
-      
-      // Use a small timeout to ensure cookies are saved before navigation
-      setTimeout(() => {
-        try {
-          // Use href instead of replace to create a fresh history entry
-          window.location.href = targetUrl;
-        } catch (err) {
-          console.error("Navigation error:", err);
-          // Fallback method if the primary method fails
-          window.location.assign(targetUrl);
-        }
-      }, 100);
-    } catch (err) {
-      console.error("Redirect helper error:", err);
-      // Ultimate fallback - simplest possible redirect
-      window.location.href = targetUrl;
-    }
-  };
-  
   // Form submission handler using URLSearchParams for reliable form data submission
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
@@ -112,22 +73,6 @@ export default function Login() {
     
     try {
       console.log("Attempting login with URLSearchParams...");
-      
-      // Try to perform a logout first to clear any existing sessions
-      try {
-        const logoutResponse = await fetch('/api/auth/logout', {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        });
-        console.log("Logout completed with status:", logoutResponse.status);
-      } catch (logoutErr) {
-        console.warn("Logout attempt failed, continuing with login:", logoutErr);
-      }
       
       // Use URLSearchParams instead of FormData
       const urlencoded = new URLSearchParams();
@@ -139,9 +84,6 @@ export default function Login() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
         },
         body: urlencoded.toString(),
         credentials: 'include', // Important for cookies
@@ -160,21 +102,18 @@ export default function Login() {
           description: `Welcome back, ${result.user?.name || data.username}!`,
         });
         
-        // Navigate based on role using a simpler approach that doesn't cause race conditions
+        // Navigate to dashboard using a simpler approach that doesn't cause race conditions
         try {
-          // Check user role for proper redirection
-          const redirectTarget = result.user?.role === 'applicant' ? '/applicant-portal' : '/dashboard';
-          
           // Show a message to the user before redirecting
           toast({
             title: "Redirecting...",
-            description: `Taking you to the ${result.user?.role === 'applicant' ? 'applicant portal' : 'dashboard'}`,
+            description: "Taking you to the dashboard",
           });
           
-          console.log(`User role: ${result.user?.role}, redirecting to: ${redirectTarget}`);
-          
-          // Use our clean session redirect helper
-          cleanSessionAndRedirect(redirectTarget);
+          // Use setTimeout to allow the toast to display
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
         } catch (e) {
           console.error("Redirect error:", e);
         }
@@ -321,8 +260,6 @@ export default function Login() {
                     Direct Form Submit (Debug)
                   </Button>
                 </form>
-                
-
               </div>
             </div>
           </CardFooter>

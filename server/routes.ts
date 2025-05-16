@@ -44,34 +44,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 86400000, // 24 hours
         secure: true, // We're on HTTPS in Replit
         httpOnly: true,
-        sameSite: 'lax', // Changed to lax for same-origin deployments
-        path: '/',
-        // Removed domain setting completely to ensure host-only cookie
+        sameSite: 'lax', // More compatible and secure than 'none'
+        path: '/'
       },
       store: new PgStore({
         pool: pool,
         tableName: 'sessions',
         createTableIfMissing: true, // Auto-create the table
-        ttl: 86400000, // 24 hours - same as cookie maxAge
-        pruneSessionInterval: 60 // Clean old sessions every minute
+        ttl: 86400000 // 24 hours - same as cookie maxAge
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: false, // Don't save session if unmodified
-      saveUninitialized: false, // Don't create session until something stored
+      resave: true, // Force session save on each request to ensure cross-frame compatibility
+      saveUninitialized: true, // Create session for tracking before user logs in
       name: 'crewplots.sid', // Custom name to avoid conflicts
       rolling: true, // Force cookies to be set on every response
     })
   );
-
-  // Add guard against duplicate session cookies
-  app.use((req, _res, next) => {
-    const cookieHeader = req.headers.cookie || '';
-    const sidMatches = (cookieHeader.match(/crewplots\.sid=/g) || []).length;
-    if (sidMatches > 1) {
-      console.warn('⚠️ Multiple session cookies detected:', cookieHeader);
-    }
-    next();
-  });
 
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());
@@ -143,8 +131,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       done(err);
     }
   });
-
-
 
   // Use route modules
   app.use('/api/auth', authRoutes);

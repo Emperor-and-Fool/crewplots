@@ -222,7 +222,8 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 
 function App() {
   const { isLoading, user } = useAuth();
-  // Clean up unnecessary state variables
+  const [forcedLoad, setForcedLoad] = React.useState(false);
+  const [autoLoginAttempted, setAutoLoginAttempted] = React.useState(false);
   const [serverAuthState, setServerAuthState] = React.useState<{
     loading: boolean;
     authenticated: boolean;
@@ -233,58 +234,88 @@ function App() {
     user: null
   });
 
-  // Synchronize React Auth Context with our serverAuthState
+  // Direct server-side authentication check that bypasses the React state issues
   React.useEffect(() => {
-    // When React auth state is ready (not loading), update serverAuthState
-    if (!isLoading) {
-      setServerAuthState({
-        loading: false,
-        authenticated: !!user,
-        user: user
-      });
-      
-      // If user is applicant, redirect them to applicant portal if they're not already there
-      if (user && 
-          user.role === 'applicant' && 
-          window.location.pathname !== '/applicant-portal' &&
-          window.location.pathname !== '/login' &&
-          window.location.pathname !== '/register' &&
-          window.location.pathname !== '/registration-success') {
-        console.log("User is applicant, redirecting to applicant portal");
-        window.location.href = '/applicant-portal';
+    const checkServerAuth = async () => {
+      try {
+        console.log("Checking server-side authentication directly in App");
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store' // Prevent caching
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Server auth check response (App):", data);
+          
+          setServerAuthState({
+            loading: false,
+            authenticated: data.authenticated,
+            user: data.user || null
+          });
+          
+          // If user is applicant, redirect them to applicant portal if they're not already there
+          if (data.authenticated && 
+              data.user?.role === 'applicant' && 
+              window.location.pathname !== '/applicant-portal' &&
+              window.location.pathname !== '/login' &&
+              window.location.pathname !== '/register' &&
+              window.location.pathname !== '/registration-success') {
+            console.log("User is applicant, redirecting to applicant portal");
+            window.location.href = '/applicant-portal';
+          }
+        } else {
+          console.error("Server auth check failed with status:", response.status);
+          setServerAuthState({
+            loading: false,
+            authenticated: false,
+            user: null
+          });
+        }
+      } catch (error) {
+        console.error("Error checking server auth:", error);
+        setServerAuthState({
+          loading: false,
+          authenticated: false,
+          user: null
+        });
       }
-    }
-  }, [isLoading, user]);
-
-  // We no longer need this verbose debug logging
-  
-  // Remove auto-login functionality
-  React.useEffect(() => {
-    // Auto-login is now disabled
-    if (!serverAuthState.authenticated && !serverAuthState.loading) {
-      console.log("Auto-login is disabled to allow manual login flow");
-    }
-  }, [serverAuthState]);
-  
-  // Show loading while checking authentication
-  React.useEffect(() => {
-    // We don't need a timeout anymore, the auth system is reliable now
-  }, [isLoading, serverAuthState.loading]);
-  
-  // Show loading indicator with 5-second timeout to prevent infinite loading
-  const [authTimeout, setAuthTimeout] = React.useState(false);
-  
-  React.useEffect(() => {
-    // If we're loading for more than 5 seconds, we'll show the login page anyway
-    const timer = setTimeout(() => {
-      setAuthTimeout(true);
-    }, 5000);
+    };
     
-    return () => clearTimeout(timer);
+    checkServerAuth();
   }, []);
+
+  // Debug logging to see what state we're in
+  console.log("App.tsx - Auth state:", { 
+    reactState: { isLoading, isAuthenticated: !!user, forcedLoad, autoLoginAttempted },
+    serverState: serverAuthState
+  });
   
-  // If we're still in the loading state but not timed out, show loading indicator
-  if ((isLoading || serverAuthState.loading) && !authTimeout && !user) {
+  // Auto-login for development - disabled to allow manual logout
+  React.useEffect(() => {
+    // Auto-login is now disabled to allow manual logout
+    if (!autoLoginAttempted && !serverAuthState.authenticated && !serverAuthState.loading) {
+      setAutoLoginAttempted(true);
+      console.log("Auto-login is disabled to allow manual logout");
+      
+      // Comment out the auto-login redirect
+      // window.location.href = '/api/auth/dev-login';
+    }
+  }, [autoLoginAttempted, serverAuthState]);
+  
+  // If still loading after 2 seconds, force the login page
+  React.useEffect(() => {
+    if (serverAuthState.loading) {
+      const timer = setTimeout(() => {
+        console.log("Loading timeout - forcing login page display");
+        setForcedLoad(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [serverAuthState.loading]);
+  
+  // Show loading while checking server authentication
+  if (serverAuthState.loading && !forcedLoad) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
@@ -293,7 +324,7 @@ function App() {
     </div>;
   }
   
-  // No need for special loading handling anymore
+  // Moving this logic to the existing useEffect to avoid React Hooks order issues
 
   // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
@@ -304,8 +335,8 @@ function App() {
             <Switch>
               {/* PUBLIC ROUTES - accessible without authentication */}
               <Route path="/login">
-                {user ? 
-                  (user.role === 'applicant' ? 
+                {serverAuthState.authenticated ? 
+                  (serverAuthState.user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
                   <Login />}

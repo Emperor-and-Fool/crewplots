@@ -276,8 +276,16 @@ router.get('/me', async (req, res) => {
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
         
-        // We've removed all debug cookie setting to prevent cookie conflicts
-        // No manual cookie manipulation - let express-session handle it
+        // Set debug cookie for testing - use SameSite=None for cross-domain cookies
+        res.cookie('debug-auth-check', 'was-checked', { 
+            maxAge: 3600000, 
+            httpOnly: true,
+            sameSite: 'none',
+            secure: false // Important: Allow insecure cookies in development
+        });
+        
+        // Force cookie to be visible in response
+        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=None; Max-Age=3600`);
         
         // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
@@ -348,12 +356,18 @@ const logoutHandler = (req, res) => {
                 return res.status(500).json({ message: 'Error during logout' });
             }
             
-            // Clear the main session cookie with proper parameters
-            res.clearCookie('crewplots.sid', { 
-                path: '/',
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax'
+            // Clear ALL cookies
+            res.clearCookie('connect.sid');
+            res.clearCookie('login-timestamp');
+            res.clearCookie('debug-auth-check');
+            res.clearCookie('admin-login');
+            res.clearCookie('crewplots.sid');
+            res.clearCookie('connect.sid-refreshed');
+            
+            // Clear additional cookies that might exist
+            const cookieNames = Object.keys(req.cookies || {});
+            cookieNames.forEach(name => {
+                res.clearCookie(name);
             });
             
             console.log('User logged out successfully, redirecting to login');
