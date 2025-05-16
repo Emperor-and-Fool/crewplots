@@ -144,6 +144,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Special maintenance route to clear all sessions - for emergency use only
+  app.post('/api/maintenance/clear-all-sessions', async (req, res) => {
+    try {
+      // Delete all sessions from database
+      const result = await pool.query('DELETE FROM sessions');
+      console.log(`Cleared all ${result.rowCount} sessions from database`);
+      return res.json({ 
+        message: `Successfully cleared all sessions`,
+        sessionsCleared: result.rowCount
+      });
+    } catch (error) {
+      console.error('Error clearing all sessions:', error);
+      return res.status(500).json({ message: 'Failed to clear all sessions' });
+    }
+  });
+
   // Use route modules
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
