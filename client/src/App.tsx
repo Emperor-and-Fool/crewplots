@@ -258,32 +258,21 @@ function App() {
 
   // We no longer need this verbose debug logging
   
-  // Auto-login for development - disabled to allow manual logout
+  // Remove auto-login functionality
   React.useEffect(() => {
-    // Auto-login is now disabled to allow manual logout
-    if (!autoLoginAttempted && !serverAuthState.authenticated && !serverAuthState.loading) {
-      setAutoLoginAttempted(true);
-      console.log("Auto-login is disabled to allow manual logout");
-      
-      // Comment out the auto-login redirect
-      // window.location.href = '/api/auth/dev-login';
+    // Auto-login is now disabled
+    if (!serverAuthState.authenticated && !serverAuthState.loading) {
+      console.log("Auto-login is disabled to allow manual login flow");
     }
-  }, [autoLoginAttempted, serverAuthState]);
+  }, [serverAuthState]);
   
-  // Show loading while checking authentication, but only for a reasonable time
+  // Show loading while checking authentication
   React.useEffect(() => {
-    // Only start the timer if we're still loading
-    if ((isLoading || serverAuthState.loading) && !forcedLoad) {
-      const timer = setTimeout(() => {
-        console.log("Loading timeout - forcing UI to proceed");
-        setForcedLoad(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, serverAuthState.loading, forcedLoad]);
+    // We don't need a timeout anymore, the auth system is reliable now
+  }, [isLoading, serverAuthState.loading]);
   
   // If we're still in the initial loading state, show a loading indicator
-  if ((isLoading || serverAuthState.loading) && !forcedLoad && !user) {
+  if (isLoading || serverAuthState.loading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
@@ -292,7 +281,7 @@ function App() {
     </div>;
   }
   
-  // Moving this logic to the existing useEffect to avoid React Hooks order issues
+  // No need for special loading handling anymore
 
   // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
