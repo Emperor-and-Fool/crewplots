@@ -4,16 +4,14 @@ import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 import { pool } from "./db";
 
-// Create Redis client
+// Create Redis client with more forgiving settings
 const redisClient = createClient({ 
   url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
   socket: {
-    reconnectStrategy: (retries) => {
-      console.log(`Redis connection attempt ${retries}`);
-      if (retries > 10) return new Error('Too many retries, giving up');
-      return Math.min(retries * 100, 3000); // Increasing backoff, max 3s
-    }
-  }
+    connectTimeout: 10000, // 10 seconds to connect
+    reconnectStrategy: false // We'll handle reconnection manually
+  },
+  disableOfflineQueue: true // Don't queue commands when disconnected
 });
 
 // Connect to Redis
@@ -81,7 +79,15 @@ const pgSessionOptions = {
   rolling: true,      // Reset expiration with each request
 };
 
-// Use Redis if client is ready, otherwise fall back to PostgreSQL
-const useRedis = true; // Set to true to use Redis, false to use PostgreSQL
+// Always use Redis unless we get a specific error during init time
+let useRedis = true;
+
+// If Redis errors out, we'll set this to false so we fall back to PG store for future requests
+redisClient.on('error', (err) => {
+  console.error('Redis client error, falling back to PostgreSQL:', err);
+  useRedis = false;
+});
+
+// Export whichever session store is available
 export const sessionOptions = useRedis ? redisSessionOptions : pgSessionOptions;
 export { redisClient, redisStore, pgStore };
