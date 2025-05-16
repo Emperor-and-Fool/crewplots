@@ -348,18 +348,23 @@ const logoutHandler = (req, res) => {
                 return res.status(500).json({ message: 'Error during logout' });
             }
             
-            // Clear ALL cookies
-            res.clearCookie('connect.sid');
-            res.clearCookie('login-timestamp');
-            res.clearCookie('debug-auth-check');
-            res.clearCookie('admin-login');
-            res.clearCookie('crewplots.sid');
-            res.clearCookie('connect.sid-refreshed');
+            // Clear cookies with explicit settings that match how they were set
+            res.clearCookie('crewplots.sid', { 
+                path: '/',
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax'
+            });
             
-            // Clear additional cookies that might exist
+            // Clear any other cookies that might exist
             const cookieNames = Object.keys(req.cookies || {});
             cookieNames.forEach(name => {
-                res.clearCookie(name);
+                res.clearCookie(name, { 
+                    path: '/',
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'lax'
+                });
             });
             
             console.log('User logged out successfully, redirecting to login');
