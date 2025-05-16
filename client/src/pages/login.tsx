@@ -68,20 +68,41 @@ export default function Login() {
   
   // Helper function to ensure clean session state
   const cleanSessionAndRedirect = (targetUrl: string) => {
-    // Clear stale cache
-    queryClient.clear();
-    
-    // Add a timestamp to help prevent caching
-    if (targetUrl.indexOf('?') === -1) {
-      targetUrl += `?_t=${Date.now()}`;
-    } else {
-      targetUrl += `&_t=${Date.now()}`;
+    try {
+      // Clear stale cache
+      queryClient.clear();
+      
+      // Set a cookie to indicate we're in a redirect process
+      document.cookie = `redirect_in_progress=true; path=/; max-age=60`;
+      
+      // Log all cookies for debugging
+      console.log("Cookies before redirect:", document.cookie);
+      
+      // Add a timestamp to help prevent caching
+      if (targetUrl.indexOf('?') === -1) {
+        targetUrl += `?_t=${Date.now()}`;
+      } else {
+        targetUrl += `&_t=${Date.now()}`;
+      }
+      
+      console.log(`Performing hard redirect to ${targetUrl} with cache busting`);
+      
+      // Use a small timeout to ensure cookies are saved before navigation
+      setTimeout(() => {
+        try {
+          // Use href instead of replace to create a fresh history entry
+          window.location.href = targetUrl;
+        } catch (err) {
+          console.error("Navigation error:", err);
+          // Fallback method if the primary method fails
+          window.location.assign(targetUrl);
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Redirect helper error:", err);
+      // Ultimate fallback - simplest possible redirect
+      window.location.href = targetUrl;
     }
-    
-    console.log(`Performing hard redirect to ${targetUrl} with cache busting`);
-    
-    // Use replace instead of href to replace the current entry in the session history
-    window.location.replace(targetUrl);
   };
   
   // Form submission handler using URLSearchParams for reliable form data submission

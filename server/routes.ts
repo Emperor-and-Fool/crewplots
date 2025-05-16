@@ -44,18 +44,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 86400000, // 24 hours
         secure: true, // We're on HTTPS in Replit
         httpOnly: true,
-        sameSite: 'lax', // More compatible and secure than 'none'
+        sameSite: 'none', // Allow cross-site requests safely since we're using HTTPS
         path: '/'
       },
       store: new PgStore({
         pool: pool,
         tableName: 'sessions',
         createTableIfMissing: true, // Auto-create the table
-        ttl: 86400000 // 24 hours - same as cookie maxAge
+        ttl: 86400000, // 24 hours - same as cookie maxAge
+        pruneSessionInterval: 60 // Clean old sessions every minute
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: true, // Force session save on each request to ensure cross-frame compatibility
-      saveUninitialized: true, // Create session for tracking before user logs in
+      resave: false, // Don't save session if unmodified
+      saveUninitialized: false, // Don't create session until something stored
       name: 'crewplots.sid', // Custom name to avoid conflicts
       rolling: true, // Force cookies to be set on every response
     })
