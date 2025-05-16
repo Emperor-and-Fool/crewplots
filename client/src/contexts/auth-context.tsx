@@ -70,12 +70,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (data && data.authenticated && data.user) {
             console.timeLog("auth:client-total", "before setState");
             setUser(data.user);
+            setIsAuthenticated(true);
             console.log("User authenticated:", data.user.username);
             console.timeLog("auth:client-total", "after setState");
           } else {
             // Not authenticated or no user data
             console.log("Not authenticated or no user data found");
             setUser(null);
+            setIsAuthenticated(false);
             // Clear any cached queries that might depend on authentication
             queryClient.clear();
             console.timeLog("auth:client-total", "after clearing state (not authenticated)");
@@ -83,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           console.log("Error response, not authenticated");
           setUser(null);
+          setIsAuthenticated(false);
           // Clear any cached queries that might depend on authentication
           queryClient.clear();
         }
@@ -97,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setUser(null);
+        setIsAuthenticated(false);
         // Clear any cached queries that might depend on authentication
         queryClient.clear();
       } finally {
@@ -137,6 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const data = await response.json();
           console.log("Login successful, user data:", data.user);
           setUser(data.user);
+          setIsAuthenticated(true);
           
           // Show success toast
           toast({
@@ -202,6 +207,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.ok) {
         setUser(null);
+        setIsAuthenticated(false);
         
         // Clear all query caches
         queryClient.clear();
