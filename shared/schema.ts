@@ -1,3 +1,13 @@
+/**
+ * Database Schema Definition Module
+ * 
+ * This module defines the entire database structure for Crew Plots Pro using Drizzle ORM.
+ * It includes table definitions, relationships, constraints, and validation schemas.
+ * 
+ * The schema follows a role-based permission model with support for multiple locations,
+ * staff competency tracking, scheduling, and applicant management.
+ */
+
 import { 
   pgTable, 
   text, 
@@ -15,7 +25,18 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Locations (different bars/restaurants)
+/**
+ * Locations Table
+ * 
+ * Represents different bar/restaurant locations within the business.
+ * Each location has its own staff, competencies, and schedules.
+ * 
+ * Key relationships:
+ * - One-to-many with users (via userLocations junction table)
+ * - One-to-many with competencies (location-specific skills)
+ * - One-to-many with positions (location-specific roles)
+ * - One-to-many with schedules (location-specific staffing)
+ */
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -27,7 +48,16 @@ export const locations = pgTable("locations", {
   ownerId: integer("owner_id"), // Set after user creation to avoid circular reference
 });
 
-// Roles table
+/**
+ * Roles Table
+ * 
+ * Defines system-level roles that determine access rights.
+ * Examples: administrator, manager, crew_manager, crew_member
+ * 
+ * Key relationships:
+ * - Many-to-many with permissions (via rolePermissions junction)
+ * - Many-to-many with users and locations (via userLocations junction)
+ */
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -35,7 +65,15 @@ export const roles = pgTable("roles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Permissions table
+/**
+ * Permissions Table
+ * 
+ * Defines granular access permissions that can be assigned to roles.
+ * Examples: manage_users, view_reports, edit_schedules
+ * 
+ * Key relationships:
+ * - Many-to-many with roles (via rolePermissions junction)
+ */
 export const permissions = pgTable("permissions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -43,7 +81,12 @@ export const permissions = pgTable("permissions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Role Permissions junction table
+/**
+ * Role Permissions Junction Table
+ * 
+ * Many-to-many relationship between roles and permissions.
+ * Allows each role to have multiple permissions.
+ */
 export const rolePermissions = pgTable("role_permissions", {
   roleId: integer("role_id").references(() => roles.id).notNull(),
   permissionId: integer("permission_id").references(() => permissions.id).notNull(),
