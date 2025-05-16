@@ -321,6 +321,39 @@ export default function Login() {
                     Direct Form Submit (Debug)
                   </Button>
                 </form>
+                
+                <div className="mt-4 pt-2 border-t">
+                  <h3 className="font-medium text-center mb-2 text-red-600">Troubleshooting Tools</h3>
+                  <Button 
+                    type="button" 
+                    className="w-full bg-red-600 hover:bg-red-700 text-white mt-2"
+                    onClick={() => {
+                      fetch('/api/maintenance/clear-all-sessions', { 
+                        method: 'POST',
+                        credentials: 'include'
+                      })
+                      .then(res => res.json())
+                      .then(data => {
+                        // Clear browser cookies
+                        document.cookie.split(";").forEach(c => {
+                          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                        });
+                        alert(`Fixed ${data.sessionsCleared} session issues. Please refresh the page.`);
+                        // Force page reload from server
+                        window.location.href = '/login?fresh=true';
+                      })
+                      .catch(err => {
+                        console.error('Error fixing sessions:', err);
+                        alert('Error fixing sessions. Please try again.');
+                      });
+                    }}
+                  >
+                    Fix Session Issues
+                  </Button>
+                  <div className="text-xs text-center text-gray-500 mt-1">
+                    If you're having trouble logging in, click this button to clear all sessions and cookies.
+                  </div>
+                </div>
               </div>
             </div>
           </CardFooter>
