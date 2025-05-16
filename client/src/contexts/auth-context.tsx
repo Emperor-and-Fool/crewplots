@@ -26,21 +26,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Check if user is already logged in
+  // Check if user is already logged in with retry logic
   useEffect(() => {
-    const checkAuth = async () => {
-      console.log("Checking authentication status...");
-      
-      // Set up timeout to avoid infinite loading
+    // Track if component is mounted to prevent state updates after unmount
+    let isMounted = true;
+    
+    // Implement a reliable fetch with timeout
+    const fetchWithTimeout = async (url: string, options = {}, timeout = 3000) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const { signal } = controller;
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
       try {
-        // Add cache-busting parameter to prevent browser caching
-        const cacheBuster = new Date().getTime();
-        const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
-          credentials: "include",
-          signal: controller.signal,
+        const response = await fetch(url, {
+          ...options,
+          signal,
+          credentials: 'include',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -48,52 +49,100 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         });
         
-        // Clear the timeout since the request completed
         clearTimeout(timeoutId);
+        return response;
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    };
 
-        console.log("Auth response status:", response.status);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("User data:", data);
+    // Authentication check with explicit retry logic and exponential backoff
+    const checkAuthWithRetry = async (maxRetries = 3, initialDelay = 500) => {
+      console.log("Starting authentication check with retry logic");
+      let retries = 0;
+      let delay = initialDelay;
+      
+      // Start loading state
+      if (isMounted) setIsLoading(true);
+      
+      while (retries <= maxRetries) {
+        try {
+          // Add cache-busting parameter
+          const cacheBuster = new Date().getTime();
+          const response = await fetchWithTimeout(`/api/auth/me?_=${cacheBuster}`, {}, 3000); 
           
-          // If authenticated and user data exists, set the user
-          if (data && data.authenticated && data.user) {
-            setUser(data.user);
-            console.log("User authenticated:", data.user.username);
+          console.log(`Auth response (attempt ${retries + 1}/${maxRetries + 1}):`, response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log("User data received:", data);
+            
+            if (data && data.authenticated && data.user) {
+              if (isMounted) {
+                setUser(data.user);
+                setIsLoading(false);
+                console.log("Auth successful, user:", data.user.username);
+              }
+              // Success - exit the retry loop
+              return;
+            } else {
+              console.log("Not authenticated or no user data");
+              if (isMounted) {
+                setUser(null);
+                queryClient.clear();
+              }
+              // No need to retry - we got a valid response indicating not authenticated
+              break;
+            }
           } else {
-            // Not authenticated or no user data
-            console.log("Not authenticated or no user data found");
+            // Server responded with error - may need to retry
+            console.warn(`Auth check failed with status ${response.status}, retrying...`);
+          }
+        } catch (error: any) {
+          // Request failed - abort or retry
+          if (error?.name === 'AbortError') {
+            console.warn(`Auth check timed out (attempt ${retries + 1}/${maxRetries + 1})`);
+          } else {
+            console.error(`Auth check error (attempt ${retries + 1}/${maxRetries + 1}):`, error);
+          }
+        }
+        
+        // If this was the last retry, set not authenticated
+        if (retries >= maxRetries) {
+          console.warn("Max retries reached, setting not authenticated");
+          if (isMounted) {
             setUser(null);
-            // Clear any cached queries that might depend on authentication
             queryClient.clear();
           }
-        } else {
-          console.log("Error response, not authenticated");
-          setUser(null);
-          // Clear any cached queries that might depend on authentication
-          queryClient.clear();
-        }
-      } catch (error: any) {
-        // Clear the timeout if there was an error
-        clearTimeout(timeoutId);
-        
-        if (error?.name === 'AbortError') {
-          console.error("Authentication request timed out after 5 seconds");
-        } else {
-          console.error("Error checking authentication status:", error);
+          break;
         }
         
-        setUser(null);
-        // Clear any cached queries that might depend on authentication
-        queryClient.clear();
-      } finally {
-        console.log("Setting isLoading to false");
+        // Increment retry counter and delay for next attempt
+        retries++;
+        
+        // Wait with exponential backoff before retrying
+        console.log(`Waiting ${delay}ms before retry ${retries}/${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Exponential backoff with jitter to avoid thundering herd
+        delay = Math.min(delay * 1.5, 5000) * (0.9 + Math.random() * 0.2);
+      }
+      
+      // Ensure loading state is updated when done with all retries
+      if (isMounted) {
+        console.log("Setting isLoading to false after all retries");
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    // Start the authentication check process
+    checkAuthWithRetry();
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [queryClient]);
 
   // Login function using URLSearchParams for reliable authentication
