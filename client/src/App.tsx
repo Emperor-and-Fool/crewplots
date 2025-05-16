@@ -222,8 +222,7 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 
 function App() {
   const { isLoading, user } = useAuth();
-  const [forcedLoad, setForcedLoad] = React.useState(false);
-  const [autoLoginAttempted, setAutoLoginAttempted] = React.useState(false);
+  // Clean up unnecessary state variables
   const [serverAuthState, setServerAuthState] = React.useState<{
     loading: boolean;
     authenticated: boolean;
@@ -257,11 +256,7 @@ function App() {
     }
   }, [isLoading, user]);
 
-  // Debug logging to see what state we're in
-  console.log("App.tsx - Auth state:", { 
-    reactState: { isLoading, isAuthenticated: !!user, forcedLoad, autoLoginAttempted },
-    serverState: serverAuthState
-  });
+  // We no longer need this verbose debug logging
   
   // Auto-login for development - disabled to allow manual logout
   React.useEffect(() => {
