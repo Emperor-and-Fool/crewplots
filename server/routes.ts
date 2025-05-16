@@ -16,7 +16,7 @@ import {
   loginSchema, registerSchema
 } from "@shared/schema";
 import { pool } from "./db";
-import { sessionOptions } from "./redis-session";
+import { sessionOptions, redisClient, redisStore } from "./redis-session";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
