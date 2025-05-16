@@ -275,19 +275,20 @@ function App() {
     }
   }, [autoLoginAttempted, serverAuthState]);
   
-  // If still loading after 2 seconds, force the login page
+  // Show loading while checking authentication, but only for a reasonable time
   React.useEffect(() => {
-    if (serverAuthState.loading) {
+    // Only start the timer if we're still loading
+    if ((isLoading || serverAuthState.loading) && !forcedLoad) {
       const timer = setTimeout(() => {
-        console.log("Loading timeout - forcing login page display");
+        console.log("Loading timeout - forcing UI to proceed");
         setForcedLoad(true);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [serverAuthState.loading]);
+  }, [isLoading, serverAuthState.loading, forcedLoad]);
   
-  // Show loading while checking server authentication
-  if (serverAuthState.loading && !forcedLoad) {
+  // If we're still in the initial loading state, show a loading indicator
+  if ((isLoading || serverAuthState.loading) && !forcedLoad && !user) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
@@ -307,8 +308,8 @@ function App() {
             <Switch>
               {/* PUBLIC ROUTES - accessible without authentication */}
               <Route path="/login">
-                {serverAuthState.authenticated ? 
-                  (serverAuthState.user?.role === 'applicant' ? 
+                {user ? 
+                  (user.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
                   <Login />}
