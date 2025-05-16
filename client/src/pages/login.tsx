@@ -66,6 +66,24 @@ export default function Login() {
     }
   };
   
+  // Helper function to ensure clean session state
+  const cleanSessionAndRedirect = (targetUrl: string) => {
+    // Clear stale cache
+    queryClient.clear();
+    
+    // Add a timestamp to help prevent caching
+    if (targetUrl.indexOf('?') === -1) {
+      targetUrl += `?_t=${Date.now()}`;
+    } else {
+      targetUrl += `&_t=${Date.now()}`;
+    }
+    
+    console.log(`Performing hard redirect to ${targetUrl} with cache busting`);
+    
+    // Use replace instead of href to replace the current entry in the session history
+    window.location.replace(targetUrl);
+  };
+  
   // Form submission handler using URLSearchParams for reliable form data submission
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
@@ -73,6 +91,22 @@ export default function Login() {
     
     try {
       console.log("Attempting login with URLSearchParams...");
+      
+      // Try to perform a logout first to clear any existing sessions
+      try {
+        const logoutResponse = await fetch('/api/auth/logout', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        console.log("Logout completed with status:", logoutResponse.status);
+      } catch (logoutErr) {
+        console.warn("Logout attempt failed, continuing with login:", logoutErr);
+      }
       
       // Use URLSearchParams instead of FormData
       const urlencoded = new URLSearchParams();
@@ -84,6 +118,9 @@ export default function Login() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
         body: urlencoded.toString(),
         credentials: 'include', // Important for cookies
@@ -115,8 +152,8 @@ export default function Login() {
           
           console.log(`User role: ${result.user?.role}, redirecting to: ${redirectTarget}`);
           
-          // Use a direct location change instead of setTimeout to ensure immediate redirect
-          window.location.href = redirectTarget;
+          // Use our clean session redirect helper
+          cleanSessionAndRedirect(redirectTarget);
         } catch (e) {
           console.error("Redirect error:", e);
         }
