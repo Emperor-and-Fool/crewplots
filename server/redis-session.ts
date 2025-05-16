@@ -4,14 +4,19 @@ import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 import { pool } from "./db";
 
-// Create Redis client with more forgiving settings
+// Create Redis client with simplified settings for reliability
 const redisClient = createClient({ 
   url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+  // No fancy options, just connect with defaults
   socket: {
-    connectTimeout: 10000, // 10 seconds to connect
-    reconnectStrategy: false // We'll handle reconnection manually
-  },
-  disableOfflineQueue: true // Don't queue commands when disconnected
+    reconnectStrategy: (retries) => {
+      if (retries > 2) {
+        console.log('Redis connection attempt failed, falling back to PostgreSQL');
+        return false; // Stop retrying after 2 attempts
+      }
+      return 100; // Try again quickly
+    }
+  }
 });
 
 // Connect to Redis
