@@ -51,8 +51,8 @@ maxmemory-policy allkeys-lru
       
       writeFileSync(configPath, redisConfig);
 
-      // Start Redis as child process
-      const redisBinary = './Redis-replit/bin/redis-server';
+      // Start Redis as child process using system-installed Redis
+      const redisBinary = 'redis-server';
       
       console.log('Starting Redis as application subprocess...');
       this.redisProcess = spawn(redisBinary, [configPath], {
