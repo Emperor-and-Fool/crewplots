@@ -11,11 +11,18 @@ try {
   const redisConfig: any = {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
-    maxRetriesPerRequest: 1,
+    // Environment-optimized settings for slower connections
+    maxRetriesPerRequest: 60,
+    retryDelayOnFailover: 2000,
+    connectTimeout: 10000,
     lazyConnect: true,
-    retryDelayOnFailover: 100,
     enableReadyCheck: false,
-    maxRetriesPerRequest: null
+    // Graceful reconnection
+    maxRetriesPerRequest: 60,
+    retryDelayOnClusterDown: 2000,
+    retryDelayOnReconnect: function(times: number) {
+      return Math.min(times * 2000, 10000);
+    }
   };
 
   // Add password if provided
@@ -23,16 +30,19 @@ try {
     redisConfig.password = process.env.REDIS_PASSWORD;
   }
 
-  redisClient = new Redis({
-    ...redisConfig,
-    retryDelayOnFailover: 100,
-    enableReadyCheck: false,
-    maxRetriesPerRequest: 1,
-    lazyConnect: true,
-    // Handle connection errors gracefully
-    onConnect: () => console.log('Redis connected'),
-    onError: (err) => console.log('Redis connection error (handled):', err.message)
+  redisClient = new Redis(redisConfig);
+  
+  // Proper event handling
+  redisClient.on('connect', () => console.log('Redis connected successfully'));
+  redisClient.on('ready', () => console.log('Redis ready for commands'));
+  redisClient.on('error', (err) => {
+    // Don't flood logs with connection errors during startup
+    if (!err.message.includes('ECONNREFUSED')) {
+      console.log('Redis error:', err.message);
+    }
   });
+  redisClient.on('reconnecting', () => console.log('Redis reconnecting...'));
+  
 } catch (error) {
   console.log("Redis connection failed:", error);
 }
