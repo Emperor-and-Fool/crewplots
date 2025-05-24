@@ -23,9 +23,9 @@ try {
     redisConfig.password = process.env.REDIS_PASSWORD;
   }
 
-  redisClient = new Redis(redisConfig);
-  
-  console.log(`Attempting to connect to Redis at ${redisConfig.host}:${redisConfig.port}`);
+  // Temporarily disable Redis client to stop connection errors
+  // redisClient = new Redis(redisConfig);
+  redisClient = null;
 } catch (error) {
   console.log("Redis connection failed:", error);
 }
