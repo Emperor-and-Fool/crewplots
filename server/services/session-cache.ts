@@ -1,8 +1,19 @@
 import Redis from "ioredis";
-import { User } from "@shared/schema";
+
+// Types for session data
+interface User {
+  id: number;
+  username: string;
+  password: string;
+  email?: string;
+  role?: string;
+}
 
 // Redis client for session caching
 let redisClient: Redis | null = null;
+
+// In-memory fallback cache
+const memoryCache = new Map<string, { data: any; expires: number }>();
 
 // Initialize Redis connection for session caching
 try {
@@ -15,6 +26,7 @@ try {
 
   redisClient.on('error', (err) => {
     console.log('Redis session cache error:', err.message);
+    redisClient = null; // Fallback to memory cache
   });
 
   redisClient.on('connect', () => {
@@ -22,6 +34,7 @@ try {
   });
 } catch (error) {
   console.log("Redis session cache initialization failed:", error);
+  redisClient = null;
 }
 
 export class SessionCache {
