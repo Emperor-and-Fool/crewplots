@@ -46,12 +46,18 @@ export class SessionCache {
    * Cache user data for faster authentication lookups
    */
   static async cacheUser(userId: number, userData: User): Promise<void> {
-    if (!redisClient) return;
-
     try {
       const key = `${this.USER_PREFIX}${userId}`;
-      await redisClient.setex(key, this.DEFAULT_TTL, JSON.stringify(userData));
-      console.log(`User ${userId} cached in Redis`);
+      
+      if (redisClient) {
+        await redisClient.setex(key, this.DEFAULT_TTL, JSON.stringify(userData));
+        console.log(`User ${userId} cached in Redis`);
+      } else {
+        // Fallback to memory cache
+        const expires = Date.now() + (this.DEFAULT_TTL * 1000);
+        memoryCache.set(key, { data: userData, expires });
+        console.log(`User ${userId} cached in memory (Redis unavailable)`);
+      }
     } catch (error) {
       console.log('Failed to cache user data:', error);
     }
@@ -61,15 +67,25 @@ export class SessionCache {
    * Get cached user data
    */
   static async getCachedUser(userId: number): Promise<User | null> {
-    if (!redisClient) return null;
-
     try {
       const key = `${this.USER_PREFIX}${userId}`;
-      const cached = await redisClient.get(key);
       
-      if (cached) {
-        console.log(`User ${userId} retrieved from Redis cache`);
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(key);
+        if (cached) {
+          console.log(`User ${userId} retrieved from Redis cache`);
+          return JSON.parse(cached);
+        }
+      } else {
+        // Check memory cache
+        const cached = memoryCache.get(key);
+        if (cached && cached.expires > Date.now()) {
+          console.log(`User ${userId} retrieved from memory cache`);
+          return cached.data;
+        } else if (cached) {
+          // Expired entry, remove it
+          memoryCache.delete(key);
+        }
       }
       
       return null;
