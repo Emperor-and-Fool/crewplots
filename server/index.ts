@@ -99,14 +99,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Start Redis as part of application lifecycle
-  console.log('Starting Redis supervisor...');
-  const redisStarted = await redisSupervisor.start();
-  if (redisStarted) {
-    console.log('Redis supervisor started successfully');
-  } else {
-    console.warn('Redis supervisor failed to start, continuing without Redis');
-  }
+  // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
+  console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
+  // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

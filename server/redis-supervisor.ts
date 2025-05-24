@@ -6,7 +6,7 @@ export class RedisSupervisor {
   private redisProcess: ChildProcess | null = null;
   private isStarting = false;
   private restartCount = 0;
-  private maxRestarts = 5;
+  private maxRestarts = 0; // Disable restarts until we find a working solution
 
   constructor() {
     // Handle graceful shutdown
