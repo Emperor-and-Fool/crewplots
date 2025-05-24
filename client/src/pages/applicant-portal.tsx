@@ -111,20 +111,7 @@ function ApplicantPortal() {
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   const [timeoutReason, setTimeoutReason] = React.useState<string>('');
   
-  // Optimized refresh mechanism - only refresh when user actively interacts
-  React.useEffect(() => {
-    // Instead of aggressive polling, refresh only on visibility change
-    const handleVisibilityChange = () => {
-      if (!document.hidden && profile && documents) {
-        // Only refresh when user returns to tab after being away
-        refetchProfile();
-        refetchDocs();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [profile, documents, refetchProfile, refetchDocs]);
+  // Removed redundant refresh mechanism since ProfileProvider handles data persistence
   
   // Function to retry all queries with multiple attempts
   const handleRetry = () => {
@@ -132,8 +119,7 @@ function ApplicantPortal() {
     setLoadingTimeout(false);
     setTimeoutReason('');
     
-    // Immediate first attempt
-    refetchProfile();
+    // Only refetch documents since ProfileProvider handles profile data
     refetchDocs();
     
     // Show toast to indicate retry
@@ -143,9 +129,8 @@ function ApplicantPortal() {
       duration: 3000,
     });
     
-    // Second retry after a short delay
+    // Second retry after a short delay - only for documents since ProfileProvider handles profile
     setTimeout(() => {
-      refetchProfile();
       refetchDocs();
       
       // Only refetch debug data in development

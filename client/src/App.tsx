@@ -34,77 +34,14 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     user: null
   });
 
-  // Optimized single authentication check
+  // Use AuthContext state instead of making duplicate API calls
   React.useEffect(() => {
-    const checkServerAuth = async () => {
-      // Create an AbortController for the timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced timeout
-      
-      try {
-        console.log("Checking server-side authentication directly in App");
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          signal: controller.signal
-        });
-        
-        // Clear the timeout since the request completed
-        clearTimeout(timeoutId);
-        
-        console.log("Auth response status:", response.status);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Server auth check response (App):", data);
-          
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-          
-          if (data.authenticated) {
-            console.log("User data:", data);
-            
-            // If authenticated but React context doesn't have it
-            if (!user) {
-              console.log("User authenticated:", data.user.username);
-            }
-            
-            // Check if user is applicant
-            if (data.user && data.user.role === 'applicant') {
-              console.log("User is applicant, redirecting to applicant portal");
-            }
-          } else {
-            console.log("Not authenticated or no user data found");
-          }
-        } else {
-          console.error("Server auth check failed with status:", response.status);
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        if (error?.name === 'AbortError') {
-          console.error("Authentication request timed out after 5 seconds");
-        } else {
-          console.error("Error checking server auth:", error);
-        }
-        
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
+    setServerAuthState({
+      loading: isLoading,
+      authenticated: isAuthenticated,
+      user: user
+    });
+  }, [isLoading, isAuthenticated, user]);
   
   // Show loading indicator while checking server-side auth
   if (serverAuthState.loading) {
