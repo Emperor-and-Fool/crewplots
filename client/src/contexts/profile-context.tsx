@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface ApplicantProfile {
   id: number;
@@ -32,7 +32,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   // Fetch profile data from API
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -49,7 +49,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Persist profile in sessionStorage to survive navigation
   useEffect(() => {
@@ -67,7 +67,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     if (!savedProfile) {
       fetchProfile();
     }
-  }, []);
+  }, [fetchProfile]);
 
   // Save profile to sessionStorage whenever it changes
   useEffect(() => {

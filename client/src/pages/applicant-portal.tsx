@@ -484,7 +484,7 @@ function ApplicantPortal() {
               <div>
                 <h3 className="text-lg font-medium mb-2">User Account</h3>
                 <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
-                  {JSON.stringify(user, null, 2)}
+                  {JSON.stringify(profile, null, 2)}
                 </pre>
               </div>
               
