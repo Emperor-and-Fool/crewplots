@@ -15,6 +15,27 @@ import {
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 
+// Simple in-memory cache for frequently accessed data
+const queryCache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
+function getCacheKey(operation: string, params: any): string {
+  return `${operation}:${JSON.stringify(params)}`;
+}
+
+function getFromCache(key: string): any {
+  const cached = queryCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  queryCache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any): void {
+  queryCache.set(key, { data, timestamp: Date.now() });
+}
+
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -1270,6 +1291,14 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Looking for applicant with userId:", userId);
       
+      // Check cache first
+      const cacheKey = getCacheKey('getApplicantByUserId', { userId });
+      const cached = getFromCache(cacheKey);
+      if (cached) {
+        console.log("Found applicant (cached):", cached);
+        return cached;
+      }
+      
       // Optimized query: select all columns directly, add limit for performance
       const [applicant] = await db
         .select()
@@ -1278,6 +1307,11 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       
       console.log("Found applicant:", applicant || "None found");
+      
+      // Cache the result
+      if (applicant) {
+        setCache(cacheKey, applicant);
+      }
       
       return applicant;
     } catch (error) {
@@ -1330,14 +1364,26 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Fetching documents for applicant ID:", applicantId);
       
+      // Check cache first
+      const cacheKey = getCacheKey('getApplicantDocuments', { applicantId });
+      const cached = getFromCache(cacheKey);
+      if (cached) {
+        console.log(`Found ${cached.length} documents (cached) for applicant ID ${applicantId}`);
+        return cached;
+      }
+      
       // Optimized query with explicit ordering for consistent results
       const documents = await db
         .select()
         .from(applicantDocuments)
         .where(eq(applicantDocuments.applicantId, applicantId))
-        .orderBy(applicantDocuments.createdAt);
+        .orderBy(applicantDocuments.uploadedAt);
       
       console.log(`Successfully retrieved ${documents.length} documents for applicant ID ${applicantId}`);
+      
+      // Cache the result
+      setCache(cacheKey, documents);
+      
       return documents;
     } catch (error) {
       console.error("Error in getApplicantDocuments:", error);
