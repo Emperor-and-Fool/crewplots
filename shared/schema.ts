@@ -1,13 +1,3 @@
-/**
- * Database Schema Definition Module
- * 
- * This module defines the entire database structure for Crew Plots Pro using Drizzle ORM.
- * It includes table definitions, relationships, constraints, and validation schemas.
- * 
- * The schema follows a role-based permission model with support for multiple locations,
- * staff competency tracking, scheduling, and applicant management.
- */
-
 import { 
   pgTable, 
   text, 
@@ -25,18 +15,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-/**
- * Locations Table
- * 
- * Represents different bar/restaurant locations within the business.
- * Each location has its own staff, competencies, and schedules.
- * 
- * Key relationships:
- * - One-to-many with users (via userLocations junction table)
- * - One-to-many with competencies (location-specific skills)
- * - One-to-many with positions (location-specific roles)
- * - One-to-many with schedules (location-specific staffing)
- */
+// Locations (different bars/restaurants)
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -48,16 +27,7 @@ export const locations = pgTable("locations", {
   ownerId: integer("owner_id"), // Set after user creation to avoid circular reference
 });
 
-/**
- * Roles Table
- * 
- * Defines system-level roles that determine access rights.
- * Examples: administrator, manager, crew_manager, crew_member
- * 
- * Key relationships:
- * - Many-to-many with permissions (via rolePermissions junction)
- * - Many-to-many with users and locations (via userLocations junction)
- */
+// Roles table
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -65,15 +35,7 @@ export const roles = pgTable("roles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Permissions Table
- * 
- * Defines granular access permissions that can be assigned to roles.
- * Examples: manage_users, view_reports, edit_schedules
- * 
- * Key relationships:
- * - Many-to-many with roles (via rolePermissions junction)
- */
+// Permissions table
 export const permissions = pgTable("permissions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -81,12 +43,7 @@ export const permissions = pgTable("permissions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Role Permissions Junction Table
- * 
- * Many-to-many relationship between roles and permissions.
- * Allows each role to have multiple permissions.
- */
+// Role Permissions junction table
 export const rolePermissions = pgTable("role_permissions", {
   roleId: integer("role_id").references(() => roles.id).notNull(),
   permissionId: integer("permission_id").references(() => permissions.id).notNull(),
@@ -97,21 +54,7 @@ export const rolePermissions = pgTable("role_permissions", {
   };
 });
 
-/**
- * Users Table
- * 
- * Core user account information for all users in the system.
- * Includes authentication data and basic profile information.
- * 
- * Note: Some fields (role, locationId) are maintained for backward 
- * compatibility but will be replaced by the userLocations junction table
- * in future updates for more flexible role management.
- * 
- * Key relationships:
- * - Many-to-many with locations (via userLocations junction)
- * - One-to-many with staff profiles
- * - One-to-many with applicant profiles
- */
+// Users & Auth
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -129,17 +72,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * User Locations Junction Table
- * 
- * Maps users to locations with specific roles, allowing a single user
- * to have different roles at different locations.
- * 
- * This is a critical table for the multi-location management feature,
- * enabling staff to work across multiple venues with appropriate permissions.
- * 
- * Example: A user could be a crew_manager at one location but a crew_member at another.
- */
+// User Locations - junction table mapping users to locations with specific roles
 export const userLocations = pgTable("user_locations", {
   userId: integer("user_id").references(() => users.id).notNull(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -151,18 +84,7 @@ export const userLocations = pgTable("user_locations", {
   };
 });
 
-/**
- * Competencies Table
- * 
- * Defines skills, certifications, or qualifications needed for positions.
- * Each competency is specific to a location, allowing different venues
- * to define their own skill requirements.
- * 
- * Key relationships:
- * - Many-to-many with positions (via positionCompetencies junction)
- * - Many-to-many with staff (via staffCompetencies junction)
- * - One-to-many with shifts (for required skill levels)
- */
+// Competencies - now explicitly associated with locations
 export const competencies = pgTable("competencies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -172,19 +94,7 @@ export const competencies = pgTable("competencies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Positions Table
- * 
- * Defines job roles or functions that staff members can perform.
- * Each position is specific to a location and may require different competencies.
- * 
- * Examples: Bartender, Server, Host, Kitchen Staff, etc.
- * 
- * Key relationships:
- * - Many-to-many with competencies (via positionCompetencies junction)
- * - One-to-many with staff members (assigned positions)
- * - Referenced in scheduling templates and shifts
- */
+// Positions/Functions - defined by crew managers for their location
 export const positions = pgTable("positions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -194,19 +104,7 @@ export const positions = pgTable("positions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Position Competencies Junction Table
- * 
- * Maps positions to required competencies with minimum proficiency levels.
- * Defines what skills are needed for each position and at what level of expertise.
- * 
- * For example:
- * - Bartender position might require Cocktail Making competency at level 3
- * - Server position might require Menu Knowledge competency at level 2
- * 
- * This table is used when scheduling to ensure staff members have
- * appropriate skills for assigned shifts.
- */
+// Position Required Competencies - mapping positions to required competencies with minimum levels
 export const positionCompetencies = pgTable("position_competencies", {
   positionId: integer("position_id").references(() => positions.id).notNull(),
   competencyId: integer("competency_id").references(() => competencies.id).notNull(),
@@ -218,21 +116,7 @@ export const positionCompetencies = pgTable("position_competencies", {
   };
 });
 
-/**
- * Staff Table
- * 
- * Represents employees who are actively working at a location.
- * Each staff record links a user to a specific location and position.
- * 
- * This table contains employment-specific details like position and 
- * desired working hours that don't belong in the core user profile.
- * 
- * Key relationships:
- * - Many-to-one with users (each staff record belongs to one user)
- * - Many-to-one with locations (each staff member belongs to one location)
- * - Many-to-one with positions (each staff member has one primary position)
- * - Many-to-many with competencies (via staffCompetencies junction)
- */
+// Staff (people who are hired and working)
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -243,24 +127,7 @@ export const staff = pgTable("staff", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Staff Competencies Junction Table
- * 
- * Tracks competency levels for each staff member with assessment history.
- * This enables skill-based scheduling and training management.
- * 
- * Unlike positionCompetencies, this table tracks actual staff skills
- * rather than required skills for positions. The assessment tracking
- * creates an audit trail for skill verification.
- * 
- * The level field uses a 0-5 scale where:
- * 0 = Not applicable/trained
- * 1 = Basic awareness
- * 2 = Beginner level
- * 3 = Competent
- * 4 = Advanced
- * 5 = Expert/can train others
- */
+// Staff Competencies (junction table with assessment tracking)
 export const staffCompetencies = pgTable("staff_competencies", {
   id: serial("id").primaryKey(),
   staffId: integer("staff_id").references(() => staff.id).notNull(),
@@ -272,25 +139,7 @@ export const staffCompetencies = pgTable("staff_competencies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Applicants Table
- * 
- * Stores information about job applicants who haven't yet been hired.
- * Applicants enter the system through the application portal and can
- * be tracked through different stages of the hiring process.
- * 
- * The status field tracks progression:
- * - new: Initial application
- * - contacted: Initial outreach made
- * - interviewed: Interview conducted
- * - hired: Accepted and moved to staff
- * - rejected: Not proceeding
- * 
- * Key relationships:
- * - Many-to-one with locations (which venue they applied to)
- * - Many-to-one with users (linked account if created)
- * - One-to-many with applicant documents
- */
+// Applicants (people who applied for a job)
 export const applicants = pgTable("applicants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -305,18 +154,7 @@ export const applicants = pgTable("applicants", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Applicant Documents Table
- * 
- * Stores documents submitted by applicants for verification.
- * This includes resumes, identity documents, certifications, etc.
- * 
- * The system tracks both the upload and verification processes with
- * timestamps for audit purposes.
- * 
- * Document files are stored as URLs pointing to the actual file storage location.
- * The cascade delete ensures all documents are removed when an applicant is deleted.
- */
+// Applicant Documents
 export const applicantDocuments = pgTable("applicant_documents", {
   id: serial("id").primaryKey(),
   applicantId: integer("applicant_id").references(() => applicants.id, { onDelete: 'cascade' }).notNull(),
@@ -328,20 +166,7 @@ export const applicantDocuments = pgTable("applicant_documents", {
   notes: text("notes"),
 });
 
-/**
- * Schedule Templates Table
- * 
- * Stores reusable schedule patterns that can be applied to create
- * weekly schedules quickly and consistently.
- * 
- * Templates are location-specific and contain a collection of shift patterns
- * that represent the typical staffing needs for that venue.
- * 
- * Key relationships:
- * - Many-to-one with locations
- * - One-to-many with template shifts
- * - Referenced by weekly schedules when creating from a template
- */
+// Schedule Templates
 export const scheduleTemplates = pgTable("schedule_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -349,18 +174,7 @@ export const scheduleTemplates = pgTable("schedule_templates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Template Shifts Table
- * 
- * Defines individual shift patterns within a schedule template.
- * Each template shift represents a recurring shift on a specific day of the week.
- * 
- * Template shifts can optionally specify required competencies and levels
- * to ensure proper skill matching when the template is used to create
- * an actual schedule.
- * 
- * The dayOfWeek field uses 0-6 for Sunday through Saturday.
- */
+// Template Shifts
 export const templateShifts = pgTable("template_shifts", {
   id: serial("id").primaryKey(),
   templateId: integer("template_id").references(() => scheduleTemplates.id).notNull(),
@@ -373,21 +187,7 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-/**
- * Weekly Schedules Table
- * 
- * Represents a week's worth of shifts for a specific location.
- * Weekly schedules can be created from templates or from scratch.
- * 
- * The isPublished flag controls visibility to staff members:
- * - false: Draft mode, only visible to managers
- * - true: Published and visible to all staff
- * 
- * Key relationships:
- * - Many-to-one with locations
- * - Many-to-one with schedule templates (optional)
- * - One-to-many with individual shifts
- */
+// Weekly Schedules
 export const weeklySchedules = pgTable("weekly_schedules", {
   id: serial("id").primaryKey(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -397,23 +197,7 @@ export const weeklySchedules = pgTable("weekly_schedules", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Shifts Table
- * 
- * Represents individual work assignments within a weekly schedule.
- * Each shift can be assigned to a staff member or left unassigned.
- * 
- * Shifts can include competency requirements to ensure appropriate
- * skill matching when assigning staff.
- * 
- * The system uses date + startTime/endTime rather than timestamp ranges
- * to simplify time representation and UI handling.
- * 
- * Key relationships:
- * - Many-to-one with weekly schedules
- * - Many-to-one with staff (when assigned)
- * - Many-to-one with competencies (optional requirement)
- */
+// Shifts (actual scheduled shifts)
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   scheduleId: integer("schedule_id").references(() => weeklySchedules.id).notNull(),
@@ -428,28 +212,7 @@ export const shifts = pgTable("shifts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Cash Counts Table
- * 
- * Records cash handling activities at different times of the business day.
- * This table enables financial tracking and reconciliation across shifts.
- * 
- * Count types:
- * - opening: Start of business day cash count
- * - midday: Mid-shift cash handover count
- * - closing: End of business day cash count
- * 
- * The system tracks:
- * - Physical cash amount
- * - Card payment totals
- * - Float amount (starting cash)
- * - Expected amounts based on sales
- * - Discrepancies between expected and actual
- * 
- * Key relationships:
- * - Many-to-one with locations
- * - Many-to-one with users (who created and verified)
- */
+// Cash Management
 export const cashCounts = pgTable("cash_counts", {
   id: serial("id").primaryKey(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -466,23 +229,7 @@ export const cashCounts = pgTable("cash_counts", {
   createdBy: integer("created_by").references(() => users.id).notNull(),
 });
 
-/**
- * Knowledge Base Categories Table
- * 
- * Organizes knowledge base articles into logical groupings.
- * Categories are location-specific to allow different venues
- * to maintain their own specialized knowledge repositories.
- * 
- * Examples of categories might include:
- * - Operating Procedures
- * - Menu Information
- * - Health & Safety
- * - Equipment Usage
- * 
- * Key relationships:
- * - Many-to-one with locations
- * - One-to-many with articles
- */
+// Knowledge Base Categories
 export const kbCategories = pgTable("kb_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -491,22 +238,7 @@ export const kbCategories = pgTable("kb_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Knowledge Base Articles Table
- * 
- * Stores training materials, procedures, and reference information
- * for staff members to access.
- * 
- * Articles are organized by category and can include rich text content
- * and images. Each article tracks creation and update information
- * for audit purposes.
- * 
- * The images field stores an array of URLs to related images.
- * 
- * Key relationships:
- * - Many-to-one with categories
- * - Many-to-one with users (author/editor)
- */
+// Knowledge Base Articles
 export const kbArticles = pgTable("kb_articles", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").references(() => kbCategories.id).notNull(),
@@ -519,24 +251,7 @@ export const kbArticles = pgTable("kb_articles", {
   updatedAt: timestamp("updated_at"),
 });
 
-/**
- * Uploaded Files Table
- * 
- * Central repository for all uploaded files in the system.
- * Stores metadata about the files rather than the file contents themselves.
- * 
- * The actual file content is stored on the filesystem or cloud storage,
- * while this table maintains metadata and references.
- * 
- * This design allows for:
- * - Efficient file deduplication
- * - Consistent file permission checking
- * - Centralized file access audit
- * 
- * Key relationships:
- * - Many-to-one with users (uploader)
- * - One-to-many with document attachments
- */
+// Uploaded Files
 export const uploadedFiles = pgTable("uploaded_files", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
@@ -548,23 +263,7 @@ export const uploadedFiles = pgTable("uploaded_files", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Document Attachments Table
- * 
- * Links uploaded files to various entities in the system.
- * This creates a flexible, polymorphic relationship between files
- * and different parts of the application.
- * 
- * The entityType enum specifies what kind of record the file is attached to:
- * - applicant: Resume, ID documents, etc.
- * - staff: Certifications, training records, etc.
- * - location: Floor plans, safety documents, etc.
- * - kb_article: Illustrations, diagrams for knowledge base articles
- * - cash_count: Receipt images, audit documentation
- * 
- * This design allows a single file to be referenced by multiple entities
- * without duplication.
- */
+// Document Attachments - for linking files to different entities
 export const documentAttachments = pgTable("document_attachments", {
   id: serial("id").primaryKey(),
   fileId: integer("file_id").references(() => uploadedFiles.id).notNull(),
@@ -575,19 +274,7 @@ export const documentAttachments = pgTable("document_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/**
- * Insert Schemas
- * 
- * These schemas are used to validate data before inserting into database tables.
- * Each schema is derived from its corresponding table but omits auto-generated fields.
- * 
- * For example:
- * - id fields are omitted because they are auto-incremented
- * - createdAt fields are omitted because they have default values
- * 
- * These schemas are used with the Zod validator to ensure data integrity
- * when handling form submissions and API requests.
- */
+// Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
@@ -611,36 +298,13 @@ export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: t
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
-/**
- * Authentication Schemas
- * 
- * These schemas validate user authentication-related data
- * and provide specific error messages for form validation.
- */
-
-/**
- * Login Schema
- * 
- * Validates username and password for login attempts.
- * Used in login forms and API endpoints.
- */
+// Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-/**
- * Registration Schema
- * 
- * Comprehensive validation for new user registration.
- * Includes validation for all required user profile fields
- * and additional checks like password confirmation.
- * 
- * The phone number regex enforces international format with country code.
- * 
- * The refine method adds a custom validation rule to ensure
- * password and confirmPassword fields match.
- */
+// User registration schema (for applicants)
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -658,19 +322,9 @@ export const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-/**
- * Type Definitions for Data Insertion
- * 
- * These types are derived from the Zod schemas using z.infer<>.
- * They represent the shape of data required when inserting new records
- * into the database tables. The types exclude auto-generated fields
- * like ids and timestamps.
- * 
- * Used throughout the application for:
- * - Form submission typing
- * - API request body validation
- * - Storage interface parameters
- */
+// Types for drizzle tables
+export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -693,32 +347,9 @@ export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
 export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
-
-/**
- * Authentication Form Types
- * 
- * These types define the shape of authentication-related data.
- * They're used for login and registration form handling.
- */
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
-/**
- * Database Record Types
- * 
- * These types represent the complete data structure of records retrieved
- * from the database, including all fields (auto-generated and manually entered).
- * 
- * They are used for:
- * - API response typing
- * - Storage interface return types
- * - Component props that display database records
- * - Type safety throughout the application
- * 
- * These types are derived directly from the Drizzle table definitions
- * using the $inferSelect utility, which ensures they stay in sync with
- * the actual database schema.
- */
 export type User = typeof users.$inferSelect;
 export type Location = typeof locations.$inferSelect;
 export type Role = typeof roles.$inferSelect;
@@ -741,24 +372,7 @@ export type KbArticle = typeof kbArticles.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
 
-/**
- * Session Storage Table
- * 
- * This table is used for storing session data when using PostgreSQL
- * as a session store with express-session and connect-pg-simple.
- * 
- * The structure follows connect-pg-simple's requirements:
- * - sid: Unique session ID (primary key)
- * - sess: JSON blob containing session data
- * - expire: Timestamp when the session expires
- * 
- * The table has an index on the expire column to improve query performance
- * when cleaning up expired sessions.
- * 
- * Note: While the application preferentially uses Redis for session storage,
- * this table serves as a fallback option when Redis is unavailable or for
- * development environments.
- */
+// Session storage for database sessions
 export const sessions = pgTable(
   "sessions",
   {
