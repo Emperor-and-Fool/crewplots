@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Set up timeout to avoid infinite loading
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
       console.timeLog("auth:client-total", "setup complete, before fetch");
       
       try {

@@ -38,10 +38,10 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
   React.useEffect(() => {
     setServerAuthState({
       loading: isLoading,
-      authenticated: isAuthenticated,
+      authenticated: !!user,
       user: user
     });
-  }, [isLoading, isAuthenticated, user]);
+  }, [isLoading, user]);
   
   // Show loading indicator while checking server-side auth
   if (serverAuthState.loading) {
@@ -77,45 +77,7 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
     user: null
   });
 
-  // Direct server-side authentication check that bypasses the React state issues
-  React.useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        console.log("Checking server-side authentication directly for role check");
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          cache: 'no-store' // Prevent caching
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Server auth check response (role):", data);
-          
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-        } else {
-          console.error("Server auth check failed with status:", response.status);
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error) {
-        console.error("Error checking server auth:", error);
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
+  // Removed redundant server auth check - now using AuthContext state only
   
   // Show loading indicator while checking server-side auth
   if (serverAuthState.loading) {
