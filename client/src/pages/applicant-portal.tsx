@@ -76,9 +76,9 @@ function ApplicantPortal() {
   } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
-    staleTime: 60000, // 1 minute
-    retry: 1, // Only retry once to prevent long delays
-    retryDelay: 2000,
+    staleTime: 300000, // 5 minutes - applicant data rarely changes
+    retry: 1,
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
     gcTime: 300000, // 5 minutes
   });
@@ -93,11 +93,11 @@ function ApplicantPortal() {
   } = useQuery<ApplicantDocument[]>({
     queryKey: ['/api/applicant-portal/documents'],
     enabled: isAuthenticated && isApplicant,
-    staleTime: 60000, // 1 minute
-    retry: 1, // Only retry once
-    retryDelay: 2000,
+    staleTime: 300000, // 5 minutes - documents rarely change
+    retry: 1,
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
-    gcTime: 300000, // 5 minutes
+    gcTime: 600000, // 10 minutes
   });
   
   // Fetch all applicants for comparison (for debugging only)
@@ -121,19 +121,19 @@ function ApplicantPortal() {
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   const [timeoutReason, setTimeoutReason] = React.useState<string>('');
   
-  // Create a keep-alive refresh mechanism to prevent stale data
+  // Optimized refresh mechanism - only refresh when user actively interacts
   React.useEffect(() => {
-    // Only set up keep-alive if we have data already
-    if (profile && documents) {
-      // Set up a periodic refresh every 30 seconds to keep the session fresh
-      const keepAliveInterval = setInterval(() => {
-        // Silent refresh without showing loading states
+    // Instead of aggressive polling, refresh only on visibility change
+    const handleVisibilityChange = () => {
+      if (!document.hidden && profile && documents) {
+        // Only refresh when user returns to tab after being away
         refetchProfile();
         refetchDocs();
-      }, 30000); // 30 seconds
-      
-      return () => clearInterval(keepAliveInterval);
-    }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [profile, documents, refetchProfile, refetchDocs]);
   
   // Function to retry all queries with multiple attempts
