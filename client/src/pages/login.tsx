@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Footer from "@/components/ui/footer";
-import { RedisStatus } from "@/components/ui/redis-status";
+
 
 export default function Login() {
   console.log("Login component rendering");
@@ -154,10 +154,6 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 flex-col relative">
-      {/* Redis Status Component in top right corner */}
-      <div className="absolute top-4 right-4">
-        <RedisStatus />
-      </div>
       
       <div className="w-full max-w-md px-4 flex-grow flex items-center justify-center">
         <Card className="shadow-lg">
