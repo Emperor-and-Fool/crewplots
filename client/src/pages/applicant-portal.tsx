@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useProfile } from '@/contexts/profile-context';
 
 import { 
   Card, 
@@ -48,6 +49,7 @@ interface ApplicantDocument {
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -66,24 +68,8 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Fetch applicant portal data - simplified to use the default queryFn from QueryClient
-  const { 
-    data: profile, 
-    isLoading: profileLoading,
-    error: profileError,
-    isError: isProfileError,
-    refetch: refetchProfile 
-  } = useQuery<ApplicantProfile>({
-    queryKey: ['/api/applicant-portal/my-profile'],
-    enabled: isAuthenticated && isApplicant,
-    staleTime: 600000, // 10 minutes - keep data fresh longer
-    retry: 1,
-    retryDelay: 500,
-    refetchOnWindowFocus: false,
-    gcTime: 1800000, // 30 minutes - persist cache longer
-    // Keep showing cached data while refetching
-    placeholderData: (previousData) => previousData
-  });
+  // Now using persistent profile context - no more null states!
+  const isProfileError = !profile && !profileLoading && profileError;
 
   // Fetch applicant documents - simplified to use the default queryFn from QueryClient
   const { 

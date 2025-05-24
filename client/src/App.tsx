@@ -329,9 +329,9 @@ function App() {
         <div className="flex flex-col min-h-screen">
           <div className="flex-grow">
             <Router>
-            <Switch>
-              {/* PUBLIC ROUTES - accessible without authentication */}
-              <Route path="/login">
+              <Switch>
+                {/* PUBLIC ROUTES - accessible without authentication */}
+                <Route path="/login">
                 {serverAuthState.authenticated ? 
                   (serverAuthState.user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
