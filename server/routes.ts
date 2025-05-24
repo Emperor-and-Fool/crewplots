@@ -99,16 +99,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   passport.serializeUser((user: any, done) => {
     console.log("Serializing user with ID:", user.id, "Type:", typeof user.id);
     
-    // In Express session, store both the user ID and a flag to indicate the user is logged in
-    // This simplifies our auth check logic
+    // Store essential user data in session to avoid database queries on every auth check
     done(null, { 
       id: user.id,
+      username: user.username,
+      role: user.role,
       loggedIn: true
     });
   });
 
   // This tells Passport.js how to retrieve the user from the session
-  passport.deserializeUser(async (sessionData: { id: number, loggedIn: boolean }, done) => {
+  passport.deserializeUser(async (sessionData: { id: number, loggedIn: boolean, username?: string, role?: string }, done) => {
     try {
       console.log("Deserializing session data:", sessionData);
       
@@ -118,8 +119,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false);
       }
       
-      // Look up the user by ID
-      const user = await storage.getUser(sessionData.id);
+      // OPTIMIZATION: Use cached session data if available, avoid DB query
+      if (sessionData.username && sessionData.role) {
+        console.log("Using cached session data for user:", sessionData.username);
+        const cachedUser = {
+          id: sessionData.id,
+          username: sessionData.username,
+          role: sessionData.role,
+          // Add other essential fields as needed
+        };
+        return done(null, cachedUser);
+      }
+      
+      // Fallback: Look up the user by ID with timeout
+      console.log("Cache miss, querying database for user ID:", sessionData.id);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      );
+      
+      const userPromise = storage.getUser(sessionData.id);
+      const user = await Promise.race([userPromise, timeoutPromise]);
+      
       if (!user) {
         console.log("User not found during deserialization, ID:", sessionData.id);
         return done(null, false);
@@ -129,6 +149,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       done(null, user);
     } catch (err) {
       console.error("Error deserializing user:", err);
+      // Don't fail auth on database errors, use cached data if possible
+      if (sessionData && sessionData.id && sessionData.loggedIn) {
+        console.log("Database error, falling back to minimal session data");
+        const fallbackUser = { id: sessionData.id, username: 'user', role: 'user' };
+        return done(null, fallbackUser);
+      }
       done(err);
     }
   });
