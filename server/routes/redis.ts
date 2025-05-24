@@ -44,17 +44,17 @@ router.get("/status", async (req: Request, res: Response) => {
       });
     }
 
-    // Check if Redis is connected
-    const isConnected = redisClient.status === 'ready' || redisClient.status === 'connecting';
-    
-    if (!isConnected) {
+    // Actually test the Redis connection with a ping
+    try {
+      await redisClient.ping();
+    } catch (connectError) {
       return res.json({
         connected: false,
         uptime: 0,
         memory: { used: 'N/A', peak: 'N/A' },
         clients: 0,
         version: 'N/A',
-        error: `Redis status: ${redisClient.status}`
+        error: `Connection failed: ${connectError instanceof Error ? connectError.message : 'Unknown error'}`
       });
     }
 
