@@ -97,7 +97,7 @@ export const queryClient = new QueryClient({
       retryDelay: 500, // Faster retry
       // Enable request deduplication and background refetching
       networkMode: 'online',
-      refetchOnMount: 'always', // Always check for fresh data but use cache while loading
+      refetchOnMount: false, // Use cached data first, prevent unnecessary reloads
     },
     mutations: {
       retry: 1,
