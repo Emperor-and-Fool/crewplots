@@ -5,6 +5,12 @@ const router = Router();
 
 // Redis client instance
 let redisClient: Redis | null = null;
+let connectionState = {
+  connected: false,
+  lastConnected: 0,
+  uptime: 0,
+  error: 'Not initialized'
+};
 
 // Initialize Redis connection
 try {
@@ -32,16 +38,35 @@ try {
 
   redisClient = new Redis(redisConfig);
   
-  // Proper event handling
-  redisClient.on('connect', () => console.log('Redis connected successfully'));
-  redisClient.on('ready', () => console.log('Redis ready for commands'));
+  // Proper event handling with state tracking
+  redisClient.on('connect', () => {
+    console.log('Redis connected successfully');
+    connectionState.connected = true;
+    connectionState.lastConnected = Date.now();
+    connectionState.error = '';
+  });
+  redisClient.on('ready', () => {
+    console.log('Redis ready for commands');
+    connectionState.connected = true;
+    connectionState.lastConnected = Date.now();
+  });
   redisClient.on('error', (err) => {
+    connectionState.connected = false;
+    connectionState.error = err.message;
     // Don't flood logs with connection errors during startup
     if (!err.message.includes('ECONNREFUSED')) {
       console.log('Redis error:', err.message);
     }
   });
-  redisClient.on('reconnecting', () => console.log('Redis reconnecting...'));
+  redisClient.on('reconnecting', () => {
+    console.log('Redis reconnecting...');
+    connectionState.connected = false;
+    connectionState.error = 'Reconnecting';
+  });
+  redisClient.on('close', () => {
+    connectionState.connected = false;
+    connectionState.error = 'Connection closed';
+  });
   
 } catch (error) {
   console.log("Redis connection failed:", error);
@@ -61,69 +86,81 @@ router.get("/status", async (req: Request, res: Response) => {
       });
     }
 
-    // Test Redis connection with timeout
-    try {
-      await Promise.race([
-        redisClient.ping(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 2000))
-      ]);
-    } catch (connectError) {
+    // Use tracked connection state instead of ping test
+    if (!connectionState.connected) {
       return res.json({
         connected: false,
         uptime: 0,
         memory: { used: 'N/A', peak: 'N/A' },
         clients: 0,
         version: 'N/A',
-        error: `Connection failed: ${connectError instanceof Error ? connectError.message : 'Unknown error'}`
+        error: connectionState.error || 'Not connected'
       });
     }
 
-    // Get Redis info
-    const info = await redisClient.info();
-    const lines = info.split('\r\n');
-    
-    const parseInfo = (section: string) => {
-      const result: Record<string, string> = {};
-      let inSection = false;
+    // Calculate uptime
+    connectionState.uptime = connectionState.lastConnected ? 
+      Math.floor((Date.now() - connectionState.lastConnected) / 1000) : 0;
+
+    // Try to get Redis info - if it fails, we're still "connected" but show basic info
+    try {
+      const info = await redisClient.info();
+      const lines = info.split('\r\n');
       
-      for (const line of lines) {
-        if (line.startsWith(`# ${section}`)) {
-          inSection = true;
-          continue;
+      const parseInfo = (section: string) => {
+        const result: Record<string, string> = {};
+        let inSection = false;
+        
+        for (const line of lines) {
+          if (line.startsWith(`# ${section}`)) {
+            inSection = true;
+            continue;
+          }
+          if (line.startsWith('#')) {
+            inSection = false;
+            continue;
+          }
+          if (inSection && line.includes(':')) {
+            const [key, value] = line.split(':');
+            result[key] = value;
+          }
         }
-        if (line.startsWith('#')) {
-          inSection = false;
-          continue;
-        }
-        if (inSection && line.includes(':')) {
-          const [key, value] = line.split(':');
-          result[key] = value;
-        }
-      }
-      return result;
-    };
+        return result;
+      };
 
-    const serverInfo = parseInfo('Server');
-    const memoryInfo = parseInfo('Memory');
-    const clientsInfo = parseInfo('Clients');
+      const serverInfo = parseInfo('Server');
+      const memoryInfo = parseInfo('Memory');
+      const clientsInfo = parseInfo('Clients');
 
-    // Format memory values
-    const formatBytes = (bytes: string) => {
-      const num = parseInt(bytes);
-      if (isNaN(num)) return bytes;
-      return `${(num / 1024 / 1024).toFixed(1)}MB`;
-    };
+      // Format memory values
+      const formatBytes = (bytes: string) => {
+        const num = parseInt(bytes);
+        if (isNaN(num)) return bytes;
+        return `${(num / 1024 / 1024).toFixed(1)}MB`;
+      };
 
-    res.json({
-      connected: true,
-      uptime: parseInt(serverInfo.uptime_in_seconds || '0'),
-      memory: {
-        used: formatBytes(memoryInfo.used_memory || '0'),
-        peak: formatBytes(memoryInfo.used_memory_peak || '0')
-      },
-      clients: parseInt(clientsInfo.connected_clients || '0'),
-      version: serverInfo.redis_version || 'Unknown'
-    });
+      res.json({
+        connected: true,
+        uptime: parseInt(serverInfo.uptime_in_seconds || connectionState.uptime.toString()),
+        memory: {
+          used: formatBytes(memoryInfo.used_memory || '0'),
+          peak: formatBytes(memoryInfo.used_memory_peak || '0')
+        },
+        clients: parseInt(clientsInfo.connected_clients || '0'),
+        version: serverInfo.redis_version || 'Unknown'
+      });
+      
+    } catch (infoError) {
+      // Connected but can't get detailed info - show basic status
+      res.json({
+        connected: true,
+        uptime: connectionState.uptime,
+        memory: { used: 'N/A', peak: 'N/A' },
+        clients: 0,
+        version: 'N/A',
+        error: `Info unavailable: ${infoError instanceof Error ? infoError.message : 'Unknown'}`
+      });
+    }
 
   } catch (error) {
     console.error("Redis status check failed:", error);
