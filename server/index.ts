@@ -5,9 +5,9 @@ import { redisSupervisor } from "./redis-supervisor";
 
 const app = express();
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Optimized body parsing middleware with smaller limits for better performance
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Minimal debug middleware (only in development)
 if (process.env.NODE_ENV === 'development') {
@@ -23,36 +23,18 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Optimized request logging middleware 
+// Streamlined request logging middleware for better performance
 app.use((req, res, next) => {
-  // Only track API requests to reduce overhead
+  // Skip logging for non-API requests to reduce overhead
   if (!req.path.startsWith("/api")) {
     return next();
   }
 
-  const start = Date.now();
-  let capturedResponse: any;
-
-  // Only capture response for debugging if needed
-  if (process.env.NODE_ENV === 'development') {
-    const originalJson = res.json;
-    res.json = function (body) {
-      capturedResponse = body;
-      return originalJson.call(this, body);
-    };
-  }
+  const start = process.hrtime.bigint();
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
-    let logLine = `${req.method} ${req.path} ${res.statusCode} in ${duration}ms`;
-    
-    // Add response preview in development only
-    if (process.env.NODE_ENV === 'development' && capturedResponse) {
-      const preview = JSON.stringify(capturedResponse).slice(0, 40) + "…";
-      logLine += ` :: ${preview}`;
-    }
-
-    log(logLine);
+    const duration = Number(process.hrtime.bigint() - start) / 1000000; // Convert to milliseconds
+    log(`${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
   });
 
   next();
