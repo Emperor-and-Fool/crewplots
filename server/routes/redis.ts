@@ -23,9 +23,16 @@ try {
     redisConfig.password = process.env.REDIS_PASSWORD;
   }
 
-  // Temporarily disable Redis client to stop connection errors
-  // redisClient = new Redis(redisConfig);
-  redisClient = null;
+  redisClient = new Redis({
+    ...redisConfig,
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: 1,
+    lazyConnect: true,
+    // Handle connection errors gracefully
+    onConnect: () => console.log('Redis connected'),
+    onError: (err) => console.log('Redis connection error (handled):', err.message)
+  });
 } catch (error) {
   console.log("Redis connection failed:", error);
 }
@@ -44,9 +51,12 @@ router.get("/status", async (req: Request, res: Response) => {
       });
     }
 
-    // Actually test the Redis connection with a ping
+    // Test Redis connection with timeout
     try {
-      await redisClient.ping();
+      await Promise.race([
+        redisClient.ping(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 2000))
+      ]);
     } catch (connectError) {
       return res.json({
         connected: false,
