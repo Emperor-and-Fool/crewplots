@@ -106,4 +106,32 @@ router.get("/status", async (req: Request, res: Response) => {
   }
 });
 
+// Session cache statistics endpoint
+router.get("/cache-stats", async (req: Request, res: Response) => {
+  try {
+    const { SessionCache } = await import("../services/session-cache");
+    const stats = await SessionCache.getCacheStats();
+    
+    if (!stats) {
+      return res.json({
+        error: 'Redis not available',
+        userCacheHits: 0,
+        sessionCacheHits: 0
+      });
+    }
+
+    res.json({
+      ...stats,
+      message: 'Session cache is working',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userCacheHits: 0,
+      sessionCacheHits: 0
+    });
+  }
+});
+
 export default router;
