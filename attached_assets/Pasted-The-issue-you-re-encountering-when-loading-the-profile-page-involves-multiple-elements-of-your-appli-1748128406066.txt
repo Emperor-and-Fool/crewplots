@@ -1,0 +1,39 @@
+The issue you're encountering when loading the profile page involves multiple elements of your application's technology stack. Here's a breakdown of the components at play:
+
+🧱 Stack Elements Involved
+React (Frontend Framework):
+
+Component Lifecycle: Upon login, your application redirects to the applicant portal, causing React components to remount. This remounting can reset component state, leading to the initial display of null for the profile.
+
+React Query (Data Fetching and Caching Library):
+
+Cache Misses: React Query manages data caching. If the cache isn't properly utilized or is cleared upon component remount, it results in cache misses, prompting new API calls to fetch the profile data.
+
+Concurrent Requests: Without effective caching, multiple components requesting the same data simultaneously can lead to duplicate API calls.
+
+Authentication Flow:
+
+Session Management: After a successful login, a session is created. However, if the session data isn't effectively shared across components or preserved during navigation, it can lead to redundant data fetching.
+
+Routing (e.g., React Router):
+
+Navigation and State Reset: Navigating between routes can cause components to unmount and remount, resetting their state and potentially leading to additional data fetching if the cache isn't retained.
+
+🔍 Summary
+The combination of component remounting, cache misses in React Query, and session management issues contributes to the observed behavior:
+
+Initial Null Profile: Due to component remounting and cache misses, the profile data isn't immediately available, resulting in a null display.
+
+Duplicate API Calls: Multiple components requesting the same data without effective caching lead to redundant API calls.
+
+✅ Recommendations
+To address these issues:
+
+Persist React Query Cache: Implement persistent caching strategies to retain data across component remounts and route changes. This can involve configuring cacheTime and staleTime appropriately.
+GitHub
+
+Optimize Authentication Flow: Ensure that session data is effectively shared and preserved across components and during navigation to prevent unnecessary data fetching.
+
+Manage Component State: Utilize global state management or context to maintain essential data across component remounts.
+
+Prevent Duplicate Requests: Implement mechanisms to prevent multiple components from initiating the same API call simultaneously, such as using shared query keys in React Qu

@@ -2,6 +2,7 @@ import { Switch, Route, Router, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import { ProfileProvider } from "@/contexts/profile-context";
 import * as React from "react";
 import Footer from "@/components/ui/footer";
 import Dashboard from "@/pages/dashboard";
@@ -323,10 +324,11 @@ function App() {
 
   // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
-    <TooltipProvider>
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow">
-          <Router>
+    <ProfileProvider>
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow">
+            <Router>
             <Switch>
               {/* PUBLIC ROUTES - accessible without authentication */}
               <Route path="/login">
@@ -473,8 +475,9 @@ function App() {
         {window.location.pathname !== '/login' && window.location.pathname !== '/register' && (
           <Footer />
         )}
-      </div>
-    </TooltipProvider>
+        </div>
+      </TooltipProvider>
+    </ProfileProvider>
   );
 }
 
