@@ -21,7 +21,6 @@ import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
 import redisRoutes from './routes/redis';
-import { SessionCache } from './services/session-cache';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -78,8 +77,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // For testing with admin account (hash comparison bypassed)
         if (username === 'admin' && password === 'adminpass123') {
-          // Cache the user immediately upon successful login
-          await SessionCache.cacheUser(user.id, user);
           return done(null, user);
         }
         
@@ -90,8 +87,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return done(null, false, { message: "Incorrect password." });
         }
         
-        // Cache the user immediately upon successful login
-        await SessionCache.cacheUser(user.id, user);
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -123,20 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false);
       }
       
-      // Try to get user from Redis cache first
-      let user = await SessionCache.getCachedUser(sessionData.id);
-      
-      if (!user) {
-        // If not in cache, get from database and cache it
-        console.log(`User ${sessionData.id} not in cache, fetching from database`);
-        user = await storage.getUser(sessionData.id);
-        
-        if (user) {
-          // Cache the user for future requests
-          await SessionCache.cacheUser(sessionData.id, user);
-        }
-      }
-      
+      // Look up the user by ID
+      const user = await storage.getUser(sessionData.id);
       if (!user) {
         console.log("User not found during deserialization, ID:", sessionData.id);
         return done(null, false);
