@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { RedisStatus } from "@/components/ui/redis-status";
+
 
 export default function Dashboard() {
   const [selectedLocation, setSelectedLocation] = useState<number>(0);
@@ -122,10 +122,6 @@ export default function Dashboard() {
         
         {/* Main scrollable area */}
         <main className="flex-1 overflow-y-auto bg-gray-50 relative">
-          {/* Redis Status Component in top right corner */}
-          <div className="absolute top-4 right-4 z-10">
-            <RedisStatus />
-          </div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Dashboard Header */}
