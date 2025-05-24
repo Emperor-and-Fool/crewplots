@@ -76,11 +76,13 @@ function ApplicantPortal() {
   } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
-    staleTime: 300000, // 5 minutes - applicant data rarely changes
+    staleTime: 600000, // 10 minutes - keep data fresh longer
     retry: 1,
-    retryDelay: 1000,
+    retryDelay: 500,
     refetchOnWindowFocus: false,
-    gcTime: 300000, // 5 minutes
+    gcTime: 1800000, // 30 minutes - persist cache longer
+    // Keep showing cached data while refetching
+    placeholderData: (previousData) => previousData
   });
 
   // Fetch applicant documents - simplified to use the default queryFn from QueryClient
@@ -93,11 +95,13 @@ function ApplicantPortal() {
   } = useQuery<ApplicantDocument[]>({
     queryKey: ['/api/applicant-portal/documents'],
     enabled: isAuthenticated && isApplicant,
-    staleTime: 300000, // 5 minutes - documents rarely change
+    staleTime: 600000, // 10 minutes - keep data fresh longer
     retry: 1,
-    retryDelay: 1000,
+    retryDelay: 500,
     refetchOnWindowFocus: false,
-    gcTime: 600000, // 10 minutes
+    gcTime: 1800000, // 30 minutes - persist cache longer
+    // Keep showing cached data while refetching
+    placeholderData: (previousData) => previousData
   });
   
   // Fetch all applicants for comparison (for debugging only)
