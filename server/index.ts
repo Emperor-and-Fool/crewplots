@@ -5,75 +5,54 @@ import { redisSupervisor } from "./redis-supervisor";
 
 const app = express();
 
-// Debug middleware for request bodies
-app.use((req, res, next) => {
-  if (req.path.includes('login')) {
-    console.log('DEBUG Request headers:', JSON.stringify(req.headers, null, 2));
-  }
-  next();
-});
-
-// Body parsing middleware - adding multipart form support
-app.use(express.json());
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Add debugging middleware before our routes
-app.use((req, res, next) => {
-  // Special logging for login attempts with multipart form data
-  if (req.path.includes('login') && req.method === 'POST') {
-    if (req.headers['content-type']?.includes('multipart/form-data')) {
-      console.log('⚠️ MULTIPART FORM LOGIN DETECTED - body may not be parsed correctly');
-      
-      // For multipart form data, try to access form fields directly
-      if (req.body && Object.keys(req.body).length === 0) {
-        console.log('Empty body detected, original form data might not be parsed');
-        
-        // If we have no body data but do have the raw request, try to extract fields
-        if (req.headers['content-type']?.includes('multipart/form-data') && req.is('multipart/form-data')) {
-          console.log('Attempting to extract fields from multipart data');
-        }
-      }
+// Minimal debug middleware (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    if (req.path.includes('login') && req.method === 'POST') {
+      console.log('DEBUG Login attempt:', { 
+        method: req.method, 
+        contentType: req.get('Content-Type'),
+        hasBody: !!req.body && Object.keys(req.body).length > 0 
+      });
     }
-  }
-  next();
-});
+    next();
+  });
+}
 
-// Debug middleware for parsed request body
+// Optimized request logging middleware 
 app.use((req, res, next) => {
-  if (req.path.includes('login')) {
-    console.log('DEBUG Request body after parsing:', req.body);
-    console.log('DEBUG Request cookies:', req.cookies);
-    console.log('DEBUG Content-Type:', req.get('Content-Type'));
-    console.log('DEBUG Request method:', req.method);
+  // Only track API requests to reduce overhead
+  if (!req.path.startsWith("/api")) {
+    return next();
   }
-  next();
-});
 
-app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedResponse: any;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  // Only capture response for debugging if needed
+  if (process.env.NODE_ENV === 'development') {
+    const originalJson = res.json;
+    res.json = function (body) {
+      capturedResponse = body;
+      return originalJson.call(this, body);
+    };
+  }
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+    let logLine = `${req.method} ${req.path} ${res.statusCode} in ${duration}ms`;
+    
+    // Add response preview in development only
+    if (process.env.NODE_ENV === 'development' && capturedResponse) {
+      const preview = JSON.stringify(capturedResponse).slice(0, 40) + "…";
+      logLine += ` :: ${preview}`;
     }
+
+    log(logLine);
   });
 
   next();
