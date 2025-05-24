@@ -86,20 +86,21 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ 
         on401: "throw",
-        timeout: DEFAULT_TIMEOUT
+        timeout: 8000 // Reduced timeout for faster error detection
       }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      // Set staleTime to 2 minutes instead of Infinity to allow for periodic refreshes
-      // that will prevent session timeouts but won't constantly refresh
-      staleTime: 120000, // 2 minutes
-      gcTime: 3600000, // 1 hour
-      retry: 2, // Retry twice with exponential backoff
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Aggressive caching for better performance
+      staleTime: 300000, // 5 minutes for most data
+      gcTime: 600000, // 10 minutes
+      retry: 1, // Single retry for faster response
+      retryDelay: 500, // Faster retry
+      // Enable request deduplication
+      networkMode: 'online',
     },
     mutations: {
-      retry: 1, // One retry for mutations
-      retryDelay: 1000,
+      retry: 1,
+      retryDelay: 500,
     },
   },
 });

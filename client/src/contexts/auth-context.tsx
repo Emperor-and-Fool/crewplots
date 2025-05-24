@@ -317,21 +317,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Implement refreshAuth function to manually recheck authentication
+  // Optimized refreshAuth function using React Query for deduplication
   const refreshAuth = async (): Promise<boolean> => {
-    console.log("Manually refreshing authentication state");
+    console.log("Refreshing authentication state");
     setIsLoading(true);
     
     try {
-      // Add cache-busting parameter to prevent browser caching
-      const cacheBuster = new Date().getTime();
-      const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
-        credentials: "include",
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+      // Use standard fetch without cache-busting to allow proper caching
+      const response = await fetch('/api/auth/me', {
+        credentials: "include"
       });
       
       if (response.ok) {

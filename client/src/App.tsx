@@ -33,23 +33,18 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     user: null
   });
 
-  // Direct server-side authentication check that bypasses the React state issues
+  // Optimized single authentication check
   React.useEffect(() => {
     const checkServerAuth = async () => {
       // Create an AbortController for the timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced timeout
       
       try {
         console.log("Checking server-side authentication directly in App");
         const response = await fetch('/api/auth/me', {
           credentials: 'include',
-          cache: 'no-store', // Prevent caching
-          signal: controller.signal,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+          signal: controller.signal
         });
         
         // Clear the timeout since the request completed
