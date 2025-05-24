@@ -56,17 +56,19 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const savedProfile = sessionStorage.getItem('applicant-profile');
     if (savedProfile) {
       try {
-        setProfile(JSON.parse(savedProfile));
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfile(parsedProfile);
+        console.log('ProfileProvider: Loaded profile from sessionStorage:', parsedProfile.name);
+        return; // Don't fetch from server if we have cached data
       } catch (error) {
         console.error('Failed to parse saved profile:', error);
         sessionStorage.removeItem('applicant-profile');
       }
     }
     
-    // If no saved profile, fetch from server
-    if (!savedProfile) {
-      fetchProfile();
-    }
+    // Only fetch from server if no valid cached profile exists
+    console.log('ProfileProvider: No cached profile found, fetching from server');
+    fetchProfile();
   }, [fetchProfile]);
 
   // Save profile to sessionStorage whenever it changes
