@@ -7,7 +7,8 @@ export const redisClient = createClient({
 });
 
 redisClient.on('error', (err) => {
-  console.error('Redis Client Error', err);
+  // Silently handle Redis connection errors to prevent app crashes
+  console.warn('Redis connection issue (app continues normally):', err.message);
 });
 
 redisClient.on('connect', () => {

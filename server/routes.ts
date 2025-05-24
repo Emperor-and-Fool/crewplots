@@ -6,8 +6,10 @@ import { insertRoomSchema, insertGuestSchema, insertReservationSchema, insertSta
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize Redis connection
-  await initRedis();
+  // Initialize Redis connection (non-blocking)
+  initRedis().catch(() => {
+    console.log('Redis will be available when server starts');
+  });
 
   // Health check endpoints
   app.get("/api/health", async (req, res) => {
