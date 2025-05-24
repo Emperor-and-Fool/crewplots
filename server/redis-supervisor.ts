@@ -30,12 +30,12 @@ export class RedisSupervisor {
         mkdirSync(logsDir, { recursive: true });
       }
 
-      // Create Redis config
+      // Create Redis config optimized for memory constraints
       const configPath = path.join(logsDir, 'redis-app.conf');
       const redisConfig = `
-# Redis Configuration for Application Integration
+# Redis Configuration for Application Integration - Memory Optimized
 port 6379
-bind 0.0.0.0
+bind 127.0.0.1
 protected-mode no
 daemonize no
 pidfile ${logsDir}/redis-app.pid
@@ -45,19 +45,31 @@ save ""
 appendonly no
 timeout 0
 tcp-keepalive 60
-maxmemory 64mb
+maxmemory 32mb
 maxmemory-policy allkeys-lru
+# Memory optimization settings
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
 `;
       
       writeFileSync(configPath, redisConfig);
 
-      // Start Redis as child process using system-installed Redis
-      const redisBinary = 'redis-server';
+      // Try the original Redis binary with different configuration
+      const redisBinary = './Redis-replit/bin/redis-server';
       
       console.log('Starting Redis as application subprocess...');
       this.redisProcess = spawn(redisBinary, [configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        detached: false // Keep as child process of Node.js
+        detached: false, // Keep as child process of Node.js
+        env: {
+          ...process.env,
+          LD_PRELOAD: '', // Disable jemalloc preloading
+          MALLOC_ARENA_MAX: '1' // Limit memory arenas
+        }
       });
 
       // Handle Redis output
