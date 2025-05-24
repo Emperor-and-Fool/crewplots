@@ -1270,27 +1270,18 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Looking for applicant with userId:", userId);
       
-      // Include the extraMessage column in the selection
-      const [applicant] = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.userId, userId));
+      // Optimized query: select all columns directly, add limit for performance
+      const [applicant] = await db
+        .select()
+        .from(applicants)
+        .where(eq(applicants.userId, userId))
+        .limit(1);
       
       console.log("Found applicant:", applicant || "None found");
       
       return applicant;
     } catch (error) {
       console.error("Error in getApplicantByUserId:", error);
-      // Return undefined on error
       return undefined;
     }
   }
@@ -1337,11 +1328,16 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicantDocuments(applicantId: number): Promise<ApplicantDocument[]> {
     try {
+      console.log("Fetching documents for applicant ID:", applicantId);
+      
+      // Optimized query with explicit ordering for consistent results
       const documents = await db
         .select()
         .from(applicantDocuments)
-        .where(eq(applicantDocuments.applicantId, applicantId));
+        .where(eq(applicantDocuments.applicantId, applicantId))
+        .orderBy(applicantDocuments.createdAt);
       
+      console.log(`Successfully retrieved ${documents.length} documents for applicant ID ${applicantId}`);
       return documents;
     } catch (error) {
       console.error("Error in getApplicantDocuments:", error);
