@@ -85,6 +85,8 @@ function ApplicantPortal() {
     retry: 1,
     retryDelay: 500,
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // Prevent mount refetches
+    refetchOnReconnect: false, // Prevent reconnect refetches
     gcTime: 1800000, // 30 minutes - persist cache longer
     // Keep showing cached data while refetching
     placeholderData: (previousData) => previousData
@@ -104,6 +106,8 @@ function ApplicantPortal() {
     retry: 1, // Only retry once
     retryDelay: 2000,
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // Prevent mount refetches
+    refetchOnReconnect: false, // Prevent reconnect refetches
     gcTime: 300000 // 5 minutes
   });
 
