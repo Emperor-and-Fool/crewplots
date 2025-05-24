@@ -8,12 +8,24 @@ let redisClient: Redis | null = null;
 
 // Initialize Redis connection
 try {
-  redisClient = new Redis({
+  const redisConfig: any = {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
     maxRetriesPerRequest: 1,
-    lazyConnect: true
-  });
+    lazyConnect: true,
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: null
+  };
+
+  // Add password if provided
+  if (process.env.REDIS_PASSWORD) {
+    redisConfig.password = process.env.REDIS_PASSWORD;
+  }
+
+  redisClient = new Redis(redisConfig);
+  
+  console.log(`Attempting to connect to Redis at ${redisConfig.host}:${redisConfig.port}`);
 } catch (error) {
   console.log("Redis connection failed:", error);
 }
