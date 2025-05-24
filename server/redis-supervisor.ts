@@ -16,10 +16,8 @@ export class RedisSupervisor {
   }
 
   async start(): Promise<boolean> {
-    if (this.isStarting || this.redisProcess) {
-      console.log('Redis already starting or running');
-      return true;
-    }
+    console.log('Redis disabled due to binary incompatibility (SIGSEGV)');
+    return false;
 
     this.isStarting = true;
     
