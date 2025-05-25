@@ -90,15 +90,13 @@ export const queryClient = new QueryClient({
       }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false, // Prevent reconnection refetches
-      refetchIntervalInBackground: false, // Disable background intervals
-      refetchOnMount: false, // Prevent mount refetches completely
-      // Extremely aggressive caching to prevent any background activity
-      staleTime: Infinity, // Never consider data stale
-      gcTime: Infinity, // Keep in memory forever
-      retry: false, // Disable retries to prevent cascade
-      // Completely disable background activity
-      networkMode: 'online'
+      // Standard caching configuration
+      staleTime: 300000, // 5 minutes
+      gcTime: 600000, // 10 minutes
+      retry: 1,
+      retryDelay: 500,
+      networkMode: 'online',
+      refetchOnMount: 'always'
     },
     mutations: {
       retry: 1,
