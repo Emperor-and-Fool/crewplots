@@ -12,6 +12,10 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
+import MessagingSystem from '@/components/ui/messaging-system';
 
 // Interface already defined in profile-context.tsx - no need to duplicate
 

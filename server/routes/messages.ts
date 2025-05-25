@@ -22,12 +22,12 @@ const getMessagesQuerySchema = z.object({
 // GET /api/messages - Fetch messages for user or applicant
 router.get('/', async (req, res) => {
   try {
-    if (!req.user?.id) {
+    if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const query = getMessagesQuerySchema.parse(req.query);
-    const userId = req.user.id;
+    const userId = (req.user as any).id;
 
     // Build query conditions
     let whereConditions;

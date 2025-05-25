@@ -268,13 +268,13 @@ export function MessagingSystem({
                       </span>
                       
                       {message.priority !== 'normal' && (
-                        <Badge size="sm" className={getPriorityColor(message.priority)}>
+                        <Badge className={getPriorityColor(message.priority)}>
                           {message.priority}
                         </Badge>
                       )}
                       
                       {message.isPrivate && (
-                        <Badge size="sm" variant="outline">
+                        <Badge variant="outline">
                           Private
                         </Badge>
                       )}
