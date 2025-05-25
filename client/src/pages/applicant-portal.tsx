@@ -193,6 +193,39 @@ function ApplicantPortal() {
           )}
         </CardContent>
       </Card>
+
+      {/* NEW: Reusable Messaging System */}
+      {user && profile && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Communication Center
+            </CardTitle>
+            <CardDescription>
+              Send messages and communicate about your application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MessagingSystem
+              userId={user.id}
+              applicantId={profile.id}
+              title="Application Messages"
+              placeholder="Type your message about your application..."
+              showPriority={true}
+              showPrivateToggle={false}
+              maxHeight="300px"
+              compactMode={false}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Message sent successfully!",
+                  description: "Your message has been recorded and will be reviewed.",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
       
       {/* Documents section removed - was causing API cascade issues */}
       
