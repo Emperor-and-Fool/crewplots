@@ -122,33 +122,15 @@ function ApplicantPortal() {
     };
   }, [authLoading, profileLoading]);
 
-  // Log all errors and data for debugging
+  // Simplified debug logging - only profile
   React.useEffect(() => {
     if (isProfileError) {
       console.error("Error loading profile:", profileError);
     }
-    if (isDocsError) {
-      console.error("Error loading documents:", docsError);
-    }
-    if (isApplicantsError) {
-      console.error("Error loading applicants:", applicantsError);
-    }
-
-    // Log data when it's available
     if (profile) {
       console.log("Profile data loaded:", profile);
     }
-    if (documents) {
-      console.log("Documents data loaded:", documents);
-    }
-    if (applicants) {
-      console.log("All applicants loaded:", applicants);
-    }
-  }, [
-    profile, documents, applicants,
-    isProfileError, isDocsError, isApplicantsError,
-    profileError, docsError, applicantsError
-  ]);
+  }, [profile, isProfileError, profileError]);
   
   // Timeout reached - show user-friendly message with specific reason
   if (loadingTimeout) {
@@ -204,9 +186,9 @@ function ApplicantPortal() {
     );
   }
 
-  // Handle specific API errors
-  if (isProfileError || isDocsError || isApplicantsError) {
-    const errorMessage = profileError?.message || docsError?.message || applicantsError?.message || 'Unknown error';
+  // Handle profile API errors only
+  if (isProfileError) {
+    const errorMessage = profileError?.message || 'Unknown error';
     
     return (
       <div className="container mx-auto py-10 px-4">
@@ -226,9 +208,8 @@ function ApplicantPortal() {
     );
   }
 
-  // Show loading state for React Query operations, but not for auth anymore
-  // This prevents race conditions where auth state is ready but profile/docs are not
-  if (profileLoading || docsLoading) {
+  // Show loading state for profile loading only
+  if (profileLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
@@ -240,7 +221,6 @@ function ApplicantPortal() {
         <div className="mt-8 text-xs text-gray-500">
           <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
           <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
-          <p>Documents Loading: {docsLoading ? 'Yes' : 'No'}</p>
         </div>
       </div>
     );
@@ -333,105 +313,21 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
       
-      <Card className="mb-8">
-        <CardHeader className="pb-2">
-          <CardTitle>Documents</CardTitle>
-          <CardDescription>Documents you've submitted with your application</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {documents && Array.isArray(documents) ? (
-            documents.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Document Name</TableHead>
-                      <TableHead>Date Uploaded</TableHead>
-                      <TableHead>File Type</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documents.map((doc: any) => (
-                      <TableRow key={doc.id}>
-                        <TableCell>
-                          <a 
-                            href={doc.documentUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {doc.documentName}
-                          </a>
-                        </TableCell>
-                        <TableCell>{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
-                        <TableCell>{doc.fileType}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="py-4">
-                <p className="text-gray-500">You haven't uploaded any documents yet.</p>
-              </div>
-            )
-          ) : (
-            <div className="py-4">
-              <p className="text-gray-500">Loading documents...</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Documents section removed - was causing API cascade issues */}
       
-      {/* Debug Information - Only visible in development */}
+      {/* Debug section simplified - only profile data */}
       {process.env.NODE_ENV !== 'production' && (
         <Card>
           <CardHeader>
             <CardTitle>Debug Information</CardTitle>
-            <CardDescription>Application debugging data (only visible in development)</CardDescription>
+            <CardDescription>Profile debugging data (only visible in development)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium mb-2">User Account</h3>
-                <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
-                  {JSON.stringify(profile, null, 2)}
-                </pre>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">Applicants Table Data</h3>
-                {Array.isArray(applicants) && applicants.length > 0 ? (
-                  <Table className="border border-gray-200 rounded-md">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>User ID</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {applicants.map((applicant: any) => (
-                        <TableRow key={applicant.id}>
-                          <TableCell>{applicant.id}</TableCell>
-                          <TableCell>{applicant.name}</TableCell>
-                          <TableCell>{applicant.email}</TableCell>
-                          <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(applicant.status)}`}>
-                            {applicant.status}
-                          </span>
-                        </TableCell>
-                          <TableCell>{applicant.userId}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-gray-500">No applicant records found in the database.</p>
-                )}
-              </div>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Profile Data</h3>
+              <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
+                {JSON.stringify(profile, null, 2)}
+              </pre>
             </div>
           </CardContent>
         </Card>
