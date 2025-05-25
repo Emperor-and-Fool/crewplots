@@ -1,27 +1,40 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { useProfile } from '@/contexts/profile-context';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { ExternalLink, File, Trash } from 'lucide-react';
 
 import { 
   Card, 
   CardContent, 
   CardDescription, 
+  CardFooter, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
-import MessagingSystem from '@/components/ui/messaging-system';
-
-// Interface already defined in profile-context.tsx - no need to duplicate
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
+  const [message, setMessage] = useState('');
+  const [docName, setDocName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -40,212 +53,378 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Now using persistent profile context - no more null states!
-  const isProfileError = !profile && !profileLoading && profileError;
+  // Fetch applicant profile data
+  const { 
+    data: profile, 
+    isLoading: profileLoading, 
+    error: profileError 
+  } = useQuery({
+    queryKey: ['/api/applicant-portal/my-profile'],
+    enabled: isAuthenticated && isApplicant,
+  });
 
-  // Documents system removed - was causing API cascade failures
-  
-  // All applicants debug query removed - not needed for profile view
+  // Fetch applicant documents
+  const { 
+    data: documents, 
+    isLoading: docsLoading, 
+    error: docsError 
+  } = useQuery({
+    queryKey: ['/api/applicant-portal/documents'],
+    enabled: isAuthenticated && isApplicant,
+  });
 
-  // Timeout detection removed - ProfileProvider handles loading efficiently
-  
-  // Removed redundant refresh mechanism since ProfileProvider handles data persistence
-  
-  // Retry function removed - ProfileProvider handles loading efficiently
-
-  // All ghost timeout detection completely removed
-
-  // Simplified debug logging - only profile
-  React.useEffect(() => {
-    if (isProfileError) {
-      console.error("Error loading profile:", profileError);
+  // Update message mutation
+  const updateMessage = useMutation({
+    mutationFn: async (messageText: string) => {
+      return await apiRequest('/api/applicant-portal/message', {
+        method: 'PUT',
+        body: JSON.stringify({ message: messageText })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Updated",
+        description: "Your message has been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/my-profile'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update message. Please try again.",
+        variant: "destructive"
+      });
     }
-    if (profile) {
-      console.log("Profile data loaded:", profile);
-    }
-  }, [profile, isProfileError, profileError]);
-  
-  // Ghost timeout warning completely removed - ProfileProvider handles loading efficiently
+  });
 
-  // Handle profile API errors only
-  if (isProfileError) {
-    const errorMessage = profileError?.message || 'Unknown error';
+  // Upload document mutation
+  const uploadDocument = useMutation({
+    mutationFn: async (formData: FormData) => {
+      // Custom fetch instead of apiRequest for FormData
+      const response = await fetch('/api/applicant-portal/documents', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload document');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document Uploaded",
+        description: "Your document has been uploaded successfully.",
+      });
+      setDocName('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload document. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete document mutation
+  const deleteDocument = useMutation({
+    mutationFn: async (id: number) => {
+      // Custom fetch instead of apiRequest
+      const response = await fetch(`/api/applicant-portal/documents/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete document');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document Deleted",
+        description: "Your document has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete document. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle message submission
+  const handleMessageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim()) {
+      updateMessage.mutate(message);
+    }
+  };
+
+  // Handle document upload
+  const handleDocumentUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
     
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const name = docName.trim() || file.name;
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('documentName', name);
+    
+    uploadDocument.mutate(formData);
+  };
+
+  if (authLoading || profileLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-          <div className="flex items-center">
-            <div className="text-red-700">
-              <p className="font-bold">Error loading data</p>
-              <p>There was a problem fetching your information: {errorMessage}</p>
-              <div className="mt-4">
-                <Button onClick={() => window.location.reload()}>Try Again</Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p>Loading your profile information...</p>
       </div>
     );
   }
 
-  // Show loading state for profile loading only
-  if (profileLoading) {
+  if (profileError || !profile) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
-        <p>Loading application data...</p>
-        <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
-          <div className="h-full bg-primary animate-pulse"></div>
-        </div>
-        {/* Debug info */}
-        <div className="mt-8 text-xs text-gray-500">
-          <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-          <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
-        </div>
+        <p className="text-red-500">Error loading your profile. Please try again later.</p>
       </div>
     );
   }
 
   // Get the applicant status badge color
-  // Function to get the class name for status badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
-        return 'bg-slate-200 text-slate-800';
+        return <Badge variant="secondary">New</Badge>;
       case 'contacted':
-        return 'bg-blue-100 text-blue-800';
+        return <Badge variant="outline">Contacted</Badge>;
       case 'interviewed':
-        return 'bg-blue-500 text-white';
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Interviewed</Badge>;
       case 'hired':
-        return 'bg-green-500 text-white';
+        return <Badge className="bg-green-500 hover:bg-green-600">Hired</Badge>;
       case 'rejected':
-        return 'bg-red-500 text-white';
+        return <Badge variant="destructive">Rejected</Badge>;
       default:
-        return 'bg-gray-200 text-gray-800';
+        return <Badge>{status}</Badge>;
     }
   };
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Applicant Portal</h1>
-        <div>
-          <p className="text-sm mb-2">Logged in as: <strong>{user?.username}</strong></p>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/api/auth/logout'}
-          >
-            Logout
-          </Button>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold mb-8">Applicant Portal</h1>
       
-      <Card className="mb-8">
-        <CardHeader className="pb-2">
-          <CardTitle>Your Application</CardTitle>
-          <CardDescription>Details of your job application</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {profile ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="text-lg">{profile.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p className="text-lg">{profile.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="text-lg">{profile.phone}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="text-lg">
-                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(profile.status)}`}>
-                      {profile.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Application Date</p>
-                  <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
-                {profile.extraMessage ? (
-                  <p className="text-gray-700">{profile.extraMessage}</p>
-                ) : (
-                  <p className="text-gray-400 italic">No additional message provided</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="py-4">
-              <p className="text-gray-500">Loading application details...</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* NEW: Reusable Messaging System */}
-      {user && profile && (
-        <Card className="mb-8">
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Profile Information */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Communication Center
-            </CardTitle>
+            <CardTitle>Your Application</CardTitle>
             <CardDescription>
-              Send messages and communicate about your application
+              View and manage your application details
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <MessagingSystem
-              userId={user.id}
-              applicantId={profile.id}
-              title="Application Messages"
-              placeholder="Type your message about your application..."
-              showPriority={true}
-              showPrivateToggle={false}
-              maxHeight="300px"
-              compactMode={false}
-              onMessageSent={(message) => {
-                toast({
-                  title: "Message sent successfully!",
-                  description: "Your message has been recorded and will be reviewed.",
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Documents section removed - was causing API cascade issues */}
-      
-      {/* Debug section simplified - only profile data */}
-      {process.env.NODE_ENV !== 'production' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Debug Information</CardTitle>
-            <CardDescription>Profile debugging data (only visible in development)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <h3 className="text-lg font-medium mb-2">Profile Data</h3>
-              <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
-                {JSON.stringify(profile, null, 2)}
-              </pre>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Name</p>
+                <p className="text-lg">{profile && profile.name ? profile.name : 'Loading...'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Email</p>
+                <p className="text-lg">{profile && profile.email ? profile.email : 'Loading...'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Phone</p>
+                <p className="text-lg">{profile && profile.phone ? profile.phone : 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Position Applied</p>
+                <p className="text-lg">{profile && profile.positionApplied ? profile.positionApplied : 'Loading...'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Status</p>
+                <div className="mt-1">{profile && profile.status ? getStatusBadge(profile.status) : 'Loading...'}</div>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Application Date</p>
+                <p className="text-lg">{profile && profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Loading...'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* Message Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Message to Recruiters</CardTitle>
+            <CardDescription>
+              Add any additional information for your application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleMessageSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="message">Your Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here (maximum 2000 characters)"
+                  className="min-h-[150px]"
+                  value={message || (profile && profile.extraMessage) || ''}
+                  onChange={(e) => setMessage(e.target.value)}
+                  maxLength={2000}
+                />
+                <p className="text-xs text-right text-gray-500">
+                  {(message || (profile && profile.extraMessage) || '').length}/2000 characters
+                </p>
+              </div>
+              <Button 
+                type="submit" 
+                disabled={updateMessage.isPending}
+              >
+                {updateMessage.isPending ? 'Saving...' : 'Save Message'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator className="my-8" />
+
+      {/* Document Upload Section */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Document Upload</CardTitle>
+          <CardDescription>
+            Upload your identification, work permits, and other required documents
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleDocumentUpload} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="docName">Document Name (Optional)</Label>
+                <Input
+                  id="docName"
+                  placeholder="e.g., ID Card, Work Permit"
+                  value={docName}
+                  onChange={(e) => setDocName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="document">Select Document</Label>
+                <Input
+                  id="document"
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+              </div>
+            </div>
+            <div>
+              <Button 
+                type="submit" 
+                disabled={uploadDocument.isPending}
+                className="flex gap-2 items-center"
+              >
+                <ExternalLink size={16} /> 
+                {uploadDocument.isPending ? 'Uploading...' : 'Upload Document'}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6">
+            <h3 className="font-medium mb-2">Uploaded Documents</h3>
+            {docsLoading ? (
+              <p>Loading documents...</p>
+            ) : docsError ? (
+              <p className="text-red-500">Error loading documents.</p>
+            ) : documents && Array.isArray(documents) && documents.length > 0 ? (
+              <Table>
+                <TableCaption>Your uploaded documents</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead>Uploaded Date</TableHead>
+                    <TableHead>Verification</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc: any) => {
+                    return doc ? (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium">{doc.documentName}</TableCell>
+                        <TableCell>{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {doc.verified_at ? (
+                            <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
+                          ) : (
+                            <Badge variant="outline">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(doc.documentUrl, '_blank')}
+                              className="flex gap-1 items-center"
+                            >
+                              <File size={16} /> View
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this document?')) {
+                                  deleteDocument.mutate(doc.id);
+                                }
+                              }}
+                              disabled={deleteDocument.isPending}
+                            >
+                              <Trash size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : null;
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-gray-500">No documents uploaded yet.</p>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col items-start">
+          <p className="text-sm text-gray-500 mb-2">
+            <strong>Accepted file formats:</strong> PDF, Word documents (.doc, .docx), and images (.jpg, .jpeg, .png)
+          </p>
+          <p className="text-sm text-gray-500">
+            <strong>Maximum file size:</strong> 10MB per document
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
