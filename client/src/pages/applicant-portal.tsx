@@ -79,7 +79,7 @@ function ApplicantPortal() {
     isError: isDocsError,
     refetch: refetchDocs 
   } = useQuery<ApplicantDocument[]>({
-    queryKey: ['/api/applicant-portal/documents'],
+    queryKey: ['/documents'],
     enabled: isAuthenticated && isApplicant,
     staleTime: 600000, // 10 minutes - keep data fresh longer
     retry: 1,
@@ -144,32 +144,8 @@ function ApplicantPortal() {
     }, 1000);
   };
 
-  // Improved auto-retry mechanism that will retry loading if data is missing
-  React.useEffect(() => {
-    let retryTimeoutId: NodeJS.Timeout | null = null;
-    
-    // If we have auth but no profile data yet, try to auto-retry multiple times
-    if (!loadingTimeout && isAuthenticated && isApplicant && 
-        !profileLoading && !docsLoading && (!profile || !documents)) {
-      console.log("Auto-retrying data fetch because data is missing");
-      
-      // Immediate first retry
-      refetchProfile();
-      refetchDocs();
-      
-      // Second retry after a delay
-      retryTimeoutId = setTimeout(() => {
-        console.log("Second auto-retry attempt for data fetch");
-        refetchProfile();
-        refetchDocs();
-      }, 2000); // 2 second delay before second auto-retry
-    }
-    
-    return () => {
-      if (retryTimeoutId) clearTimeout(retryTimeoutId);
-    };
-  }, [isAuthenticated, isApplicant, profile, documents, 
-      profileLoading, docsLoading, loadingTimeout, refetchProfile, refetchDocs]);
+  // Removed auto-retry mechanism - ProfileProvider handles profile persistence
+  // Documents will load once and show empty state if none exist
   
   // Set up timeout detection for loading states
   React.useEffect(() => {
