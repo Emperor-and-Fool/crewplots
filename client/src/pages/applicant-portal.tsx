@@ -43,52 +43,13 @@ function ApplicantPortal() {
   
   // All applicants debug query removed - not needed for profile view
 
-  // Set up more sophisticated timeout and keep-alive handling
-  const [loadingTimeout, setLoadingTimeout] = React.useState(false);
-  const [timeoutReason, setTimeoutReason] = React.useState<string>('');
+  // Timeout detection removed - ProfileProvider handles loading efficiently
   
   // Removed redundant refresh mechanism since ProfileProvider handles data persistence
   
-  // Retry function simplified - only ProfileProvider refresh needed
-  const handleRetry = () => {
-    setLoadingTimeout(false);
-    setTimeoutReason('');
-    
-    // ProfileProvider handles profile refetch
-    refetchProfile();
-    
-    toast({
-      title: "Retrying",
-      description: "Attempting to load your profile data...",
-      duration: 3000,
-    });
-  };
+  // Retry function removed - ProfileProvider handles loading efficiently
 
-  // Auto-retry mechanism removed - ProfileProvider handles data persistence reliably
-  
-  // Set up timeout detection for loading states
-  React.useEffect(() => {
-    // Set different timeouts for different loading states
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    if (authLoading) {
-      timeoutId = setTimeout(() => {
-        setLoadingTimeout(true);
-        setTimeoutReason('Authentication is taking longer than expected. This could be due to session issues.');
-      }, 10000); // 10 seconds for auth timeout - extended from 7s
-    } else if (profileLoading) {
-      timeoutId = setTimeout(() => {
-        setLoadingTimeout(true);
-        setTimeoutReason('Loading your profile data is taking longer than expected. This may be due to database connectivity issues.');
-      }, 10000); // 10 seconds for profile timeout - extended from 7s
-    }
-    
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [authLoading, profileLoading]);
+  // All ghost timeout detection completely removed
 
   // Simplified debug logging - only profile
   React.useEffect(() => {
@@ -100,59 +61,7 @@ function ApplicantPortal() {
     }
   }, [profile, isProfileError, profileError]);
   
-  // Timeout reached - show user-friendly message with specific reason
-  if (loadingTimeout) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex flex-col">
-            <div className="text-yellow-700">
-              <p className="font-bold text-lg">Loading is taking longer than expected</p>
-              
-              {timeoutReason ? (
-                <p className="mt-2">{timeoutReason}</p>
-              ) : (
-                <p className="mt-2">This could be due to network issues or server delays.</p>
-              )}
-              
-              <p className="mt-4 font-medium">You can try:</p>
-              <ul className="list-disc ml-5 mt-2">
-                <li>Wait a bit longer</li>
-                <li>Try refreshing your data</li>
-                <li>Check your internet connection</li>
-                <li>Log out and log back in if the issue persists</li>
-              </ul>
-              
-              <div className="mt-6 space-x-3">
-                <Button 
-                  onClick={handleRetry}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  Retry Loading Data
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                >
-                  Refresh Page
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={() => window.location.href = '/api/auth/logout'}
-                  className="border-red-300 text-red-600 hover:bg-red-50"
-                >
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Ghost timeout warning completely removed - ProfileProvider handles loading efficiently
 
   // Handle profile API errors only
   if (isProfileError) {
