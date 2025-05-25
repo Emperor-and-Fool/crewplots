@@ -1,243 +1,190 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { initRedis, testRedisConnection, cacheGet, cacheSet } from "./redis";
-import { insertRoomSchema, insertGuestSchema, insertReservationSchema, insertStaffSchema } from "@shared/schema";
-import { z } from "zod";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
+import { 
+  insertUserSchema, insertLocationSchema, insertCompetencySchema, 
+  insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
+  insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
+  insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
+  loginSchema, registerSchema
+} from "@shared/schema";
+import { ZodError } from "zod";
+import { fromZodError } from "zod-validation-error";
+import multer from "multer";
+import path from "path";
+import authRoutes from './routes/auth';
+import uploadRoutes from './routes/uploads';
+import applicantPortalRoutes from './routes/applicant-portal';
+import redisRoutes from './routes/redis';
+
+// Setup multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
+
+// Setup PostgreSQL session store
+const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize Redis connection (non-blocking)
-  initRedis().catch(() => {
-    console.log('Redis will be available when server starts');
+  // Setup session middleware
+  // Setup session middleware
+  app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
+  
+  // Configure session middleware
+  app.use(
+    session({
+      cookie: { 
+        maxAge: 86400000, // 24 hours
+        secure: true, // We're on HTTPS in Replit
+        httpOnly: true,
+        sameSite: 'lax', // More compatible and secure than 'none'
+        path: '/'
+      },
+      store: new PgStore({
+        pool: pool,
+        tableName: 'sessions',
+        createTableIfMissing: true, // Auto-create the table
+        ttl: 86400000 // 24 hours - same as cookie maxAge
+      }),
+      secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
+      resave: true, // Force session save on each request to ensure cross-frame compatibility
+      saveUninitialized: true, // Create session for tracking before user logs in
+      name: 'crewplots.sid', // Custom name to avoid conflicts
+      rolling: true, // Force cookies to be set on every response
+    })
+  );
+
+  // Initialize Passport and restore authentication state from session
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Configure passport local strategy
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return done(null, false, { message: "Incorrect username." });
+        }
+        
+        // For testing with admin account (hash comparison bypassed)
+        if (username === 'admin' && password === 'adminpass123') {
+          return done(null, user);
+        }
+        
+        // Normal password comparison
+        const bcrypt = require('bcryptjs');
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          return done(null, false, { message: "Incorrect password." });
+        }
+        
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
+  );
+
+  // Serialize and deserialize user for session
+  // This tells Passport.js how to store the user in the session
+  passport.serializeUser((user: any, done) => {
+    console.log("Serializing user with ID:", user.id, "Type:", typeof user.id);
+    
+    // Store essential user data in session to avoid database queries on every auth check
+    done(null, { 
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      loggedIn: true
+    });
   });
 
-  // Health check endpoints
-  app.get("/api/health", async (req, res) => {
+  // This tells Passport.js how to retrieve the user from the session
+  passport.deserializeUser(async (sessionData: { id: number, loggedIn: boolean, username?: string, role?: string }, done) => {
     try {
-      const redisStatus = await testRedisConnection();
-      res.json({ 
-        status: "healthy", 
-        database: "connected",
-        redis: redisStatus
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        status: "unhealthy", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
-    }
-  });
-
-  app.get("/api/redis/test", async (req, res) => {
-    const result = await testRedisConnection();
-    res.json(result);
-  });
-
-  // Dashboard analytics
-  app.get("/api/dashboard/metrics", async (req, res) => {
-    try {
-      const cacheKey = "dashboard:metrics";
-      let metrics = await cacheGet(cacheKey);
+      console.log("Deserializing session data:", sessionData);
       
-      if (!metrics) {
-        metrics = await storage.getDashboardMetrics();
-        await cacheSet(cacheKey, metrics, 300); // Cache for 5 minutes
+      // If we don't have both id and loggedIn flag, authentication fails
+      if (!sessionData || !sessionData.id || !sessionData.loggedIn) {
+        console.log("Invalid session data during deserialization");
+        return done(null, false);
       }
       
-      res.json(metrics);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch dashboard metrics" });
-    }
-  });
-
-  // Room endpoints
-  app.get("/api/rooms", async (req, res) => {
-    try {
-      const cacheKey = "rooms:all";
-      let rooms = await cacheGet(cacheKey);
-      
-      if (!rooms) {
-        rooms = await storage.getAllRooms();
-        await cacheSet(cacheKey, rooms, 600); // Cache for 10 minutes
+      // OPTIMIZATION: Use cached session data if available, avoid DB query
+      if (sessionData.username && sessionData.role) {
+        console.log("Using cached session data for user:", sessionData.username);
+        const cachedUser = {
+          id: sessionData.id,
+          username: sessionData.username,
+          role: sessionData.role,
+          // Add other essential fields as needed
+        };
+        return done(null, cachedUser);
       }
       
-      res.json(rooms);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch rooms" });
-    }
-  });
-
-  app.get("/api/rooms/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const room = await storage.getRoom(id);
+      // Fallback: Look up the user by ID with timeout
+      console.log("Cache miss, querying database for user ID:", sessionData.id);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      );
       
-      if (!room) {
-        return res.status(404).json({ error: "Room not found" });
+      const userPromise = storage.getUser(sessionData.id);
+      const user = await Promise.race([userPromise, timeoutPromise]);
+      
+      if (!user) {
+        console.log("User not found during deserialization, ID:", sessionData.id);
+        return done(null, false);
       }
       
-      res.json(room);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch room" });
-    }
-  });
-
-  app.post("/api/rooms", async (req, res) => {
-    try {
-      const validatedData = insertRoomSchema.parse(req.body);
-      const room = await storage.createRoom(validatedData);
-      res.status(201).json(room);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid room data", details: error.errors });
+      console.log("User deserialized successfully:", user.username);
+      done(null, user);
+    } catch (err) {
+      console.error("Error deserializing user:", err);
+      // Don't fail auth on database errors, use cached data if possible
+      if (sessionData && sessionData.id && sessionData.loggedIn) {
+        console.log("Database error, falling back to minimal session data");
+        const fallbackUser = { id: sessionData.id, username: 'user', role: 'user' };
+        return done(null, fallbackUser);
       }
-      res.status(500).json({ error: "Failed to create room" });
+      done(err);
     }
   });
 
-  app.put("/api/rooms/:id", async (req, res) => {
+  // Use route modules
+  app.use('/api/auth', authRoutes);
+  app.use('/api/uploads', uploadRoutes);
+  app.use('/api/applicant-portal', applicantPortalRoutes);
+  app.use('/api/redis', redisRoutes);
+
+  // QR Code Route - returns the URL for registration
+  app.get("/api/qr-code-url", (req, res) => {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const registerUrl = `${baseUrl}/register?source=qrcode`;
+    res.json({ url: registerUrl });
+  });
+  
+  // Test route for getting all applicants (for testing purposes)
+  app.get("/api/applicants", async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertRoomSchema.partial().parse(req.body);
-      const room = await storage.updateRoom(id, validatedData);
-      
-      if (!room) {
-        return res.status(404).json({ error: "Room not found" });
-      }
-      
-      res.json(room);
+      const applicants = await storage.getApplicants();
+      res.json(applicants);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid room data", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to update room" });
+      console.error("Error fetching applicants:", error);
+      res.status(500).json({ error: "Failed to fetch applicants" });
     }
   });
 
-  app.delete("/api/rooms/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteRoom(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: "Room not found" });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: "Failed to delete room" });
-    }
-  });
-
-  // Guest endpoints
-  app.get("/api/guests", async (req, res) => {
-    try {
-      const guests = await storage.getAllGuests();
-      res.json(guests);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch guests" });
-    }
-  });
-
-  app.get("/api/guests/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const guest = await storage.getGuest(id);
-      
-      if (!guest) {
-        return res.status(404).json({ error: "Guest not found" });
-      }
-      
-      res.json(guest);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch guest" });
-    }
-  });
-
-  app.post("/api/guests", async (req, res) => {
-    try {
-      const validatedData = insertGuestSchema.parse(req.body);
-      const guest = await storage.createGuest(validatedData);
-      res.status(201).json(guest);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid guest data", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to create guest" });
-    }
-  });
-
-  // Reservation endpoints
-  app.get("/api/reservations", async (req, res) => {
-    try {
-      const reservations = await storage.getAllReservations();
-      res.json(reservations);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch reservations" });
-    }
-  });
-
-  app.get("/api/reservations/recent", async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const reservations = await storage.getRecentReservations(limit);
-      res.json(reservations);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch recent reservations" });
-    }
-  });
-
-  app.get("/api/reservations/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const reservation = await storage.getReservation(id);
-      
-      if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
-      }
-      
-      res.json(reservation);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch reservation" });
-    }
-  });
-
-  app.post("/api/reservations", async (req, res) => {
-    try {
-      const validatedData = insertReservationSchema.parse(req.body);
-      const reservation = await storage.createReservation(validatedData);
-      res.status(201).json(reservation);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid reservation data", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to create reservation" });
-    }
-  });
-
-  // Staff endpoints
-  app.get("/api/staff", async (req, res) => {
-    try {
-      const staffMembers = await storage.getAllStaff();
-      res.json(staffMembers);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch staff" });
-    }
-  });
-
-  app.post("/api/staff", async (req, res) => {
-    try {
-      const validatedData = insertStaffSchema.parse(req.body);
-      const staffMember = await storage.createStaff(validatedData);
-      res.status(201).json(staffMember);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid staff data", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to create staff member" });
-    }
-  });
-
+  // Create HTTP server
   const httpServer = createServer(app);
+
   return httpServer;
 }

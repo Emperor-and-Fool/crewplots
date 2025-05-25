@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Redis service
+  redis:
+    image: redis:7.2-alpine
+    container_name: crewplots-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # PostgreSQL database (optional - if you want to use Docker for DB too)
+  postgres:
+    image: postgres:15-alpine
+    container_name: crewplots-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-crewplots}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres}"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Your application (optional - for full Docker deployment)
+  app:
+    build: .
+    container_name: crewplots-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${PGUSER:-postgres}:${PGPASSWORD:-password}@postgres:5432/${PGDATABASE:-crewplots}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:

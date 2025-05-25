@@ -1,0 +1,71 @@
+Below is a blunt checklist of the usual suspects when a React page that should appear right after login never gets past its loading spinner. Everything centers on the handshake between React ⇆ API ⇆ Passport and the data fetch for “/me”.
+1. The session/JWT never reaches the API
+What goes wrong	Typical symptom	Quick test
+Cookie not sent – fetch/axios call doesn’t set credentials:"include" or withCredentials:true.	Network tab shows request with no Cookie: header ⇒ server replies 401/302 loop.	Add credentials:"include" and watch headers again.
+Secure/SameSite mismatch – cookie marked Secure, SameSite=None but you’re on http:// or on a different sub-domain/port.	Cookie visible in dev-tools “Application > Cookies” but never sent on API call.	Serve over HTTPS or align domain/port; relax SameSite for SPA on another sub-domain.
+JWT not attached – you’re using token strategy but forgot Authorization: Bearer ... on the first fetch after reload.	First API hit is 401; React retries forever.	Log localStorage.getItem("token"); inspect request headers.
+2. Passport never recognises the session
+
+    Order of middleware.
+    app.use(passport.session()) must come after cookie-parser / session store.
+
+    serializeUser / deserializeUser bugs.
+    If deserializeUser rejects (DB down, wrong ID), req.user stays undefined, Passport fails silently, your route responds 401 or stalls waiting for DB.
+
+Check server logs: Passport emits “failed to deserialize user” if that path throws.
+3. Route protection vs. React routing
+
+    API returns HTML redirect, React expects JSON → JSON.parse hangs inside a useEffect, suspense fallback spins forever.
+    Confirm: Inspect response body; if you see “<!DOCTYPE html>…Found. Redirecting to /login” the guard is tripping.
+
+    Client-side guard deadlock.
+    Component checks authContext.loading and immediately fetches /me; if loading never becomes false because the same fetch resolves it, you sit in an eternal spinner.
+
+4. CORS & pre-flight
+
+If the API is on another origin and OPTIONS fails (wrong Access-Control-Allow-Credentials or missing Access-Control-Allow-Headers), the browser aborts before the request even hits Passport.
+
+Clue: Network tab shows the GET/POST in grey-italic “blocked: CORS” with status (failed).
+5. Infrastructure wrinkles (Traefik / Docker)
+
+    Path rewrites – Traefik may strip “/api” before forwarding; your fetch("/api/me") hits a 404 internally.
+
+    Sticky sessions missing – if you use a session store in memory and Traefik load-balances to a different container on the very next request, the cookie maps to a session that doesn’t exist there ⇒ 401.
+
+6. Database or code awaits that never resolve
+
+    await User.findById(id) but your DB pool is exhausted / connection string wrong ⇒ request never finishes; client hangs.
+
+    Promise chain missing return so Express route never res.json(...), leaving the response open.
+
+Watch server logs and the Network timing column – if Time ≈ ∞, the handler stalled.
+7. React‐specific gotchas
+
+    Suspense + React.lazy() for the profile page without a proper error boundary means any thrown error (fetch 401, JSON parse) leaves you in the fallback forever.
+
+    State update on an unmounted component after redirect throws “Can’t perform a React state update” and the spinner is stuck.
+
+Rapid triage flow
+
+    Network tab first
+    Do you see the /me call?
+    Status? (302? 401? stalled?)
+
+    Check request headers versus cookies/tokens.
+
+    Inspect the response body for redirects or HTML.
+
+    Server logs – look for “deserializeUser” errors or DB exceptions.
+
+    Repeat with curl/postman to isolate whether the hang is client-side React logic or back-end.
+
+Fix the first broken link in that chain; everything downstream usually starts working.
+Hard-earned lessons
+
+    Never rely on “works on localhost” – enable HTTPS early so Secure/SameSite issues surface before prod.
+
+    Always return a short JSON “not authenticated” payload (e.g., {error:"unauthenticated"}) instead of a redirect when the client is an SPA; React can then route to /login explicitly instead of choking on HTML.
+
+    Add timeout + abort-controller in the fetch to prevent infinite spinners revealing nothing.
+
+That’s the realistic list. Walk through it with the dev-tools open and you’ll pinpoint the stall.

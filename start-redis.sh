@@ -1,12 +1,15 @@
 #!/bin/bash
-# Start Redis server with proper configuration
-redis-server --port 6379 --bind 127.0.0.1 --protected-mode no --save "" --appendonly no --timeout 0 --tcp-keepalive 300 --daemonize yes --pidfile /tmp/redis.pid --logfile /tmp/redis.log --dir /tmp
 
-# Wait a bit and check if Redis is running
+# Start Redis in the background for development
+echo "Starting Redis server..."
+redis-server --port 6379 --bind 127.0.0.1 --protected-mode no --save "" --appendonly no &
+
+# Wait a moment for Redis to start
 sleep 2
+
+# Test the connection
 if redis-cli ping > /dev/null 2>&1; then
-    echo "Redis started successfully"
+    echo "✅ Redis is running on port 6379"
 else
-    echo "Redis failed to start, trying alternative configuration"
-    redis-server --port 6379 --bind 0.0.0.0 --protected-mode no --save "" --appendonly no --daemonize yes
+    echo "❌ Redis failed to start"
 fi

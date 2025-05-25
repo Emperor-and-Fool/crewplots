@@ -1,0 +1,22 @@
+Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <a> a 
+    at a
+    at a
+    at https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7c1aaabc:337:18
+    at div
+    at nav
+    at div
+    at aside
+    at Sidebar (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/src/components/ui/sidebar.tsx:40:27)
+    at div
+    at Dashboard (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/src/pages/dashboard.tsx:39:51)
+    at ProtectedRoute (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/src/App.tsx?v=UgmX-5WAAM1nGSJrMV32n:33:38)
+    at Route (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7c1aaabc:323:16)
+    at Switch (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7c1aaabc:379:17)
+    at Router (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7c1aaabc:291:17)
+    at Provider (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AJU3CG7.js?v=7c1aaabc:38:15)
+    at TooltipProvider (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=7c1aaabc:61:5)
+    at App (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/src/App.tsx?v=UgmX-5WAAM1nGSJrMV32n:215:31)
+    at AuthProvider (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/src/contexts/auth-context.tsx?v=UgmX-5WAAM1nGSJrMV32n:30:32)
+    at QueryClientProvider (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=7c1aaabc:2881:3)
+    at V (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=7c1aaabc:44:25)
+    at J (https://136c4c4b-9f69-4db2-b358-eb7d990dc45a-00-3jigbzohwyn1n.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=7c1aaabc:42:18)

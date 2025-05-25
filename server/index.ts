@@ -1,36 +1,40 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { redisSupervisor } from "./redis-supervisor";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
+// Optimized body parsing middleware with smaller limits for better performance
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Minimal debug middleware (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    if (req.path.includes('login') && req.method === 'POST') {
+      console.log('DEBUG Login attempt:', { 
+        method: req.method, 
+        contentType: req.get('Content-Type'),
+        hasBody: !!req.body && Object.keys(req.body).length > 0 
+      });
+    }
+    next();
+  });
+}
+
+// Streamlined request logging middleware for better performance
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  // Skip logging for non-API requests to reduce overhead
+  if (!req.path.startsWith("/api")) {
+    return next();
+  }
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  const start = process.hrtime.bigint();
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
+    const duration = Number(process.hrtime.bigint() - start) / 1000000; // Convert to milliseconds
+    log(`${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
   });
 
   next();
@@ -44,7 +48,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error("Server error:", err);
   });
 
   // importantly only setup vite in development and after
@@ -55,6 +59,10 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+
+  // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
+  console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
+  // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

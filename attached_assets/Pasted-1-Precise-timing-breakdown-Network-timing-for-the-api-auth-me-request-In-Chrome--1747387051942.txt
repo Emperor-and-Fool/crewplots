@@ -1,0 +1,67 @@
+1. Precise timing breakdown
+
+    Network timing for the /api/auth/me request
+
+        In Chrome DevTools → Network → click the /auth/me call → look at the Timing tab.
+        • How long was DNS/Connect/TLS?
+        • How long was “Waiting (TTFB)”?
+
+    Server-side processing time
+
+        In your /auth/me handler, log timestamps at:
+
+        console.time("me:total");
+        // fetch session / deserializeUser
+        console.timeLog("me:total", "after deserializeUser");
+        // any DB lookup for profile or roles
+        console.timeLog("me:total", "after DB lookup");
+        // final res.json
+        console.timeEnd("me:total");
+
+        Paste those timings.
+
+2. Code paths and race surface
+
+    Auth context code (client/src/contexts/auth-context.tsx)
+
+        The useEffect that calls /auth/me and sets isLoading/user.
+
+        Any additional hooks that gate rendering on isLoading vs. user.
+
+    Role-check invocation
+
+        Where you do your “server-side auth check directly for role check”
+
+        Are you nesting another fetch inside the first effect, or firing two parallel calls?
+
+3. DB & session store details
+
+    Which store are you using for sessions? (In-memory, Mongo, Redis?)
+
+    Is your profile lookup hitting the same database or a different one?
+
+    Any chance the DB connection pool is exhausted or slow?
+
+4. Work-around audit
+
+    Show me the code around your AbortController logic and your retry/refetch button handler.
+
+    Any custom middleware in Express before Passport that might introduce delays?
+
+Next steps
+
+    Gather the above timings and paste them here.
+
+    Share the relevant snippets of your client auth-context and server /auth/me route.
+
+With those numbers and code paths in hand we can see whether it’s:
+
+    Pure network / TLS latency
+
+    Slow session deserialize or DB calls
+
+    Mis-ordered hooks causing an unnecessary second fetch
+
+    Or a leftover workaround stalling setIsLoading(false) until after your timeout
+
+Once we see the data, we can propose code cleanup (flattening nested effects, removing redundant calls, tightening middleware) and ensure your initial render isn’t blocked by a needless round-trip.
