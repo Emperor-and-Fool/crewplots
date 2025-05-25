@@ -71,45 +71,9 @@ function ApplicantPortal() {
   // Now using persistent profile context - no more null states!
   const isProfileError = !profile && !profileLoading && profileError;
 
-  // Fetch applicant documents - simplified to use the default queryFn from QueryClient
-  const { 
-    data: documents, 
-    isLoading: docsLoading,
-    error: docsError,
-    isError: isDocsError,
-    refetch: refetchDocs 
-  } = useQuery<ApplicantDocument[]>({
-    queryKey: ['/documents'],
-    enabled: isAuthenticated && isApplicant,
-    staleTime: 600000, // 10 minutes - keep data fresh longer
-    retry: 1,
-    retryDelay: 500,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Prevent mount refetches
-    refetchOnReconnect: false, // Prevent reconnect refetches
-    gcTime: 1800000, // 30 minutes - persist cache longer
-    // Keep showing cached data while refetching
-    placeholderData: (previousData) => previousData
-  });
+  // Documents system removed - was causing API cascade failures
   
-  // Fetch all applicants for comparison (for debugging only)
-  const { 
-    data: applicants, 
-    isLoading: applicantsLoading,
-    error: applicantsError,
-    isError: isApplicantsError,
-    refetch: refetchApplicants
-  } = useQuery<ApplicantProfile[]>({
-    queryKey: ['/api/applicants'],
-    enabled: isAuthenticated && process.env.NODE_ENV !== 'production', // Only fetch in development
-    staleTime: 60000, // 1 minute
-    retry: 1, // Only retry once
-    retryDelay: 2000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Prevent mount refetches
-    refetchOnReconnect: false, // Prevent reconnect refetches
-    gcTime: 300000 // 5 minutes
-  });
+  // All applicants debug query removed - not needed for profile view
 
   // Set up more sophisticated timeout and keep-alive handling
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
@@ -117,59 +81,22 @@ function ApplicantPortal() {
   
   // Removed redundant refresh mechanism since ProfileProvider handles data persistence
   
-  // Function to retry all queries with multiple attempts
+  // Retry function simplified - only ProfileProvider refresh needed
   const handleRetry = () => {
-    // Reset timeout state
     setLoadingTimeout(false);
     setTimeoutReason('');
     
-    // Only refetch documents since ProfileProvider handles profile data
-    refetchDocs();
+    // ProfileProvider handles profile refetch
+    refetchProfile();
     
-    // Show toast to indicate retry
     toast({
       title: "Retrying",
-      description: "Attempting to load your data...",
+      description: "Attempting to load your profile data...",
       duration: 3000,
     });
-    
-    // Second retry after a short delay - only for documents since ProfileProvider handles profile
-    setTimeout(() => {
-      refetchDocs();
-      
-      // Only refetch debug data in development
-      if (process.env.NODE_ENV !== 'production') {
-        refetchApplicants?.();
-      }
-    }, 1000);
   };
 
-  // Improved auto-retry mechanism that will retry loading if data is missing
-  React.useEffect(() => {
-    let retryTimeoutId: NodeJS.Timeout | null = null;
-    
-    // If we have auth but no profile data yet, try to auto-retry multiple times
-    if (!loadingTimeout && isAuthenticated && isApplicant && 
-        !profileLoading && !docsLoading && (!profile || !documents)) {
-      console.log("Auto-retrying data fetch because data is missing");
-      
-      // Immediate first retry
-      refetchProfile();
-      refetchDocs();
-      
-      // Second retry after a delay
-      retryTimeoutId = setTimeout(() => {
-        console.log("Second auto-retry attempt for data fetch");
-        refetchProfile();
-        refetchDocs();
-      }, 2000); // 2 second delay before second auto-retry
-    }
-    
-    return () => {
-      if (retryTimeoutId) clearTimeout(retryTimeoutId);
-    };
-  }, [isAuthenticated, isApplicant, profile, documents, 
-      profileLoading, docsLoading, loadingTimeout, refetchProfile, refetchDocs]);
+  // Auto-retry mechanism removed - ProfileProvider handles data persistence reliably
   
   // Set up timeout detection for loading states
   React.useEffect(() => {
@@ -186,11 +113,6 @@ function ApplicantPortal() {
         setLoadingTimeout(true);
         setTimeoutReason('Loading your profile data is taking longer than expected. This may be due to database connectivity issues.');
       }, 10000); // 10 seconds for profile timeout - extended from 7s
-    } else if (docsLoading) {
-      timeoutId = setTimeout(() => {
-        setLoadingTimeout(true);
-        setTimeoutReason('Loading your documents is taking longer than expected. This may be due to server performance issues.');
-      }, 10000); // 10 seconds for docs timeout - extended from 7s
     }
     
     return () => {
@@ -198,7 +120,7 @@ function ApplicantPortal() {
         clearTimeout(timeoutId);
       }
     };
-  }, [authLoading, profileLoading, docsLoading]);
+  }, [authLoading, profileLoading]);
 
   // Log all errors and data for debugging
   React.useEffect(() => {
