@@ -1,5 +1,4 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,39 +12,8 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
-// Define interfaces for strong typing
-interface ApplicantProfile {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  status: string;
-  resumeUrl: string | null;
-  notes: string | null;
-  extraMessage: string | null;
-  userId: number;
-  locationId: number | null;
-  createdAt: string;
-}
-
-interface ApplicantDocument {
-  id: number;
-  applicantId: number;
-  documentName: string;
-  documentUrl: string;
-  fileType: string;
-  uploadedAt: string;
-}
+// Interface already defined in profile-context.tsx - no need to duplicate
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
