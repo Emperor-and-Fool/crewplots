@@ -62,6 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.timeLog("auth:client-total", "response received");
         
         if (response.ok) {
+          // Check if response is actually JSON before parsing
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            console.error("Response is not JSON, content-type:", contentType);
+            throw new Error(`Expected JSON response but got ${contentType}`);
+          }
+          
           const data = await response.json();
           console.timeLog("auth:client-total", "response parsed");
           console.log("User data:", data);
@@ -94,7 +101,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearTimeout(timeoutId);
         
         if (error?.name === 'AbortError') {
-          console.error("Authentication request timed out after 5 seconds");
+          console.error("Authentication request timed out after 2 seconds");
+        } else if (error?.message?.includes('JSON')) {
+          console.error("JSON parsing error in auth check:", error.message);
         } else {
           console.error("Error checking authentication status:", error);
         }
