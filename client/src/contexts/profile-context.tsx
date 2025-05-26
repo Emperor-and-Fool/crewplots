@@ -51,23 +51,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Persist profile in sessionStorage to survive navigation
+  // Always fetch fresh profile data to ensure status is up-to-date
   useEffect(() => {
-    const savedProfile = sessionStorage.getItem('applicant-profile');
-    if (savedProfile) {
-      try {
-        const parsedProfile = JSON.parse(savedProfile);
-        setProfile(parsedProfile);
-        console.log('ProfileProvider: Loaded profile from sessionStorage:', parsedProfile.name);
-        return; // Don't fetch from server if we have cached data
-      } catch (error) {
-        console.error('Failed to parse saved profile:', error);
-        sessionStorage.removeItem('applicant-profile');
-      }
-    }
-    
-    // Only fetch from server if no valid cached profile exists
-    console.log('ProfileProvider: No cached profile found, fetching from server');
+    console.log('ProfileProvider: Fetching fresh profile from server');
     fetchProfile();
   }, [fetchProfile]);
 
