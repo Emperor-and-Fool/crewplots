@@ -160,6 +160,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual applicant by ID (register this FIRST before other routes)
+  app.get("/api/applicants/:id", async (req, res) => {
+    console.log("Individual applicant endpoint hit with ID:", req.params.id);
+    try {
+      const applicantId = parseInt(req.params.id);
+      if (isNaN(applicantId)) {
+        console.log("Invalid applicant ID:", req.params.id);
+        return res.status(400).json({ error: "Invalid applicant ID" });
+      }
+      
+      console.log("Fetching applicant with ID:", applicantId);
+      const applicant = await storage.getApplicant(applicantId);
+      console.log("Database result:", applicant ? "Found" : "Not found");
+      
+      if (!applicant) {
+        return res.status(404).json({ error: "Applicant not found" });
+      }
+      
+      res.json(applicant);
+    } catch (error) {
+      console.error("Error fetching applicant:", error);
+      res.status(500).json({ error: "Failed to fetch applicant" });
+    }
+  });
+
+  // Test route for getting all applicants (for testing purposes)
+  app.get("/api/applicants", async (req, res) => {
+    try {
+      const applicants = await storage.getApplicants();
+      res.json(applicants);
+    } catch (error) {
+      console.error("Error fetching applicants:", error);
+      res.status(500).json({ error: "Failed to fetch applicants" });
+    }
+  });
+
   // Use route modules
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
@@ -172,37 +208,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const baseUrl = req.protocol + '://' + req.get('host');
     const registerUrl = `${baseUrl}/register?source=qrcode`;
     res.json({ url: registerUrl });
-  });
-  
-  // Test route for getting all applicants (for testing purposes)
-  app.get("/api/applicants", async (req, res) => {
-    try {
-      const applicants = await storage.getApplicants();
-      res.json(applicants);
-    } catch (error) {
-      console.error("Error fetching applicants:", error);
-      res.status(500).json({ error: "Failed to fetch applicants" });
-    }
-  });
-
-  // Get individual applicant by ID
-  app.get("/api/applicants/:id", async (req, res) => {
-    try {
-      const applicantId = parseInt(req.params.id);
-      if (isNaN(applicantId)) {
-        return res.status(400).json({ error: "Invalid applicant ID" });
-      }
-      
-      const applicant = await storage.getApplicant(applicantId);
-      if (!applicant) {
-        return res.status(404).json({ error: "Applicant not found" });
-      }
-      
-      res.json(applicant);
-    } catch (error) {
-      console.error("Error fetching applicant:", error);
-      res.status(500).json({ error: "Failed to fetch applicant" });
-    }
   });
 
   // Create HTTP server
