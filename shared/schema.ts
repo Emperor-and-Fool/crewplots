@@ -145,7 +145,7 @@ export const applicants = pgTable("applicants", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
-  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected"] }).default("new").notNull(),
+  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new").notNull(),
   resumeUrl: text("resume_url"),
   notes: text("notes"),
   extraMessage: text("extra_message"),
@@ -153,6 +153,8 @@ export const applicants = pgTable("applicants", {
   locationId: integer("location_id").references(() => locations.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
 
 // Applicant Documents
 export const applicantDocuments = pgTable("applicant_documents", {

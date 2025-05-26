@@ -96,7 +96,7 @@ export default function ApplicantDetail() {
     // If Short-list is selected, immediately update status and go back to list
     if (action === 'shortlist') {
       updateApplicantMutation.mutate({
-        status: 'contacted',
+        status: 'short-listed',
         reviewerNotes,
         locationId: selectedLocation ? parseInt(selectedLocation) : null,
       });
