@@ -143,28 +143,39 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
       
-      {/* Simple Message System */}
+      {/* Message System */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            Communication Hub
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="text-sm text-gray-600">
               Send a message to the recruiting team
             </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type your message here..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                Send
+            
+            {/* Basic formatting toolbar */}
+            <div className="flex gap-2 border-b pb-2">
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Bold">
+                <strong>B</strong>
               </button>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Italic">
+                <em>I</em>
+              </button>
+            </div>
+            
+            {/* Expandable textarea */}
+            <div className="space-y-2">
+              <textarea
+                placeholder="Type your message here..."
+                className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                style={{ lineHeight: '1.5' }}
+              />
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-gray-400">
+                  Supports basic markdown: **bold**, *italic*
+                </div>
+                <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                  Send Message
+                </button>
+              </div>
             </div>
           </div>
         </CardContent>
