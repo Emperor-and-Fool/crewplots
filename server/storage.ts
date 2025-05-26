@@ -1182,7 +1182,7 @@ export class DatabaseStorage implements IStorage {
   // Applicants
   async getApplicant(id: number): Promise<Applicant | undefined> {
     try {
-      // Select specific columns to avoid extraMessage issues
+      // Include extraMessage field to match the expected Applicant type
       const [applicant] = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1191,6 +1191,7 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
