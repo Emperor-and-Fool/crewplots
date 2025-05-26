@@ -232,13 +232,6 @@ export default function Applicants() {
                     </p>
                   </div>
                   <div className="mt-4 sm:mt-0 flex gap-2">
-                    <Button 
-                      variant="outline"
-                      onClick={handlePrintQR}
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Print QR Code
-                    </Button>
                     <Button onClick={() => setShowForm(true)}>
                       <PlusCircle className="h-4 w-4 mr-2" />
                       Add Applicant
@@ -324,16 +317,6 @@ export default function Applicants() {
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
                                 )}
                                 <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
-                                <div className="flex gap-2 mt-3">
-                                  <Button size="sm" variant="outline" onClick={() => handleHire(applicant)}>
-                                    <UserCheck className="h-3 w-3 mr-1" />
-                                    Hire
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Delete
-                                  </Button>
-                                </div>
                               </div>
                             );
                         })}
