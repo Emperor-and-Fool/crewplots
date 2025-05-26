@@ -159,6 +159,22 @@ function ApplicantPortal() {
               <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Italic">
                 <em>I</em>
               </button>
+              <div className="border-l mx-2"></div>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Happy">
+                😊
+              </button>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Thumbs up">
+                👍
+              </button>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Heart">
+                ❤️
+              </button>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Celebration">
+                🎉
+              </button>
+              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Thinking">
+                🤔
+              </button>
             </div>
             
             {/* Expandable textarea */}
