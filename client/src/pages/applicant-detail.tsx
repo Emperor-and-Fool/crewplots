@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function ApplicantDetail() {
-  const [, params] = useRoute("/applicants/:id");
+  const [, params] = useRoute("/applicant/:id");
   const applicantId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
