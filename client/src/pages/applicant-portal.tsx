@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/contexts/profile-context';
+import { MessagingSystem } from '@/components/ui/messaging-system';
 
 import { 
   Card, 
@@ -140,6 +141,21 @@ function ApplicantPortal() {
           )}
         </CardContent>
       </Card>
+      
+      {/* New Messaging System - Simple Configuration */}
+      {user && profile && (
+        <MessagingSystem 
+          userId={user.id}
+          applicantId={profile.id}
+          title="Communication Hub"
+          placeholder="Send a message to recruiters..."
+          showPriority={true}
+          showPrivateToggle={false}
+          showMessageTypes={false}
+          compactMode={true}
+          maxHeight="300px"
+        />
+      )}
       
       {/* Documents section removed - was causing API cascade issues */}
       
