@@ -292,15 +292,15 @@ export default function Applicants() {
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2">
-                                    {applicant.extraMessage && (
-                                      <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                                        📝 MESSAGE
-                                      </span>
+                                    {applicant.extraMessage ? (
+                                      <span className="w-3 h-3 bg-blue-500 rounded-full" title="Has message"></span>
+                                    ) : (
+                                      <span className="w-3 h-3 bg-gray-200 rounded-full" title="No message"></span>
                                     )}
-                                    {applicant.resumeUrl && (
-                                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                                        💎 DOCUMENT
-                                      </span>
+                                    {applicant.resumeUrl ? (
+                                      <span className="w-3 h-3 bg-green-500 rounded-full" title="Has document"></span>
+                                    ) : (
+                                      <span className="w-3 h-3 bg-gray-200 rounded-full" title="No document"></span>
                                     )}
                                   </div>
                                 </div>
