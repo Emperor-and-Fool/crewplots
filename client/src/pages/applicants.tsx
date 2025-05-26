@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -23,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/components/applicants/applicant-form";
-import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
@@ -291,12 +291,16 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-white p-4 rounded-lg shadow-sm border">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
-                                  <div className="flex gap-1">
+                                  <div className="flex gap-2">
                                     {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-blue-500" />
+                                      <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                                        📝 MESSAGE
+                                      </span>
                                     )}
                                     {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                                        💎 DOCUMENT
+                                      </span>
                                     )}
                                   </div>
                                 </div>
