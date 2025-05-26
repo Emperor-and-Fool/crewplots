@@ -340,15 +340,35 @@ export default function Applicants() {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
-                              <div key={applicant.id} className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                              <div 
+                                key={applicant.id} 
+                                className="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
-                                  <div className="flex gap-1">
-                                    {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-blue-500" />
+                                  <div className="flex gap-2 items-center">
+                                    {applicant.extraMessage ? (
+                                      <div className="flex items-center gap-1">
+                                        <MessageSquare className="h-4 w-4 text-blue-500" />
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <MessageSquare className="h-4 w-4 text-gray-300" />
+                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                      </div>
                                     )}
-                                    {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                    {applicant.resumeUrl ? (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-green-500" />
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-300" />
+                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                      </div>
                                     )}
                                   </div>
                                 </div>

@@ -66,6 +66,8 @@ function ApplicantPortal() {
         return 'bg-blue-100 text-blue-800';
       case 'interviewed':
         return 'bg-blue-500 text-white';
+      case 'short-listed':
+        return 'bg-green-100 text-green-800';
       case 'hired':
         return 'bg-green-500 text-white';
       case 'rejected':
