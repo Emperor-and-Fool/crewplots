@@ -291,16 +291,28 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-white p-4 rounded-lg shadow-sm border">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 items-center">
                                     {applicant.extraMessage ? (
-                                      <span className="w-3 h-3 bg-blue-500 rounded-full" title="Has message"></span>
+                                      <div className="flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3 text-green-600" />
+                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has message"></span>
+                                      </div>
                                     ) : (
-                                      <span className="w-3 h-3 bg-gray-200 rounded-full" title="No message"></span>
+                                      <div className="flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No message"></span>
+                                      </div>
                                     )}
                                     {applicant.resumeUrl ? (
-                                      <span className="w-3 h-3 bg-green-500 rounded-full" title="Has document"></span>
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="w-3 h-3 text-green-600" />
+                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has document"></span>
+                                      </div>
                                     ) : (
-                                      <span className="w-3 h-3 bg-gray-200 rounded-full" title="No document"></span>
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="w-3 h-3 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No document"></span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
