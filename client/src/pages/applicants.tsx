@@ -47,9 +47,10 @@ export default function Applicants() {
   // Auth hook
   const { user } = useAuth();
 
-  // Since this component is already protected by RoleProtectedRoute in App.tsx,
-  // we don't need additional access control here. The routing system already
-  // ensures only managers and floor_managers can access this page.
+  // SECURITY & ACCESS CONTROL SYSTEM:
+  // This page is protected by RoleProtectedRoute in App.tsx which uses SERVER-SIDE authentication.
+  // DO NOT add additional role checks here - use only the routing-level protection.
+  // This ensures we have exactly ONE authentication system throughout the app.
 
   // Fetch applicants
   const { data: applicants, isLoading } = useQuery({
@@ -63,7 +64,7 @@ export default function Applicants() {
 
   // Filter applicants by location
   const filteredApplicants = applicants?.filter(applicant => 
-    !selectedLocation || applicant.locationId === selectedLocation
+    !selectedLocation || selectedLocation === "all" || applicant.locationId === parseInt(selectedLocation)
   );
 
   // Delete mutation
@@ -259,7 +260,7 @@ export default function Applicants() {
                             <SelectValue placeholder="All Locations" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Locations</SelectItem>
+                            <SelectItem value="all">All Locations</SelectItem>
                             {locations?.map(location => (
                               <SelectItem key={location.id} value={location.id.toString()}>
                                 {location.name}
