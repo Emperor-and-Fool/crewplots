@@ -187,6 +187,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update individual applicant
+  app.patch("/api/applicants/:id", async (req, res) => {
+    try {
+      const applicantId = parseInt(req.params.id);
+      if (isNaN(applicantId)) {
+        return res.status(400).json({ error: "Invalid applicant ID" });
+      }
+      
+      const updateData = req.body;
+      console.log(`Updating applicant ${applicantId} with data:`, updateData);
+      
+      const updatedApplicant = await storage.updateApplicant(applicantId, updateData);
+      if (updatedApplicant) {
+        res.json(updatedApplicant);
+      } else {
+        res.status(404).json({ error: "Applicant not found" });
+      }
+    } catch (error) {
+      console.error("Error updating applicant:", error);
+      res.status(500).json({ error: "Failed to update applicant" });
+    }
+  });
+
   // Get all applicants
   app.get("/api/applicants", async (req, res) => {
     try {
