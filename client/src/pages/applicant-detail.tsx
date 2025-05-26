@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function ApplicantDetail() {
   const [, params] = useRoute("/applicant/:id");
+  const [, navigate] = useLocation();
   const applicantId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,6 +42,30 @@ export default function ApplicantDetail() {
     queryKey: ['/api/locations'],
   });
 
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/me'],
+    queryFn: () => fetch('/api/me', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  // Save message mutation
+  const saveMessageMutation = useMutation({
+    mutationFn: (message: string) => {
+      if (!message.trim() || !currentUser?.username) return Promise.resolve();
+      const writerName = currentUser.username === 'admin' ? 'Admin' : currentUser.username;
+      const messageWithName = `${writerName}: ${message.trim()}`;
+      
+      // Update the applicant's extraMessage field
+      return apiRequest(`/api/applicants/${applicantId}`, 'PATCH', { 
+        extraMessage: messageWithName 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/applicants', applicantId] });
+      setNewMessage(""); // Clear the message input after saving
+    },
+  });
+
   // Update applicant mutation
   const updateApplicantMutation = useMutation({
     mutationFn: (data: any) => 
@@ -54,11 +79,31 @@ export default function ApplicantDetail() {
     },
   });
 
+  // Auto-save message when leaving the page
+  const autoSaveMessage = () => {
+    if (newMessage.trim()) {
+      saveMessageMutation.mutate(newMessage);
+    }
+  };
+
   const handleActionSelect = (action: 'shortlist' | 'maybe' | 'reject') => {
+    // Auto-save message before performing action
+    autoSaveMessage();
+    
     setSelectedAction(action);
     
+    // If Short-list is selected, immediately update status and go back to list
+    if (action === 'shortlist') {
+      updateApplicantMutation.mutate({
+        status: 'contacted',
+        reviewerNotes,
+        locationId: selectedLocation ? parseInt(selectedLocation) : null,
+      });
+      // Navigate back to applicants list
+      setTimeout(() => navigate('/applicants'), 500);
+    }
     // If reject is selected, immediately update status
-    if (action === 'reject') {
+    else if (action === 'reject') {
       updateApplicantMutation.mutate({
         status: 'rejected',
         reviewerNotes,
@@ -69,19 +114,14 @@ export default function ApplicantDetail() {
   const handleSaveReview = () => {
     if (!selectedAction) return;
 
+    // Auto-save message before saving review
+    autoSaveMessage();
+
     const updateData: any = {
       reviewerNotes,
     };
 
-    if (selectedAction === 'shortlist') {
-      updateData.status = 'contacted';
-      updateData.called = called;
-      updateData.appointment = appointment;
-      if (appointment && appointmentDate && appointmentTime) {
-        updateData.appointmentDateTime = `${appointmentDate}T${appointmentTime}`;
-      }
-      updateData.locationId = selectedLocation ? parseInt(selectedLocation) : null;
-    } else if (selectedAction === 'maybe') {
+    if (selectedAction === 'maybe') {
       updateData.status = 'interviewed';
     }
 
@@ -89,7 +129,9 @@ export default function ApplicantDetail() {
   };
 
   const goBack = () => {
-    window.history.back();
+    // Auto-save message before going back
+    autoSaveMessage();
+    navigate('/applicants');
   };
 
   if (isLoading) {
