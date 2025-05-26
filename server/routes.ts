@@ -160,7 +160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get individual applicant by ID (register this FIRST before other routes)
+  // Register API endpoints FIRST before other routes to prevent conflicts
+  
+  // Get individual applicant by ID
   app.get("/api/applicants/:id", async (req, res) => {
     console.log("Individual applicant endpoint hit with ID:", req.params.id);
     try {
@@ -185,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test route for getting all applicants (for testing purposes)
+  // Get all applicants
   app.get("/api/applicants", async (req, res) => {
     try {
       const applicants = await storage.getApplicants();
@@ -193,6 +195,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching applicants:", error);
       res.status(500).json({ error: "Failed to fetch applicants" });
+    }
+  });
+
+  // Get all locations
+  app.get("/api/locations", async (req, res) => {
+    try {
+      const locations = await storage.getLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ error: "Failed to fetch locations" });
     }
   });
 
