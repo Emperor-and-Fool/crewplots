@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/components/applicants/applicant-form";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, FileText, Trash2, UserCheck, UserX, Mail, Phone, ExternalLink } from "lucide-react";
+import { PlusCircle, FileText, Trash2, UserCheck, UserX, Mail, Phone, ExternalLink, QrCode } from "lucide-react";
+import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { Applicant, Location, Staff } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -173,7 +174,23 @@ export default function Applicants() {
     }
   };
 
-
+  // Generate and print QR code
+  const handlePrintQR = async () => {
+    try {
+      await printQRCode();
+      toast({
+        title: "QR Code Generated",
+        description: "The application QR code has been sent to your printer",
+      });
+    } catch (error) {
+      console.error('Error printing QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Helper function to get status badge style
   const getStatusBadge = (status: string) => {
@@ -244,6 +261,13 @@ export default function Applicants() {
                     </p>
                   </div>
                   <div className="mt-4 sm:mt-0 flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={handlePrintQR}
+                    >
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Print QR Code
+                    </Button>
                     <Button onClick={() => setShowForm(true)}>
                       <PlusCircle className="h-4 w-4 mr-2" />
                       Add Applicant
