@@ -10,6 +10,7 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
+import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function ApplicantPortal() {
@@ -142,20 +143,32 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
       
-      {/* New Messaging System - Simple Configuration */}
-      {user && profile && (
-        <MessagingSystem 
-          userId={user.id}
-          applicantId={profile.id}
-          title="Communication Hub"
-          placeholder="Send a message to recruiters..."
-          showPriority={true}
-          showPrivateToggle={false}
-          showMessageTypes={false}
-          compactMode={true}
-          maxHeight="300px"
-        />
-      )}
+      {/* Simple Message System */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5" />
+            Communication Hub
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              Send a message to the recruiting team
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type your message here..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                Send
+              </button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Documents section removed - was causing API cascade issues */}
       
