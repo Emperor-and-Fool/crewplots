@@ -143,6 +143,23 @@ function ApplicantPortal() {
       
       {/* Documents section removed - was causing API cascade issues */}
       
+      {/* Debug section - only visible in development */}
+      {process.env.NODE_ENV !== 'production' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Information</CardTitle>
+            <CardDescription>Profile debugging data (only visible in development)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Profile Data</h3>
+              <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
+                {JSON.stringify(profile, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
     </div>
   );
