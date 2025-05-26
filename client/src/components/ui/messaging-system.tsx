@@ -258,7 +258,7 @@ export function MessagingSystem({
                   onClick={() => onMessageClick?.(message)}
                 >
                   <div className="flex-shrink-0">
-                    {getMessageIcon(message.messageType)}
+                    {getMessageIcon(message.messageType || 'text')}
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -268,7 +268,7 @@ export function MessagingSystem({
                       </span>
                       
                       {message.priority !== 'normal' && (
-                        <Badge className={getPriorityColor(message.priority)}>
+                        <Badge className={getPriorityColor(message.priority || 'normal')}>
                           {message.priority}
                         </Badge>
                       )}
