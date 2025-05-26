@@ -336,7 +336,7 @@ export default function Applicants() {
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900">Short-listed</h3>
                       <div className="space-y-3">
-                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed').map((applicant) => {
+                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed' || app.status === 'short-listed').map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
@@ -358,6 +358,9 @@ export default function Applicants() {
                                   )}
                                   {applicant.status === 'interviewed' && (
                                     <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Interviewed</Badge>
+                                  )}
+                                  {applicant.status === 'short-listed' && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Short-listed</Badge>
                                   )}
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
