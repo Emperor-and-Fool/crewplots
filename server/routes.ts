@@ -165,6 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/applicant-portal', applicantPortalRoutes);
   app.use('/api/redis', redisRoutes);
+  app.use('/api/messages', messagesRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
