@@ -304,11 +304,15 @@ export default function ApplicantDetail() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No specific location</SelectItem>
-                        {locations?.map((location: any) => (
-                          <SelectItem key={location.id} value={location.id.toString()}>
-                            {location.name}
-                          </SelectItem>
-                        ))}
+                        {locations && locations.length > 0 ? (
+                          locations.map((location: any) => (
+                            <SelectItem key={location.id} value={location.id.toString()}>
+                              {location.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="all">All locations</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

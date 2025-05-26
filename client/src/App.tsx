@@ -348,6 +348,16 @@ function App() {
                 }
               </Route>
               
+              <Route path="/applicants/:id">
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={ApplicantDetail} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
+              </Route>
+              
               <Route path="/applicant/:id">
                 {serverAuthState.authenticated ? 
                   <RoleProtectedRoute 
