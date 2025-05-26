@@ -281,7 +281,11 @@ export default function Applicants() {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
-                              <div key={applicant.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                              <div 
+                                key={applicant.id} 
+                                className="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
