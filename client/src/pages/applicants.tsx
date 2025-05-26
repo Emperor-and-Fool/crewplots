@@ -7,14 +7,6 @@ import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/components/applicants/applicant-form";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, FileText, Trash2, UserCheck, UserX, Mail, Phone, ExternalLink, QrCode } from "lucide-react";
+import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { Applicant, Location, Staff } from "@shared/schema";
@@ -48,49 +40,56 @@ export default function Applicants() {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Auth hook
   const { user } = useAuth();
 
-  // Check if user has management role
-  const isManager = user?.role === "manager";
-  const isFloorManager = user?.role === "floor_manager";
+  // Check role permissions
+  const canAccessManagementPages = user?.role === "administrator" || 
+                                   user?.role === "manager" || 
+                                   user?.role === "crew_manager" ||
+                                   user?.role === "floor_manager";
+
+  if (!canAccessManagementPages) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch applicants
-  const { data: applicants, isLoading } = useQuery<Applicant[]>({
+  const { data: applicants, isLoading } = useQuery({
     queryKey: ['/api/applicants'],
   });
 
   // Fetch locations
-  const { data: locations } = useQuery<Location[]>({
+  const { data: locations } = useQuery({
     queryKey: ['/api/locations'],
   });
 
-  // Filter applicants based on selected location and status
-  const filteredApplicants = applicants?.filter(applicant => {
-    if (selectedLocation && applicant.locationId !== selectedLocation) {
-      return false;
-    }
-    if (selectedStatus && applicant.status !== selectedStatus) {
-      return false;
-    }
-    return true;
-  });
+  // Filter applicants by location
+  const filteredApplicants = applicants?.filter(applicant => 
+    !selectedLocation || applicant.locationId === selectedLocation
+  );
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/applicants/${id}`, undefined);
+      return apiRequest('DELETE', `/api/applicants/${id}`);
     },
     onSuccess: async () => {
-      // Invalidate applicants query
       await queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
-      
       toast({
         title: "Applicant Deleted",
-        description: "The applicant has been deleted successfully",
+        description: "The applicant has been successfully deleted",
       });
-      
       setDeleteDialogOpen(false);
     },
     onError: (error) => {
@@ -112,14 +111,13 @@ export default function Applicants() {
       });
       
       // Then create a staff record
-      // This is simplified - in a real app, you'd need more data
       const applicant = applicants?.find(a => a.id === id);
       if (!applicant) throw new Error("Applicant not found");
       
       return apiRequest('POST', '/api/staff', {
         userId: null, // Would need to find or create user
         locationId,
-        position: applicant.positionApplied,
+        position: "General", // Default position
         wantedHours: 20 // Default
       });
     },
@@ -192,66 +190,51 @@ export default function Applicants() {
     }
   };
 
-  // Helper function to get status badge style
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "new":
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">New</Badge>;
-      case "contacted":
-        return <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-200">Contacted</Badge>;
-      case "interviewed":
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Interviewed</Badge>;
-      case "hired":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Hired</Badge>;
-      case "rejected":
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  // If not a manager or floor manager, redirect to dashboard
-  if (!isLoading && !isManager && !isFloorManager) {
-    navigate("/dashboard");
-    return null;
-  }
-
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for larger screens */}
-      <Sidebar />
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile navigation */}
-        <MobileNavbar />
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar />
         
-        {/* Top header with search and user */}
-        <Header />
-        
-        {/* Main scrollable area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <Header />
+          
+          {/* Mobile navbar */}
+          <MobileNavbar />
+          
+          {/* Page content */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
             {showForm ? (
-              // Show applicant form
+              // Show form
               <div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
+                <div className="mb-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedApplicant(null);
+                    }}
+                    className="mb-4"
+                  >
+                    ← Back to Applicants
+                  </Button>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {selectedApplicant ? 'Edit Applicant' : 'Add New Applicant'}
+                  </h1>
+                </div>
+                <ApplicantForm 
+                  applicant={selectedApplicant || undefined} 
+                  onSuccess={() => {
                     setShowForm(false);
                     setSelectedApplicant(null);
                   }}
-                  className="mb-4"
-                >
-                  Back to Applicants
-                </Button>
-                <ApplicantForm 
-                  applicant={selectedApplicant || undefined} 
                   isEditing={!!selectedApplicant} 
                 />
               </div>
             ) : (
-              // Show applicants list
+              // Show four-section applicants view
               <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                   <div>
@@ -275,7 +258,8 @@ export default function Applicants() {
                   </div>
                 </div>
 
-                <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                {/* Filter by Location */}
+                <div className="mb-6">
                   <Card className="w-full sm:w-auto">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -299,222 +283,284 @@ export default function Applicants() {
                       </div>
                     </CardContent>
                   </Card>
-                  
-                  <Card className="w-full sm:w-auto">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">Filter by Status:</label>
-                        <Select 
-                          value={selectedStatus || ""} 
-                          onValueChange={(value) => setSelectedStatus(value || null)}
-                        >
-                          <SelectTrigger id="status-filter" className="w-[200px]">
-                            <SelectValue placeholder="All Statuses" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">All Statuses</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="interviewed">Interviewed</SelectItem>
-                            <SelectItem value="hired">Hired</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>All Applicants</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="flex justify-center py-4">
-                        <p>Loading applicants...</p>
-                      </div>
-                    ) : filteredApplicants && filteredApplicants.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Position</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Applied</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredApplicants.map((applicant) => {
+                {/* Four-section applicant view */}
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <p>Loading applicants...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    {/* Not Reviewed Yet */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Not Reviewed Yet</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'new').map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
-                              <TableRow key={applicant.id}>
-                                <TableCell className="font-medium">
-                                  {applicant.name}
-                                  {location && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Location: {location.name}
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell>{applicant.positionApplied}</TableCell>
-                                <TableCell>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center">
-                                      <Mail className="h-4 w-4 mr-1 text-gray-400" />
-                                      <a href={`mailto:${applicant.email}`} className="text-sm text-primary-600 hover:underline">
-                                        {applicant.email}
-                                      </a>
-                                    </div>
-                                    {applicant.phone && (
-                                      <div className="flex items-center">
-                                        <Phone className="h-4 w-4 mr-1 text-gray-400" />
-                                        <a href={`tel:${applicant.phone}`} className="text-sm">
-                                          {applicant.phone}
-                                        </a>
-                                      </div>
+                              <div key={applicant.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-1">
+                                    {applicant.extraMessage && (
+                                      <MessageSquare className="h-4 w-4 text-blue-500" />
                                     )}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {getStatusBadge(applicant.status)}
-                                </TableCell>
-                                <TableCell>
-                                  {format(new Date(applicant.createdAt), 'MMM d, yyyy')}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end space-x-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedApplicant(applicant);
-                                        setShowForm(true);
-                                      }}
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                      <span className="sr-only">Edit</span>
-                                    </Button>
-                                    
-                                    {applicant.status !== "hired" && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-green-500 hover:text-green-600"
-                                        onClick={() => handleHire(applicant)}
-                                      >
-                                        <UserCheck className="h-4 w-4" />
-                                        <span className="sr-only">Hire</span>
-                                      </Button>
-                                    )}
-                                    
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-red-500 hover:text-red-600"
-                                      onClick={() => handleDelete(applicant)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Delete</span>
-                                    </Button>
-                                    
                                     {applicant.resumeUrl && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => window.open(applicant.resumeUrl!, '_blank')}
-                                      >
-                                        <ExternalLink className="h-4 w-4" />
-                                        <span className="sr-only">View Resume</span>
-                                      </Button>
+                                      <Paperclip className="h-4 w-4 text-green-500" />
                                     )}
                                   </div>
-                                </TableCell>
-                              </TableRow>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phone && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button size="sm" variant="outline" onClick={() => handleHire(applicant)}>
+                                    <UserCheck className="h-3 w-3 mr-1" />
+                                    Hire
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
                             );
-                          })}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-6">
-                        <p className="text-gray-500">No applicants found</p>
-                        <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setShowForm(true)}
-                          >
-                            Add applicant manually
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            onClick={handlePrintQR}
-                          >
-                            <QrCode className="h-4 w-4 mr-2" />
-                            Print application QR code
-                          </Button>
-                        </div>
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'new').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No new applicants</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </div>
+
+                    {/* Short-listed */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Short-listed</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div key={applicant.id} className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-1">
+                                    {applicant.extraMessage && (
+                                      <MessageSquare className="h-4 w-4 text-blue-500" />
+                                    )}
+                                    {applicant.resumeUrl && (
+                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 mb-2">
+                                  {applicant.status === 'contacted' && (
+                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">Contacted</Badge>
+                                  )}
+                                  {applicant.status === 'interviewed' && (
+                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Interviewed</Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phone && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button size="sm" variant="outline" onClick={() => handleHire(applicant)}>
+                                    <UserCheck className="h-3 w-3 mr-1" />
+                                    Hire
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No short-listed applicants</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Look Again */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Look Again</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'hired').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div key={applicant.id} className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-1">
+                                    {applicant.extraMessage && (
+                                      <MessageSquare className="h-4 w-4 text-blue-500" />
+                                    )}
+                                    {applicant.resumeUrl && (
+                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200 mb-2">Review Later</Badge>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phone && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button size="sm" variant="outline" onClick={() => handleHire(applicant)}>
+                                    <UserCheck className="h-3 w-3 mr-1" />
+                                    Hire
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'hired').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No applicants to review later</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Rejected */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-500">Rejected</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'rejected').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div key={applicant.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 opacity-60">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-500">{applicant.name}</h4>
+                                  <div className="flex gap-1">
+                                    {applicant.extraMessage && (
+                                      <MessageSquare className="h-4 w-4 text-gray-400" />
+                                    )}
+                                    {applicant.resumeUrl && (
+                                      <Paperclip className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 mb-2">Rejected</Badge>
+                                <p className="text-sm text-gray-500 mb-2">{applicant.email}</p>
+                                {applicant.phone && (
+                                  <p className="text-sm text-gray-500 mb-2">{applicant.phone}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-400 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button size="sm" variant="outline" disabled className="opacity-50">
+                                    <UserX className="h-3 w-3 mr-1" />
+                                    Rejected
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'rejected').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No rejected applicants</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-      
-      {/* Delete confirmation dialog */}
+
+      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Applicant</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedApplicant?.name}"? This action cannot be undone.
+              Are you sure you want to delete {selectedApplicant?.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* Hire confirmation dialog */}
+
+      {/* Hire Dialog */}
       <Dialog open={hireDialogOpen} onOpenChange={setHireDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Hire Applicant</DialogTitle>
             <DialogDescription>
-              You are about to hire "{selectedApplicant?.name}" for position "{selectedApplicant?.positionApplied}".
-              Please select the location where this staff member will work.
+              Select a location to hire {selectedApplicant?.name}.
             </DialogDescription>
           </DialogHeader>
-          
-          <Select onValueChange={(value) => {
-            if (value) confirmHire(parseInt(value));
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a location" />
-            </SelectTrigger>
-            <SelectContent>
-              {locations?.map(location => (
-                <SelectItem key={location.id} value={location.id.toString()}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
+          <div className="space-y-4">
+            <Select onValueChange={(value) => setSelectedLocation(parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations?.map(location => (
+                  <SelectItem key={location.id} value={location.id.toString()}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setHireDialogOpen(false)}>
               Cancel
+            </Button>
+            <Button 
+              onClick={() => selectedLocation && confirmHire(selectedLocation)}
+              disabled={hireMutation.isPending || !selectedLocation}
+            >
+              {hireMutation.isPending ? "Hiring..." : "Hire"}
             </Button>
           </DialogFooter>
         </DialogContent>
