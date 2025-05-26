@@ -29,6 +29,7 @@ export default function ApplicantDetail() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [newMessage, setNewMessage] = useState("");
 
   // Fetch applicant data
   const { data: applicant, isLoading } = useQuery({
@@ -50,8 +51,8 @@ export default function ApplicantDetail() {
 
   // Save message mutation
   const saveMessageMutation = useMutation({
-    mutationFn: (message: string) => {
-      if (!message.trim() || !currentUser?.username) return Promise.resolve();
+    mutationFn: async (message: string) => {
+      if (!message.trim() || !currentUser?.username) return null;
       const writerName = currentUser.username === 'admin' ? 'Admin' : currentUser.username;
       const messageWithName = `${writerName}: ${message.trim()}`;
       
