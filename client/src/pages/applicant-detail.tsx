@@ -57,7 +57,7 @@ export default function ApplicantDetail() {
       const messageWithName = `${writerName}: ${message.trim()}`;
       
       // Update the applicant's extraMessage field
-      return apiRequest(`/api/applicants/${applicantId}`, 'PATCH', { 
+      return apiRequest('PATCH', `/api/applicants/${applicantId}`, { 
         extraMessage: messageWithName 
       });
     },
@@ -70,7 +70,7 @@ export default function ApplicantDetail() {
   // Update applicant mutation
   const updateApplicantMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest(`/api/applicants/${applicantId}`, 'PATCH', data),
+      apiRequest('PATCH', `/api/applicants/${applicantId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
       toast({
