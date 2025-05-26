@@ -1,6 +1,4 @@
 import React from 'react';
-import { useLocation } from 'wouter';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/contexts/profile-context';
 
@@ -13,31 +11,11 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Interface already defined in profile-context.tsx - no need to duplicate
-
 function ApplicantPortal() {
   const { user } = useAuth();
-  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
-  const { toast } = useToast();
-
-  // Now using persistent profile context - no more null states!
-  const isProfileError = !profile && !profileLoading && profileError;
-
-  // Documents system removed - was causing API cascade failures
+  const { profile, isLoading: profileLoading, error: profileError } = useProfile();
   
-  // All applicants debug query removed - not needed for profile view
-
-
-
-  // Simplified debug logging - only profile
-  React.useEffect(() => {
-    if (isProfileError) {
-      console.error("Error loading profile:", profileError);
-    }
-    if (profile) {
-      console.log("Profile data loaded:", profile);
-    }
-  }, [profile, isProfileError, profileError]);
+  const isProfileError = !profile && !profileLoading && profileError;
   
 
 
