@@ -32,6 +32,7 @@ export default function ApplicantDetail() {
   // Fetch applicant data
   const { data: applicant, isLoading } = useQuery({
     queryKey: ['/api/applicants', applicantId],
+    queryFn: () => fetch(`/api/applicants/${applicantId}`, { credentials: 'include' }).then(res => res.json()),
     enabled: !!applicantId,
   });
 
@@ -43,10 +44,7 @@ export default function ApplicantDetail() {
   // Update applicant mutation
   const updateApplicantMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest(`/api/applicants/${applicantId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/applicants/${applicantId}`, 'PATCH', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
       toast({
@@ -152,7 +150,9 @@ export default function ApplicantDetail() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Applied Date</Label>
-                  <p className="text-gray-900">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                  <p className="text-gray-900">
+                    {applicant.createdAt ? format(new Date(applicant.createdAt), "MMM d, yyyy") : 'Not available'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -247,7 +247,7 @@ export default function ApplicantDetail() {
                       <Checkbox
                         id="called"
                         checked={called}
-                        onCheckedChange={setCalled}
+                        onCheckedChange={(checked) => setCalled(checked === true)}
                       />
                       <Label htmlFor="called" className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
@@ -259,7 +259,7 @@ export default function ApplicantDetail() {
                       <Checkbox
                         id="appointment"
                         checked={appointment}
-                        onCheckedChange={setAppointment}
+                        onCheckedChange={(checked) => setAppointment(checked === true)}
                       />
                       <Label htmlFor="appointment" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />

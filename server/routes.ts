@@ -185,6 +185,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual applicant by ID
+  app.get("/api/applicants/:id", async (req, res) => {
+    try {
+      const applicantId = parseInt(req.params.id);
+      if (isNaN(applicantId)) {
+        return res.status(400).json({ error: "Invalid applicant ID" });
+      }
+      
+      const applicant = await storage.getApplicant(applicantId);
+      if (!applicant) {
+        return res.status(404).json({ error: "Applicant not found" });
+      }
+      
+      res.json(applicant);
+    } catch (error) {
+      console.error("Error fetching applicant:", error);
+      res.status(500).json({ error: "Failed to fetch applicant" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 
