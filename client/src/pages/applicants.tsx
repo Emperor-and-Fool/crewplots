@@ -47,22 +47,9 @@ export default function Applicants() {
   // Auth hook
   const { user } = useAuth();
 
-  // Check role permissions
-  const canAccessManagementPages = user?.role === "administrator" || 
-                                   user?.role === "manager" || 
-                                   user?.role === "crew_manager" ||
-                                   user?.role === "floor_manager";
-
-  if (!canAccessManagementPages) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
+  // Since this component is already protected by RoleProtectedRoute in App.tsx,
+  // we don't need additional access control here. The routing system already
+  // ensures only managers and floor_managers can access this page.
 
   // Fetch applicants
   const { data: applicants, isLoading } = useQuery({
