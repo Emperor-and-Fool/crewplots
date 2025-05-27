@@ -6,6 +6,7 @@ import {
   boolean, 
   timestamp, 
   json, 
+  jsonb,
   foreignKey, 
   varchar, 
   decimal,
@@ -291,6 +292,24 @@ export const documentAttachments = pgTable("document_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Messages System - Reusable and Extensible
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  messageType: text("message_type", { 
+    enum: ["text", "rich-text", "system", "notification"] 
+  }).default("text").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  applicantId: integer("applicant_id").references(() => applicants.id), // Optional - for applicant-specific messages
+  isPrivate: boolean("is_private").default(false).notNull(),
+  attachmentUrl: text("attachment_url"), // For future file attachments
+  metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
+  isRead: boolean("is_read").default(false).notNull(),
+  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
@@ -315,6 +334,7 @@ export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: t
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -366,6 +386,8 @@ export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
 export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 

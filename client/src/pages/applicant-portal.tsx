@@ -41,21 +41,17 @@ function ApplicantPortal() {
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
   // Now using persistent profile context - no more null states!
+  
   const isProfileError = !profile && !profileLoading && profileError;
 
   // Documents system removed - was causing API cascade failures
-
   // All applicants debug query removed - not needed for profile view
-
   // Timeout detection removed - ProfileProvider handles loading efficiently
-
   // Removed redundant refresh mechanism since ProfileProvider handles data persistence
-
   // Retry function removed - ProfileProvider handles loading efficiently
-
   // All ghost timeout detection completely removed
-
   // Simplified debug logging - only profile
+
   React.useEffect(() => {
     if (isProfileError) {
       console.error("Error loading profile:", profileError);
