@@ -115,35 +115,29 @@ export function MessagingSystem({
       messageType: 'text',
       priority: 'normal',
       isPrivate: false,
-      applicantId: applicantId,
+      applicantId,
     },
   });
 
-  // Fetch messages query with intelligent caching
-  const messagesQuery = useQuery({
-    queryKey: ['messages', applicantId ? `applicant-${applicantId}` : 'general'],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (applicantId) params.set('applicantId', applicantId.toString());
-      if (showOnlyUserMessages) params.set('userId', userId.toString());
-      return fetch(`/api/messages?${params}`).then(res => res.json());
-    },
-    staleTime: 30000, // Consider fresh for 30 seconds
-    refetchInterval: 60000, // Auto-refetch every minute
+  // Fetch messages query
+  const { data: messages = [], isLoading, error } = useQuery<Message[]>({
+    queryKey: applicantId ? ['/api/messages', applicantId] : ['/api/messages', userId],
+    enabled: !!userId,
   });
 
-  // Create message mutation with optimistic updates
+  // Create message mutation
   const createMessageMutation = useMutation({
-    mutationFn: async (data: MessageFormData) => {
-      const messageData: Partial<InsertMessage> = {
+    mutationFn: async (data: MessageFormData): Promise<Message> => {
+      const messageData: InsertMessage = {
         content: data.content,
         messageType: data.messageType,
         priority: data.priority,
         isPrivate: data.isPrivate,
-        senderId: userId,
+        userId,
         applicantId: data.applicantId,
         isRead: false,
-        sentAt: new Date(),
+        attachmentUrl: null,
+        metadata: null,
       };
 
       const response = await fetch('/api/messages', {
@@ -153,61 +147,70 @@ export function MessagingSystem({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error(`Failed to create message: ${response.statusText}`);
       }
 
       return response.json();
     },
     onSuccess: (newMessage) => {
+      // Invalidate and refetch messages
+      queryClient.invalidateQueries({
+        queryKey: applicantId ? ['/api/messages', applicantId] : ['/api/messages', userId],
+      });
+      
       // Reset form
       form.reset();
       
-      // Invalidate and refetch messages
-      queryClient.invalidateQueries({ 
-        queryKey: ['messages', applicantId ? `applicant-${applicantId}` : 'general'] 
-      });
-      
-      // Call success callback
+      // Call custom handler
       onMessageSent?.(newMessage);
       
+      // Show success toast
       toast({
-        title: 'Message sent successfully',
-        description: 'Your message has been delivered.',
+        title: 'Message sent',
+        description: 'Your message has been successfully sent.',
       });
     },
     onError: (error) => {
       toast({
         title: 'Failed to send message',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        description: error.message,
         variant: 'destructive',
       });
     },
   });
 
+  // Filter messages based on props
+  const filteredMessages = React.useMemo(() => {
+    let filtered = messages;
+
+    if (showOnlyUserMessages) {
+      filtered = filtered.filter(msg => msg.userId === userId);
+    }
+
+    if (!showSystemMessages) {
+      filtered = filtered.filter(msg => msg.messageType !== 'system');
+    }
+
+    return filtered.sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
+
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
-    createMessageMutation.mutate(data);
+    if (data.content.trim()) {
+      createMessageMutation.mutate(data);
+    }
   };
 
-  // Filter messages based on props
-  const filteredMessages = messagesQuery.data?.filter((message: Message) => {
-    if (!showSystemMessages && message.messageType === 'system') return false;
-    if (showOnlyUserMessages && message.senderId !== userId) return false;
-    return true;
-  }) || [];
-
-  if (messagesQuery.isLoading) {
+  // Handle loading and error states
+  if (error) {
     return (
       <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center text-red-600 dark:text-red-400">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            Failed to load messages
           </div>
         </CardContent>
       </Card>
@@ -230,69 +233,67 @@ export function MessagingSystem({
 
       <CardContent className="space-y-4">
         {/* Messages Display */}
-        <ScrollArea className="border rounded-lg p-3" style={{ maxHeight }}>
-          {filteredMessages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+        <ScrollArea className={`rounded-md border p-3`} style={{ maxHeight }}>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
+              <span className="ml-2">Loading messages...</span>
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mb-2 opacity-40" />
               <p>No messages yet</p>
-              <p className="text-sm mt-1">Start the conversation below</p>
+              <p className="text-sm">Start a conversation!</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredMessages.map((message: Message) => (
+              {filteredMessages.map((message, index) => (
                 <div
                   key={message.id}
-                  onClick={() => onMessageClick?.(message)}
-                  className={`p-3 rounded-lg border transition-colors ${
-                    onMessageClick ? 'cursor-pointer hover:bg-muted/50' : ''
-                  } ${
-                    message.senderId === userId
-                      ? 'bg-primary/5 border-primary/20 ml-8'
-                      : 'bg-muted/30 mr-8'
+                  className={`flex gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
+                    message.userId === userId 
+                      ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' 
+                      : 'bg-gray-50 dark:bg-gray-900/20'
                   }`}
+                  onClick={() => onMessageClick?.(message)}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      {getMessageIcon(message.messageType)}
+                  <div className="flex-shrink-0">
+                    {getMessageIcon(message.messageType)}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium">
+                        {message.userId === userId ? 'You' : 'System'}
+                      </span>
+                      
+                      {message.priority !== 'normal' && (
+                        <Badge className={getPriorityColor(message.priority)}>
+                          {message.priority}
+                        </Badge>
+                      )}
+                      
+                      {message.isPrivate && (
+                        <Badge variant="outline">
+                          Private
+                        </Badge>
+                      )}
+                      
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {format(new Date(message.createdAt), 'MMM d, h:mm a')}
+                      </span>
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">
-                          {message.senderId === userId ? 'You' : `User ${message.senderId}`}
-                        </span>
-                        
-                        {message.priority !== 'normal' && (
-                          <Badge 
-                            className={`text-xs ${getPriorityColor(message.priority)}`}
-                            variant="secondary"
-                          >
-                            {message.priority}
-                          </Badge>
-                        )}
-                        
-                        {message.isPrivate && (
-                          <Badge variant="outline" className="text-xs">
-                            Private
-                          </Badge>
-                        )}
-                        
-                        <span className="text-xs text-muted-foreground ml-auto">
-                          {message.sentAt ? format(new Date(message.sentAt), 'MMM d, HH:mm') : ''}
-                        </span>
+                    <p className="text-sm text-foreground break-words">
+                      {message.content}
+                    </p>
+                    
+                    {/* Future: Rich text, attachments, etc. would go here */}
+                    {enableMarkdown && message.messageType === 'rich-text' && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Rich text formatting enabled
                       </div>
-                      
-                      <p className="text-sm text-foreground break-words">
-                        {message.content}
-                      </p>
-                      
-                      {!message.isRead && message.senderId !== userId && (
-                        <div className="flex items-center gap-1 mt-2">
-                          <div className="h-2 w-2 bg-primary rounded-full"></div>
-                          <span className="text-xs text-primary">New</span>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -300,10 +301,11 @@ export function MessagingSystem({
           )}
         </ScrollArea>
 
-        {/* Message Form */}
+        <Separator />
+
+        {/* Message Composition Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-            {/* Message Content */}
             <FormField
               control={form.control}
               name="content"
@@ -312,7 +314,8 @@ export function MessagingSystem({
                   <FormControl>
                     <Textarea
                       placeholder={placeholder}
-                      className="min-h-[80px] resize-none"
+                      className="resize-none"
+                      rows={compactMode ? 2 : 3}
                       {...field}
                     />
                   </FormControl>
@@ -321,9 +324,9 @@ export function MessagingSystem({
               )}
             />
 
-            {/* Optional Controls */}
+            {/* Advanced Options (Collapsible) */}
             {(showPriority || showPrivateToggle || showMessageTypes) && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {showPriority && (
                   <FormField
                     control={form.control}
@@ -337,34 +340,12 @@ export function MessagingSystem({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="low">Low Priority</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
                             <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="high">High Priority</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
                             <SelectItem value="urgent">Urgent</SelectItem>
                           </SelectContent>
                         </Select>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {showPrivateToggle && (
-                  <FormField
-                    control={form.control}
-                    name="isPrivate"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            className="rounded border border-input bg-background"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal">
-                          Private message
-                        </FormLabel>
                       </FormItem>
                     )}
                   />
@@ -384,7 +365,7 @@ export function MessagingSystem({
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="text">Text</SelectItem>
-                            <SelectItem value="rich-text">Rich Text</SelectItem>
+                            {enableRichText && <SelectItem value="rich-text">Rich Text</SelectItem>}
                             <SelectItem value="notification">Notification</SelectItem>
                           </SelectContent>
                         </Select>
@@ -395,23 +376,22 @@ export function MessagingSystem({
               </div>
             )}
 
-            {/* Submit Button */}
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                {form.watch('content')?.length || 0}/1000 characters
+                {form.watch('content').length}/1000 characters
               </div>
               
               <Button 
                 type="submit" 
-                disabled={createMessageMutation.isPending || !form.watch('content')?.trim()}
-                className="flex items-center gap-2"
+                disabled={createMessageMutation.isPending || !form.watch('content').trim()}
+                className="gap-2"
               >
                 {createMessageMutation.isPending ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                {createMessageMutation.isPending ? 'Sending...' : 'Send'}
+                Send
               </Button>
             </div>
           </form>
@@ -420,3 +400,5 @@ export function MessagingSystem({
     </Card>
   );
 }
+
+export default MessagingSystem;
