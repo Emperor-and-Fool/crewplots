@@ -394,9 +394,9 @@ export type Shift = typeof shifts.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
-export type Message = typeof messages.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
+export type Message = typeof messages.$inferSelect;
 
 // Session storage for database sessions
 export const sessions = pgTable(
