@@ -41,21 +41,17 @@ function ApplicantPortal() {
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
   // Now using persistent profile context - no more null states!
+  
   const isProfileError = !profile && !profileLoading && profileError;
 
   // Documents system removed - was causing API cascade failures
-  
   // All applicants debug query removed - not needed for profile view
-
   // Timeout detection removed - ProfileProvider handles loading efficiently
-  
   // Removed redundant refresh mechanism since ProfileProvider handles data persistence
-  
   // Retry function removed - ProfileProvider handles loading efficiently
-
   // All ghost timeout detection completely removed
-
   // Simplified debug logging - only profile
+
   React.useEffect(() => {
     if (isProfileError) {
       console.error("Error loading profile:", profileError);
@@ -64,13 +60,13 @@ function ApplicantPortal() {
       console.log("Profile data loaded:", profile);
     }
   }, [profile, isProfileError, profileError]);
-  
+
   // Ghost timeout warning completely removed - ProfileProvider handles loading efficiently
 
   // Handle profile API errors only
   if (isProfileError) {
     const errorMessage = profileError?.message || 'Unknown error';
-    
+
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
@@ -140,7 +136,7 @@ function ApplicantPortal() {
           </Button>
         </div>
       </div>
-      
+
       <Card className="mb-8">
         <CardHeader className="pb-2">
           <CardTitle>Your Application</CardTitle>
@@ -176,7 +172,7 @@ function ApplicantPortal() {
                   <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-              
+
               <div className="pt-4 border-t">
                 <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
                 {profile.extraMessage ? (
@@ -226,9 +222,9 @@ function ApplicantPortal() {
           </CardContent>
         </Card>
       )}
-      
+
       {/* Documents section removed - was causing API cascade issues */}
-      
+
       {/* Debug section simplified - only profile data */}
       {process.env.NODE_ENV !== 'production' && (
         <Card>

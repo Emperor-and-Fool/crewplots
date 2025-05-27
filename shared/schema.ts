@@ -146,7 +146,7 @@ export const applicants = pgTable("applicants", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
-  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected"] }).default("new").notNull(),
+  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new").notNull(),
   resumeUrl: text("resume_url"),
   notes: text("notes"),
   extraMessage: text("extra_message"),
@@ -154,6 +154,8 @@ export const applicants = pgTable("applicants", {
   locationId: integer("location_id").references(() => locations.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
 
 // Applicant Documents
 export const applicantDocuments = pgTable("applicant_documents", {
@@ -252,6 +254,21 @@ export const kbArticles = pgTable("kb_articles", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Messages table for the messaging system
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  applicantId: integer("applicant_id").references(() => applicants.id),
+  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal"),
+  messageType: text("message_type").default("text"),
+  isPrivate: boolean("is_private").default(false),
+  isRead: boolean("is_read").default(false),
+  attachmentUrl: text("attachment_url"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Uploaded Files
 export const uploadedFiles = pgTable("uploaded_files", {
   id: serial("id").primaryKey(),
@@ -314,6 +331,7 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, cre
 export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: true, createdAt: true });
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
@@ -365,6 +383,7 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertCashCount = z.infer<typeof insertCashCountSchema>;
 export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
 export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
@@ -391,6 +410,7 @@ export type Shift = typeof shifts.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
+export type Message = typeof messages.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
 

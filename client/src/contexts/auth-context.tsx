@@ -34,88 +34,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      console.time("auth:client-total");
-      console.log("Checking authentication status...");
-      
-      // Set up timeout to avoid infinite loading
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
-      console.timeLog("auth:client-total", "setup complete, before fetch");
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
       
       try {
-        // Add cache-busting parameter to prevent browser caching
-        const cacheBuster = new Date().getTime();
-        const response = await fetch(`/api/auth/me?_=${cacheBuster}`, {
+        const response = await fetch('/api/auth/me', {
           credentials: "include",
-          signal: controller.signal,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
+          signal: controller.signal
         });
         
-        // Clear the timeout since the request completed
         clearTimeout(timeoutId);
-
-        console.log("Auth response status:", response.status);
-        console.timeLog("auth:client-total", "response received");
         
         if (response.ok) {
-          // Check if response is actually JSON before parsing
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            console.error("Response is not JSON, content-type:", contentType);
-            throw new Error(`Expected JSON response but got ${contentType}`);
-          }
-          
           const data = await response.json();
-          console.timeLog("auth:client-total", "response parsed");
-          console.log("User data:", data);
           
-          // If authenticated and user data exists, set the user
           if (data && data.authenticated && data.user) {
-            console.timeLog("auth:client-total", "before setState");
             setUser(data.user);
             setIsAuthenticated(true);
-            console.log("User authenticated:", data.user.username);
-            console.timeLog("auth:client-total", "after setState");
           } else {
-            // Not authenticated or no user data
-            console.log("Not authenticated or no user data found");
             setUser(null);
             setIsAuthenticated(false);
-            // Clear any cached queries that might depend on authentication
             queryClient.clear();
-            console.timeLog("auth:client-total", "after clearing state (not authenticated)");
           }
         } else {
-          console.log("Error response, not authenticated");
           setUser(null);
           setIsAuthenticated(false);
-          // Clear any cached queries that might depend on authentication
           queryClient.clear();
         }
       } catch (error: any) {
-        // Clear the timeout if there was an error
         clearTimeout(timeoutId);
-        
-        if (error?.name === 'AbortError') {
-          console.error("Authentication request timed out after 2 seconds");
-        } else if (error?.message?.includes('JSON')) {
-          console.error("JSON parsing error in auth check:", error.message);
-        } else {
-          console.error("Error checking authentication status:", error);
-        }
-        
         setUser(null);
         setIsAuthenticated(false);
-        // Clear any cached queries that might depend on authentication
         queryClient.clear();
       } finally {
-        console.log("Setting isLoading to false");
         setIsLoading(false);
-        console.timeEnd("auth:client-total");
       }
     };
 

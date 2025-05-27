@@ -13,6 +13,7 @@ import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
+import ApplicantDetail from "@/pages/applicant-detail";
 import ApplicantPortal from "@/pages/applicant-portal";
 import CashManagement from "@/pages/cash-management";
 import KnowledgeBase from "@/pages/knowledge-base";
@@ -341,6 +342,26 @@ function App() {
                 {serverAuthState.authenticated ? 
                   <RoleProtectedRoute 
                     component={Applicants} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
+              </Route>
+              
+              <Route path="/applicants/:id">
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={ApplicantDetail} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
+              </Route>
+              
+              <Route path="/applicant/:id">
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={ApplicantDetail} 
                     requiredRoles={["manager", "floor_manager"]} 
                   /> : 
                   <Redirect to="/login" />

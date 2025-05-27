@@ -1,15 +1,15 @@
 import {
   users, locations, competencies, staff, staffCompetencies, applicants, applicantDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, documentAttachments,
+  kbCategories, kbArticles, uploadedFiles, documentAttachments, messages,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
   type Applicant, type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type CashCount, type KbCategory, type KbArticle, 
+  type Shift, type CashCount, type KbCategory, type KbArticle, type Message,
   type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
   type InsertStaffCompetency, type InsertApplicant, type InsertApplicantDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
-  type InsertCashCount, type InsertKbCategory, type InsertKbArticle,
+  type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertMessage,
   type InsertUploadedFile, type InsertDocumentAttachment
 } from "@shared/schema";
 import { db } from "./db";
@@ -173,6 +173,16 @@ export interface IStorage {
   deleteDocumentAttachment(id: number): Promise<boolean>;
   deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean>;
   deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean>;
+
+  // Messages
+  getMessage(id: number): Promise<Message | undefined>;
+  getMessages(): Promise<Message[]>;
+  getMessagesByUser(userId: number): Promise<Message[]>;
+  getMessagesByApplicant(applicantId: number): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message | undefined>;
+  deleteMessage(id: number): Promise<boolean>;
+  userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1172,7 +1182,7 @@ export class DatabaseStorage implements IStorage {
   // Applicants
   async getApplicant(id: number): Promise<Applicant | undefined> {
     try {
-      // Select specific columns to avoid extraMessage issues
+      // Include extraMessage field to match the expected Applicant type
       const [applicant] = await db.select({
         id: applicants.id,
         name: applicants.name,
@@ -1181,6 +1191,7 @@ export class DatabaseStorage implements IStorage {
         status: applicants.status,
         resumeUrl: applicants.resumeUrl,
         notes: applicants.notes,
+        extraMessage: applicants.extraMessage,
         userId: applicants.userId,
         locationId: applicants.locationId,
         createdAt: applicants.createdAt
@@ -1765,6 +1776,61 @@ export class DatabaseStorage implements IStorage {
   async deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean> {
     await db.delete(documentAttachments).where(eq(documentAttachments.fileId, fileId));
     return true;
+  }
+
+  // Message operations
+  async getMessage(id: number): Promise<Message | undefined> {
+    const [message] = await db.select().from(messages).where(eq(messages.id, id));
+    return message || undefined;
+  }
+
+  async getMessages(): Promise<Message[]> {
+    return await db.select().from(messages).orderBy(messages.createdAt);
+  }
+
+  async getMessagesByUser(userId: number): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.userId, userId)).orderBy(messages.createdAt);
+  }
+
+  async getMessagesByApplicant(applicantId: number): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.applicantId, applicantId)).orderBy(messages.createdAt);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [createdMessage] = await db.insert(messages).values(message).returning();
+    return createdMessage;
+  }
+
+  async updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message | undefined> {
+    const [updatedMessage] = await db.update(messages)
+      .set(message)
+      .where(eq(messages.id, id))
+      .returning();
+    return updatedMessage || undefined;
+  }
+
+  async deleteMessage(id: number): Promise<boolean> {
+    await db.delete(messages).where(eq(messages.id, id));
+    return true;
+  }
+
+  async userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean> {
+    // Check if user is admin/manager or if they are the applicant
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    // Admins and managers have access to all applicants
+    if (user.role === 'administrator' || user.role === 'manager') {
+      return true;
+    }
+    
+    // Check if user is the applicant themselves
+    const applicant = await this.getApplicant(applicantId);
+    if (applicant && applicant.userId === userId) {
+      return true;
+    }
+    
+    return false;
   }
 }
 

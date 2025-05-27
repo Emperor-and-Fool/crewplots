@@ -1,0 +1,657 @@
+*   [33me7a068b[m[33m ([m[1;32mreplit-agent[m[33m)[m Revert to stable applicant portal, resolving persistent data loading issues
+[31m|[m[32m\[m  
+[31m|[m * [33m668871c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop-redis[m[33m, [m[1;31morigin/develop-redis[m[33m)[m Revert to stable applicant portal, resolving persistent data loading issues
+* [32m|[m [33m3d8afb0[m Update applicant portal to improve document handling and messaging
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m8a3b433[m Update applicant portal to improve document handling and messaging
+* [34m|[m [33m931c750[m Add communication center to applicant portal for sending application messages
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m94d8c40[m Add communication center to applicant portal for sending application messages
+* [36m|[m [33m7a7502f[m Enable users to send messages and view them within their profiles
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mfafd604[m Enable users to send messages and view them within their profiles
+* [1;32m|[m [33m90ae15a[m Implement a messaging system enabling users to send each other messages
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m3f49ade[m Implement a messaging system enabling users to send each other messages
+* [1;34m|[m [33m735f0da[m Remove unnecessary loading alerts that appear to be triggered incorrectly
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m4d67a66[m Remove unnecessary loading alerts that appear to be triggered incorrectly
+* [1;36m|[m [33m380c55c[m Remove unused elements and code from applicant portal for a cleaner interface
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33me4776c6[m[33m ([m[1;31morigin/save-working-portal[m[33m, [m[1;32msave-working-portal[m[33m)[m Remove unused elements and code from applicant portal for a cleaner interface
+* [32m|[m [33mbaa840d[m Streamline applicant portal by removing document-related features
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m5e7d170[m Streamline applicant portal by removing document-related features
+* [34m|[m [33ma0953c1[m Streamline profile loading by removing outdated and unneeded features
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mca9122a[m Streamline profile loading by removing outdated and unneeded features
+* [36m|[m [33m2174655[m Initialize the project with core structure for hospitality management
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m0a0a01f[m Initialize the project with core structure for hospitality management
+* [1;32m|[m [33ma48d1bd[m Improve data loading and error handling when users log in and access portal
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m284f430[m Improve data loading and error handling when users log in and access portal
+* [1;34m|[m [33me999753[m Improve the loading of applicant documents and remove unnecessary retries
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33mbfdcd07[m Improve the loading of applicant documents and remove unnecessary retries
+* [1;36m|[m [33m74af8d9[m Revert aggressive caching to improve data freshness across the application
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m4069b7c[m Revert aggressive caching to improve data freshness across the application
+* [32m|[m [33m4c76132[m Improve app responsiveness by disabling background data updates
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33ma732c8c[m Improve app responsiveness by disabling background data updates
+* [34m|[m [33m7873dfe[m Improve the app's performance and reduce unnecessary server requests
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m7fdc0f3[m Improve the app's performance and reduce unnecessary server requests
+* [36m|[m [33md224348[m Improve app responsiveness by optimizing data fetching behavior
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mb7b8e44[m Improve app responsiveness by optimizing data fetching behavior
+* [1;32m|[m [33m095a9a9[m Restore constant data checks for a smoother user experience across website
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33mdbf90db[m Restore constant data checks for a smoother user experience across website
+* [1;34m|[m [33md54e8f9[m Improve data loading behavior and reduce unnecessary page reloads
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m11b0911[m Improve data loading behavior and reduce unnecessary page reloads
+* [1;36m|[m [33m781746d[m Restore initial page loading by re-enabling server authentication check
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m27c04bf[m Restore initial page loading by re-enabling server authentication check
+* [32m|[m [33m3ff0755[m Improve user login experience by reducing timeout and simplifying checks
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m0ed57ee[m Improve user login experience by reducing timeout and simplifying checks
+* [34m|[m [33m93ac32e[m Reduce API calls and improve data handling on user authentication
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33me861eef[m Reduce API calls and improve data handling on user authentication
+* [36m|[m [33m59d80a0[m Retain user profile information even after they close the application
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m5889981[m Retain user profile information even after they close the application
+* [1;32m|[m [33m9baf31c[m Improve user profile loading and display for a smoother portal experience
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33mf97c85a[m Improve user profile loading and display for a smoother portal experience
+* [1;34m|[m [33m853d8cf[m Improve profile loading with error handling and data consistency
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33mbe11730[m Improve profile loading with error handling and data consistency
+* [1;36m|[m [33m873f17d[m Add image for use in helping users understand the new features
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33mba181c3[m Add image for use in helping users understand the new features
+* [32m|[m [33m9d3b2b0[m Improve applicant portal performance by using context for profile data
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m18d28a9[m Improve applicant portal performance by using context for profile data
+* [34m|[m [33m6c895b8[m Improve profile loading reliability and reduce unnecessary data requests
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33ma56dad2[m Improve profile loading reliability and reduce unnecessary data requests
+* [36m|[m [33m99b141a[m Improve data loading and persistence for applicant profile information
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m289e773[m Improve data loading and persistence for applicant profile information
+* [1;32m|[m [33m512a13b[m Improve app performance with optimized authentication and data handling
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m8d920ec[m Improve app performance with optimized authentication and data handling
+* [1;34m|[m [33m9332fc8[m Improve data handling and reduce unnecessary updates in applicant portal
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33md3559e4[m Improve data handling and reduce unnecessary updates in applicant portal
+* [1;36m|[m [33m3969915[m Improve backend performance by optimizing database and request handling
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m1363ad3[m Improve backend performance by optimizing database and request handling
+* [32m|[m [33m9b31978[m Improve the speed of fetching applicant data and related documents
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m52c173f[m Improve the speed of fetching applicant data and related documents
+* [34m|[m [33mc9c885f[m Ensure database operations are healthy and running at optimal performance
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m1657b7b[m Ensure database operations are healthy and running at optimal performance
+* [36m|[m [33me0bb110[m Improve applicant data retrieval for enhanced system performance
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m645ba6d[m Improve applicant data retrieval for enhanced system performance
+* [1;32m|[m [33m2aa04fe[m Improve request handling and debugging capabilities for better performance
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m64209be[m Improve request handling and debugging capabilities for better performance
+* [1;34m|[m [33m1692d5e[m Remove status widget from login screen to streamline user interface
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33macf1058[m Remove status widget from login screen to streamline user interface
+* [1;36m|[m [33m35dbeb7[m Remove widget that displays the status of the data caching system
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33mf4c9651[m Remove widget that displays the status of the data caching system
+* [32m|[m [33m0e8381d[m Improve user login speed by storing user details in the session
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mcab4459[m Improve user login speed by storing user details in the session
+* [34m|[m [33mcb13985[m Temporarily stop Redis to fix a memory allocation problem
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mc602c56[m Temporarily stop Redis to fix a memory allocation problem
+* [36m|[m [33mf1e9c2d[m Reduce Redis memory footprint and configure for better performance
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m34e2ad8[m Reduce Redis memory footprint and configure for better performance
+* [1;32m|[m [33ma01176a[m Use system's Redis installation instead of a local build to start the service
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33mf488363[m Use system's Redis installation instead of a local build to start the service
+* [1;34m|[m [33m87e2152[m Enable Redis integration to improve system performance and data handling
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m39acfa6[m Enable Redis integration to improve system performance and data handling
+* [1;36m|[m [33m0704526[m Disable Redis functionality due to system incompatibility issues
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33mc26a0af[m Disable Redis functionality due to system incompatibility issues
+* [32m|[m [33m0aaf681[m Set up background Redis process management and handle startup and restarts
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mb04055b[m Set up background Redis process management and handle startup and restarts
+* [34m|[m [33m354aa16[m Investigate and address the premature termination of Redis processes
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m0f25864[m Investigate and address the premature termination of Redis processes
+* [36m|[m [33ma8845ee[m Update Redis server process ID to reflect current running instance
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m664823b[m Update Redis server process ID to reflect current running instance
+* [1;32m|[m [33m4ee8cee[m Improve the widget by accurately displaying the status of the Redis server
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m0fb76c4[m Improve the widget by accurately displaying the status of the Redis server
+* [1;34m|[m [33me49e490[m Address unexpected behavior with a user interface element on the platform
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m20d8966[m Address unexpected behavior with a user interface element on the platform
+* [1;36m|[m [33mcf01f2e[m Improve Redis connection reliability and error handling in the platform
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33mb5dca85[m Improve Redis connection reliability and error handling in the platform
+* [32m|[m [33m35fc1df[m Add extensive logging to diagnose frequent Redis server failures
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m19693d0[m Add extensive logging to diagnose frequent Redis server failures
+* [34m|[m [33m479dc68[m Automate Redis server operations within the containerized environment
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mff420c5[m Automate Redis server operations within the containerized environment
+* [36m|[m [33m7970240[m Improve Redis connection reliability and prevent widget loading issues
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m195a2e2[m Improve Redis connection reliability and prevent widget loading issues
+* [1;32m|[m [33m3aab22c[m Enable external access to Redis server and change exposed port
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m869f4cd[m Enable external access to Redis server and change exposed port
+* [1;34m|[m [33m180c9be[m Update Redis binaries to enhance data management and overall performance
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m30d2e99[m Update Redis binaries to enhance data management and overall performance
+* [1;36m|[m [33m5158772[m Disable Redis client to resolve problematic connection errors
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m570f57e[m Disable Redis client to resolve problematic connection errors
+* [32m|[m [33mf0c2bd3[m Add script to automatically start Redis server for local development
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m91b1554[m Add script to automatically start Redis server for local development
+* [34m|[m [33m5cd8a2a[m Provide instructions on running a Redis server within the Replit environment
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m39f2486[m Provide instructions on running a Redis server within the Replit environment
+* [36m|[m [33m6d95e15[m Improve the way the platform checks its connection to the data cache
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m757fae8[m Improve the way the platform checks its connection to the data cache
+* [1;32m|[m [33m9e31a77[m Add visual aid to clarify redis connection status during investigation
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m1c56c12[m Add visual aid to clarify redis connection status during investigation
+* [1;34m|[m [33m61511d0[m Set up the project's core structure and establish initial dependencies
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33ma989b84[m Set up the project's core structure and establish initial dependencies
+* [1;36m|[m [33m85e06ca[m Created a checkpoint
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33me4884d1[m Created a checkpoint
+* [32m|[m [33me48c5ea[m Attempt to restore Redis functionality to allow for further development
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m7bae7b6[m Attempt to restore Redis functionality to allow for further development
+* [34m|[m [33mf381e6c[m Enable local Redis server for improved data management and performance
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33md9446b4[m Enable local Redis server for improved data management and performance
+* [36m|[m [33maead6ee[m Re-establish Redis connection for improved data handling and performance
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mc110b19[m Re-establish Redis connection for improved data handling and performance
+* [1;32m|[m [33m591e7c7[m Enable the application to run smoothly within a development environment
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m0c56d70[m Enable the application to run smoothly within a development environment
+* [1;34m|[m [33m5ed1e08[m Improve Redis connection settings to work reliably in development
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33ma6eb34e[m Improve Redis connection settings to work reliably in development
+* [1;36m|[m [33medf1df8[m Prepare the project to connect to Redis without modifying application
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33mb8a537b[m Prepare the project to connect to Redis without modifying application
+* [32m|[m [33mbce0a78[m Remove temporary caching to address immediate operational instability
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m7bce180[m Remove temporary caching to address immediate operational instability
+* [34m|[m [33m4d98a59[m Improve user login reliability by adding a fallback caching mechanism
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33ma3486b3[m Improve user login reliability by adding a fallback caching mechanism
+* [36m|[m [33maefe4e6[m Improve user session handling by adding in-memory cache fallback
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mb7179f9[m Improve user session handling by adding in-memory cache fallback
+* [1;32m|[m [33m7dd2029[m Equip the application environment with necessary tools for testing
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m1317f41[m Equip the application environment with necessary tools for testing
+* [1;34m|[m [33m3e80bcd[m Show real-time performance and health of user session data storage
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m8032922[m Show real-time performance and health of user session data storage
+* [1;36m|[m [33m07ff07c[m Improve user login speed and reliability by storing account information
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m918e0fe[m Improve user login speed and reliability by storing account information
+* [32m|[m [33m5ecbb22[m Show the status of the data cache on both the login and main dashboard
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m8810e12[m Show the status of the data cache on both the login and main dashboard
+* [34m|[m [33mf42b336[m Display the real-time status of our fast data storage on key platform pages
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mfdfa657[m Display the real-time status of our fast data storage on key platform pages
+* [36m|[m [33mbfc391d[m Add handling for ignored errors across the platform for better stability
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33mdaaeb8d[m Add handling for ignored errors across the platform for better stability
+[1;31m|[m * [33m78d4f10[m[33m ([m[1;31morigin/develop-adminandtest[m[33m, [m[1;32mdevelop-adminandtest[m[33m)[m Restored to '8a329b0fae4e7ecbece0f5730e681b1fe98e2c82'
+[1;31m|[m * [33m71c58f7[m Saved your changes before rolling back
+* [1;32m|[m   [33mf53a8d5[m Introduce standardized form components to streamline user input handling
+[1;33m|[m[1;34m\[m [1;32m\[m  
+[1;33m|[m * [1;32m|[m [33m6afd579[m[33m ([m[1;31morigin/develop-workingversion[m[33m, [m[1;32mdevelop-workingversion[m[33m, [m[1;32mdevelop-beforegit[m[33m)[m Introduce standardized form components to streamline user input handling
+* [1;34m|[m [1;32m|[m [33m84df5a3[m Introduce reusable interface components for a more consistent user experience
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33mceaf5c3[m Introduce reusable interface components for a more consistent user experience
+* [1;36m|[m [1;32m|[m [33ma6f9c86[m Improve system stability by addressing errors and ensuring reliability
+[31m|[m[1;36m\[m[1;36m|[m [1;32m|[m 
+[31m|[m * [1;32m|[m [33md5e9c1a[m Improve system stability by addressing errors and ensuring reliability
+* [32m|[m [1;32m|[m [33m3c8b5de[m Improve application navigation and fix authentication for enhanced security
+[33m|[m[32m\[m[32m|[m [1;32m|[m 
+[33m|[m * [1;32m|[m [33m91e0903[m Improve application navigation and fix authentication for enhanced security
+* [34m|[m [1;32m|[m [33md0db30b[m Improve code consistency and ensure adherence to project standards
+[35m|[m[34m\[m[34m|[m [1;32m|[m 
+[35m|[m * [1;32m|[m [33mfda215c[m Improve code consistency and ensure adherence to project standards
+* [36m|[m [1;32m|[m [33ma2d2f4e[m Fix an issue preventing users from being directed to the login page
+[1;31m|[m[36m\[m[36m|[m [1;32m|[m 
+[1;31m|[m * [1;32m|[m [33m0ee95b0[m Fix an issue preventing users from being directed to the login page
+* [1;32m|[m [1;32m|[m [33m66583bd[m Set up the basic structure and configuration for the new application
+[1;33m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[1;33m|[m * [1;32m|[m [33m4eb161e[m Set up the basic structure and configuration for the new application
+* [1;34m|[m [1;32m|[m [33mf5fef3e[m Use a basic application setup to resolve rendering issues for now
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33m07d3fc5[m[33m ([m[1;31morigin/develop-beforegit[m[33m)[m Use a basic application setup to resolve rendering issues for now
+* [1;36m|[m [1;32m|[m [33m2bdbdfa[m Improve application stability and remove direct login bypassing React
+[31m|[m[1;36m\[m[1;36m|[m [1;32m|[m 
+[31m|[m * [1;32m|[m [33m75ad63a[m Improve application stability and remove direct login bypassing React
+* [32m|[m [1;32m|[m [33m00e5b2a[m Provide a direct login route bypassing the React frontend for user access
+[33m|[m[32m\[m[32m|[m [1;32m|[m 
+[33m|[m * [1;32m|[m [33m920e148[m Provide a direct login route bypassing the React frontend for user access
+* [34m|[m [1;32m|[m [33m03a7ab1[m Ensure users are redirected to the login page when not authenticated
+[35m|[m[34m\[m[34m|[m [1;32m|[m 
+[35m|[m * [1;32m|[m [33m3d15c75[m Ensure users are redirected to the login page when not authenticated
+* [36m|[m [1;32m|[m [33mec7ff62[m Remove temporary backup files from the client application
+[1;31m|[m[36m\[m[36m|[m [1;32m|[m 
+[1;31m|[m * [1;32m|[m [33m0a3d947[m Remove temporary backup files from the client application
+* [1;32m|[m [1;32m|[m [33md3391ac[m Serve website files correctly and resolve issues with how the app is served
+[1;33m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[1;33m|[m * [1;32m|[m [33md782107[m Serve website files correctly and resolve issues with how the app is served
+* [1;34m|[m [1;32m|[m [33m3672668[m Add a basic landing page with login to help showcase the platform
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33mdc6dd99[m Add a basic landing page with login to help showcase the platform
+* [1;36m|[m [1;32m|[m [33m2465641[m Improve website loading speed and reliability during development
+[31m|[m[1;36m\[m[1;36m|[m [1;32m|[m 
+[31m|[m * [1;32m|[m [33mfea0809[m Improve website loading speed and reliability during development
+* [32m|[m [1;32m|[m [33m4bd0c03[m Show a basic dashboard after login and provide a way to reset user sessions
+[33m|[m[32m\[m[32m|[m [1;32m|[m 
+[33m|[m * [1;32m|[m [33m160da20[m Show a basic dashboard after login and provide a way to reset user sessions
+* [34m|[m [1;32m|[m [33me84a667[m Improve website loading and user session handling for a smoother experience
+[35m|[m[34m\[m[34m|[m [1;32m|[m 
+[35m|[m * [1;32m|[m [33m9c1f613[m Improve website loading and user session handling for a smoother experience
+* [36m|[m [1;32m|[m [33mb90bf57[m Provide a basic login form and configure simplified session handling
+[1;31m|[m[36m\[m[36m|[m [1;32m|[m 
+[1;31m|[m * [1;32m|[m [33m61180d6[m Provide a basic login form and configure simplified session handling
+* [1;32m|[m [1;32m|[m [33m4b08ffb[m Investigate application errors and explore alternative solutions without Redis
+[1;33m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[1;33m|[m * [1;32m|[m [33mbc462ed[m Investigate application errors and explore alternative solutions without Redis
+* [1;34m|[m [1;32m|[m [33mde8935b[m Improve loading speeds and ensure compatibility of core website features
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33m21209ec[m Improve loading speeds and ensure compatibility of core website features
+* [1;36m|[m [1;32m|[m [33m84a7345[m Use memory for user sessions while database connections are established
+[31m|[m[1;36m\[m[1;36m|[m [1;32m|[m 
+[31m|[m * [1;32m|[m [33me360209[m Use memory for user sessions while database connections are established
+* [32m|[m [1;32m|[m [33m9454797[m Improve website loading speed and fix missing component issues for users
+[33m|[m[32m\[m[32m|[m [1;32m|[m 
+[33m|[m * [1;32m|[m [33m7e3bad4[m Improve website loading speed and fix missing component issues for users
+* [34m|[m [1;32m|[m [33m2c69fb8[m Implement login page enabling users to access the Crew Plots Pro platform
+[35m|[m[34m\[m[34m|[m [1;32m|[m 
+[35m|[m * [1;32m|[m [33mc3215ef[m Implement login page enabling users to access the Crew Plots Pro platform
+* [36m|[m [1;32m|[m [33m9293913[m Display core platform information on initial page load for all users
+[1;31m|[m[36m\[m[36m|[m [1;32m|[m 
+[1;31m|[m * [1;32m|[m [33mac8f882[m Display core platform information on initial page load for all users
+* [1;32m|[m [1;32m|[m [33m17954ed[m Initialize core components to display initial screen on the platform
+[1;33m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[1;33m|[m * [1;32m|[m [33mb80fca7[m Initialize core components to display initial screen on the platform
+* [1;34m|[m [1;32m|[m [33me69abf5[m Display core application data on a simplified dashboard for testing
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33mc62290d[m Display core application data on a simplified dashboard for testing
+* [1;36m|[m [1;32m|[m [33m416d230[m Enhance the application with login functionality and user interface improvements
+[31m|[m[1;36m\[m[1;36m|[m [1;32m|[m 
+[31m|[m * [1;32m|[m [33m24541f8[m Enhance the application with login functionality and user interface improvements
+* [32m|[m [1;32m|[m [33ma1225d8[m Provide ability to retrieve a list of all users, locations, and staff
+[33m|[m[32m\[m[32m|[m [1;32m|[m 
+[33m|[m * [1;32m|[m [33ma0e8b67[m Provide ability to retrieve a list of all users, locations, and staff
+* [34m|[m [1;32m|[m [33m5cc4f97[m Restore proper frontend serving and improve server logging for debugging
+[35m|[m[34m\[m[34m|[m [1;32m|[m 
+[35m|[m * [1;32m|[m [33m4bb618f[m Restore proper frontend serving and improve server logging for debugging
+* [36m|[m [1;32m|[m [33m6be7320[m Provide helpful information about the application's status and available endpoints
+[1;31m|[m[36m\[m[36m|[m [1;32m|[m 
+[1;31m|[m * [1;32m|[m [33ma286eaf[m Provide helpful information about the application's status and available endpoints
+* [1;32m|[m [1;32m|[m [33m5c1c5ee[m Enable Redis functionality and improve server behavior for production use
+[1;33m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[1;33m|[m * [1;32m|[m [33m2a71270[m Enable Redis functionality and improve server behavior for production use
+* [1;34m|[m [1;32m|[m [33m9e7874a[m Include a library of reusable components for building user interfaces
+[1;35m|[m[1;34m\[m[1;34m|[m [1;32m|[m 
+[1;35m|[m * [1;32m|[m [33m9e97195[m Include a library of reusable components for building user interfaces
+* [1;36m|[m [1;32m|[m   [33m93dfe41[m Improve the reliability of data caching with more robust Redis connections
+[31m|[m[32m\[m [1;36m\[m [1;32m\[m  
+[31m|[m * [1;36m|[m [1;32m|[m [33m501bdb4[m[33m ([m[1;32mmain[m[33m)[m Improve the reliability of data caching with more robust Redis connections
+* [32m|[m [1;36m|[m [1;32m|[m [33mf620ec7[m Start the Redis server automatically when the application launches
+[33m|[m[32m\[m[32m|[m [1;36m|[m [1;32m|[m 
+[33m|[m * [1;36m|[m [1;32m|[m [33m43369af[m Start the Redis server automatically when the application launches
+* [34m|[m [1;36m|[m [1;32m|[m [33mda934f0[m Start the background data cache for faster information retrieval system-wide
+[35m|[m[34m\[m[34m|[m [1;36m|[m [1;32m|[m 
+[35m|[m * [1;36m|[m [1;32m|[m [33m5dd240d[m Start the background data cache for faster information retrieval system-wide
+* [36m|[m [1;36m|[m [1;32m|[m [33m66059be[m Configure the database cache to accept connections and store data temporarily
+[1;31m|[m[36m\[m[36m|[m [1;36m|[m [1;32m|[m 
+[1;31m|[m * [1;36m|[m [1;32m|[m [33mbd39e5d[m Configure the database cache to accept connections and store data temporarily
+* [1;32m|[m [1;36m|[m [1;32m|[m [33m57ce617[m Enable external access to the data caching system for improved connectivity
+[1;33m|[m[1;32m\[m[1;32m|[m [1;36m|[m [1;32m|[m 
+[1;33m|[m * [1;36m|[m [1;32m|[m [33m6f52051[m Enable external access to the data caching system for improved connectivity
+* [1;34m|[m [1;36m|[m [1;32m|[m [33m44463ab[m Set up Redis for faster data retrieval and improved application speed
+[1;35m|[m[1;34m\[m[1;34m|[m [1;36m|[m [1;32m|[m 
+[1;35m|[m * [1;36m|[m [1;32m|[m [33m2597d71[m Set up Redis for faster data retrieval and improved application speed
+* [1;36m|[m [1;36m|[m [1;32m|[m [33mfa75947[m Ensure smooth startup by addressing potential Redis connection problems
+[31m|[m[1;36m\[m[1;36m|[m [1;36m|[m [1;32m|[m 
+[31m|[m * [1;36m|[m [1;32m|[m [33m521471a[m Ensure smooth startup by addressing potential Redis connection problems
+* [32m|[m [1;36m|[m [1;32m|[m [33m3edc5b4[m Set up initial project structure and core UI components for the application
+[33m|[m[32m\[m[32m|[m [1;36m|[m [1;32m|[m 
+[33m|[m * [1;36m|[m [1;32m|[m [33m027e9ed[m Set up initial project structure and core UI components for the application
+* [34m|[m [1;36m|[m [1;32m|[m [33m1239ca8[m Started building your app
+[34m|[m[34m/[m [1;36m/[m [1;32m/[m  
+* [1;36m|[m [1;32m|[m [33m7ba1418[m Started building your app
+* [1;36m|[m [1;32m|[m [33m4051c91[m Initial commit
+ [1;36m/[m [1;32m/[m  
+[1;36m|[m [1;32m|[m * [33m15c30bc[m[33m ([m[1;31morigin/develop[m[33m)[m Assistant checkpoint: Add startup logging and check Redis connection
+[1;36m|[m [1;32m|[m * [33m06c65f9[m Assistant checkpoint: Enhanced monitoring and health check reporting
+[1;36m|[m [1;32m|[m * [33m8ef4fcf[m Assistant checkpoint: Enhanced monitoring agent with detailed logging
+[1;36m|[m [1;32m|[m * [33m7e31651[m Assistant checkpoint: Add health checks and monitoring
+[1;36m|[m [1;32m|[m * [33m540284f[m Assistant checkpoint: Add monitoring agent with auto-recovery capabilities
+[1;36m|[m [1;32m|[m * [33m98b5b52[m Assistant checkpoint: Configure development workflow and install tsx
+[1;36m|[m [1;32m|[m * [33m463793a[m Assistant checkpoint: Add file upload functionality to frontend and backend
+[1;36m|[m [1;32m|[m * [33m7e50bdd[m Assistant checkpoint: Configure server ports and deployment settings
+[1;36m|[m [1;32m|[m * [33mc19b9ee[m Assistant checkpoint: Set up DevOps agent branch and workflow
+[1;36m|[m [1;32m|[m[1;32m/[m  
+[1;36m|[m * [33md767be2[m Add documentation outlining authentication and lessons learned during development
+[1;36m|[m * [33m5152460[m Add project documentation with implementation plan and Redis integration guide
+[1;36m|[m * [33m2f42ad6[m Use database sessions as a temporary solution for user authentication
+[1;36m|[m * [33meb8804b[m Add session management using the database until Redis is implemented
+[1;36m|[m * [33mbf3ff1f[m Improve data handling by adding comprehensive type definitions to the project
+[1;36m|[m * [33m0441736[m Document database tables to improve code readability and maintainability
+[1;36m|[m * [33mb2f1fcb[m Add descriptive code comments to the database schema definitions
+[1;36m|[m * [33m03397df[m Improve the understandability of the database schema with detailed comments
+[1;36m|[m[1;36m/[m  
+* [33mb4353b7[m Add code comments and documentation to enhance code understanding
+* [33mb2d4ad9[m Improve code clarity with detailed documentation and configurations
+* [33mb02a268[m Enable simple deployment using containerization for consistent environments
+* [33ma501b86[m Configure application to run inside Docker container using local Redis
+* [33m4dbbaf0[m Improve application speed and reliability with local Redis instance
+* [33m18a3962[m Improve Redis connection by making it more reliable and fault-tolerant
+* [33m55c7ebe[m Improve Redis connection reliability and remove PostgreSQL session fallback
+* [33mb19a5ed[m Improve connection to data cache for more reliable user sessions
+* [33mf607ce9[m Improve the platform's ability to reliably maintain user login sessions
+* [33m907df42[m Improve the platform's ability to maintain user sessions more reliably
+* [33m07a3b98[m Configure the system to connect with the Redis server on the local machine
+* [33m4c5fb2d[m Integrate Redis to improve session management and speed up user logins
+* [33m90ccb84[m Switch session storage from Redis to PostgreSQL for better data persistence
+* [33m2c91e69[m Improve the way user sessions are stored and managed for enhanced security
+* [33m6496709[m Improve session management by using Redis for faster data storage
+* [33m314033f[m Enable faster data access and improve overall system performance
+* [33m84fc590[m Improve data loading and retry mechanism for applicant portal page
+* [33m8a329b0[m Improve data loading reliability on the applicant portal page
+* [33m199123c[m Ensure user authentication status is reliably updated across the platform
+* [33m0373d69[m Improve user authentication by checking if users are actively signed in
+* [33mff7543b[m Revert recent changes to streamline user authentication status handling
+* [33m81c7f30[m Add ability to manually check user login status for enhanced reliability
+* [33mf61f1de[m Ensure the application accurately reflects the user's login status
+* [33md9801a6[m Improve user session handling and ensure user authentication is persistent
+* [33m50f4919[m Improve authentication checks and ensure secure user session management
+* [33m157f8c9[m Add instructions for analyzing user authentication timing and code flow
+* [33m2c19ba8[m Restored to '481672318123ede7c70387b4619872553281fc00'
+* [33m455ceca[m Saved your changes before rolling back
+* [33me78dfce[m Improve loading page behavior by adding a timeout for authentication
+* [33m623d007[m Ensure users are securely logged out of the application upon request
+* [33me89cf71[m Add crucial image to improve visual elements for enhanced user engagement
+* [33m68cc9de[m Improve logout process to ensure users are securely signed out of the system
+* [33mcfab9cf[m Remove automatic login and streamline the loading process
+* [33m37547e5[m Remove unnecessary code and logging statements from main application
+* [33m751e71b[m Simplify user login check to improve app responsiveness and reliability
+* [33m18058a7[m Remove the troubleshooting button for session clearing on the login page
+* [33m8ceb46a[m Add a troubleshooting option to resolve login issues for users
+* [33m6cb2f4f[m Add a secret function to reset all user login sessions in case of problems
+* [33mf9e8287[m Improve user logout process by clearing all authentication cookies
+* [33md86abd2[m Improve session handling and prevent cookie conflicts for enhanced security
+* [33me5f0b46[m Improve cookie handling to ensure consistent user sessions across the platform
+* [33m08c224e[m Improve handling of user sessions with secure cookie configurations
+* [33m919b39c[m Improve login redirection reliability and session cookie handling
+* [33m702ab25[m Improve login reliability by clearing old sessions and preventing caching
+* [33mc4392f3[m Improve user session reliability and prevent stale data issues across platform
+* [33m14d4f6b[m Route users to the correct portal based on their specific account roles
+* [33m77987c5[m Improve the loading behavior of the login process
+* [33m5cc06df[m Ensure user login status remains consistent between the website and server
+* [33m5564f1d[m Improve user authentication reliability when loading the application
+* [33m4816723[m Provide documentation to troubleshoot authentication and data loading issues
+* [33mbe2f076[m Remove the application position field from the applicant database
+* [33ma42b410[m Update application form by removing unnecessary position field
+* [33m0c66d8c[m Remove the job position from applicant profiles to streamline data entry
+* [33m0aae6fb[m Remove outdated field to streamline the application process for candidates
+* [33md40766a[m Add administrator function to log out all users for security purposes
+* [33m84a3176[m Improve logout process and add admin ability to clear all active sessions
+* [33mcbe136e[m Improve data loading and session handling for a smoother user experience
+* [33m8af20d8[m Simplify data fetching and improve loading state in the applicant portal
+* [33m6376a96[m Improve applicant portal loading times and user experience
+* [33m53f7ef6[m Improve database connection reliability and provide enhanced error details
+* [33md6f2b99[m Investigate intermittent issue to determine the cause of unexpected behavior
+* [33m17912b8[m Improve data loading speed and reliability across the applicant portal
+* [33me736574[m Provide visual example to illustrate problem with user authentication
+* [33m4747361[m Improve user login security and cookie handling across different browsers
+* [33mf38dd75[m Remove the user interface page to clear all user login sessions
+* [33mb0f8a33[m Add a tool to remove all user sessions and start with a clean slate
+* [33m903a988[m Add function to clear all active user sessions and force re-login
+* [33mec77a30[m Add a tool to remove all active user sessions for testing purposes
+* [33mc7017ce[m Improve data handling on applicant portal for better data consistency
+* [33m995cef6[m Improve applicant data loading and display errors more effectively
+* [33m3837240[m Load applicant data to populate profile information on their portal page
+* [33m4e50005[m Improve loading experience with error handling in the applicant portal
+* [33m6cd13d0[m Improve user authentication process and ensure session persistence
+* [33mcdbcb48[m Include applicant messages when retrieving applicant information from database
+* [33m05b1043[m Add a test page to allow applicants to try out the system
+* [33m5f53f9c[m Show all job applicants in a table on a test page for easy viewing
+* [33m681fdc2[m Display applicant data directly from the database for testing purposes
+* [33m05fab76[m Improve applicant document handling for better data consistency and reliability
+* [33m3b2170e[m Enable uploading and managing documents for job applicants profiles
+* [33m8292eb8[m Add system for applicants to upload and manage their important documents
+* [33m8ad85a8[m Enable storage of applicant documents for streamlined application management
+* [33m15c8038[m Improve menu button visibility and navigation across devices
+* [33m96ec1d5[m Restore admin login functionality and redirect users to the dashboard
+* [33m0ee49d6[m Restored to '6f46bb17313862688945b6791e6d71ce0f4c227e'
+* [33mae757bb[m Checkpoint before revert
+* [33m8dbe6d3[m Restored to '6f46bb17313862688945b6791e6d71ce0f4c227e'
+* [33m14e8586[m Checkpoint before revert
+* [33mad3fa33[m Restored to '7566d736a255daf590c822fff2ec96b560a00402'
+* [33mcca76b5[m Checkpoint before revert
+* [33m863e84f[m Restored to '7566d736a255daf590c822fff2ec96b560a00402'
+* [33m49ade78[m Checkpoint before revert
+* [33m6063fb0[m Restored to 'e76022fd02b65fd3aa22c446b5093ce185b2b758'
+* [33me91306b[m Checkpoint before revert
+* [33m98015d1[m Restored to '4ca09bb726172713391e7e090c7eca128946d790'
+* [33med1f4f8[m Checkpoint before revert
+* [33m02a474f[m Refactor applicant portal to display basic profile information
+* [33m02991a3[m Improve login reliability and handle issues where user sessions get stuck
+* [33ma922c8d[m Improve the display of applicant information and interface elements
+* [33mfe168b9[m Refactor applicant document display for clarity and improved function
+* [33mdfa8ef1[m Enhance applicant portal by displaying user details and managing documents
+* [33m44e3c11[m Improve data handling and navigation after login across the entire platform
+* [33mb126486[m Improve login process to handle user credentials more efficiently
+* [33m779ea6b[m Clear user session data completely to prevent persistent login issues
+* [33mebca447[m Ensure session data is cleared to avoid potential issues in applicant portal
+* [33m4ca09bb[m Signal successful operation and trigger continuous integration build process
+* [33me76022f[m Improve applicant portal error handling and logging for message updates
+* [33m87b0528[m Improve user session validation and error handling for applicant data
+* [33m43cef81[m Clarify role of in-memory storage and avoid unexpected data access
+* [33m7566d73[m Improve applicant retrieval process for individual user accounts
+* [33mfdd9d61[m Improve the stability and reliability of underlying system infrastructure
+* [33m45e60d9[m Improve portal loading times and stability during data processing
+* [33mdf679bf[m Document intentional empty commit to trigger a specific build process
+* [33m8882710[m Improve loading applicant data and provide detailed debugging information
+* [33m6f46bb1[m Fix loading error preventing applicants from seeing profile information
+* [33m2e83f37[m Investigate and resolve loading issues occurring after user login
+* [33m9402695[m Improve the process of logging out to be more reliable and complete
+* [33m020f63f[m Improve user experience by displaying feedback messages during login
+* [33mfdfc95f[m Add logout functionality to applicant portal with a clear visual button
+* [33m3d3d980[m Improve applicant profile view and add new portal page with document upload
+* [33m4e04dcc[m Improve fetching of applicant data and handle potential errors
+* [33m2c0f546[m Improve applicant data retrieval and document handling for reliability
+* [33mc37825c[m Ensure applicants are directed to their dedicated portal upon login
+* [33m17a0a1c[m Improve user logout and login flows with enhanced error handling
+* [33m4bf270b[m Improve user login reliability and provide informative feedback
+* [33mf0a4112[m Improve user login process for more reliable authentication and session handling
+* [33m748bf0c[m Add debug form to login page and improve server login handling
+* [33m6b68f11[m Add detailed debugging to login process to diagnose failure
+* [33mbf6a7a1[m Improve logout process to securely invalidate user sessions and cookies
+* [33mc191e8d[m Improve user authentication process and session management security
+* [33m3bd0463[m Improve authentication status checks and provide detailed debugging information
+* [33m96863fb[m Allow users to log in using either their username or email address
+* [33m519ba0f[m Improve user login process by tracking credentials and session data
+* [33mfb98d85[m Update user session to improve login tracking across the platform
+* [33mc6465e5[m Initialize core platform architecture for hospitality management system
+* [33me8266a6[m Improve the display of application documents within the applicant portal
+* [33m01483dc[m Update document management interface making it easier to remove files
+* [33m6312288[m Improve document handling and update status display in applicant portal
+* [33mca26cc5[m Enable applicants to manage their profile and upload documents
+* [33m94d64f0[m Create dedicated space where potential employees can apply for positions
+* [33mbf8687f[m Allow applicants to log in, add a message and upload documents
+* [33mb96a398[m Initialize base project structure with essential configurations
+* [33mbdd0b2a[m Remove outdated information fields from the database for better organization
+* [33mad48a0e[m Improve phone number input with country code selection on registration
+* [33me85c857[m Improve phone number validation and ensure unique codes for each user
+* [33med44292[m Improve user registration by adding phone number formatting and unique codes
+* [33m19d9de9[m Include visual confirmation when users successfully complete an action
+* [33m2c686dc[m Show country flag emojis in the phone number selection component
+* [33mb81b628[m Improve the appearance of country codes in phone number input fields
+* [33m0828d7d[m Restore country flags in phone number selector and keep country codes
+* [33m6d2fce0[m Update the country code selector to display codes instead of flags
+* [33m650213f[m Improve the appearance of country codes and flags in the phone number input
+* [33m05e1052[m Update the username example shown on the registration page
+* [33m54f156e[m Update example location details to reflect Dutch locale more accurately
+* [33mf33f391[m Update sample names and contact information with Dutch equivalents
+* [33m7a36b96[m Update example names to Dutch names in registration and calendar examples
+* [33m1ddb277[m Improve phone number input with country code selection for registration
+* [33m2d54f77[m Store user phone numbers in a more structured and organized format
+* [33m297842f[m Synchronize database structure with application models after recent fixes
+* [33md4daa10[m Restored to 'c458a5a228fdeb0205733d0e3a09e7a991cadebc'
+* [33m31dbea5[m Checkpoint before revert
+* [33ma1adaec[m Define the database structure for users, roles, locations and permissions
+* [33m093891d[m Begin storing phone numbers with country codes during sign-up process
+* [33m3ca7e0f[m Ensure user sessions are correctly stored and managed across the platform
+* [33md26ec7b[m Ensure user sessions are reliably maintained throughout platform use
+* [33m129ec06[m Restored to 'c458a5a228fdeb0205733d0e3a09e7a991cadebc'
+* [33me963040[m Checkpoint before revert
+* [33m4a6c6cd[m Restored to 'c458a5a228fdeb0205733d0e3a09e7a991cadebc'
+* [33mb302a7b[m Checkpoint before revert
+* [33me3f57b9[m Restored to 'c458a5a228fdeb0205733d0e3a09e7a991cadebc'
+* [33md58126b[m Checkpoint before revert
+* [33mdc8c595[m Restored to 'c458a5a228fdeb0205733d0e3a09e7a991cadebc'
+* [33mf1cfd2e[m Checkpoint before revert
+* [33m1ed1a4b[m Restored to '9398bfdd56be9f499e83c71dda76be8d914040f3'
+* [33m6050168[m Checkpoint before revert
+* [33m8499094[m Improve navigation after registration and ensure user data is passed correctly
+* [33mcd2a1cf[m Improve user registration and streamline the post-registration redirect
+* [33mdc83180[m Initialize project structure for the hospitality management platform
+* [33m9398bfd[m Improve navigation and streamline access to key features on the sidebar
+* [33mc458a5a[m Guide new users to the success page after registering on the platform
+* [33m20a044a[m Show a confirmation page after registration and automatically redirect to login
+* [33ma6745b5[m Improve user registration by combining phone number and country code
+* [33m03a9aab[m Guide users to a success page after registration, with account details
+* [33m6a06bbd[m Show a confirmation page after successful user registration
+* [33m0caeb19[m Give users immediate feedback when passwords do not match on sign-up
+* [33m72e2efd[m Prevent premature page redirection after user registration attempt
+* [33ma638ac6[m Set the default country code to the Netherlands in the phone number selector
+* [33m861dbf5[m Improve phone number input with country codes for easy WhatsApp contact
+* [33m76e8e4b[m Improve phone number input during registration with country code selection
+* [33mf1ace76[m Require users to select their country code when registering
+* [33m1abd69b[m Improve user registration process and fix form submission issues
+* [33md0341ca[m Improve user registration form with password confirmation and validation
+* [33m5d21531[m Improve website navigation to guide users to the appropriate page
+* [33mff9dd7e[m Improve the way users navigate the application based on login status
+* [33mf77c8c5[m Show the login page directly when users are not signed in properly
+* [33m8905f29[m Enable unauthenticated users to access the login and registration pages
+* [33m1f923c7[m Give every new user full access to the system during initial setup
+* [33m35325be[m Establish the basic structure for managing locations, roles and permissions
+* [33m87d30c6[m Update the application's name across the entire user interface
+* [33m4b2fae3[m Add company branding and update name for consistent branding across platform
+* [33m8c35947[m Rename application to crewe.nl and add footer with copyright information
+* [33mcfca451[m Enhance the registration process with improved error handling and design
+* [33mc8502f8[m Improve user registration by collecting first and last names separately
+* [33mee8eceb[m Update user profiles with first name, last name, and contact number
+* [33mc4aab88[m Keep user session active while navigating to different areas of the site
+* [33m0eb74d8[m Make logging out more reliable in both the header and mobile navigation
+* [33mefb7946[m Prevent automatic re-login after logout for a better user experience
+* [33m5a28f65[m Enhance session management with PostgreSQL for increased reliability
+* [33md4345b5[m Display a basic calendar view for staff scheduling over the next three weeks
+* [33ma68d802[m Add a basic calendar view to scheduling for manager-level staff
+* [33m98155bf[m Improve website appearance by adding more color shades for visual elements
+* [33mb05d0a5[m Change the sidebar background color to match the primary theme
+* [33m9c6ad4a[m Allow all users to see the management pages for debugging purposes
+* [33mee9ac28[m Ensure accurate user roles and permissions throughout the application
+* [33m857814d[m Add extra utilities and restore essential features to the platform
+* [33mab000b8[m Improve the sidebar's look and feel with new colors for better navigation
+* [33m65fd22e[m Improve the sidebar's visual appearance for enhanced user interface experience
+* [33m803ac57[m Improve the visibility of selected items in the sidebar navigation
+* [33mc5c85d4[m Improve sidebar visibility by updating the background and border colors
+* [33m61bfb37[m Implement reliable logout process that redirects users to the login screen
+* [33m7eeec77[m Ensure users are properly logged in before accessing secure parts of the site
+* [33m1dc6720[m Implement simplified login for faster access during development
+* [33m1d3943c[m Implement quick login button for testing purposes and bypass login screen
+* [33m966cffb[m Improve user login process by adding debug information and error handling
+* [33mfdd0630[m Implement automatic login for easier development environment access
+* [33m1ee7b26[m Improve the way users log in by using newer web request technologies
+* [33m8b5fb88[m Investigate user login behavior using alternative request method and logging
+* [33m004e03a[m Improve login error handling and provide detailed request logs
+* [33m89dc400[m Investigate persistent login failures despite repeated attempts
+* [33m6c220cf[m Restored to '45bf73d4cd924b5c340abf7492a3faf4aee979c0'
+* [33m9c70239[m Checkpoint before revert
+* [33mb9eefac[m Improve authentication checks and login process for enhanced reliability
+* [33m3d7c63e[m Improve user login process by checking authentication status more reliably
+* [33mc4ab32e[m Improve user login reliability by updating session storage mechanism
+* [33m2856559[m Improve user login process for better cookie and session management
+* [33ma9ed719[m Improve user login process to ensure session persistence and reliability
+* [33mb3b0000[m Improve session handling by storing user data in the database
+* [33m2bd5285[m Add enhanced logging to help troubleshoot user login problems
+* [33m4be4e63[m Improve security by ensuring users are logged in during authentication
+* [33mdfa76f4[m Restored to '45bf73d4cd924b5c340abf7492a3faf4aee979c0'
+* [33m458d889[m Checkpoint before revert
+* [33m6d0b93e[m Restored to '45bf73d4cd924b5c340abf7492a3faf4aee979c0'
+* [33mba52705[m Checkpoint before revert
+* [33m5fa5a57[m Improve login security by ensuring users are properly authenticated
+* [33m9d47c37[m Improve user login reliability and address session management problems
+* [33m6139f65[m Improve communication between the front end and back end during login
+* [33m5bc6a68[m Investigate and address persistent login failures across the platform
+* [33mf71f3a5[m Restored to '45bf73d4cd924b5c340abf7492a3faf4aee979c0'
+* [33m5ae070b[m Checkpoint before revert
+* [33m1cef7fd[m Enable users to log in and access the platform securely using Replit accounts
+* [33m6b7129e[m Improve user login security and session management on the platform
+* [33mc8fc3a4[m Ensure user sessions are immediately validated upon successful login
+* [33m45d3500[m Improve login reliability and provide more informative server-side logging
+* [33ma4e1b17[m Add automated setup for initial administrator account during platform launch
+* [33mbc73313[m Improve login verification and keep users logged in while active
+* [33m4843609[m Track user login status throughout the application's active session
+* [33m7613e4e[m Improve user interface with new color scheme and add location management
+* [33me9daeb1[m Improve sidebar appearance and visibility with new color scheme
+* [33m45bf73d[m Improve loading screen experience by navigating users to login faster
+* [33m1a27a63[m Simplify the loading screen display for a cleaner user experience
+* [33m4174db3[m Ensure the login page displays correctly when users are not signed in
+* [33ma6d0bbc[m Improve user login process and ensure up-to-date authentication status
+* [33m6d963a6[m Improve loading screen and address authentication issues with forced refresh
+* [33m01d67d4[m Improve user login and logout process, addressing session management issues
+* [33m6824ad9[m Improve user login and logout process with enhanced session management
+* [33mea8d040[m Show the authentication status of users while the application is starting up
+* [33mb5bca3e[m Improve session handling to ensure users are properly authenticated
+* [33m6edf732[m Add a way to check if the user's login session is still active
+* [33m2cf4447[m Improve user login process with better error handling and admin bypass
+* [33m8325c74[m Restructure application routes into dedicated files for better organization
+* [33md59beae[m Organize authentication routes into dedicated module for better structure
+* [33meff8dac[m Update the sign up link on the login page to navigate correctly
+* [33ma8ef94b[m Improve login page appearance and track component mounting for debugging
+* [33m4ae2c17[m Implement user login and registration system with file upload support
+* [33ma54a8ae[m Store and retrieve company data in a structured database
+* [33m629fb58[m Improve access control by adding role-based permissions to key functions
+* [33m9671e69[m Improve login process with loading states, feedback, and data handling
+* [33m726ae2c[m Investigate and resolve the application hang during initial loading
+* [33m11ca05f[m Update navigation to ensure users can move between different scheduling views
+* [33me26a8c9[m Improve navigation and file handling across the hospitality platform
+* [33m9c8e442[m Set up core platform features and initial project structure
+* [33m881d382[m Started building your app
+* [33mcee7318[m Initial commit
+* [33mae462b6[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Initial commit

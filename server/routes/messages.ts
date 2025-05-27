@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 
     // Build query conditions
     let whereConditions;
-    
+
     if (query.applicantId) {
       // Get messages for specific applicant (user must own the applicant record)
       whereConditions = and(
@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
     if (query.messageType) {
       whereConditions = and(whereConditions, eq(messages.messageType, query.messageType));
     }
-    
+
     if (query.isPrivate !== undefined) {
       whereConditions = and(whereConditions, eq(messages.isPrivate, query.isPrivate));
     }
@@ -66,7 +66,7 @@ router.get('/', async (req, res) => {
       .limit(query.limit);
 
     console.log(`Fetched ${userMessages.length} messages for user ${userId}${query.applicantId ? ` (applicant: ${query.applicantId})` : ''}`);
-    
+
     res.json(userMessages);
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -112,18 +112,18 @@ router.post('/', async (req, res) => {
       .returning();
 
     console.log(`Created message ${newMessage.id} for user ${userId}${messageData.applicantId ? ` (applicant: ${messageData.applicantId})` : ''}`);
-    
+
     res.status(201).json(newMessage);
   } catch (error) {
     console.error('Error creating message:', error);
-    
+
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
         error: 'Validation failed', 
         details: error.errors 
       });
     }
-    
+
     res.status(500).json({ error: 'Failed to create message' });
   }
 });
