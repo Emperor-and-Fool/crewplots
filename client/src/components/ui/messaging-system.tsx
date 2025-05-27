@@ -1,67 +1,19 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User } from 'lucide-react';
+import { MessageCircle, Send, Bold, Italic, Smile } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
-import type { Message, InsertMessage } from '@shared/schema';
+import type { Message } from '@shared/schema';
 
-// Message form validation schema with extensible features
-const messageFormSchema = z.object({
-  content: z.string()
-    .min(1, 'Message content is required')
-    .max(1000, 'Message must be less than 1000 characters'),
-  messageType: z.enum(['text', 'rich-text', 'system', 'notification']).default('text'),
-  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
-  isPrivate: z.boolean().default(false),
-  applicantId: z.number().optional(), // For applicant-specific messages
-});
-
-type MessageFormData = z.infer<typeof messageFormSchema>;
-
-// Extensible props interface for future customization
 interface MessagingSystemProps {
-  // Core configuration
-  userId: number;
-  applicantId?: number; // Optional - for applicant-specific messages
-  
-  // UI customization
-  title?: string;
-  placeholder?: string;
-  showPriority?: boolean;
-  showPrivateToggle?: boolean;
-  showMessageTypes?: boolean;
-  maxHeight?: string;
-  
-  // Feature toggles for future extensibility
-  enableRichText?: boolean;
-  enableFileAttachments?: boolean;
-  enableEmoji?: boolean;
-  enableMarkdown?: boolean;
-  
-  // Filtering and display options
-  showOnlyUserMessages?: boolean;
-  showSystemMessages?: boolean;
-  allowMessageDeletion?: boolean;
-  
-  // Event handlers
-  onMessageSent?: (message: Message) => void;
-  onMessageClick?: (message: Message) => void;
-  
-  // Custom styling
-  className?: string;
-  compactMode?: boolean;
+  applicantId: number;
+  currentUserId: number;
+  messages: Message[];
+  onMessageSave: (content: string) => void;
 }
 
 // Priority badge styling
