@@ -1,7 +1,8 @@
 import React from 'react';
+import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/contexts/profile-context';
-import { MessagingSystem } from '@/components/ui/messaging-system';
 
 import { 
   Card, 
@@ -10,21 +11,66 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
+import MessagingSystem from '@/components/ui/messaging-system';
+
+// Interface already defined in profile-context.tsx - no need to duplicate
 
 function ApplicantPortal() {
-  const { user } = useAuth();
-  const { profile, isLoading: profileLoading, error: profileError } = useProfile();
-  
-  const isProfileError = !profile && !profileLoading && profileError;
-  
+  const { user, isLoading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
 
+  // Redirect if not authenticated or not an applicant
+  const isAuthenticated = !!user;
+  const isApplicant = user?.role === 'applicant';
+
+  React.useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !isApplicant)) {
+      toast({
+        title: "Access Denied",
+        description: "You must be logged in as an applicant to view this page.",
+        variant: "destructive"
+      });
+      navigate('/login');
+    }
+  }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
+
+  // Now using persistent profile context - no more null states!
+  const isProfileError = !profile && !profileLoading && profileError;
+
+  // Documents system removed - was causing API cascade failures
+
+  // All applicants debug query removed - not needed for profile view
+
+  // Timeout detection removed - ProfileProvider handles loading efficiently
+
+  // Removed redundant refresh mechanism since ProfileProvider handles data persistence
+
+  // Retry function removed - ProfileProvider handles loading efficiently
+
+  // All ghost timeout detection completely removed
+
+  // Simplified debug logging - only profile
+  React.useEffect(() => {
+    if (isProfileError) {
+      console.error("Error loading profile:", profileError);
+    }
+    if (profile) {
+      console.log("Profile data loaded:", profile);
+    }
+  }, [profile, isProfileError, profileError]);
+
+  // Ghost timeout warning completely removed - ProfileProvider handles loading efficiently
 
   // Handle profile API errors only
   if (isProfileError) {
     const errorMessage = profileError?.message || 'Unknown error';
-    
+
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
@@ -52,6 +98,11 @@ function ApplicantPortal() {
         <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
           <div className="h-full bg-primary animate-pulse"></div>
         </div>
+        {/* Debug info */}
+        <div className="mt-8 text-xs text-gray-500">
+          <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+          <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
+        </div>
       </div>
     );
   }
@@ -66,8 +117,6 @@ function ApplicantPortal() {
         return 'bg-blue-100 text-blue-800';
       case 'interviewed':
         return 'bg-blue-500 text-white';
-      case 'short-listed':
-        return 'bg-green-100 text-green-800';
       case 'hired':
         return 'bg-green-500 text-white';
       case 'rejected':
@@ -91,7 +140,7 @@ function ApplicantPortal() {
           </Button>
         </div>
       </div>
-      
+
       <Card className="mb-8">
         <CardHeader className="pb-2">
           <CardTitle>Your Application</CardTitle>
@@ -127,7 +176,7 @@ function ApplicantPortal() {
                   <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-              
+
               <div className="pt-4 border-t">
                 <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
                 {profile.extraMessage ? (
@@ -144,64 +193,43 @@ function ApplicantPortal() {
           )}
         </CardContent>
       </Card>
-      
-      {/* Message System */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600">
-              Send a message to the recruiting team
-            </div>
-            
-            {/* Basic formatting toolbar */}
-            <div className="flex gap-2 border-b pb-2">
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Bold">
-                <strong>B</strong>
-              </button>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Italic">
-                <em>I</em>
-              </button>
-              <div className="border-l mx-2"></div>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Happy">
-                😊
-              </button>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Thumbs up">
-                👍
-              </button>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Heart">
-                ❤️
-              </button>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Celebration">
-                🎉
-              </button>
-              <button className="px-2 py-1 text-sm border rounded hover:bg-gray-100" title="Thinking">
-                🤔
-              </button>
-            </div>
-            
-            {/* Expandable textarea */}
-            <div className="space-y-2">
-              <textarea
-                placeholder="Type your message here..."
-                className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                style={{ lineHeight: '1.5' }}
-              />
-              <div className="flex justify-between items-center">
-                <div className="text-xs text-gray-400">
-                  Supports basic markdown: **bold**, *italic*
-                </div>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                  Send Message
-                </button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
+
+      {/* NEW: Reusable Messaging System */}
+      {user && profile && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Communication Center
+            </CardTitle>
+            <CardDescription>
+              Send messages and communicate about your application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MessagingSystem
+              userId={user.id}
+              applicantId={profile.id}
+              title="Application Messages"
+              placeholder="Type your message about your application..."
+              showPriority={true}
+              showPrivateToggle={false}
+              maxHeight="300px"
+              compactMode={false}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Message sent successfully!",
+                  description: "Your message has been recorded and will be reviewed.",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Documents section removed - was causing API cascade issues */}
-      
-      {/* Debug section - only visible in development */}
+
+      {/* Debug section simplified - only profile data */}
       {process.env.NODE_ENV !== 'production' && (
         <Card>
           <CardHeader>
@@ -218,7 +246,6 @@ function ApplicantPortal() {
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }
