@@ -1,103 +1,200 @@
 import { Router } from 'express';
+import { eq, and, desc, or } from 'drizzle-orm';
 import { z } from 'zod';
-import { fromZodError } from 'zod-validation-error';
-import { storage } from '../storage';
-import { insertMessageSchema, type Message } from '@shared/schema';
+import { db } from '../db';
+import { messages, insertMessageSchema } from '@shared/schema';
+import type { InsertMessage, Message } from '@shared/schema';
 
 const router = Router();
 
-// Authentication middleware to ensure user is logged in
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.user || !req.user.id) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
+// Validation schemas
+const createMessageSchema = insertMessageSchema.extend({
+  content: z.string().min(1).max(1000),
+});
 
-// Get messages for a user or applicant
-router.get('/:identifier?', requireAuth, async (req: any, res) => {
+const getMessagesQuerySchema = z.object({
+  applicantId: z.string().optional().transform(val => val ? parseInt(val) : undefined),
+  messageType: z.enum(['text', 'rich-text', 'system', 'notification']).optional(),
+  isPrivate: z.enum(['true', 'false']).optional().transform(val => val === 'true'),
+  limit: z.string().optional().transform(val => val ? parseInt(val) : 50),
+});
+
+// GET /api/messages - Fetch messages for user or applicant
+router.get('/', async (req, res) => {
   try {
-    const identifier = req.params.identifier;
-    const userId = req.user.id;
-    
-    let messages: Message[];
-    
-    if (identifier && !isNaN(Number(identifier))) {
-      // If identifier is provided and is a number, treat it as applicantId
-      const applicantId = Number(identifier);
-      messages = await storage.getMessagesByApplicant(applicantId);
-    } else {
-      // Otherwise get messages for the current user
-      messages = await storage.getMessagesByUser(userId);
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    res.json(messages);
+
+    const query = getMessagesQuerySchema.parse(req.query);
+    const userId = (req.user as any).id;
+
+    // Build query conditions
+    let whereConditions;
+
+    if (query.applicantId) {
+      // Get messages for specific applicant (user must own the applicant record)
+      whereConditions = and(
+        eq(messages.applicantId, query.applicantId),
+        or(
+          eq(messages.userId, userId),
+          eq(messages.isPrivate, false) // Include non-private messages from others
+        )
+      );
+    } else {
+      // Get user's general messages
+      whereConditions = and(
+        eq(messages.userId, userId),
+        eq(messages.applicantId, null) // Only non-applicant-specific messages
+      );
+    }
+
+    // Apply additional filters
+    if (query.messageType) {
+      whereConditions = and(whereConditions, eq(messages.messageType, query.messageType));
+    }
+
+    if (query.isPrivate !== undefined) {
+      whereConditions = and(whereConditions, eq(messages.isPrivate, query.isPrivate));
+    }
+
+    const userMessages = await db
+      .select()
+      .from(messages)
+      .where(whereConditions)
+      .orderBy(desc(messages.createdAt))
+      .limit(query.limit);
+
+    console.log(`Fetched ${userMessages.length} messages for user ${userId}${query.applicantId ? ` (applicant: ${query.applicantId})` : ''}`);
+
+    res.json(userMessages);
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
 
-// Create a new message
-router.post('/', requireAuth, async (req: any, res) => {
+// POST /api/messages - Create a new message
+router.post('/', async (req, res) => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const validatedData = createMessageSchema.parse(req.body);
     const userId = req.user.id;
-    
-    // Validate the request body
-    const messageData = insertMessageSchema.parse({
-      ...req.body,
-      userId, // Ensure userId comes from authenticated user
-    });
-    
-    // Validate applicantId if provided
+
+    // Ensure the message is associated with the authenticated user
+    const messageData: InsertMessage = {
+      ...validatedData,
+      userId, // Override with authenticated user ID
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Validate applicant ownership if applicantId is provided
     if (messageData.applicantId) {
-      const applicant = await storage.getApplicant(messageData.applicantId);
-      if (!applicant) {
-        return res.status(404).json({ error: 'Applicant not found' });
+      const applicantCheck = await db.query.applicants.findFirst({
+        where: and(
+          eq(db.query.applicants.id, messageData.applicantId),
+          eq(db.query.applicants.userId, userId)
+        ),
+      });
+
+      if (!applicantCheck) {
+        return res.status(403).json({ error: 'Access denied: Applicant not found or unauthorized' });
       }
     }
-    
-    // Create the message
-    const message = await storage.createMessage(messageData);
-    
-    res.status(201).json(message);
+
+    const [newMessage] = await db
+      .insert(messages)
+      .values(messageData)
+      .returning();
+
+    console.log(`Created message ${newMessage.id} for user ${userId}${messageData.applicantId ? ` (applicant: ${messageData.applicantId})` : ''}`);
+
+    res.status(201).json(newMessage);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const validationError = fromZodError(error);
-      return res.status(400).json({ error: validationError.message });
-    }
-    
     console.error('Error creating message:', error);
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      });
+    }
+
     res.status(500).json({ error: 'Failed to create message' });
   }
 });
 
-// Mark message as read
-router.patch('/:messageId/read', requireAuth, async (req: any, res) => {
+// GET /api/messages/:id - Get specific message
+router.get('/:id', async (req, res) => {
   try {
-    const messageId = Number(req.params.messageId);
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const messageId = parseInt(req.params.id);
     const userId = req.user.id;
-    
+
     if (isNaN(messageId)) {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
-    
-    // Get the message to verify ownership/access
-    const message = await storage.getMessage(messageId);
+
+    const message = await db.query.messages.findFirst({
+      where: and(
+        eq(messages.id, messageId),
+        or(
+          eq(messages.userId, userId),
+          eq(messages.isPrivate, false) // Allow access to non-private messages
+        )
+      ),
+    });
+
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
     }
-    
-    // Only allow marking as read if user has access to the message
-    const hasAccess = message.userId === userId || 
-                     (message.applicantId && await storage.userHasAccessToApplicant(userId, message.applicantId));
-    
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+
+    res.json(message);
+  } catch (error) {
+    console.error('Error fetching message:', error);
+    res.status(500).json({ error: 'Failed to fetch message' });
+  }
+});
+
+// PUT /api/messages/:id/read - Mark message as read
+router.put('/:id/read', async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    const updatedMessage = await storage.updateMessage(messageId, { isRead: true });
-    
+
+    const messageId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(messageId)) {
+      return res.status(400).json({ error: 'Invalid message ID' });
+    }
+
+    // Only allow users to mark their own messages as read
+    const [updatedMessage] = await db
+      .update(messages)
+      .set({ 
+        isRead: true, 
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(messages.id, messageId),
+        eq(messages.userId, userId)
+      ))
+      .returning();
+
+    if (!updatedMessage) {
+      return res.status(404).json({ error: 'Message not found or unauthorized' });
+    }
+
+    console.log(`Marked message ${messageId} as read for user ${userId}`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error marking message as read:', error);
@@ -105,30 +202,35 @@ router.patch('/:messageId/read', requireAuth, async (req: any, res) => {
   }
 });
 
-// Delete a message (if allowed)
-router.delete('/:messageId', requireAuth, async (req: any, res) => {
+// DELETE /api/messages/:id - Delete message (optional feature)
+router.delete('/:id', async (req, res) => {
   try {
-    const messageId = Number(req.params.messageId);
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const messageId = parseInt(req.params.id);
     const userId = req.user.id;
-    
+
     if (isNaN(messageId)) {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
-    
-    // Get the message to verify ownership
-    const message = await storage.getMessage(messageId);
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
+
+    // Only allow users to delete their own messages
+    const [deletedMessage] = await db
+      .delete(messages)
+      .where(and(
+        eq(messages.id, messageId),
+        eq(messages.userId, userId)
+      ))
+      .returning();
+
+    if (!deletedMessage) {
+      return res.status(404).json({ error: 'Message not found or unauthorized' });
     }
-    
-    // Only allow deletion by message owner
-    if (message.userId !== userId) {
-      return res.status(403).json({ error: 'Only message author can delete messages' });
-    }
-    
-    await storage.deleteMessage(messageId);
-    
-    res.json({ success: true });
+
+    console.log(`Deleted message ${messageId} for user ${userId}`);
+    res.json({ success: true, message: 'Message deleted' });
   } catch (error) {
     console.error('Error deleting message:', error);
     res.status(500).json({ error: 'Failed to delete message' });
