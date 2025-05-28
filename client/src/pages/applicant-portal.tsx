@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import MessagingSystem from '@/components/ui/messaging-system';
 
 // Interface already defined in profile-context.tsx - no need to duplicate
 
@@ -184,26 +185,27 @@ function ApplicantPortal() {
                 )}
               </div>
 
-              {/* Simple message form for applicants */}
-              <div className="pt-4 border-t">
-                <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                <div className="space-y-2">
-                  <textarea
-                    className="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
+              {/* Messaging system for applicants */}
+              {user && profile && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
+                  <MessagingSystem
+                    userId={user.id}
+                    applicantId={profile.id}
                     placeholder="Type your message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    showPriority={false}
+                    showPrivateToggle={false}
+                    compactMode={true}
+                    maxHeight="120px"
+                    onMessageSent={(message) => {
+                      toast({
+                        title: "Message sent",
+                        description: "Your message has been recorded.",
+                      });
+                    }}
                   />
-                  <Button 
-                    size="sm" 
-                    className="bg-blue-600 hover:bg-blue-700"
-                    disabled={!message.trim() || isSubmitting}
-                  >
-                    {isSubmitting ? 'Sending...' : 'Send Message'}
-                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="py-4">
