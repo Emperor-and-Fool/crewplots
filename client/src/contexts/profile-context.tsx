@@ -53,7 +53,7 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
 
   // Always fetch fresh profile data to ensure status is up-to-date
   useEffect(() => {
-    console.log('ProfileProvider: Fetching fresh profile from server');
+    console.log('ProfileScraperInit: Fetching fresh profile from server');
     fetchProfile();
   }, [fetchProfile]);
 

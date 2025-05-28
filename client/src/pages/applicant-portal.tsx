@@ -49,9 +49,9 @@ function ApplicantPortal() {
 
   // Documents system removed - was causing API cascade failures
   // All applicants debug query removed - not needed for profile view
-  // Timeout detection removed - ProfileProvider handles loading efficiently
-  // Removed redundant refresh mechanism since ProfileProvider handles data persistence
-  // Retry function removed - ProfileProvider handles loading efficiently
+  // Timeout detection removed - ProfileScraperInit handles loading efficiently
+  // Removed redundant refresh mechanism since ProfileScraperInit handles data persistence
+  // Retry function removed - ProfileScraperInit handles loading efficiently
   // All ghost timeout detection completely removed
   // Simplified debug logging - only profile
 
@@ -64,7 +64,7 @@ function ApplicantPortal() {
     }
   }, [profile, isProfileError, profileError]);
 
-  // Ghost timeout warning completely removed - ProfileProvider handles loading efficiently
+  // Ghost timeout warning completely removed - ProfileScraperInit handles loading efficiently
 
   // Handle profile API errors only
   if (isProfileError) {

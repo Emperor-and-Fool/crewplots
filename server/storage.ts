@@ -1204,23 +1204,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicants(): Promise<Applicant[]> {
+  async getApplicants(): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants);
+      // Get all users with applicant role from the unified users table
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'));
       
       return result;
     } catch (error) {
