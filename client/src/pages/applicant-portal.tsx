@@ -183,7 +183,7 @@ function ApplicantPortal() {
               </div>
 
               {/* Simple message form for applicants */}
-              {user && (
+              {user && profile && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
                   <MessagingSystem
