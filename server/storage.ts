@@ -485,36 +485,37 @@ export class MemStorage implements IStorage {
     return this.staffCompetencies.delete(id);
   }
 
-  // Applicants
-  async getApplicant(id: number): Promise<Applicant | undefined> {
-    return this.applicants.get(id);
+  // Applicants (using unified users table approach)
+  async getApplicant(id: number): Promise<User | undefined> {
+    return this.users.find(user => user.id === id && user.role === 'applicant');
   }
 
-  async getApplicants(): Promise<Applicant[]> {
-    return Array.from(this.applicants.values());
+  async getApplicants(): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant');
   }
 
-  async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(applicant => applicant.locationId === locationId);
+  async getApplicantsByLocation(locationId: number): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant' && user.locationId === locationId);
   }
 
-  async getApplicantsByStatus(status: string): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(applicant => applicant.status === status);
+  async getApplicantsByStatus(status: string): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant' && user.status === status);
   }
 
-  async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
-    const newApplicant: Applicant = {
-      id: this.currentApplicantId++,
+  async createApplicant(applicant: InsertUser): Promise<User> {
+    const newApplicant: User = {
+      id: this.currentUserId++,
       createdAt: new Date(),
+      role: 'applicant',
       ...applicant
     };
-    this.applicants.set(newApplicant.id, newApplicant);
+    this.users.push(newApplicant);
     return newApplicant;
   }
 
-  async updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined> {
-    const existingApplicant = this.applicants.get(id);
-    if (!existingApplicant) {
+  async updateApplicant(id: number, applicant: Partial<InsertUser>): Promise<User | undefined> {
+    const existingApplicantIndex = this.users.findIndex(user => user.id === id && user.role === 'applicant');
+    if (existingApplicantIndex === -1) {
       return undefined;
     }
 
@@ -1179,23 +1180,12 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Applicants
-  async getApplicant(id: number): Promise<Applicant | undefined> {
+  // Applicants (now using unified users table)
+  async getApplicant(id: number): Promise<User | undefined> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const [applicant] = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.id, id));
+      const [applicant] = await db.select()
+        .from(users)
+        .where(and(eq(users.id, id), eq(users.role, 'applicant')));
       
       return applicant;
     } catch (error) {
