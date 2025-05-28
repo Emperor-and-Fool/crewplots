@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
 import { 
@@ -11,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@shared/schema";
+import { useDashboard } from "@/contexts/dashboard-context";
 
 interface ApplicantsSummaryProps {
   locationId?: number;

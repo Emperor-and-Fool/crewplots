@@ -22,6 +22,7 @@ import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
 import redisRoutes from './routes/redis';
 import messagesRoutes from './routes/messages';
+import dashboardRoutes from './routes/dashboard';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -238,6 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/applicant-portal', applicantPortalRoutes);
   app.use('/api/redis', redisRoutes);
   app.use('/api/messages', messagesRoutes);
+  app.use('/api', dashboardRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
