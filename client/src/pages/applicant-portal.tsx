@@ -183,24 +183,26 @@ function ApplicantPortal() {
               </div>
 
               {/* Simple message form for applicants */}
-              <div className="pt-4 border-t">
-                <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                <MessagingSystem
-                  userId={user.id}
-                  applicantId={profile.id}
-                  placeholder="Type your message..."
-                  showPriority={false}
-                  showPrivateToggle={false}
-                  compactMode={true}
-                  maxHeight="120px"
-                  onMessageSent={(message) => {
-                    toast({
-                      title: "Message sent",
-                      description: "Your message has been recorded.",
-                    });
-                  }}
-                />
-              </div>
+              {user && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
+                  <MessagingSystem
+                    userId={user.id}
+                    applicantId={profile.id}
+                    placeholder="Type your message..."
+                    showPriority={false}
+                    showPrivateToggle={false}
+                    compactMode={true}
+                    maxHeight="120px"
+                    onMessageSent={(message) => {
+                      toast({
+                        title: "Message sent",
+                        description: "Your message has been recorded.",
+                      });
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-4">
