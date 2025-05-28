@@ -121,7 +121,19 @@ export function MessagingSystem({
 
   // Fetch messages query
   const { data: messages = [], isLoading, error } = useQuery<Message[]>({
-    queryKey: receiverId ? ['/api/messages', receiverId] : ['/api/messages', userId],
+    queryKey: receiverId ? ['/api/messages', 'receiver', receiverId] : ['/api/messages', 'user', userId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (receiverId) {
+        params.append('receiverId', receiverId.toString());
+      }
+      
+      const response = await fetch(`/api/messages?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: !!userId,
   });
 
@@ -155,7 +167,7 @@ export function MessagingSystem({
     onSuccess: (newMessage) => {
       // Invalidate and refetch messages
       queryClient.invalidateQueries({
-        queryKey: receiverId ? ['/api/messages', receiverId] : ['/api/messages', userId],
+        queryKey: receiverId ? ['/api/messages', 'receiver', receiverId] : ['/api/messages', 'user', userId],
       });
       
       // Reset form
