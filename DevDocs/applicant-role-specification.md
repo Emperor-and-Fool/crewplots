@@ -57,13 +57,11 @@ The applicant role represents users who are applying for positions within the ho
 ## Backend Components
 
 ### ApplicantProfileScanner
-**Purpose**: Handles applicant profile data operations
+**Purpose**: Handles applicant profile data operations (renamed from ProfileProvider)
 **Location**: Backend service layer
 **Key Functions**:
 - Profile data retrieval for applicant users
-- Status updates and workflow transitions
-- Document management operations
-- Application history tracking
+- Same functionality as ProfileProvider, only name changed
 
 ### API Endpoints
 **Base Route**: `/api/applicant-portal/`
