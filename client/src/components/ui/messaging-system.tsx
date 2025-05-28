@@ -143,6 +143,8 @@ export function MessagingSystem({
       return data;
     },
     enabled: !!userId,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
   });
 
   // Create message mutation
