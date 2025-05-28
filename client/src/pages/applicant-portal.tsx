@@ -31,6 +31,7 @@ function ApplicantPortal() {
   // Redirect if not authenticated or not an applicant
   const isAuthenticated = !!user;
   const isApplicant = user?.role === 'applicant';
+  const userId = user?.id;
 
   React.useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isApplicant)) {
