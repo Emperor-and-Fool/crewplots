@@ -186,12 +186,13 @@ function ApplicantPortal() {
                 )}
               </div>
 
-              {/* Messaging system for applicants - always render if user exists */}
-              {user && (
+              {/* Messaging system for applicants - render when userId is available */}
+              {userId && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-4">Communication</p>
                   <MessagingSystem
-                    userId={user.id}
+                    key={`messaging-${userId}`}
+                    userId={userId}
                     title="Application Messages"
                     placeholder="Type your message about your application..."
                     showPriority={false}
