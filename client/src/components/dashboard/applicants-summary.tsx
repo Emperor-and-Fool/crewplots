@@ -39,23 +39,22 @@ const formatRelativeTime = (date: string | Date) => {
 };
 
 export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryProps) {
-  // Fetch applicants, filtered by location if provided
-  const { data: applicants, isLoading } = useQuery<User[]>({
-    queryKey: locationId 
-      ? ['/api/applicants/location', locationId] 
-      : ['/api/applicants'],
-    enabled: true,
-  });
+  // Use unified dashboard context instead of separate API call
+  const { data: dashboardData, isLoading } = useDashboard();
+  
+  // Filter applicants by location if provided, otherwise use all
+  const applicants = dashboardData?.applicants || [];
+  const filteredApplicants = locationId 
+    ? applicants.filter(a => a.locationId === locationId)
+    : applicants;
 
   // Get only the most recent applicants up to the limit
-  const recentApplicants = applicants
-    ? [...applicants]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit)
-    : [];
+  const recentApplicants = [...filteredApplicants]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, limit);
 
-  const totalApplicants = applicants?.length || 0;
-  const newApplicants = applicants?.filter(a => a.status === 'new').length || 0;
+  const totalApplicants = filteredApplicants.length;
+  const newApplicants = filteredApplicants.filter(a => a.status === 'new').length;
 
   if (isLoading) {
     return (
