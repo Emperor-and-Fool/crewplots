@@ -190,7 +190,7 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
 
-      {/* NEW: Reusable Messaging System */}
+      {/* Communication Center - no longer in use
       {user && profile && (
         <Card className="mb-8">
           <CardHeader>
@@ -222,6 +222,7 @@ function ApplicantPortal() {
           </CardContent>
         </Card>
       )}
+      */}
 
       {/* Documents section removed - was causing API cascade issues */}
 
