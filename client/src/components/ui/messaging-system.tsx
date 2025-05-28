@@ -128,11 +128,19 @@ export function MessagingSystem({
         params.append('receiverId', receiverId.toString());
       }
       
-      const response = await fetch(`/api/messages?${params.toString()}`);
+      console.log(`Fetching messages for user ${userId}, receiverId: ${receiverId}`);
+      const response = await fetch(`/api/messages?${params.toString()}`, {
+        credentials: 'include' // Ensure cookies are sent
+      });
+      
       if (!response.ok) {
+        console.error(`Messages API error: ${response.status} - ${response.statusText}`);
         throw new Error(`Failed to fetch messages: ${response.statusText}`);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log(`Received ${data.length} messages:`, data);
+      return data;
     },
     enabled: !!userId,
   });
