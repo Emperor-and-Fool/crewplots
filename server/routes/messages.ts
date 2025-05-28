@@ -32,20 +32,23 @@ router.get('/', async (req, res) => {
     // Build query conditions
     let whereConditions;
 
-    if (query.applicantId) {
-      // Get messages for specific applicant (user must own the applicant record)
+    if (query.receiverId) {
+      // Get messages between user and specific receiver
       whereConditions = and(
-        eq(messages.applicantId, query.applicantId),
+        or(
+          and(eq(messages.userId, userId), eq(messages.receiverId, query.receiverId)),
+          and(eq(messages.userId, query.receiverId), eq(messages.receiverId, userId))
+        ),
         or(
           eq(messages.userId, userId),
           eq(messages.isPrivate, false) // Include non-private messages from others
         )
       );
     } else {
-      // Get user's general messages
-      whereConditions = and(
+      // Get user's general messages (sent or received)
+      whereConditions = or(
         eq(messages.userId, userId),
-        eq(messages.applicantId, null) // Only non-applicant-specific messages
+        eq(messages.receiverId, userId)
       );
     }
 
@@ -65,7 +68,7 @@ router.get('/', async (req, res) => {
       .orderBy(desc(messages.createdAt))
       .limit(query.limit);
 
-    console.log(`Fetched ${userMessages.length} messages for user ${userId}${query.applicantId ? ` (applicant: ${query.applicantId})` : ''}`);
+    console.log(`Fetched ${userMessages.length} messages for user ${userId}${query.receiverId ? ` (receiver: ${query.receiverId})` : ''}`);
 
     res.json(userMessages);
   } catch (error) {
@@ -88,30 +91,14 @@ router.post('/', async (req, res) => {
     const messageData: InsertMessage = {
       ...validatedData,
       userId, // Override with authenticated user ID
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
-
-    // Validate applicant ownership if applicantId is provided
-    if (messageData.applicantId) {
-      const applicantCheck = await db.query.applicants.findFirst({
-        where: and(
-          eq(db.query.applicants.id, messageData.applicantId),
-          eq(db.query.applicants.userId, userId)
-        ),
-      });
-
-      if (!applicantCheck) {
-        return res.status(403).json({ error: 'Access denied: Applicant not found or unauthorized' });
-      }
-    }
 
     const [newMessage] = await db
       .insert(messages)
       .values(messageData)
       .returning();
 
-    console.log(`Created message ${newMessage.id} for user ${userId}${messageData.applicantId ? ` (applicant: ${messageData.applicantId})` : ''}`);
+    console.log(`Created message ${newMessage.id} for user ${userId}${messageData.receiverId ? ` (receiver: ${messageData.receiverId})` : ''}`);
 
     res.status(201).json(newMessage);
   } catch (error) {

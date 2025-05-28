@@ -191,7 +191,7 @@ function ApplicantPortal() {
                   <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
                   <MessagingSystem
                     userId={user.id}
-                    applicantId={profile.id}
+                    receiverId={undefined}
                     placeholder="Type your message..."
                     showPriority={false}
                     showPrivateToggle={false}

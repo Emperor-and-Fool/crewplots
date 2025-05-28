@@ -86,7 +86,7 @@ const getMessageIcon = (messageType: string) => {
 
 export function MessagingSystem({
   userId,
-  applicantId,
+  receiverId,
   title = 'Messages',
   placeholder = 'Type your message here...',
   showPriority = true,
@@ -115,13 +115,13 @@ export function MessagingSystem({
       messageType: 'text',
       priority: 'normal',
       isPrivate: false,
-      applicantId,
+      receiverId,
     },
   });
 
   // Fetch messages query
   const { data: messages = [], isLoading, error } = useQuery<Message[]>({
-    queryKey: applicantId ? ['/api/messages', applicantId] : ['/api/messages', userId],
+    queryKey: receiverId ? ['/api/messages', receiverId] : ['/api/messages', userId],
     enabled: !!userId,
   });
 
@@ -134,7 +134,7 @@ export function MessagingSystem({
         priority: data.priority,
         isPrivate: data.isPrivate,
         userId,
-        applicantId: data.applicantId,
+        receiverId: data.receiverId,
         isRead: false,
         attachmentUrl: null,
         metadata: null,
@@ -155,7 +155,7 @@ export function MessagingSystem({
     onSuccess: (newMessage) => {
       // Invalidate and refetch messages
       queryClient.invalidateQueries({
-        queryKey: applicantId ? ['/api/messages', applicantId] : ['/api/messages', userId],
+        queryKey: receiverId ? ['/api/messages', receiverId] : ['/api/messages', userId],
       });
       
       // Reset form
