@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Applicant } from "@shared/schema";
+import { User } from "@shared/schema";
 
 interface ApplicantsSummaryProps {
   locationId?: number;
@@ -40,7 +40,7 @@ const formatRelativeTime = (date: string | Date) => {
 
 export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryProps) {
   // Fetch applicants, filtered by location if provided
-  const { data: applicants, isLoading } = useQuery<Applicant[]>({
+  const { data: applicants, isLoading } = useQuery<User[]>({
     queryKey: locationId 
       ? ['/api/applicants/location', locationId] 
       : ['/api/applicants'],
@@ -109,7 +109,7 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
                       {applicant.name}
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
-                      Applied for: {applicant.positionApplied}
+                      {applicant.email}
                     </div>
                   </div>
                   <div className="mt-4 flex-shrink-0 sm:mt-0">

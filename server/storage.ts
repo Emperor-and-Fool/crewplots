@@ -1218,23 +1218,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
+  async getApplicantsByLocation(locationId: number): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.locationId, locationId));
+      // Get users with applicant role filtered by location from unified users table
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'))
+        .where(eq(users.locationId, locationId));
       
       return result;
     } catch (error) {
@@ -1243,23 +1233,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicantsByStatus(status: string): Promise<Applicant[]> {
+  async getApplicantsByStatus(status: string): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.status, status));
+      // Get users with applicant role filtered by status from unified users table
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'))
+        .where(eq(users.status, status));
       
       return result;
     } catch (error) {
