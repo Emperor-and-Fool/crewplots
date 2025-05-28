@@ -2,7 +2,7 @@ import { Switch, Route, Router, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
-import { ProfileProvider } from "@/contexts/profile-context";
+import { ProfileScraperInit } from "@/contexts/profile-context";
 import * as React from "react";
 import Footer from "@/components/ui/footer";
 import Dashboard from "@/pages/dashboard";
@@ -262,7 +262,7 @@ function App() {
 
   // IMPROVED ROUTING: Always use Router for all routes (authenticated or not)
   return (
-    <ProfileProvider>
+    <ProfileScraperInit>
       <TooltipProvider>
         <div className="flex flex-col min-h-screen">
           <div className="flex-grow">
@@ -435,7 +435,7 @@ function App() {
         )}
         </div>
       </TooltipProvider>
-    </ProfileProvider>
+    </ProfileScraperInit>
   );
 }
 

@@ -1,13 +1,13 @@
 import {
-  users, locations, competencies, staff, staffCompetencies, applicants, applicantDocuments,
+  users, locations, competencies, staff, staffCompetencies, applicantDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments, messages,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
-  type Applicant, type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
+  type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
   type Shift, type CashCount, type KbCategory, type KbArticle, type Message,
   type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
-  type InsertStaffCompetency, type InsertApplicant, type InsertApplicantDocument, type InsertScheduleTemplate,
+  type InsertStaffCompetency, type InsertApplicantDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
   type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertMessage,
   type InsertUploadedFile, type InsertDocumentAttachment
@@ -81,14 +81,14 @@ export interface IStorage {
   updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined>;
   deleteStaffCompetency(id: number): Promise<boolean>;
 
-  // Applicants
-  getApplicant(id: number): Promise<Applicant | undefined>;
-  getApplicants(): Promise<Applicant[]>;
-  getApplicantsByLocation(locationId: number): Promise<Applicant[]>;
-  getApplicantsByStatus(status: string): Promise<Applicant[]>;
-  getApplicantByUserId(userId: number): Promise<Applicant | undefined>;
-  createApplicant(applicant: InsertApplicant): Promise<Applicant>;
-  updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined>;
+  // Applicants (now using User type with role filtering)
+  getApplicant(id: number): Promise<User | undefined>;
+  getApplicants(): Promise<User[]>;
+  getApplicantsByLocation(locationId: number): Promise<User[]>;
+  getApplicantsByStatus(status: string): Promise<User[]>;
+  getApplicantByUserId(userId: number): Promise<User | undefined>;
+  createApplicant(applicant: InsertUser): Promise<User>;
+  updateApplicant(id: number, applicant: Partial<InsertUser>): Promise<User | undefined>;
   deleteApplicant(id: number): Promise<boolean>;
   createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any>;
   getApplicantDocuments(applicantId: number): Promise<any[]>;
@@ -1298,7 +1298,7 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
+  async getApplicantByUserId(userId: number): Promise<User | undefined> {
     try {
       console.log("Looking for applicant with userId:", userId);
       
@@ -1310,11 +1310,11 @@ export class DatabaseStorage implements IStorage {
         return cached;
       }
       
-      // Optimized query: select all columns directly, add limit for performance
+      // Query users table for applicant role
       const [applicant] = await db
         .select()
-        .from(applicants)
-        .where(eq(applicants.userId, userId))
+        .from(users)
+        .where(and(eq(users.id, userId), eq(users.role, 'applicant')))
         .limit(1);
       
       console.log("Found applicant:", applicant || "None found");

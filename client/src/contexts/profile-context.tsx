@@ -26,7 +26,7 @@ interface ProfileContextType {
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
-export function ProfileProvider({ children }: { children: React.ReactNode }) {
+export function ProfileScraperInit({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<ApplicantProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -88,7 +88,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 export function useProfile() {
   const context = useContext(ProfileContext);
   if (context === undefined) {
-    throw new Error('useProfile must be used within a ProfileProvider');
+    throw new Error('useProfile must be used within a ProfileScraperInit');
   }
   return context;
 }
