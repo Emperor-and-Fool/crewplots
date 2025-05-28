@@ -80,12 +80,12 @@ router.get('/', async (req, res) => {
 // POST /api/messages - Create a new message
 router.post('/', async (req, res) => {
   try {
-    if (!req.user?.id) {
+    if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const validatedData = createMessageSchema.parse(req.body);
-    const userId = req.user.id;
+    const userId = (req.user as any).id;
 
     // Ensure the message is associated with the authenticated user
     const messageData: InsertMessage = {
