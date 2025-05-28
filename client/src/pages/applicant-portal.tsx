@@ -14,42 +14,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle, Send } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
-
-// Simple message box component without API calls
-const SimpleMessageBox = () => {
-  const [message, setMessage] = useState('');
-
-  return (
-    <div className="space-y-3">
-      <Textarea
-        placeholder="Type your message here..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="min-h-[80px] resize-none"
-        maxLength={500}
-      />
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-500">
-          {message.length}/500 characters
-        </p>
-        <Button 
-          size="sm" 
-          disabled={!message.trim()}
-          onClick={() => {
-            console.log('Message to send:', message);
-            setMessage('');
-          }}
-        >
-          <Send className="w-4 h-4 mr-1" />
-          Send
-        </Button>
-      </div>
-    </div>
-  );
-};
+import MessagingSystem from '@/components/ui/messaging-system';
 
 // Interface already defined in profile-context.tsx - no need to duplicate
 
@@ -222,7 +189,11 @@ function ApplicantPortal() {
               {user && profile && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                  <SimpleMessageBox />
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-800">
+                      Testing: MessagingSystem component may have API issues after database migration. User ID: {user.id}, Profile ID: {profile.id}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
