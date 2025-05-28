@@ -186,28 +186,6 @@ function ApplicantPortal() {
                 )}
               </div>
 
-              {/* Messaging system for applicants - render when userId is available */}
-              {userId && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-500 mb-4">Communication</p>
-                  <MessagingSystem
-                    key={`messaging-${userId}`}
-                    userId={userId}
-                    title="Application Messages"
-                    placeholder="Type your message about your application..."
-                    showPriority={false}
-                    showPrivateToggle={false}
-                    maxHeight="300px"
-                    compactMode={true}
-                    onMessageSent={(message) => {
-                      toast({
-                        title: "Message sent successfully!",
-                        description: "Your message has been recorded and will be reviewed.",
-                      });
-                    }}
-                  />
-                </div>
-              )}
             </div>
           ) : (
             <div className="py-4">
@@ -216,6 +194,34 @@ function ApplicantPortal() {
           )}
         </CardContent>
       </Card>
+
+      {/* Messaging system - render independently of profile loading */}
+      {userId && (
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle>Communication</CardTitle>
+            <CardDescription>Send messages about your application</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MessagingSystem
+              key={`messaging-${userId}`}
+              userId={userId}
+              title="Application Messages"
+              placeholder="Type your message about your application..."
+              showPriority={false}
+              showPrivateToggle={false}
+              maxHeight="300px"
+              compactMode={true}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Message sent successfully!",
+                  description: "Your message has been recorded and will be reviewed.",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
 
 
