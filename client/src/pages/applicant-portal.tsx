@@ -188,7 +188,22 @@ function ApplicantPortal() {
               {/* Messaging system for applicants */}
               {user && profile && (
                 <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
+                  <p className="text-sm font-medium text-gray-500 mb-4">Communication</p>
+                  <MessagingSystem
+                    userId={user.id}
+                    title="Application Messages"
+                    placeholder="Type your message about your application..."
+                    showPriority={false}
+                    showPrivateToggle={false}
+                    maxHeight="300px"
+                    compactMode={true}
+                    onMessageSent={(message) => {
+                      toast({
+                        title: "Message sent successfully!",
+                        description: "Your message has been recorded and will be reviewed.",
+                      });
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -200,39 +215,7 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
 
-      {/* Communication Center - no longer in use
-      {user && profile && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Communication Center
-            </CardTitle>
-            <CardDescription>
-              Send messages and communicate about your application
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MessagingSystem
-              userId={user.id}
-              applicantId={profile.id}
-              title="Application Messages"
-              placeholder="Type your message about your application..."
-              showPriority={true}
-              showPrivateToggle={false}
-              maxHeight="300px"
-              compactMode={false}
-              onMessageSent={(message) => {
-                toast({
-                  title: "Message sent successfully!",
-                  description: "Your message has been recorded and will be reviewed.",
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-      */}
+
 
       {/* Documents section removed - was causing API cascade issues */}
 
