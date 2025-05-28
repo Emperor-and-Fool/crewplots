@@ -185,8 +185,8 @@ function ApplicantPortal() {
                 )}
               </div>
 
-              {/* Messaging system for applicants */}
-              {user && profile && (
+              {/* Messaging system for applicants - always render if user exists */}
+              {user && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-4">Communication</p>
                   <MessagingSystem
