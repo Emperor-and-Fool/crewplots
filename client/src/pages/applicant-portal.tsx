@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
-import MessagingSystem from '@/components/ui/messaging-system';
+import { useState } from 'react';
 
 // Interface already defined in profile-context.tsx - no need to duplicate
 
@@ -24,6 +24,8 @@ function ApplicantPortal() {
   const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect if not authenticated or not an applicant
   const isAuthenticated = !!user;
@@ -183,21 +185,25 @@ function ApplicantPortal() {
               </div>
 
               {/* Simple message form for applicants */}
-              {user && profile && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                  <div className="space-y-2">
-                    <textarea
-                      className="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                      placeholder="Type your message..."
-                    />
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                      Send Message
-                    </Button>
-                  </div>
+              <div className="pt-4 border-t">
+                <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={!message.trim() || isSubmitting}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </Button>
                 </div>
-              )}
+              </div>
             </div>
           ) : (
             <div className="py-4">
