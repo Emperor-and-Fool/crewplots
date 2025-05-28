@@ -189,21 +189,11 @@ function ApplicantPortal() {
               {user && profile && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                  <MessagingSystem
-                    userId={user.id}
-                    receiverId={undefined}
-                    placeholder="Type your message..."
-                    showPriority={false}
-                    showPrivateToggle={false}
-                    compactMode={true}
-                    maxHeight="120px"
-                    onMessageSent={(message) => {
-                      toast({
-                        title: "Message sent",
-                        description: "Your message has been recorded.",
-                      });
-                    }}
-                  />
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-800">
+                      Testing: MessagingSystem component may have API issues after database migration. User ID: {user.id}, Profile ID: {profile.id}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
 // POST /api/messages - Create a new message
 router.post('/', async (req, res) => {
   try {
-    if (!req.user) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
