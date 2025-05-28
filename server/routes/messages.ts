@@ -13,7 +13,7 @@ const createMessageSchema = insertMessageSchema.extend({
 });
 
 const getMessagesQuerySchema = z.object({
-  applicantId: z.string().optional().transform(val => val ? parseInt(val) : undefined),
+  receiverId: z.string().optional().transform(val => val ? parseInt(val) : undefined),
   messageType: z.enum(['text', 'rich-text', 'system', 'notification']).optional(),
   isPrivate: z.enum(['true', 'false']).optional().transform(val => val === 'true'),
   limit: z.string().optional().transform(val => val ? parseInt(val) : 50),

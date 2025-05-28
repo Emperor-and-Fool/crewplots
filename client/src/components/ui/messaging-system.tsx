@@ -25,7 +25,7 @@ const messageFormSchema = z.object({
   messageType: z.enum(['text', 'rich-text', 'system', 'notification']).default('text'),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   isPrivate: z.boolean().default(false),
-  applicantId: z.number().optional(), // For applicant-specific messages
+  receiverId: z.number().optional(), // Who receives the message
 });
 
 type MessageFormData = z.infer<typeof messageFormSchema>;
@@ -34,7 +34,7 @@ type MessageFormData = z.infer<typeof messageFormSchema>;
 interface MessagingSystemProps {
   // Core configuration
   userId: number;
-  applicantId?: number; // Optional - for applicant-specific messages
+  receiverId?: number; // Optional - who receives the message
   
   // UI customization
   title?: string;

@@ -287,7 +287,7 @@ export const messages = pgTable("messages", {
     enum: ["text", "rich-text", "system", "notification"] 
   }).default("text").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  applicantId: integer("applicant_id").references(() => applicants.id), // Optional - for applicant-specific messages
+  receiverId: integer("receiver_id").references(() => users.id), // Optional - who receives the message
   isPrivate: boolean("is_private").default(false).notNull(),
   attachmentUrl: text("attachment_url"), // For future file attachments
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
