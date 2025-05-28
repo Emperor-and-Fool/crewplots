@@ -189,11 +189,6 @@ function ApplicantPortal() {
               {user && profile && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium text-gray-500 mb-2">Send a Message</p>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-800">
-                      Testing: MessagingSystem component may have API issues after database migration. User ID: {user.id}, Profile ID: {profile.id}
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
