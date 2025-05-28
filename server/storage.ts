@@ -1213,8 +1213,7 @@ export class DatabaseStorage implements IStorage {
       // Get users with applicant role filtered by location from unified users table
       const result = await db.select()
         .from(users)
-        .where(eq(users.role, 'applicant'))
-        .where(eq(users.locationId, locationId));
+        .where(and(eq(users.role, 'applicant'), eq(users.locationId, locationId)));
       
       return result;
     } catch (error) {
