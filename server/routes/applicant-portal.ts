@@ -68,9 +68,9 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
     // Add a 500ms delay to ensure database connection is ready (helps with race conditions)
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const applicant = await storage.getApplicantByUserId(req.user.id);
+    const applicant = await storage.getUserById(req.user.id);
     
-    if (!applicant) {
+    if (!applicant || applicant.role !== 'applicant') {
       console.log('No applicant profile found for user ID:', req.user.id);
       return res.status(404).json({ 
         error: 'Applicant profile not found',

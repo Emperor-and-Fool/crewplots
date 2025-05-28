@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { insertApplicantSchema, type InsertApplicant, type Applicant, type Location } from "@shared/schema";
+import { insertUserSchema, type InsertUser, type User, type Location } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -47,7 +47,7 @@ export function ApplicantForm({ applicant, isEditing = false }: ApplicantFormPro
 
   // Form definition
   const form = useForm<InsertApplicant>({
-    resolver: zodResolver(insertApplicantSchema),
+    resolver: zodResolver(insertUserSchema),
     defaultValues: {
       name: applicant?.name || "",
       email: applicant?.email || "",
