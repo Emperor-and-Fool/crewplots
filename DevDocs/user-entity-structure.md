@@ -65,20 +65,14 @@ File: `shared/schema.ts`
 
 ### Backend Storage
 File: `server/storage.ts`
-- Storage methods should work with users table directly
+- Storage methods work with users table directly
 - Role-based filtering using `WHERE role = 'applicant'` instead of separate table joins
-- Methods like `getApplicantByUserId()` should be replaced with `getUserById()` with role checking
+- Uses `getUserById()` with role checking
 
 ### API Endpoints
 File: `server/routes/applicant-portal.ts`
-- Should query users table with role filtering
-- Document operations reference users.id not applicants.id
-
-## Migration Summary
-- ✅ Database: Consolidated applicants data into users table
-- ✅ Schema: Updated to reflect unified structure
-- ⏳ Backend: Storage layer needs updating to use users table
-- ⏳ Frontend: Components may need updating to work with user entities instead of applicant entities
+- Queries users table with role filtering
+- Document operations reference users.id
 
 ## Key Principles
 1. **Single Source of Truth**: All user data in one table
