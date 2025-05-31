@@ -141,33 +141,30 @@ function ApplicantPortal() {
         </div>
       </div>
 
-      {/* Messaging system - render first to avoid dependencies */}
-      {userId ? (
-        <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle>Communication</CardTitle>
-            <CardDescription>Send messages about your application</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MessagingSystem
-              key={`messaging-${userId}`}
-              userId={userId}
-              title="Application Messages"
-              placeholder="Type your message about your application..."
-              showPriority={false}
-              showPrivateToggle={false}
-              maxHeight="300px"
-              compactMode={true}
-              onMessageSent={(message) => {
-                toast({
-                  title: "Message sent successfully!",
-                  description: "Your message has been recorded and will be reviewed.",
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* Messaging system - always render, let component handle loading states */}
+      <Card className="mb-8">
+        <CardHeader className="pb-2">
+          <CardTitle>Communication</CardTitle>
+          <CardDescription>Send messages about your application</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MessagingSystem
+            userId={userId || 0}
+            title="Application Messages"
+            placeholder="Type your message about your application..."
+            showPriority={false}
+            showPrivateToggle={false}
+            maxHeight="300px"
+            compactMode={true}
+            onMessageSent={(message) => {
+              toast({
+                title: "Message sent successfully!",
+                description: "Your message has been recorded and will be reviewed.",
+              });
+            }}
+          />
+        </CardContent>
+      </Card>
 
       <Card className="mb-8">
         <CardHeader className="pb-2">
