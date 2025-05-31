@@ -142,41 +142,32 @@ function ApplicantPortal() {
       </div>
 
       {/* Messaging system - render first to avoid dependencies */}
-      {(() => {
-        console.log(`ApplicantPortal: Checking messaging render - userId=${userId}, user=${JSON.stringify(user)}`);
-        if (userId) {
-          console.log(`ApplicantPortal: Rendering messaging system for userId=${userId}`);
-          return (
-            <Card className="mb-8">
-              <CardHeader className="pb-2">
-                <CardTitle>Communication</CardTitle>
-                <CardDescription>Send messages about your application</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MessagingSystem
-                  key={`messaging-${userId}`}
-                  userId={userId}
-                  title="Application Messages"
-                  placeholder="Type your message about your application..."
-                  showPriority={false}
-                  showPrivateToggle={false}
-                  maxHeight="300px"
-                  compactMode={true}
-                  onMessageSent={(message) => {
-                    toast({
-                      title: "Message sent successfully!",
-                      description: "Your message has been recorded and will be reviewed.",
-                    });
-                  }}
-                />
-              </CardContent>
-            </Card>
-          );
-        } else {
-          console.log(`ApplicantPortal: Not rendering messaging system - userId is ${userId}`);
-          return null;
-        }
-      })()}
+      {userId ? (
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle>Communication</CardTitle>
+            <CardDescription>Send messages about your application</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MessagingSystem
+              key={`messaging-${userId}`}
+              userId={userId}
+              title="Application Messages"
+              placeholder="Type your message about your application..."
+              showPriority={false}
+              showPrivateToggle={false}
+              maxHeight="300px"
+              compactMode={true}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Message sent successfully!",
+                  description: "Your message has been recorded and will be reviewed.",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="mb-8">
         <CardHeader className="pb-2">
