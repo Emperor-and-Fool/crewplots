@@ -199,14 +199,14 @@ function ApplicantPortal() {
       {profile && userId && (
         <Card className="mb-8">
           <CardHeader className="pb-2">
-            <CardTitle>Communication</CardTitle>
+            <CardTitle>Additional things you should know</CardTitle>
             <CardDescription>Send messages about your application</CardDescription>
           </CardHeader>
           <CardContent>
             <MessagingSystem
               userId={userId}
-              title="Application Messages"
-              placeholder="Type your message about your application..."
+              title=""
+              placeholder="Share any additional information relevant to your application..."
               showPriority={false}
               showPrivateToggle={false}
               maxHeight="300px"
