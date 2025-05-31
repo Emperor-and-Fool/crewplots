@@ -177,14 +177,12 @@ function ApplicantPortal() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t">
-                <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
-                {profile.extraMessage ? (
+              {profile.extraMessage && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
                   <p className="text-gray-700">{profile.extraMessage}</p>
-                ) : (
-                  <p className="text-gray-400 italic">No additional message provided</p>
-                )}
-              </div>
+                </div>
+              )}
 
             </div>
           ) : (
