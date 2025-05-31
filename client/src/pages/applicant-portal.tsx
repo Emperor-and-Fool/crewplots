@@ -204,7 +204,7 @@ function ApplicantPortal() {
           </CardHeader>
           <CardContent>
             <MessagingSystem
-              userId={userId || 0}
+              userId={profile.id}
               title="Application Messages"
               placeholder="Type your message about your application..."
               showPriority={false}

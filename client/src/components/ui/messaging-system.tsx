@@ -107,17 +107,7 @@ export function MessagingSystem({
 }: MessagingSystemProps) {
   const { toast } = useToast();
 
-  // Debug logging to track component lifecycle
-  React.useEffect(() => {
-    console.log(`MessagingSystem: Component mounted with userId=${userId}, receiverId=${receiverId}`);
-    return () => {
-      console.log(`MessagingSystem: Component unmounting`);
-    };
-  }, []);
 
-  React.useEffect(() => {
-    console.log(`MessagingSystem: Props changed - userId=${userId}, receiverId=${receiverId}`);
-  }, [userId, receiverId]);
 
   // Form setup with validation
   const form = useForm<MessageFormData>({
@@ -140,18 +130,15 @@ export function MessagingSystem({
         params.append('receiverId', receiverId.toString());
       }
       
-      console.log(`Fetching messages for user ${userId}, receiverId: ${receiverId}`);
       const response = await fetch(`/api/messages?${params.toString()}`, {
         credentials: 'include' // Ensure cookies are sent
       });
       
       if (!response.ok) {
-        console.error(`Messages API error: ${response.status} - ${response.statusText}`);
         throw new Error(`Failed to fetch messages: ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log(`Received ${data.length} messages:`, data);
       return data;
     },
     enabled: !!userId,
