@@ -27,13 +27,13 @@ import { ApplicantForm } from "@/components/applicants/applicant-form";
 import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
-import { Applicant, Location, Staff } from "@shared/schema";
+import { User, Location, Staff, Message } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 
 export default function Applicants() {
   const [showForm, setShowForm] = useState(false);
-  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+  const [selectedApplicant, setSelectedApplicant] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hireDialogOpen, setHireDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
@@ -53,14 +53,45 @@ export default function Applicants() {
   // This ensures we have exactly ONE authentication system throughout the app.
 
   // Fetch applicants
-  const { data: applicants, isLoading } = useQuery({
+  const { data: applicants, isLoading } = useQuery<User[]>({
     queryKey: ['/api/applicants'],
   });
 
   // Fetch locations
-  const { data: locations } = useQuery({
+  const { data: locations } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
   });
+
+  // Component to display message count for an applicant
+  const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
+    const { data: messages } = useQuery<Message[]>({
+      queryKey: ['/api/messages', 'user', applicantId],
+      queryFn: async () => {
+        const response = await fetch(`/api/messages?userId=${applicantId}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch messages');
+        }
+        return response.json();
+      },
+    });
+
+    const messageCount = messages?.length || 0;
+
+    return (
+      <div className="flex items-center gap-1">
+        <MessageSquare className={`w-3 h-3 ${messageCount > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+        {messageCount > 0 ? (
+          <Badge variant="secondary" className="text-xs px-1 py-0 h-4 min-w-4 flex items-center justify-center">
+            {messageCount}
+          </Badge>
+        ) : (
+          <span className="w-2 h-2 bg-gray-300 rounded-full" title="No messages"></span>
+        )}
+      </div>
+    );
+  };
 
   // Filter applicants by location
   const filteredApplicants = applicants?.filter(applicant => 
@@ -132,13 +163,13 @@ export default function Applicants() {
   });
 
   // Handle delete applicant
-  const handleDelete = (applicant: Applicant) => {
+  const handleDelete = (applicant: User) => {
     setSelectedApplicant(applicant);
     setDeleteDialogOpen(true);
   };
 
   // Handle hire applicant
-  const handleHire = (applicant: Applicant) => {
+  const handleHire = (applicant: User) => {
     setSelectedApplicant(applicant);
     setHireDialogOpen(true);
   };
