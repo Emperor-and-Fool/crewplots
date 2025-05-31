@@ -107,7 +107,17 @@ export function MessagingSystem({
 }: MessagingSystemProps) {
   const { toast } = useToast();
 
+  // Debug logging to track component lifecycle
+  React.useEffect(() => {
+    console.log(`MessagingSystem: Component mounted with userId=${userId}, receiverId=${receiverId}`);
+    return () => {
+      console.log(`MessagingSystem: Component unmounting`);
+    };
+  }, []);
 
+  React.useEffect(() => {
+    console.log(`MessagingSystem: Props changed - userId=${userId}, receiverId=${receiverId}`);
+  }, [userId, receiverId]);
 
   // Form setup with validation
   const form = useForm<MessageFormData>({
