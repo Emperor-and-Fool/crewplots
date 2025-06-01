@@ -285,6 +285,7 @@ export const messages = pgTable("messages", {
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
   isRead: boolean("is_read").default(false).notNull(),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
+  audienceId: integer("audience_id"), // Who can view this message (role-based or custom audiences)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

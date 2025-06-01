@@ -65,13 +65,13 @@ export default function Applicants() {
   // Component to display message count for an applicant
   const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
     const { data: messages } = useQuery<Message[]>({
-      queryKey: ['/api/messages', 'user', applicantId],
+      queryKey: ['/api/messages', 'applicant-notes', applicantId],
       queryFn: async () => {
-        const response = await fetch(`/api/messages?userId=${applicantId}`, {
+        const response = await fetch(`/api/messages/applicant-notes/${applicantId}`, {
           credentials: 'include'
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch messages');
+          throw new Error('Failed to fetch applicant messages');
         }
         return response.json();
       },

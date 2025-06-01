@@ -224,4 +224,37 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET /api/messages/applicant-notes/:applicantId - Get notes/messages sent by a specific applicant
+router.get('/applicant-notes/:applicantId', async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const applicantId = parseInt(req.params.applicantId);
+    
+    if (isNaN(applicantId)) {
+      return res.status(400).json({ error: 'Invalid applicant ID' });
+    }
+
+    // Get all messages sent by this applicant (where receiverId is null = notes/general messages)
+    // These are notes the applicant left that staff can view
+    const applicantMessages = await db
+      .select()
+      .from(messages)
+      .where(and(
+        eq(messages.userId, applicantId),
+        eq(messages.receiverId, null) // Only get general notes, not direct conversations
+      ))
+      .orderBy(desc(messages.createdAt));
+
+    console.log(`Fetched ${applicantMessages.length} notes from applicant ${applicantId}`);
+    
+    res.json(applicantMessages);
+  } catch (error) {
+    console.error('Error fetching applicant messages:', error);
+    res.status(500).json({ error: 'Failed to fetch applicant messages' });
+  }
+});
+
 export default router;
