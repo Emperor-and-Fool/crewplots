@@ -94,8 +94,8 @@ export default function Applicants() {
   };
 
   // Filter applicants by location
-  const filteredApplicants = applicants?.filter(applicant => 
-    !selectedLocation || selectedLocation === "all" || applicant.locationId === parseInt(selectedLocation)
+  const filteredApplicants = applicants?.filter((applicant: User) => 
+    !selectedLocation || selectedLocation === "all" || applicant.locationId === Number(selectedLocation)
   );
 
   // Delete mutation
@@ -320,17 +320,7 @@ export default function Applicants() {
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
-                                    {applicant.extraMessage ? (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-green-600" />
-                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has message"></span>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-gray-400" />
-                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No message"></span>
-                                      </div>
-                                    )}
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
                                         <Paperclip className="w-3 h-3 text-green-600" />
@@ -345,8 +335,8 @@ export default function Applicants() {
                                   </div>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -379,17 +369,7 @@ export default function Applicants() {
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
-                                    {applicant.extraMessage ? (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="h-4 w-4 text-blue-500" />
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="h-4 w-4 text-gray-300" />
-                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                                      </div>
-                                    )}
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
                                         <Paperclip className="h-4 w-4 text-green-500" />
@@ -415,8 +395,8 @@ export default function Applicants() {
                                   )}
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -465,8 +445,8 @@ export default function Applicants() {
                                 </div>
                                 <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200 mb-2">Review Later</Badge>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -515,8 +495,8 @@ export default function Applicants() {
                                 </div>
                                 <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 mb-2">Rejected</Badge>
                                 <p className="text-sm text-gray-500 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-500 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-500 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-400 mb-3">{location.name}</p>
