@@ -36,7 +36,7 @@ export default function Applicants() {
   const [selectedApplicant, setSelectedApplicant] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hireDialogOpen, setHireDialogOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
@@ -277,8 +277,8 @@ export default function Applicants() {
                       <div className="flex items-center justify-between">
                         <label htmlFor="location-filter" className="text-sm font-medium text-gray-700">Filter by Location:</label>
                         <Select 
-                          value={selectedLocation?.toString() || ""} 
-                          onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}
+                          value={selectedLocation || ""} 
+                          onValueChange={(value) => setSelectedLocation(value || null)}
                         >
                           <SelectTrigger id="location-filter" className="w-[200px]">
                             <SelectValue placeholder="All Locations" />
@@ -434,12 +434,13 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
-                                  <div className="flex gap-1">
-                                    {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-blue-500" />
-                                    )}
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-green-500" />
+                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has document"></span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -484,12 +485,13 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 opacity-60">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-500">{applicant.name}</h4>
-                                  <div className="flex gap-1">
-                                    {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-gray-400" />
-                                    )}
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-gray-400" />
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="Has document"></span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
