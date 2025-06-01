@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, desc, or, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db';
 import { messages, insertMessageSchema } from '@shared/schema';

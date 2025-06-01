@@ -64,7 +64,7 @@ export default function Applicants() {
 
   // Component to display message count for an applicant
   const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
-    const { data: messages } = useQuery<Message[]>({
+    const { data: messages, isLoading, error } = useQuery<Message[]>({
       queryKey: ['/api/messages', 'applicant-notes', applicantId],
       queryFn: async () => {
         const response = await fetch(`/api/messages/applicant-notes/${applicantId}`, {
@@ -76,6 +76,19 @@ export default function Applicants() {
         return response.json();
       },
     });
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center gap-1">
+          <MessageSquare className="w-3 h-3 text-gray-400" />
+          <span className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></span>
+        </div>
+      );
+    }
+
+    if (error) {
+      console.error('MessageIndicator error:', error);
+    }
 
     const messageCount = messages?.length || 0;
 
