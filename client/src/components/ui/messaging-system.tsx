@@ -244,11 +244,6 @@ export function MessagingSystem({
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
           {title}
-          {filteredMessages.length > 0 && (
-            <Badge variant="secondary" className="ml-auto">
-              {filteredMessages.length}
-            </Badge>
-          )}
         </CardTitle>
       </CardHeader>
 
