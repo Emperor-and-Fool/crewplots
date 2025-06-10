@@ -197,13 +197,13 @@ function ApplicantPortal() {
       {profile && (
         <Card className="mb-8">
           <CardHeader className="pb-2">
-            <CardTitle>Communication</CardTitle>
+            <CardTitle>Your Documents & Motivation here</CardTitle>
             <CardDescription>Send messages about your application</CardDescription>
           </CardHeader>
           <CardContent>
             <MessagingSystem
               userId={profile.id}
-              title="Application Messages"
+              title="Why you want to work with our Crew:"
               placeholder="Type your message about your application..."
               showPriority={false}
               showPrivateToggle={false}
