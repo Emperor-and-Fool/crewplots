@@ -336,20 +336,74 @@ export function MessagingSystem({
               <span className="ml-2">Loading messages...</span>
             </div>
           ) : filteredMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full max-w-sm"
-                onClick={() => {
-                  setEditingMessageId(-1);
-                  setEditContent('');
-                }}
-              >
-                <Edit2 className="h-5 w-5 mr-2" />
-                Start a conversation
-              </Button>
-            </div>
+            editingMessageId === -1 ? (
+              // Show editor when creating first message
+              <div className="space-y-3 p-3">
+                <RichTextEditor
+                  content={editContent}
+                  onChange={setEditContent}
+                  placeholder="Leave us a message..."
+                  className="min-h-[120px]"
+                />
+                
+                <div className="flex items-center gap-2 justify-between">
+                  <div className="text-xs text-muted-foreground">
+                    {editContent.length}/1000 characters
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (editContent.trim()) {
+                          form.setValue('content', editContent);
+                          form.setValue('messageType', 'rich-text');
+                          form.handleSubmit(onSubmit)();
+                          setEditingMessageId(null);
+                          setEditContent('');
+                        }
+                      }}
+                      disabled={createMessageMutation.isPending || !editContent.trim()}
+                    >
+                      {createMessageMutation.isPending ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                      ) : (
+                        <Send className="h-3 w-3 mr-1" />
+                      )}
+                      Send
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingMessageId(null);
+                        setEditContent('');
+                      }}
+                      disabled={createMessageMutation.isPending}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Show button when no messages exist
+              <div className="flex flex-col items-center justify-center py-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full max-w-sm"
+                  onClick={() => {
+                    setEditingMessageId(-1);
+                    setEditContent('');
+                  }}
+                >
+                  <Edit2 className="h-5 w-5 mr-2" />
+                  Start a conversation
+                </Button>
+              </div>
+            )
           ) : (
             <div className="space-y-3">
               {filteredMessages.map((message, index) => (
@@ -502,60 +556,6 @@ export function MessagingSystem({
               <Edit2 className="h-4 w-4 mr-2" />
               Add a new note
             </Button>
-          </div>
-        )}
-
-        {/* New Message Creation Form - appears when no messages exist and user clicks "Start a conversation" */}
-        {editingMessageId === -1 && filteredMessages.length === 0 && (
-          <div className="space-y-3 pt-3 border-t">
-            <RichTextEditor
-              content={editContent}
-              onChange={setEditContent}
-              placeholder="Leave us a message..."
-              className="min-h-[120px]"
-            />
-            
-            <div className="flex items-center gap-2 justify-between">
-              <div className="text-xs text-muted-foreground">
-                {editContent.length}/1000 characters
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    if (editContent.trim()) {
-                      // Use the regular form submission
-                      form.setValue('content', editContent);
-                      form.setValue('messageType', 'rich-text');
-                      form.handleSubmit(onSubmit)();
-                      setEditingMessageId(null);
-                      setEditContent('');
-                    }
-                  }}
-                  disabled={createMessageMutation.isPending || !editContent.trim()}
-                >
-                  {createMessageMutation.isPending ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                  ) : (
-                    <Send className="h-3 w-3 mr-1" />
-                  )}
-                  Send
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditingMessageId(null);
-                    setEditContent('');
-                  }}
-                  disabled={createMessageMutation.isPending}
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
           </div>
         )}
       </CardContent>
