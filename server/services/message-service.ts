@@ -148,7 +148,7 @@ export class MessageService {
       return postgresDeleted;
     } catch (error) {
       console.error('MessageService.deleteMessage error:', error);
-      throw new Error(`Failed to delete message: ${error.message}`);
+      throw new Error(`Failed to delete message: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
