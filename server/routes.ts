@@ -24,6 +24,7 @@ import redisRoutes from './routes/redis';
 import messagesRoutes from './routes/messages/index';
 import documentsRoutes from './routes/documents';
 import dashboardRoutes from './routes/dashboard';
+import mongodbMessagesRoutes from './routes/mongodb-messages';
 
 // Setup multer for file uploads
 const upload = multer({
