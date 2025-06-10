@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
-import { NoteSystem } from '@/components/ui/note-system';
+import { MessagingSystem } from '@/components/ui/messaging-system';
 
 // Interface already defined in profile-context.tsx - no need to duplicate
 
@@ -200,14 +200,18 @@ function ApplicantPortal() {
             <CardTitle>Your Documents & Motivation here</CardTitle>
           </CardHeader>
           <CardContent>
-            <NoteSystem
+            <MessagingSystem
               userId={profile.id}
+              mode="note"
               title="Why you want to work with our Crew:"
               placeholder="Type your note about your application..."
+              showPriority={false}
+              showPrivateToggle={false}
               maxHeight="300px"
               compactMode={true}
               workflow="application"
-              onNoteSaved={(note) => {
+              documentStorage={true}
+              onMessageSent={(message) => {
                 toast({
                   title: "Note saved successfully!",
                   description: "Your note has been recorded and will be reviewed.",

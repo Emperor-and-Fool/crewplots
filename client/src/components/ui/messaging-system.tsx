@@ -301,7 +301,7 @@ export function MessagingSystem({
     },
   });
 
-  // Auto-save draft mutation
+  // Auto-save draft mutation - handles both note and message modes
   const autoSaveDraftMutation = useMutation({
     mutationFn: async (content: string): Promise<Message> => {
       const messageData = {
@@ -310,9 +310,14 @@ export function MessagingSystem({
         isPrivate: false,
       };
 
+      // Choose endpoint based on mode
+      const baseEndpoint = isNoteMode 
+        ? '/api/applicant-portal/messages' // Note mode uses upsert logic
+        : '/api/messages'; // Messages mode uses traditional messaging
+
       if (draftMessageId) {
         // Update existing draft
-        const response = await fetch(`/api/applicant-portal/messages/${draftMessageId}`, {
+        const response = await fetch(`${baseEndpoint}/${draftMessageId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content }),
@@ -325,8 +330,8 @@ export function MessagingSystem({
 
         return response.json();
       } else {
-        // Create new draft
-        const response = await fetch('/api/applicant-portal/messages', {
+        // Create new draft - in note mode this will upsert
+        const response = await fetch(baseEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(messageData),
@@ -373,21 +378,25 @@ export function MessagingSystem({
     );
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
 
-  // Debounced auto-save effect - ensure only one note per user
+  // Debounced auto-save effect - behavior depends on mode
   React.useEffect(() => {
     if (editContent.trim() && editContent !== lastSavedContent) {
       const timeoutId = setTimeout(() => {
-        // Always check if any message exists for this user first
-        if (filteredMessages.length > 0) {
-          // Use the existing message ID - only one should exist
-          setDraftMessageId(filteredMessages[0].id);
+        if (isNoteMode) {
+          // Note mode: ensure only one note per user
+          if (filteredMessages.length > 0) {
+            setDraftMessageId(filteredMessages[0].id);
+          }
+        } else {
+          // Messages mode: traditional messaging behavior
+          // Auto-save as draft but allow multiple messages
         }
         autoSaveDraftMutation.mutate(editContent);
       }, 500);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [editContent, lastSavedContent, draftMessageId, filteredMessages]);
+  }, [editContent, lastSavedContent, draftMessageId, filteredMessages, isNoteMode]);
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
