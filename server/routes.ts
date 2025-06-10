@@ -21,7 +21,7 @@ import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
 import redisRoutes from './routes/redis';
-import messagesRoutes from './routes/messages';
+import messagesRoutes from './routes/messages/index';
 import dashboardRoutes from './routes/dashboard';
 
 // Setup multer for file uploads
