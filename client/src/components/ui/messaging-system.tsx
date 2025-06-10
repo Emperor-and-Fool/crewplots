@@ -356,17 +356,6 @@ export function MessagingSystem({
     },
   });
 
-  // Debounced auto-save effect
-  React.useEffect(() => {
-    if (editContent.trim() && editContent !== lastSavedContent) {
-      const timeoutId = setTimeout(() => {
-        autoSaveDraftMutation.mutate(editContent);
-      }, 500); // Save after 500ms of no typing for faster response
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [editContent, lastSavedContent]);
-
   // Filter messages based on props
   const filteredMessages = React.useMemo(() => {
     let filtered = messages;
@@ -383,6 +372,21 @@ export function MessagingSystem({
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
+
+  // Debounced auto-save effect - always update existing message if one exists
+  React.useEffect(() => {
+    if (editContent.trim() && editContent !== lastSavedContent) {
+      const timeoutId = setTimeout(() => {
+        // If there's already a message, use it as the draft, otherwise create new
+        if (filteredMessages.length > 0 && !draftMessageId) {
+          setDraftMessageId(filteredMessages[filteredMessages.length - 1].id);
+        }
+        autoSaveDraftMutation.mutate(editContent);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [editContent, lastSavedContent, draftMessageId, filteredMessages]);
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
