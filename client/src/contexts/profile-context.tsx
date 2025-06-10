@@ -31,12 +31,24 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch profile data from API
+  // Fetch profile data from API based on user role
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/applicant-portal/my-profile');
+      // First get current user to determine role
+      const authResponse = await fetch('/api/auth/check');
+      if (!authResponse.ok) {
+        throw new Error('Not authenticated');
+      }
+      const authData = await authResponse.json();
+      
+      // Choose endpoint based on user role
+      const endpoint = authData.role === 'applicant' 
+        ? '/api/applicant-portal/my-profile'
+        : '/api/admin/my-profile';
+      
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Failed to fetch profile: ${response.status}`);
       }
