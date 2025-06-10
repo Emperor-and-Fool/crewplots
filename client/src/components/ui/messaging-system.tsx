@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User } from 'lucide-react';
+import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -140,6 +140,42 @@ export function MessagingSystem({
     enabled: !!userId,
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
+  });
+
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: number): Promise<void> => {
+      const response = await fetch(`/api/applicant-portal/messages/${messageId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete message: ${response.statusText}`);
+      }
+    },
+    onSuccess: () => {
+      // Invalidate and refetch messages
+      queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      queryClient.refetchQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      toast({
+        title: 'Message deleted',
+        description: 'Your message has been successfully deleted.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete message',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
   });
 
   // Create message mutation - use applicant-specific endpoint
@@ -294,6 +330,24 @@ export function MessagingSystem({
                       <span className="text-xs text-muted-foreground ml-auto">
                         {format(new Date(message.createdAt), 'MMM d, h:mm a')}
                       </span>
+
+                      {/* Delete button - only show for user's own messages */}
+                      {message.userId === userId && allowMessageDeletion && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to delete this message?')) {
+                              deleteMessageMutation.mutate(message.id);
+                            }
+                          }}
+                          disabled={deleteMessageMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                     
                     {message.messageType === 'rich-text' ? (
