@@ -185,6 +185,46 @@ router.post('/messages', isApplicant, async (req: any, res) => {
   }
 });
 
+// Update message for applicant
+router.put('/messages/:id', isApplicant, async (req: any, res) => {
+  try {
+    const messageId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { content } = req.body;
+    
+    if (isNaN(messageId)) {
+      return res.status(400).json({ error: 'Invalid message ID' });
+    }
+    
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    // First check if the message exists and belongs to the user
+    const [existingMessage] = await db.select().from(messagesTable)
+      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)));
+    
+    if (!existingMessage) {
+      return res.status(404).json({ error: 'Message not found or not authorized' });
+    }
+    
+    // Update the message
+    const [updatedMessage] = await db.update(messagesTable)
+      .set({ 
+        content: content.trim(),
+        updatedAt: new Date()
+      })
+      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)))
+      .returning();
+    
+    console.log(`Updated message ${messageId} for applicant user ${userId}`);
+    res.json(updatedMessage);
+  } catch (error) {
+    console.error('Error updating applicant message:', error);
+    res.status(500).json({ error: 'Failed to update message' });
+  }
+});
+
 // Delete message for applicant
 router.delete('/messages/:id', isApplicant, async (req: any, res) => {
   try {

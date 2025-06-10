@@ -297,19 +297,19 @@ function ApplicantPortal() {
           </CardContent>
         </Card>
 
-        {/* Communication Card */}
+        {/* Application Notes Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Communication</CardTitle>
+            <CardTitle>Application Notes</CardTitle>
             <CardDescription>
-              Send messages about your application
+              Add notes and updates to your application
             </CardDescription>
           </CardHeader>
           <CardContent>
             <MessagingSystem
               userId={user?.id || 0}
-              title="Application Messages"
-              placeholder="Type your message about your application..."
+              title="Application Notes"
+              placeholder="Type your note about your application..."
               showPriority={true}
               showPrivateToggle={true}
               allowMessageDeletion={true}
@@ -318,8 +318,8 @@ function ApplicantPortal() {
               compactMode={false}
               onMessageSent={(message) => {
                 toast({
-                  title: "Message sent successfully!",
-                  description: "Your message has been recorded and will be reviewed.",
+                  title: "Note sent successfully!",
+                  description: "Your note has been recorded and will be reviewed.",
                 });
               }}
             />

@@ -267,13 +267,13 @@ export function MessagingSystem({
       
       // Show success toast
       toast({
-        title: 'Message sent',
-        description: 'Your message has been successfully sent.',
+        title: 'Note sent',
+        description: 'Your note has been successfully sent.',
       });
     },
     onError: (error) => {
       toast({
-        title: 'Failed to send message',
+        title: 'Failed to send note',
         description: error.message,
         variant: 'destructive',
       });
@@ -379,34 +379,96 @@ export function MessagingSystem({
                         {format(new Date(message.createdAt), 'MMM d, h:mm a')}
                       </span>
 
-                      {/* Delete button - only show for user's own messages */}
-                      {message.userId === userId && allowMessageDeletion && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 ml-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('Are you sure you want to delete this message?')) {
-                              deleteMessageMutation.mutate(message.id);
-                            }
-                          }}
-                          disabled={deleteMessageMutation.isPending}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                      {/* Edit and Delete buttons - only show for user's own messages */}
+                      {message.userId === userId && (
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-blue-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingMessageId(message.id);
+                              setEditContent(message.content);
+                            }}
+                            disabled={editMessageMutation.isPending}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          
+                          {allowMessageDeletion && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this note?')) {
+                                  deleteMessageMutation.mutate(message.id);
+                                }
+                              }}
+                              disabled={deleteMessageMutation.isPending}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                     
-                    {message.messageType === 'rich-text' ? (
-                      <MessageDisplay 
-                        content={message.content} 
-                        className="text-sm"
-                      />
+                    {editingMessageId === message.id ? (
+                      <div className="space-y-3">
+                        <RichTextEditor
+                          content={editContent}
+                          onChange={setEditContent}
+                          placeholder="Edit your note..."
+                          className="min-h-[100px]"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (editContent.trim()) {
+                                editMessageMutation.mutate({
+                                  messageId: message.id,
+                                  content: editContent
+                                });
+                              }
+                            }}
+                            disabled={editMessageMutation.isPending || !editContent.trim()}
+                          >
+                            {editMessageMutation.isPending ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                            ) : (
+                              <Save className="h-3 w-3 mr-1" />
+                            )}
+                            Save
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingMessageId(null);
+                              setEditContent('');
+                            }}
+                            disabled={editMessageMutation.isPending}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
                     ) : (
-                      <p className="text-sm text-foreground break-words">
-                        {message.content}
-                      </p>
+                      message.messageType === 'rich-text' ? (
+                        <MessageDisplay 
+                          content={message.content} 
+                          className="text-sm"
+                        />
+                      ) : (
+                        <p className="text-sm text-foreground break-words">
+                          {message.content}
+                        </p>
+                      )
                     )}
                   </div>
                 </div>
