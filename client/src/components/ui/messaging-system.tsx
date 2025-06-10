@@ -338,18 +338,10 @@ export function MessagingSystem({
     onSuccess: (message) => {
       setDraftMessageId(message.id);
       setLastSavedContent(message.content);
-      setHasCreatedMessage(true);
       setIsAutoSaving(false);
       
-      // Force immediate cache refresh to show the draft
-      queryClient.invalidateQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
-      });
-      
-      // Also refetch immediately to ensure data is current
-      queryClient.refetchQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
-      });
+      // Don't change UI state or invalidate cache during auto-save
+      // This keeps the editor visible while saving in background
     },
     onError: () => {
       setIsAutoSaving(false);
@@ -390,13 +382,17 @@ export function MessagingSystem({
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
-    // If we have a draft, just finalize it, otherwise create new
+    // If we have a draft, just finalize it and show the card
     if (draftMessageId && editContent.trim()) {
-      // Draft already exists, just mark as finalized
+      // Draft already exists, just switch to card view
       setEditingMessageId(null);
       setEditContent('');
-      setDraftMessageId(null);
-      setLastSavedContent('');
+      setHasCreatedMessage(true);
+      
+      // Now refresh the cache to show the finalized message
+      queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
       
       toast({
         title: "Message sent successfully!",
