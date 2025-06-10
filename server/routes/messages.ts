@@ -288,7 +288,7 @@ router.get('/notes/:userId/:workflow/count', async (req, res) => {
       .from(messages)
       .where(and(
         eq(messages.userId, userId),
-        eq(messages.workflow, workflow),
+        eq(messages.workflow, workflow as any),
         isNull(messages.receiverId)
       ));
 

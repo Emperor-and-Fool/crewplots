@@ -285,7 +285,7 @@ export const messages = pgTable("messages", {
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
   isRead: boolean("is_read").default(false).notNull(),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
-  workflow: text("workflow", { enum: ["application", "crew", "location", "scheduling", "knowledge", "statistics"] }),
+  workflow: text("workflow"),
   visibleToRoles: text("visible_to_roles").array(), // Array of roles that can view this note
   audienceId: integer("audience_id"), // Legacy field - will migrate to workflow system
   createdAt: timestamp("created_at").defaultNow().notNull(),
