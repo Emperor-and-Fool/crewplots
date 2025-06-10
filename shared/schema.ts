@@ -68,7 +68,7 @@ export const rolePermissions = pgTable("role_permissions", {
 // Users & Auth
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  public_id: text("public_id").notNull().unique(),
+  public_id: text("public_id").unique(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),

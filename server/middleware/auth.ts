@@ -1,18 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
-
-interface AuthenticatedUser {
-    id: number;
-    username: string;
-    role: string;
-    email?: string;
-    name?: string;
-}
+import { User } from "@shared/schema";
 
 declare global {
     namespace Express {
         interface Request {
-            user?: AuthenticatedUser;
+            user?: User;
         }
     }
 }
