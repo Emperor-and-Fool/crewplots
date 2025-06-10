@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { ExternalLink, File, Trash } from 'lucide-react';
+import ApplicationNotes from '@/components/applicants/application-notes';
 
 import { 
   Card, 
@@ -273,37 +274,16 @@ function ApplicantPortal() {
           </CardContent>
         </Card>
 
-        {/* Message Card */}
+        {/* Application Notes Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Message to Recruiters</CardTitle>
+            <CardTitle>Application Notes</CardTitle>
             <CardDescription>
-              Add any additional information for your application
+              Add notes and updates to your application
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleMessageSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="message">Your Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Type your message here (maximum 2000 characters)"
-                  className="min-h-[150px]"
-                  value={message || (profile && profile.extraMessage) || ''}
-                  onChange={(e) => setMessage(e.target.value)}
-                  maxLength={2000}
-                />
-                <p className="text-xs text-right text-gray-500">
-                  {(message || (profile && profile.extraMessage) || '').length}/2000 characters
-                </p>
-              </div>
-              <Button 
-                type="submit" 
-                disabled={updateMessage.isPending}
-              >
-                {updateMessage.isPending ? 'Saving...' : 'Save Message'}
-              </Button>
-            </form>
+            <ApplicationNotes userId={user?.id} />
           </CardContent>
         </Card>
       </div>
