@@ -300,15 +300,12 @@ function ApplicantPortal() {
         {/* Application Notes Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Application Notes</CardTitle>
-            <CardDescription>
-              Add notes and updates to your application
-            </CardDescription>
+            <CardTitle>Your Documents & Motivation here</CardTitle>
           </CardHeader>
           <CardContent>
             <MessagingSystem
               userId={user?.id || 0}
-              title="Application Notes"
+              title="Why you want to work with our Crew:"
               placeholder="Type your note about your application..."
               showPriority={true}
               showPrivateToggle={true}
