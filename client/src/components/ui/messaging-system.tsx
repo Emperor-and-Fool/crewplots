@@ -37,6 +37,9 @@ interface MessagingSystemProps {
   userId: number;
   receiverId?: number; // Optional - who receives the message
   
+  // Module selection - determines behavior
+  mode?: 'note' | 'messages'; // Default: 'messages'
+  
   // UI customization
   title?: string;
   placeholder?: string;
@@ -94,6 +97,7 @@ const getMessageIcon = (messageType: string) => {
 export function MessagingSystem({
   userId,
   receiverId,
+  mode = 'messages', // Default to messages mode
   title = 'Messages',
   placeholder = 'Type your message here...',
   showPriority = true,
@@ -113,6 +117,10 @@ export function MessagingSystem({
   compactMode = false,
 }: MessagingSystemProps) {
   const { toast } = useToast();
+  
+  // Mode-specific behavior configuration
+  const isNoteMode = mode === 'note';
+  const isMessagesMode = mode === 'messages';
   
   // Edit state management
   const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);

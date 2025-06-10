@@ -202,6 +202,7 @@ function ApplicantPortal() {
           <CardContent>
             <MessagingSystem
               userId={profile.id}
+              mode="note"
               title="Why you want to work with our Crew:"
               placeholder="Type your message about your application..."
               showPriority={false}
