@@ -400,23 +400,12 @@ export function MessagingSystem({
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
-    // If we have a draft, just finalize it and show the card
+    // If we have a draft, use the proper edit mutation like the Save button
     if (draftMessageId && editContent.trim()) {
-      // Simply switch to card view - the message is already saved via auto-save
-      setEditingMessageId(null);
-      setEditContent('');
-      setHasCreatedMessage(true);
-      
-      // Quietly refresh just the messages data without disrupting the UI
-      queryClient.refetchQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
+      editMessageMutation.mutate({
+        messageId: draftMessageId,
+        content: editContent
       });
-      
-      toast({
-        title: "Message sent successfully!",
-        description: "Your message has been saved.",
-      });
-      
       return;
     }
     
@@ -647,24 +636,19 @@ export function MessagingSystem({
                             size="sm"
                             onClick={() => {
                               if (editContent.trim()) {
-                                // Simply switch to view mode - the message is already saved via auto-save
-                                setEditingMessageId(null);
-                                setEditContent('');
-                                
-                                // Quietly refresh just the messages data without disrupting the UI
-                                queryClient.refetchQueries({
-                                  queryKey: ['/api/applicant-portal/messages', userId],
-                                });
-                                
-                                toast({
-                                  title: "Message saved successfully!",
-                                  description: "Your changes have been saved.",
+                                editMessageMutation.mutate({
+                                  messageId: message.id,
+                                  content: editContent
                                 });
                               }
                             }}
-                            disabled={!editContent.trim()}
+                            disabled={editMessageMutation.isPending || !editContent.trim()}
                           >
-                            <Save className="h-3 w-3 mr-1" />
+                            {editMessageMutation.isPending ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                            ) : (
+                              <Save className="h-3 w-3 mr-1" />
+                            )}
                             Save
                           </Button>
                           <Button
