@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User, Trash2, Edit2, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -107,6 +107,10 @@ export function MessagingSystem({
   compactMode = false,
 }: MessagingSystemProps) {
   const { toast } = useToast();
+  
+  // Edit state management
+  const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);
+  const [editContent, setEditContent] = React.useState<string>('');
 
 
 
@@ -151,7 +155,7 @@ export function MessagingSystem({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete message: ${response.statusText}`);
+        throw new Error(`Failed to delete note: ${response.statusText}`);
       }
     },
     onSuccess: () => {
@@ -165,13 +169,57 @@ export function MessagingSystem({
       });
       
       toast({
-        title: 'Message deleted',
-        description: 'Your message has been successfully deleted.',
+        title: 'Note deleted',
+        description: 'Your note has been successfully deleted.',
       });
     },
     onError: (error) => {
       toast({
-        title: 'Failed to delete message',
+        title: 'Failed to delete note',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Edit message mutation
+  const editMessageMutation = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: number, content: string }): Promise<void> => {
+      const response = await fetch(`/api/applicant-portal/messages/${messageId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update note: ${response.statusText}`);
+      }
+    },
+    onSuccess: () => {
+      // Invalidate and refetch messages
+      queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      queryClient.refetchQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      // Reset edit state
+      setEditingMessageId(null);
+      setEditContent('');
+      
+      toast({
+        title: 'Note updated',
+        description: 'Your note has been successfully updated.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to update note',
         description: error.message,
         variant: 'destructive',
       });
