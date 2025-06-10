@@ -407,6 +407,11 @@ export function MessagingSystem({
       setEditContent('');
       setHasCreatedMessage(true);
       
+      // Quietly refresh just the messages data without disrupting the UI
+      queryClient.refetchQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
       toast({
         title: "Message sent successfully!",
         description: "Your message has been saved.",
