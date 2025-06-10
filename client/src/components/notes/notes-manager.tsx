@@ -58,7 +58,7 @@ export default function NotesManager({ userId, userName, initialWorkflow = 'appl
   // Create note mutation
   const createNoteMutation = useMutation({
     mutationFn: async (noteData: { content: string; workflow: string; visibleToRoles: string[] }) => {
-      const response = await fetch('/api/messages', {
+      const response = await fetch('/api/messages/notes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -123,7 +123,7 @@ export class MessagingService {
       .delete(messages)
       .where(eq(messages.id, messageId));
     
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 }
 
