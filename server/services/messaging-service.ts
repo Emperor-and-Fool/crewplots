@@ -58,7 +58,11 @@ export class MessagingService {
     if (note.documentReference) {
       try {
         const document = await documentService.getDocument(note.documentReference);
-        content = document.content;
+        if (document && document.buffer) {
+          content = document.buffer.toString('utf-8');
+        } else {
+          content = note.content || 'Content temporarily unavailable';
+        }
       } catch (error) {
         console.warn(`Failed to retrieve document content for note ${note.id}:`, error);
         // Graceful degradation - use PostgreSQL content or show unavailable message
@@ -149,18 +153,18 @@ export class MessagingService {
     // Store content in MongoDB if it exists
     if (noteData.content && noteData.content.trim()) {
       try {
-        const document = await documentService.storeDocument({
-          filename: `note_${Date.now()}.txt`,
-          content: noteData.content,
-          contentType: 'text/plain',
-          uploadedBy: requestingUserId,
-          metadata: {
-            type: 'note_content',
-            workflow: noteData.workflow || 'general',
-            createdAt: new Date().toISOString()
+        const contentBuffer = Buffer.from(noteData.content, 'utf-8');
+        const document = await documentService.storeDocument(
+          contentBuffer,
+          {
+            filename: `note_${Date.now()}.txt`,
+            contentType: 'text/plain',
+            size: contentBuffer.length,
+            userId: requestingUserId,
+            documentType: 'other'
           }
-        });
-        documentReference = document.id;
+        );
+        documentReference = document.documentId;
       } catch (error) {
         console.warn('Failed to store note content in MongoDB, falling back to PostgreSQL:', error);
         // Content will remain in PostgreSQL as fallback
@@ -168,15 +172,21 @@ export class MessagingService {
     }
 
     // Create note metadata in PostgreSQL
+    const noteToInsert = {
+      ...noteData,
+      documentReference,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // If content is stored in MongoDB, keep minimal content for fallback
+    if (documentReference) {
+      noteToInsert.content = noteData.content?.substring(0, 100) + '...' || '';
+    }
+    
     const [createdNote] = await db
       .insert(messages)
-      .values({
-        ...noteData,
-        content: documentReference ? null : noteData.content, // Clear content if stored in MongoDB
-        documentReference,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
+      .values(noteToInsert)
       .returning();
 
     // Return compiled note data
