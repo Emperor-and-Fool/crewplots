@@ -1,5 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
+import { messageService } from '../services/message-service';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -133,17 +134,15 @@ router.put('/message', isApplicant, async (req: any, res) => {
   }
 });
 
-// Get messages for applicant
+// Get messages for applicant (using service layer)
 router.get('/messages', isApplicant, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Get messages for this user from the messages table
-    const messages = await db.select().from(messagesTable)
-      .where(eq(messagesTable.userId, userId))
-      .orderBy(messagesTable.createdAt);
+    // Use MessageService to get compiled messages (PostgreSQL + MongoDB)
+    const messages = await messageService.getMessagesByUser(userId);
     
-    console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
+    console.log(`Fetched ${messages.length} compiled messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching applicant messages:', error);
@@ -151,11 +150,11 @@ router.get('/messages', isApplicant, async (req: any, res) => {
   }
 });
 
-// Create message for applicant
+// Create message for applicant (using service layer)
 router.post('/messages', isApplicant, async (req: any, res) => {
   try {
     const messageSchema = z.object({
-      content: z.string().min(1).max(1000),
+      content: z.string().min(1).max(10000), // Increased limit for rich content
       priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
       isPrivate: z.boolean().default(false),
     });
@@ -163,17 +162,18 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Insert message into database
-    const [newMessage] = await db.insert(messagesTable).values({
+    // Use MessageService to create message (PostgreSQL + MongoDB)
+    const newMessage = await messageService.createMessage({
       content: validatedData.content,
       messageType: 'rich-text',
       userId: userId,
       priority: validatedData.priority,
       isPrivate: validatedData.isPrivate,
       isRead: false,
-    }).returning();
+      workflow: 'application', // Set workflow for applicant messages
+    });
     
-    console.log(`Created message from applicant user ${userId}`);
+    console.log(`Created message with MongoDB storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -185,7 +185,7 @@ router.post('/messages', isApplicant, async (req: any, res) => {
   }
 });
 
-// Update message for applicant
+// Update message for applicant (using service layer)
 router.put('/messages/:id', isApplicant, async (req: any, res) => {
   try {
     const messageId = parseInt(req.params.id);
@@ -200,24 +200,18 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
     
-    // First check if the message exists and belongs to the user
-    const [existingMessage] = await db.select().from(messagesTable)
-      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)));
-    
-    if (!existingMessage) {
+    // Verify message ownership through storage layer
+    const existingMessage = await storage.getMessage(messageId);
+    if (!existingMessage || existingMessage.userId !== userId) {
       return res.status(404).json({ error: 'Message not found or not authorized' });
     }
     
-    // Update the message
-    const [updatedMessage] = await db.update(messagesTable)
-      .set({ 
-        content: content.trim(),
-        updatedAt: new Date()
-      })
-      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)))
-      .returning();
+    // Use MessageService to update message (PostgreSQL + MongoDB)
+    const updatedMessage = await messageService.updateMessage(messageId, {
+      content: content.trim()
+    });
     
-    console.log(`Updated message ${messageId} for applicant user ${userId}`);
+    console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${userId}`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error updating applicant message:', error);
@@ -225,7 +219,7 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
   }
 });
 
-// Delete message for applicant
+// Delete message for applicant (using service layer)
 router.delete('/messages/:id', isApplicant, async (req: any, res) => {
   try {
     const messageId = parseInt(req.params.id);
@@ -235,20 +229,21 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
     
-    // First check if the message exists and belongs to the user
-    const [existingMessage] = await db.select().from(messagesTable)
-      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)));
-    
-    if (!existingMessage) {
+    // Verify message ownership through storage layer
+    const existingMessage = await storage.getMessage(messageId);
+    if (!existingMessage || existingMessage.userId !== userId) {
       return res.status(404).json({ error: 'Message not found or not authorized' });
     }
     
-    // Delete the message
-    await db.delete(messagesTable)
-      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.userId, userId)));
+    // Use MessageService to delete message (PostgreSQL + MongoDB)
+    const deleted = await messageService.deleteMessage(messageId);
     
-    console.log(`Deleted message ${messageId} for applicant user ${userId}`);
-    res.json({ success: true, messageId });
+    if (deleted) {
+      console.log(`Deleted message ${messageId} with MongoDB cleanup for applicant user ${userId}`);
+      res.json({ success: true, messageId });
+    } else {
+      res.status(500).json({ error: 'Failed to delete message' });
+    }
   } catch (error) {
     console.error('Error deleting applicant message:', error);
     res.status(500).json({ error: 'Failed to delete message' });

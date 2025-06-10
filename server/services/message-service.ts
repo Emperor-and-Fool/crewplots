@@ -65,7 +65,7 @@ export class MessageService {
       };
     } catch (error) {
       console.error('MessageService.createMessage error:', error);
-      throw new Error(`Failed to create message: ${error.message}`);
+      throw new Error(`Failed to create message: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -85,7 +85,7 @@ export class MessageService {
       return compiledMessages;
     } catch (error) {
       console.error('MessageService.getMessagesByUser error:', error);
-      throw new Error(`Failed to get messages: ${error.message}`);
+      throw new Error(`Failed to get messages: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -120,7 +120,7 @@ export class MessageService {
       return await this.compileMessage(updatedMessage);
     } catch (error) {
       console.error('MessageService.updateMessage error:', error);
-      throw new Error(`Failed to update message: ${error.message}`);
+      throw new Error(`Failed to update message: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
