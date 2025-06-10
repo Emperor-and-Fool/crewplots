@@ -285,7 +285,7 @@ export const documentAttachments = pgTable("document_attachments", {
 // Messages System - Reusable and Extensible
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  content: text("content").notNull(),
+  content: text("content").notNull(), // Stores MongoDB ObjectId OR actual content (fallback mode)
   messageType: text("message_type", { 
     enum: ["text", "rich-text", "system", "notification"] 
   }).default("text").notNull(),
@@ -299,6 +299,24 @@ export const messages = pgTable("messages", {
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
   workflow: text("workflow"),
   visibleToRoles: text("visible_to_roles").array(), // Array of roles that can view this note
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Virtual MongoDB Documents - PostgreSQL fallback for MongoDB document storage
+export const messageDocuments = pgTable("message_documents", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => messages.id), // Back reference to PostgreSQL message
+  content: text("content").notNull(), // Rich document content (HTML, markdown, etc.)
+  contentType: text("content_type", { 
+    enum: ["rich-text", "plain-text", "markdown"] 
+  }).default("rich-text").notNull(),
+  workflow: text("workflow", { 
+    enum: ["application", "crew", "location", "scheduling", "knowledge", "statistics"] 
+  }),
+  wordCount: integer("word_count").default(0),
+  characterCount: integer("character_count").default(0),
+  htmlLength: integer("html_length").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -324,6 +342,7 @@ export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: t
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMessageDocumentSchema = createInsertSchema(messageDocuments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
