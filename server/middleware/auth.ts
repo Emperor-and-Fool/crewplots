@@ -33,7 +33,8 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
         // Passport already attaches the user to req.user
         // We just need to verify it's valid
-        if (!req.user || !req.user.id) {
+        const user = req.user as any;
+        if (!user || !user.id) {
             console.log("Invalid user object in session");
             req.logout((err) => {
                 if (err) {
