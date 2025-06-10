@@ -38,6 +38,25 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # MongoDB for document storage
+  mongodb:
+    image: mongo:7.0
+    container_name: crewplots-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-crewplots_documents}
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   # Your application (optional - for full Docker deployment)
   app:
     build: .
@@ -50,13 +69,17 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - MONGODB_URL=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-crewplots_documents}?authSource=admin
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
   redis_data:
   postgres_data:
+  mongodb_data:
