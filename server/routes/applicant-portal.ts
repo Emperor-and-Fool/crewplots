@@ -162,16 +162,12 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Use MessageService to create message (PostgreSQL + MongoDB)
-    const newMessage = await messageService.createMessage({
-      content: validatedData.content,
-      messageType: 'rich-text',
-      userId: userId,
-      priority: validatedData.priority,
-      isPrivate: validatedData.isPrivate,
-      isRead: false,
-      workflow: 'application', // Set workflow for applicant messages
-    });
+    // Use MessageService to upsert message (create or update) to ensure only one message per user
+    const newMessage = await messageService.upsertUserMessage(
+      userId,
+      validatedData.content,
+      'application'
+    );
     
     console.log(`Created message with MongoDB storage for applicant user ${userId}`);
     res.status(201).json(newMessage);

@@ -365,13 +365,14 @@ export function MessagingSystem({
     );
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
 
-  // Debounced auto-save effect - always update existing message if one exists
+  // Debounced auto-save effect - ensure only one note per user
   React.useEffect(() => {
     if (editContent.trim() && editContent !== lastSavedContent) {
       const timeoutId = setTimeout(() => {
-        // If there's already a message, use it as the draft, otherwise create new
-        if (filteredMessages.length > 0 && !draftMessageId) {
-          setDraftMessageId(filteredMessages[filteredMessages.length - 1].id);
+        // Always check if any message exists for this user first
+        if (filteredMessages.length > 0) {
+          // Use the existing message ID - only one should exist
+          setDraftMessageId(filteredMessages[0].id);
         }
         autoSaveDraftMutation.mutate(editContent);
       }, 500);

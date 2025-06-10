@@ -131,6 +131,33 @@ export class MessageService {
   }
 
   /**
+   * Upsert message for user - create if none exists, update if one exists
+   * This ensures only one message per user
+   */
+  async upsertUserMessage(userId: number, content: string, workflow?: string): Promise<ServiceMessage> {
+    try {
+      // Check if user already has a message
+      const existingMessages = await storage.getMessagesByUser(userId);
+      
+      if (existingMessages.length > 0) {
+        // Update the existing message (use the first/only one)
+        return await this.updateMessage(existingMessages[0].id, { content });
+      } else {
+        // Create new message
+        return await this.createMessage({
+          userId,
+          content,
+          messageType: 'text',
+          workflow,
+        });
+      }
+    } catch (error) {
+      console.error('MessageService.upsertUserMessage error:', error);
+      throw new Error(`Failed to upsert message: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
    * Update message content (MongoDB or PostgreSQL based on availability)
    */
   async updateMessage(messageId: number, updates: { content?: string }): Promise<ServiceMessage> {
