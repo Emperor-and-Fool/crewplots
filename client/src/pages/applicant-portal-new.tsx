@@ -10,10 +10,18 @@ import MessagingSystem from '@/components/ui/messaging-system';
 // Profile interface
 interface ApplicantProfile {
   id: number;
-  name: string;
+  public_id: string;
+  username: string;
   email: string;
-  phoneNumber?: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  role: string;
+  phoneNumber: string;
   status: string;
+  resumeUrl?: string;
+  notes?: string;
+  extraMessage?: string;
   createdAt: string;
 }
 
@@ -69,7 +77,7 @@ function ApplicantPortal() {
     data: profile, 
     isLoading: profileLoading, 
     error: profileError 
-  } = useQuery({
+  } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     enabled: isAuthenticated && isApplicant,
   });
@@ -87,10 +95,15 @@ function ApplicantPortal() {
   // Update message mutation
   const updateMessage = useMutation({
     mutationFn: async (messageText: string) => {
-      return await apiRequest('/api/applicant-portal/message', {
+      const response = await fetch('/api/applicant-portal/message', {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({ message: messageText })
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
