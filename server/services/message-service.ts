@@ -1,6 +1,9 @@
 import { ObjectId } from 'mongodb';
 import { mongoConnection } from '../db-mongo';
 import { storage } from '../storage';
+import { db } from '../db';
+import { messageDocuments } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import type { Message, InsertMessage } from '@shared/schema';
 
 // MongoDB document structure for message content
@@ -67,13 +70,28 @@ export class MessageService {
           compiledContent: messageData.content,
         };
       } else {
-        // Fallback path: Store content directly in PostgreSQL
-        console.log('MongoDB unavailable, using PostgreSQL fallback for message storage');
-        const postgresMessage = await storage.createMessage(messageData);
+        // Fallback path: Use PostgreSQL virtual MongoDB tables
+        console.log('MongoDB unavailable, using PostgreSQL virtual document tables');
+        
+        // Store content in PostgreSQL message_documents table
+        const documentId = await this.storeVirtualDocument(messageData.content, {
+          contentType: 'rich-text',
+          workflow: messageData.workflow as any,
+        });
+
+        // Create message record with virtual document reference
+        const postgresMessage = await storage.createMessage({
+          ...messageData,
+          content: documentId.toString(), // Store virtual document ID as reference
+        });
+
+        // Update virtual document with message reference
+        await this.updateVirtualDocumentReference(documentId, postgresMessage.id);
 
         return {
           ...postgresMessage,
-          compiledContent: postgresMessage.content,
+          documentId: documentId.toString(),
+          compiledContent: messageData.content,
         };
       }
     } catch (error) {
@@ -96,15 +114,15 @@ export class MessageService {
       if (mongoAvailable) {
         // Compile messages with MongoDB content
         const compiledMessages = await Promise.all(
-          postgresMessages.map(msg => this.compileMessage(msg))
+          postgresMessages.map(msg => this.compileMessage(msg, 'mongodb'))
         );
         return compiledMessages;
       } else {
-        // Return PostgreSQL messages directly (fallback mode)
-        return postgresMessages.map(msg => ({
-          ...msg,
-          compiledContent: msg.content,
-        }));
+        // Compile messages with virtual PostgreSQL documents
+        const compiledMessages = await Promise.all(
+          postgresMessages.map(msg => this.compileMessage(msg, 'virtual'))
+        );
+        return compiledMessages;
       }
     } catch (error) {
       console.error('MessageService.getMessagesByUser error:', error);
@@ -134,11 +152,21 @@ export class MessageService {
           await this.updateContentDocument(documentId, updates.content);
           
           // Return compiled message
-          return await this.compileMessage(existingMessage);
+          return await this.compileMessage(existingMessage, 'mongodb');
+        }
+      } else {
+        // Virtual PostgreSQL mode: Update virtual document
+        const documentId = existingMessage.content;
+        
+        if (documentId && !isNaN(parseInt(documentId))) {
+          await this.updateVirtualDocument(documentId, updates.content);
+          
+          // Return compiled message
+          return await this.compileMessage(existingMessage, 'virtual');
         }
       }
       
-      // Fallback path: Update content directly in PostgreSQL
+      // Final fallback: Update content directly in PostgreSQL
       const updatedMessage = await storage.updateMessage(messageId, updates);
       
       if (!updatedMessage) {
@@ -156,11 +184,11 @@ export class MessageService {
   }
 
   /**
-   * Delete message and associated MongoDB document
+   * Delete message and associated document (MongoDB or virtual PostgreSQL)
    */
   async deleteMessage(messageId: number): Promise<boolean> {
     try {
-      // Step 1: Get message to find MongoDB document ID
+      // Step 1: Get message to find document reference
       const message = await storage.getMessage(messageId);
       if (!message) {
         return false;
@@ -171,9 +199,17 @@ export class MessageService {
       // Step 2: Delete from PostgreSQL
       const postgresDeleted = await storage.deleteMessage(messageId);
 
-      // Step 3: Delete from MongoDB
+      // Step 3: Delete from document storage
       if (postgresDeleted && documentId) {
-        await this.deleteContentDocument(documentId);
+        const mongoAvailable = await this.isMongoDBAvailable();
+        
+        if (mongoAvailable && this.isValidObjectId(documentId)) {
+          // Delete MongoDB document
+          await this.deleteContentDocument(documentId);
+        } else if (!isNaN(parseInt(documentId))) {
+          // Delete virtual PostgreSQL document
+          await this.deleteVirtualDocument(documentId);
+        }
       }
 
       return postgresDeleted;
@@ -206,6 +242,80 @@ export class MessageService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * PRIVATE METHODS - Virtual PostgreSQL document operations (fallback)
+   */
+
+  private async storeVirtualDocument(
+    content: string, 
+    options: { 
+      contentType: 'rich-text' | 'plain-text' | 'markdown';
+      workflow?: string;
+    }
+  ): Promise<number> {
+    // Calculate metadata
+    const plainText = content.replace(/<[^>]*>/g, '');
+    const wordCount = plainText.trim().split(/\s+/).length;
+    const characterCount = plainText.length;
+    const htmlLength = content.length;
+
+    const [result] = await db.insert(messageDocuments).values({
+      content,
+      contentType: options.contentType,
+      workflow: options.workflow as any,
+      wordCount,
+      characterCount,
+      htmlLength,
+    }).returning();
+
+    return result.id;
+  }
+
+  private async updateVirtualDocumentReference(documentId: number, messageId: number): Promise<void> {
+    await db.update(messageDocuments)
+      .set({ messageId })
+      .where(eq(messageDocuments.id, documentId));
+  }
+
+  private async getVirtualDocument(documentId: string): Promise<any> {
+    const id = parseInt(documentId);
+    if (isNaN(id)) return null;
+
+    const [document] = await db.select().from(messageDocuments)
+      .where(eq(messageDocuments.id, id));
+    
+    return document || null;
+  }
+
+  private async updateVirtualDocument(documentId: string, newContent: string): Promise<void> {
+    const id = parseInt(documentId);
+    if (isNaN(id)) return;
+
+    // Calculate updated metadata
+    const plainText = newContent.replace(/<[^>]*>/g, '');
+    const wordCount = plainText.trim().split(/\s+/).length;
+    const characterCount = plainText.length;
+    const htmlLength = newContent.length;
+
+    await db.update(messageDocuments)
+      .set({
+        content: newContent,
+        wordCount,
+        characterCount,
+        htmlLength,
+        updatedAt: new Date(),
+      })
+      .where(eq(messageDocuments.id, id));
+  }
+
+  private async deleteVirtualDocument(documentId: string): Promise<void> {
+    const id = parseInt(documentId);
+    if (isNaN(id)) return;
+
+    await db.delete(messageDocuments)
+      .where(eq(messageDocuments.id, id));
   }
 
   /**
@@ -293,39 +403,63 @@ export class MessageService {
     await collection.deleteOne({ _id: new ObjectId(documentId) });
   }
 
-  private async compileMessage(postgresMessage: Message): Promise<ServiceMessage> {
+  private async compileMessage(postgresMessage: Message, storageType: 'mongodb' | 'virtual'): Promise<ServiceMessage> {
     try {
-      // The content field in PostgreSQL contains the MongoDB document ID
       const documentId = postgresMessage.content;
       
-      if (!documentId || !ObjectId.isValid(documentId)) {
-        // Fallback for messages that don't have MongoDB documents
+      if (storageType === 'mongodb') {
+        // MongoDB document compilation
+        if (!documentId || !ObjectId.isValid(documentId)) {
+          return {
+            ...postgresMessage,
+            compiledContent: postgresMessage.content,
+          };
+        }
+
+        const db = mongoConnection.getDatabase();
+        const collection = db.collection<MessageDocument>('message_documents');
+        const document = await collection.findOne({ _id: new ObjectId(documentId) });
+        
+        if (!document) {
+          console.warn(`MongoDB document not found for message ${postgresMessage.id}`);
+          return {
+            ...postgresMessage,
+            compiledContent: 'Content not available',
+          };
+        }
+
         return {
           ...postgresMessage,
-          compiledContent: postgresMessage.content,
+          documentId,
+          compiledContent: document.content,
+          content: document.content,
         };
-      }
+      } else {
+        // Virtual PostgreSQL document compilation
+        if (!documentId || isNaN(parseInt(documentId))) {
+          return {
+            ...postgresMessage,
+            compiledContent: postgresMessage.content,
+          };
+        }
 
-      // Fetch content from MongoDB
-      const db = mongoConnection.getDatabase();
-      const collection = db.collection<MessageDocument>('message_documents');
-      
-      const document = await collection.findOne({ _id: new ObjectId(documentId) });
-      
-      if (!document) {
-        console.warn(`MongoDB document not found for message ${postgresMessage.id}`);
+        const virtualDocument = await this.getVirtualDocument(documentId);
+        
+        if (!virtualDocument) {
+          console.warn(`Virtual document not found for message ${postgresMessage.id}`);
+          return {
+            ...postgresMessage,
+            compiledContent: 'Content not available',
+          };
+        }
+
         return {
           ...postgresMessage,
-          compiledContent: 'Content not available',
+          documentId,
+          compiledContent: virtualDocument.content,
+          content: virtualDocument.content,
         };
       }
-
-      return {
-        ...postgresMessage,
-        documentId,
-        compiledContent: document.content,
-        content: document.content, // Replace content field with actual content for frontend
-      };
     } catch (error) {
       console.error('Error compiling message:', error);
       return {
