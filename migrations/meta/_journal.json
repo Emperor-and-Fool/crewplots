@@ -8,6 +8,13 @@
       "when": 1749582898815,
       "tag": "0000_polite_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749596390470,
+      "tag": "0001_lush_wolf_cub",
+      "breakpoints": true
     }
   ]
 }
