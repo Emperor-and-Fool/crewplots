@@ -16,13 +16,14 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import type { Message, InsertMessage } from '@shared/schema';
+import { RichTextEditor, MessageDisplay } from '@/components/ui/rich-text-editor';
 
 // Message form validation schema with extensible features
 const messageFormSchema = z.object({
   content: z.string()
     .min(1, 'Message content is required')
-    .max(1000, 'Message must be less than 1000 characters'),
-  messageType: z.enum(['text', 'rich-text', 'system', 'notification']).default('text'),
+    .max(5000, 'Message must be less than 5000 characters'),
+  messageType: z.enum(['text', 'rich-text', 'system', 'notification']).default('rich-text'),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   isPrivate: z.boolean().default(false),
   receiverId: z.number().optional(), // Who receives the message
@@ -114,7 +115,7 @@ export function MessagingSystem({
     resolver: zodResolver(messageFormSchema),
     defaultValues: {
       content: '',
-      messageType: 'text',
+      messageType: 'rich-text',
       priority: 'normal',
       isPrivate: false,
       receiverId,
@@ -295,15 +296,15 @@ export function MessagingSystem({
                       </span>
                     </div>
                     
-                    <p className="text-sm text-foreground break-words">
-                      {message.content}
-                    </p>
-                    
-                    {/* Future: Rich text, attachments, etc. would go here */}
-                    {enableMarkdown && message.messageType === 'rich-text' && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Rich text formatting enabled
-                      </div>
+                    {message.messageType === 'rich-text' ? (
+                      <MessageDisplay 
+                        content={message.content} 
+                        className="text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm text-foreground break-words">
+                        {message.content}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -323,11 +324,12 @@ export function MessagingSystem({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Textarea
+                    <RichTextEditor
+                      content={field.value}
+                      onChange={field.onChange}
                       placeholder={placeholder}
-                      className="resize-none"
-                      rows={compactMode ? 2 : 3}
-                      {...field}
+                      maxHeight={compactMode ? "120px" : "200px"}
+                      className="min-h-[100px]"
                     />
                   </FormControl>
                   <FormMessage />
