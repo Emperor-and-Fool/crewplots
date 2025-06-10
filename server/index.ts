@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { redisSupervisor } from "./redis-supervisor";
+import { mongoConnection } from "./db-mongo";
 
 const app = express();
 
@@ -58,6 +59,13 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+  }
+
+  // Initialize MongoDB connection
+  try {
+    await mongoConnection.connect();
+  } catch (error) {
+    console.log('MongoDB connection failed, continuing without document storage features');
   }
 
   // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue

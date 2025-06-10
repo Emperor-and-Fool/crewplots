@@ -281,7 +281,8 @@ export const messages = pgTable("messages", {
   userId: integer("user_id").references(() => users.id).notNull(),
   receiverId: integer("receiver_id").references(() => users.id), // Optional - who receives the message
   isPrivate: boolean("is_private").default(false).notNull(),
-  attachmentUrl: text("attachment_url"), // For future file attachments
+  attachmentUrl: text("attachment_url"), // Legacy field
+  documentReference: text("document_reference"), // MongoDB document ID for sensitive files
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
   isRead: boolean("is_read").default(false).notNull(),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
