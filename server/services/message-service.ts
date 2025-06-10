@@ -38,31 +38,44 @@ export class MessageService {
   }
 
   /**
-   * Create a new message with content stored in MongoDB
+   * Create a new message with content stored in MongoDB (fallback to PostgreSQL if MongoDB unavailable)
    */
   async createMessage(messageData: InsertMessage & { workflow?: string }): Promise<ServiceMessage> {
     try {
-      // Step 1: Store content in MongoDB
-      const documentId = await this.storeContentDocument(messageData.content, {
-        contentType: 'rich-text',
-        workflow: messageData.workflow as any,
-      });
+      // Check if MongoDB is available
+      const mongoAvailable = await this.isMongoDBAvailable();
+      
+      if (mongoAvailable) {
+        // MongoDB path: Store content in MongoDB
+        const documentId = await this.storeContentDocument(messageData.content, {
+          contentType: 'rich-text',
+          workflow: messageData.workflow as any,
+        });
 
-      // Step 2: Create message record in PostgreSQL with MongoDB reference
-      const postgresMessage = await storage.createMessage({
-        ...messageData,
-        content: documentId, // Store MongoDB document ID as reference
-      });
+        // Create message record in PostgreSQL with MongoDB reference
+        const postgresMessage = await storage.createMessage({
+          ...messageData,
+          content: documentId, // Store MongoDB document ID as reference
+        });
 
-      // Step 3: Update MongoDB document with PostgreSQL message ID
-      await this.updateDocumentMessageReference(documentId, postgresMessage.id);
+        // Update MongoDB document with PostgreSQL message ID
+        await this.updateDocumentMessageReference(documentId, postgresMessage.id);
 
-      // Step 4: Return compiled message
-      return {
-        ...postgresMessage,
-        documentId,
-        compiledContent: messageData.content,
-      };
+        return {
+          ...postgresMessage,
+          documentId,
+          compiledContent: messageData.content,
+        };
+      } else {
+        // Fallback path: Store content directly in PostgreSQL
+        console.log('MongoDB unavailable, using PostgreSQL fallback for message storage');
+        const postgresMessage = await storage.createMessage(messageData);
+
+        return {
+          ...postgresMessage,
+          compiledContent: postgresMessage.content,
+        };
+      }
     } catch (error) {
       console.error('MessageService.createMessage error:', error);
       throw new Error(`Failed to create message: ${error instanceof Error ? error.message : String(error)}`);
