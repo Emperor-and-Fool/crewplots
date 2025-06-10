@@ -117,6 +117,7 @@ export function MessagingSystem({
   // Edit state management
   const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);
   const [editContent, setEditContent] = React.useState<string>('');
+  const [hasCreatedMessage, setHasCreatedMessage] = React.useState<boolean>(false);
 
 
 
@@ -255,6 +256,9 @@ export function MessagingSystem({
       return response.json();
     },
     onSuccess: async (newMessage) => {
+      // Set the flag to indicate a message was created
+      setHasCreatedMessage(true);
+      
       // Immediately invalidate and refetch the messages query
       await queryClient.invalidateQueries({
         queryKey: ['/api/applicant-portal/messages', userId],
@@ -341,7 +345,7 @@ export function MessagingSystem({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
               <span className="ml-2">Loading messages...</span>
             </div>
-          ) : filteredMessages.length === 0 ? (
+          ) : filteredMessages.length === 0 && !hasCreatedMessage ? (
             editingMessageId === -1 ? (
               // Show editor when creating first message
               <div className="space-y-3 p-3">
