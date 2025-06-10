@@ -149,8 +149,8 @@ export const staffCompetencies = pgTable("staff_competencies", {
 
 
 
-// Applicant Documents
-export const applicantDocuments = pgTable("applicant_documents", {
+// User Documents
+export const userDocuments = pgTable("user_documents", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
   documentName: text("document_name").notNull(),
@@ -279,7 +279,6 @@ export const messages = pgTable("messages", {
     enum: ["text", "rich-text", "system", "notification"] 
   }).default("text").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  receiverId: integer("receiver_id").references(() => users.id), // Optional - who receives the message
   isPrivate: boolean("is_private").default(false).notNull(),
   attachmentUrl: text("attachment_url"), // Legacy field
   documentReference: text("document_reference"), // MongoDB document ID for sensitive files
@@ -288,7 +287,6 @@ export const messages = pgTable("messages", {
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
   workflow: text("workflow"),
   visibleToRoles: text("visible_to_roles").array(), // Array of roles that can view this note
-  audienceId: integer("audience_id"), // Legacy field - will migrate to workflow system
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -305,7 +303,7 @@ export const insertPositionCompetencySchema = createInsertSchema(positionCompete
 export const insertCompetencySchema = createInsertSchema(competencies).omit({ id: true, createdAt: true });
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
 export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
-export const insertApplicantDocumentSchema = createInsertSchema(applicantDocuments).omit({ id: true, uploadedAt: true, verifiedAt: true });
+export const insertUserDocumentSchema = createInsertSchema(userDocuments).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
@@ -342,7 +340,7 @@ export const registerSchema = z.object({
 });
 
 // Types for drizzle tables
-export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
+export type UserDocument = typeof userDocuments.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
@@ -355,7 +353,7 @@ export type InsertPositionCompetency = z.infer<typeof insertPositionCompetencySc
 export type InsertCompetency = z.infer<typeof insertCompetencySchema>;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type InsertStaffCompetency = z.infer<typeof insertStaffCompetencySchema>;
-export type InsertApplicantDocument = z.infer<typeof insertApplicantDocumentSchema>;
+export type InsertUserDocument = z.infer<typeof insertUserDocumentSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;

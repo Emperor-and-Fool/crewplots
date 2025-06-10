@@ -1,13 +1,13 @@
 import {
-  users, locations, competencies, staff, staffCompetencies, applicantDocuments,
+  users, locations, competencies, staff, staffCompetencies, userDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments, messages,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
-  type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
+  type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
   type Shift, type CashCount, type KbCategory, type KbArticle, type Message,
   type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
-  type InsertStaffCompetency, type InsertApplicantDocument, type InsertScheduleTemplate,
+  type InsertStaffCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
   type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertMessage,
   type InsertUploadedFile, type InsertDocumentAttachment
@@ -201,7 +201,7 @@ export class MemStorage implements IStorage {
   private kbArticles: Map<number, KbArticle>;
   private uploadedFiles: Map<number, UploadedFile>;
   private documentAttachments: Map<number, DocumentAttachment>;
-  private _applicantDocuments: Map<number, any>;
+  private _userDocuments: Map<number, any>;
 
   private currentUserId: number;
   private currentLocationId: number;
