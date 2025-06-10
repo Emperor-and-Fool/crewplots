@@ -341,8 +341,13 @@ export function MessagingSystem({
       setHasCreatedMessage(true);
       setIsAutoSaving(false);
       
-      // Refresh messages to show the draft
+      // Force immediate cache refresh to show the draft
       queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      // Also refetch immediately to ensure data is current
+      queryClient.refetchQueries({
         queryKey: ['/api/applicant-portal/messages', userId],
       });
     },
@@ -530,8 +535,8 @@ export function MessagingSystem({
                 </Button>
               </div>
             )
-          ) : hasCreatedMessage && filteredMessages.length === 0 ? (
-            // Show loading state when message was created but not yet loaded
+          ) : hasCreatedMessage && filteredMessages.length === 0 && (isAutoSaving || autoSaveDraftMutation.isPending) ? (
+            // Show loading state only when actively saving and no messages loaded yet
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
               <span className="ml-2">Loading your message...</span>
