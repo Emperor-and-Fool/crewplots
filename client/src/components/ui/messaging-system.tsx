@@ -45,6 +45,12 @@ interface MessagingSystemProps {
   showMessageTypes?: boolean;
   maxHeight?: string;
   
+  // Workflow categorization
+  workflow?: 'application' | 'crew' | 'location' | 'scheduling' | 'knowledge' | 'statistics';
+  
+  // Document storage integration
+  documentStorage?: boolean;
+  
   // Feature toggles for future extensibility
   enableRichText?: boolean;
   enableFileAttachments?: boolean;

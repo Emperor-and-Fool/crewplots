@@ -208,6 +208,8 @@ function ApplicantPortal() {
               showPrivateToggle={false}
               maxHeight="300px"
               compactMode={true}
+              workflow="application"
+              documentStorage={true}
               onMessageSent={(message) => {
                 toast({
                   title: "Message sent successfully!",

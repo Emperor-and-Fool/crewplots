@@ -119,7 +119,7 @@ router.put('/documents/:documentId', async (req, res) => {
     // First, verify the document belongs to the authenticated user
     const existingDoc = await collection.findOne({ 
       _id: new ObjectId(documentId),
-      userId: req.user.id 
+      userId: (req.user as any).id 
     });
     
     if (!existingDoc) {
@@ -179,7 +179,7 @@ router.delete('/documents/:documentId', async (req, res) => {
     // Verify the document belongs to the authenticated user before deleting
     const result = await collection.deleteOne({ 
       _id: new ObjectId(documentId),
-      userId: req.user.id 
+      userId: (req.user as any).id 
     });
 
     if (result.deletedCount === 0) {
