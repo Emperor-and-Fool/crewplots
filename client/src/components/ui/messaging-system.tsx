@@ -345,7 +345,7 @@ export function MessagingSystem({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
               <span className="ml-2">Loading messages...</span>
             </div>
-          ) : filteredMessages.length === 0 && !hasCreatedMessage ? (
+          ) : filteredMessages.length === 0 && !hasCreatedMessage && !createMessageMutation.isPending ? (
             editingMessageId === -1 ? (
               // Show editor when creating first message
               <div className="space-y-3 p-3">
@@ -414,6 +414,12 @@ export function MessagingSystem({
                 </Button>
               </div>
             )
+          ) : hasCreatedMessage && filteredMessages.length === 0 ? (
+            // Show loading state when message was created but not yet loaded
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
+              <span className="ml-2">Loading your message...</span>
+            </div>
           ) : (
             <div className="space-y-3">
               {filteredMessages.map((message, index) => (
