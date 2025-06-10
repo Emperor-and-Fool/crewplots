@@ -402,14 +402,16 @@ export function MessagingSystem({
   const onSubmit = (data: MessageFormData) => {
     // If we have a draft, just finalize it and show the card
     if (draftMessageId && editContent.trim()) {
-      // Draft already exists, just switch to card view
+      // Keep the content until the refresh completes
       setEditingMessageId(null);
-      setEditContent('');
       setHasCreatedMessage(true);
       
-      // Now refresh the cache to show the finalized message
+      // Refresh the cache to show the finalized message
       queryClient.invalidateQueries({
         queryKey: ['/api/applicant-portal/messages', userId],
+      }).then(() => {
+        // Only clear edit content after the query refreshes
+        setEditContent('');
       });
       
       toast({
@@ -553,6 +555,24 @@ export function MessagingSystem({
                 </Button>
               </div>
             )
+          ) : hasCreatedMessage && filteredMessages.length === 0 && editContent.trim() ? (
+            // Show transitional content while message loads after send
+            <div className="space-y-3">
+              <div className="flex gap-3 p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <div className="flex-shrink-0">
+                  <MessageCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">You</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {format(new Date(), 'MMM d, h:mm a')}
+                    </span>
+                  </div>
+                  <MessageDisplay content={editContent} />
+                </div>
+              </div>
+            </div>
           ) : hasCreatedMessage && filteredMessages.length === 0 && (isAutoSaving || autoSaveDraftMutation.isPending) ? (
             // Show loading state only when actively saving and no messages loaded yet
             <div className="flex items-center justify-center py-8 text-muted-foreground">
