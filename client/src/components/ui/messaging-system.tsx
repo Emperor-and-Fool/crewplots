@@ -363,7 +363,15 @@ export function MessagingSystem({
 
   // Filter messages based on props
   const filteredMessages = React.useMemo(() => {
-    let filtered = messages;
+    // Ensure we have an array to work with
+    let filtered = Array.isArray(messages) ? messages : [];
+    
+    // Debug logging
+    console.log('Messages data:', messages);
+    console.log('Is array:', Array.isArray(messages));
+    console.log('Filtered length:', filtered.length);
+    console.log('User ID:', userId);
+    console.log('Show only user messages:', showOnlyUserMessages);
 
     if (showOnlyUserMessages) {
       filtered = filtered.filter(msg => msg.userId === userId);
@@ -373,6 +381,7 @@ export function MessagingSystem({
       filtered = filtered.filter(msg => msg.messageType !== 'system');
     }
 
+    console.log('Final filtered messages:', filtered);
     return filtered.sort((a, b) => 
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
@@ -454,7 +463,7 @@ export function MessagingSystem({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
               <span className="ml-2">Loading messages...</span>
             </div>
-          ) : filteredMessages.length === 0 && !hasCreatedMessage && !createMessageMutation.isPending ? (
+          ) : filteredMessages.length === 0 && !createMessageMutation.isPending ? (
             editingMessageId === -1 ? (
               // Show editor when creating first message
               <div className="space-y-3 p-3">
