@@ -647,19 +647,24 @@ export function MessagingSystem({
                             size="sm"
                             onClick={() => {
                               if (editContent.trim()) {
-                                editMessageMutation.mutate({
-                                  messageId: message.id,
-                                  content: editContent
+                                // Simply switch to view mode - the message is already saved via auto-save
+                                setEditingMessageId(null);
+                                setEditContent('');
+                                
+                                // Quietly refresh just the messages data without disrupting the UI
+                                queryClient.refetchQueries({
+                                  queryKey: ['/api/applicant-portal/messages', userId],
+                                });
+                                
+                                toast({
+                                  title: "Message saved successfully!",
+                                  description: "Your changes have been saved.",
                                 });
                               }
                             }}
-                            disabled={editMessageMutation.isPending || !editContent.trim()}
+                            disabled={!editContent.trim()}
                           >
-                            {editMessageMutation.isPending ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                            ) : (
-                              <Save className="h-3 w-3 mr-1" />
-                            )}
+                            <Save className="h-3 w-3 mr-1" />
                             Save
                           </Button>
                           <Button
