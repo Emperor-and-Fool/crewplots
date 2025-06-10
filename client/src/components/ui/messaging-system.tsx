@@ -164,8 +164,13 @@ export function MessagingSystem({
       return response.json();
     },
     onSuccess: (newMessage) => {
-      // Invalidate and refetch messages
+      // Invalidate and refetch messages - use exact same key as the query
       queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+      
+      // Also trigger an immediate refetch
+      queryClient.refetchQueries({
         queryKey: ['/api/applicant-portal/messages', userId],
       });
       
