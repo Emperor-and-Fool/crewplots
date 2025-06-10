@@ -9,10 +9,11 @@ This document outlines the server infrastructure requirements for deploying the 
 
 #### 1. Application Container (Node.js)
 **Purpose**: Main application server running Express.js with React frontend
-- **Base Image**: `node:20-alpine`
-- **Runtime**: Node.js 20.x with npm
+- **Base Image**: `node:20-alpine` (Alpine Linux 3.18+)
+- **Runtime**: Node.js 20.x with npm 10.x
 - **Port**: 5000 (internal)
-- **Dependencies**: All npm packages as defined in package.json
+- **System Packages**: git, python3, make, g++ (for native module compilation)
+- **Dependencies**: Complete npm package list below
 
 #### 2. PostgreSQL Database Container
 **Purpose**: Primary database for user data, metadata, and relational information
@@ -42,45 +43,126 @@ This document outlines the server infrastructure requirements for deploying the 
 - **Configuration**: Persistent storage for session data
 - **Memory Optimization**: jemalloc disabled for Replit compatibility
 
-## Application Dependencies
+## Complete Package Manifest
 
-### Core Runtime Packages
+### Production Dependencies
 ```json
 {
-  "node": "20.x",
-  "npm": "10.x",
-  "typescript": "^5.0.0",
-  "tsx": "latest"
+  "@hookform/resolvers": "^3.x",
+  "@jridgewell/trace-mapping": "^0.x",
+  "@neondatabase/serverless": "^0.x",
+  "@radix-ui/react-accordion": "^1.x",
+  "@radix-ui/react-alert-dialog": "^1.x",
+  "@radix-ui/react-aspect-ratio": "^1.x",
+  "@radix-ui/react-avatar": "^1.x",
+  "@radix-ui/react-checkbox": "^1.x",
+  "@radix-ui/react-collapsible": "^1.x",
+  "@radix-ui/react-context-menu": "^2.x",
+  "@radix-ui/react-dialog": "^1.x",
+  "@radix-ui/react-dropdown-menu": "^2.x",
+  "@radix-ui/react-hover-card": "^1.x",
+  "@radix-ui/react-label": "^2.x",
+  "@radix-ui/react-menubar": "^1.x",
+  "@radix-ui/react-navigation-menu": "^1.x",
+  "@radix-ui/react-popover": "^1.x",
+  "@radix-ui/react-progress": "^1.x",
+  "@radix-ui/react-radio-group": "^1.x",
+  "@radix-ui/react-scroll-area": "^1.x",
+  "@radix-ui/react-select": "^2.x",
+  "@radix-ui/react-separator": "^1.x",
+  "@radix-ui/react-slider": "^1.x",
+  "@radix-ui/react-slot": "^1.x",
+  "@radix-ui/react-switch": "^1.x",
+  "@radix-ui/react-tabs": "^1.x",
+  "@radix-ui/react-toast": "^1.x",
+  "@radix-ui/react-toggle": "^1.x",
+  "@radix-ui/react-toggle-group": "^1.x",
+  "@radix-ui/react-tooltip": "^1.x",
+  "@tanstack/react-query": "^5.x",
+  "bcryptjs": "^2.x",
+  "class-variance-authority": "^0.x",
+  "clsx": "^2.x",
+  "cmdk": "^0.x",
+  "connect-pg-simple": "^9.x",
+  "date-fns": "^3.x",
+  "drizzle-orm": "^0.x",
+  "drizzle-zod": "^0.x",
+  "embla-carousel-react": "^8.x",
+  "express": "^4.x",
+  "express-session": "^1.x",
+  "framer-motion": "^11.x",
+  "input-otp": "^1.x",
+  "ioredis": "^5.x",
+  "lucide-react": "^0.x",
+  "memoizee": "^0.x",
+  "memorystore": "^1.x",
+  "mongodb": "^6.x",
+  "multer": "^1.x",
+  "next-themes": "^0.x",
+  "openid-client": "^5.x",
+  "passport": "^0.x",
+  "passport-local": "^1.x",
+  "react": "^18.x",
+  "react-day-picker": "^8.x",
+  "react-dom": "^18.x",
+  "react-hook-form": "^7.x",
+  "react-icons": "^5.x",
+  "react-resizable-panels": "^2.x",
+  "recharts": "^2.x",
+  "tailwind-merge": "^2.x",
+  "tailwindcss": "^3.x",
+  "tailwindcss-animate": "^1.x",
+  "tsx": "^4.x",
+  "tw-animate-css": "^0.x",
+  "typescript": "^5.x",
+  "vaul": "^0.x",
+  "wouter": "^3.x",
+  "ws": "^8.x",
+  "zod": "^3.x",
+  "zod-validation-error": "^3.x"
 }
 ```
 
-### Database Drivers
+### Development Dependencies
 ```json
 {
-  "pg": "PostgreSQL driver",
-  "drizzle-orm": "Type-safe ORM",
-  "mongodb": "MongoDB driver"
+  "@replit/vite-plugin-cartographer": "^2.x",
+  "@replit/vite-plugin-runtime-error-modal": "^2.x",
+  "@tailwindcss/typography": "^0.x",
+  "@tailwindcss/vite": "^4.x",
+  "@types/bcryptjs": "^2.x",
+  "@types/connect-pg-simple": "^7.x",
+  "@types/express": "^4.x",
+  "@types/express-session": "^1.x",
+  "@types/memoizee": "^0.x",
+  "@types/multer": "^1.x",
+  "@types/node": "^20.x",
+  "@types/passport": "^1.x",
+  "@types/passport-local": "^1.x",
+  "@types/react": "^18.x",
+  "@types/react-dom": "^18.x",
+  "@types/ws": "^8.x",
+  "@vitejs/plugin-react": "^4.x",
+  "autoprefixer": "^10.x",
+  "drizzle-kit": "^0.x",
+  "esbuild": "^0.x",
+  "postcss": "^8.x",
+  "vite": "^5.x"
 }
 ```
 
-### Security & Encryption
-```json
-{
-  "bcryptjs": "Password hashing",
-  "passport": "Authentication middleware",
-  "express-session": "Session management",
-  "crypto": "Built-in encryption for sensitive documents"
-}
-```
+### Core System Requirements
+- **Base OS**: Alpine Linux 3.18+ (from node:20-alpine)
+- **Node.js**: v20.x LTS
+- **npm**: v10.x
+- **Python**: v3.11+ (for native module compilation)
+- **Build Tools**: make, g++, git
 
-### Web Framework
-```json
-{
-  "express": "Web server",
-  "vite": "Frontend build tool",
-  "react": "Frontend framework"
-}
-```
+### Database Drivers & ORMs
+- **PostgreSQL**: Native pg driver with connection pooling
+- **MongoDB**: Official MongoDB driver with GridFS support
+- **Redis**: ioredis client with cluster support
+- **Drizzle ORM**: Type-safe database operations with Zod integration
 
 ## Environment Variables Required
 
