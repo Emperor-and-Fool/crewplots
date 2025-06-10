@@ -118,6 +118,9 @@ export function MessagingSystem({
   const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);
   const [editContent, setEditContent] = React.useState<string>('');
   const [hasCreatedMessage, setHasCreatedMessage] = React.useState<boolean>(false);
+  const [draftMessageId, setDraftMessageId] = React.useState<number | null>(null);
+  const [lastSavedContent, setLastSavedContent] = React.useState<string>('');
+  const [isAutoSaving, setIsAutoSaving] = React.useState<boolean>(false);
 
 
 
@@ -290,6 +293,68 @@ export function MessagingSystem({
     },
   });
 
+  // Auto-save draft mutation
+  const autoSaveDraftMutation = useMutation({
+    mutationFn: async (content: string): Promise<Message> => {
+      const messageData = {
+        content,
+        priority: 'normal' as const,
+        isPrivate: false,
+      };
+
+      if (draftMessageId) {
+        // Update existing draft
+        const response = await fetch(`/api/applicant-portal/messages/${draftMessageId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update draft: ${response.statusText}`);
+        }
+
+        return response.json();
+      } else {
+        // Create new draft
+        const response = await fetch('/api/applicant-portal/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(messageData),
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to create draft: ${response.statusText}`);
+        }
+
+        return response.json();
+      }
+    },
+    onSuccess: (message) => {
+      setDraftMessageId(message.id);
+      setLastSavedContent(message.content);
+      setHasCreatedMessage(true);
+      
+      // Refresh messages to show the draft
+      queryClient.invalidateQueries({
+        queryKey: ['/api/applicant-portal/messages', userId],
+      });
+    },
+  });
+
+  // Debounced auto-save effect
+  React.useEffect(() => {
+    if (editContent.trim() && editContent !== lastSavedContent) {
+      const timeoutId = setTimeout(() => {
+        autoSaveDraftMutation.mutate(editContent);
+      }, 1000); // Save after 1 second of no typing
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [editContent, lastSavedContent]);
+
   // Filter messages based on props
   const filteredMessages = React.useMemo(() => {
     let filtered = messages;
@@ -309,9 +374,34 @@ export function MessagingSystem({
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
+    // If we have a draft, just finalize it, otherwise create new
+    if (draftMessageId && editContent.trim()) {
+      // Draft already exists, just mark as finalized
+      setEditingMessageId(null);
+      setEditContent('');
+      setDraftMessageId(null);
+      setLastSavedContent('');
+      
+      toast({
+        title: "Message sent successfully!",
+        description: "Your message has been saved.",
+      });
+      
+      return;
+    }
+    
     if (data.content.trim()) {
       createMessageMutation.mutate(data);
     }
+  };
+
+  const resetForm = () => {
+    form.reset();
+    setEditingMessageId(null);
+    setEditContent('');
+    setDraftMessageId(null);
+    setLastSavedContent('');
+    setHasCreatedMessage(false);
   };
 
   // Handle loading and error states
