@@ -10,7 +10,8 @@ import {
   type InsertStaffCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
   type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertMessage,
-  type InsertUploadedFile, type InsertDocumentAttachment
+  type InsertUploadedFile, type InsertDocumentAttachment,
+  generatePublicId
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
@@ -280,6 +281,7 @@ export class MemStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const newUser: User = {
       id: this.currentUserId++,
+      public_id: generatePublicId(12),
       createdAt: new Date(),
       ...user
     };

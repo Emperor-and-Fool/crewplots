@@ -16,6 +16,16 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Utility function to generate secure public IDs
+export function generatePublicId(length: number = 12): string {
+  const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return result;
+}
+
 // Locations (different bars/restaurants)
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
