@@ -15,13 +15,14 @@ const createNoteSchema = insertMessageSchema.extend({
 // GET /api/messages/notes/:userId/:workflow - Get workflow-specific notes from a user
 router.get('/:userId/:workflow', async (req, res) => {
   try {
-    if (!req.user?.id) {
+    const user = req.user as any;
+    if (!user?.id) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const userId = parseInt(req.params.userId);
     const workflow = req.params.workflow;
-    const currentUserRole = (req.user as any).role;
+    const currentUserRole = user.role;
     
     if (isNaN(userId)) {
       return res.status(400).json({ error: 'Invalid user ID' });
@@ -41,13 +42,14 @@ router.get('/:userId/:workflow', async (req, res) => {
 // GET /api/messages/notes/:userId/:workflow/count - Get count of workflow notes (for indicators)
 router.get('/:userId/:workflow/count', async (req, res) => {
   try {
-    if (!req.user?.id) {
+    const user = req.user as any;
+    if (!user?.id) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const userId = parseInt(req.params.userId);
     const workflow = req.params.workflow;
-    const currentUserRole = (req.user as any).role;
+    const currentUserRole = user.role;
     
     if (isNaN(userId)) {
       return res.status(400).json({ error: 'Invalid user ID' });
@@ -65,7 +67,8 @@ router.get('/:userId/:workflow/count', async (req, res) => {
 // POST /api/messages/notes - Create a new note
 router.post('/', async (req, res) => {
   try {
-    if (!req.user?.id) {
+    const user = req.user as any;
+    if (!user?.id) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -77,7 +80,7 @@ router.post('/', async (req, res) => {
       audienceId: 1, // Default audience
     };
 
-    const createdNote = await messagingService.createNote(noteData);
+    const createdNote = await messagingService.createNote(noteData, user.id);
     
     console.log(`Created note for user ${noteData.userId} in workflow ${noteData.workflow}`);
     
