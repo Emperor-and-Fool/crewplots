@@ -290,6 +290,7 @@ export const messages = pgTable("messages", {
     enum: ["text", "rich-text", "system", "notification"] 
   }).default("text").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  receiverId: integer("receiver_id").references(() => users.id), // Optional recipient
   isPrivate: boolean("is_private").default(false).notNull(),
   attachmentUrl: text("attachment_url"), // Legacy field
   documentReference: text("document_reference"), // MongoDB document ID for sensitive files
