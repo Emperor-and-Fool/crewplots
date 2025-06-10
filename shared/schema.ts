@@ -58,6 +58,7 @@ export const rolePermissions = pgTable("role_permissions", {
 // Users & Auth
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  public_id: text("public_id").notNull().unique(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
@@ -292,7 +293,7 @@ export const messages = pgTable("messages", {
 });
 
 // Insert Schemas
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, public_id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
 export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
