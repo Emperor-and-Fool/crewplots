@@ -5,7 +5,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { ExternalLink, File, Trash } from 'lucide-react';
-import ApplicationNotes from '@/components/applicants/application-notes';
+import MessagingSystem from '@/components/ui/messaging-system';
+
+// Profile interface
+interface ApplicantProfile {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  status: string;
+  createdAt: string;
+}
 
 import { 
   Card, 
@@ -248,42 +258,58 @@ function ApplicantPortal() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Name</p>
-                <p className="text-lg">{profile && profile.name ? profile.name : 'Loading...'}</p>
+                <p className="text-lg">{profile?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-lg">{profile && profile.email ? profile.email : 'Loading...'}</p>
+                <p className="text-lg">{profile?.email || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Phone</p>
-                <p className="text-lg">{profile && profile.phone ? profile.phone : 'Not provided'}</p>
+                <p className="text-lg">{profile?.phoneNumber || 'Not provided'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Position Applied</p>
-                <p className="text-lg">{profile && profile.positionApplied ? profile.positionApplied : 'Loading...'}</p>
+                <p className="text-lg">{'General Position'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Status</p>
-                <div className="mt-1">{profile && profile.status ? getStatusBadge(profile.status) : 'Loading...'}</div>
+                <div className="mt-1">{profile?.status ? getStatusBadge(profile.status) : 'Loading...'}</div>
               </div>
               <div>
                 <p className="text-sm font-medium">Application Date</p>
-                <p className="text-lg">{profile && profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Loading...'}</p>
+                <p className="text-lg">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Loading...'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Application Notes Card */}
+        {/* Communication Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Application Notes</CardTitle>
+            <CardTitle>Communication</CardTitle>
             <CardDescription>
-              Add notes and updates to your application
+              Send messages about your application
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ApplicationNotes userId={user?.id} />
+            <MessagingSystem
+              userId={user?.id || 0}
+              title="Application Messages"
+              placeholder="Type your message about your application..."
+              showPriority={true}
+              showPrivateToggle={true}
+              allowMessageDeletion={true}
+              enableRichText={true}
+              maxHeight="400px"
+              compactMode={false}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Message sent successfully!",
+                  description: "Your message has been recorded and will be reviewed.",
+                });
+              }}
+            />
           </CardContent>
         </Card>
       </div>
