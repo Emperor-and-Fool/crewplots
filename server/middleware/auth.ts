@@ -29,7 +29,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         console.log("Auth middleware - Checking authentication");
         console.log("Auth middleware - isAuthenticated:", req.isAuthenticated());
         console.log("Auth middleware - Session:", req.session);
-        console.log("Auth middleware - User:", req.user ? `Found: ${req.user.username}` : 'None');
+        console.log("Auth middleware - User:", req.user ? `Found: ${(req.user as any).username}` : 'None');
         
         // When using passport, we can simply use isAuthenticated() method
         if (!req.isAuthenticated()) {
@@ -52,7 +52,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             return;
         }
 
-        console.log("User authenticated successfully:", req.user.username);
+        console.log("User authenticated successfully:", (req.user as any).username);
         // User is already attached to the request by Passport
         next();
     } catch (error) {
@@ -69,7 +69,7 @@ export const checkRole = (allowedRoles: string[]) => {
                 return;
             }
 
-            if (!allowedRoles.includes(req.user.role)) {
+            if (!allowedRoles.includes((req.user as any).role)) {
                 res.status(403).json({ message: "Forbidden - Insufficient permissions" });
                 return;
             }

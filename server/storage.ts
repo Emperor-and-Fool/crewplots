@@ -235,7 +235,7 @@ export class MemStorage implements IStorage {
     this.kbArticles = new Map();
     this.uploadedFiles = new Map();
     this.documentAttachments = new Map();
-    this._applicantDocuments = new Map();
+    this._userDocuments = new Map();
 
     this.currentUserId = 1;
     this.currentLocationId = 1;
