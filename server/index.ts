@@ -61,12 +61,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Initialize MongoDB connection
-  try {
-    await mongoConnection.connect();
-  } catch (error) {
-    console.log('MongoDB connection failed, continuing without document storage features');
-  }
+  // Initialize MongoDB connection (non-blocking)
+  mongoConnection.connect().catch((error) => {
+    console.log('MongoDB connection failed, document storage features disabled');
+  });
 
   // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
   console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
