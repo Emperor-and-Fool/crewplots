@@ -164,24 +164,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register API endpoints FIRST before other routes to prevent conflicts
   
-  // Admin profile endpoint for non-applicant users
-  app.get("/api/admin/my-profile", async (req: any, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    try {
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching admin profile:", error);
-      res.status(500).json({ error: "Failed to fetch profile" });
-    }
-  });
-  
   // Get individual applicant by ID
   app.get("/api/applicants/:id", async (req, res) => {
     console.log("Individual applicant endpoint hit with ID:", req.params.id);

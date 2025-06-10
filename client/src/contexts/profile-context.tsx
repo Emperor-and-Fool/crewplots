@@ -31,30 +31,24 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch profile data from API based on user role
+  // Fetch profile data from API - use auth/me for all users
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // First get current user to determine role
-      const authResponse = await fetch('/api/auth/check');
-      if (!authResponse.ok) {
-        throw new Error('Not authenticated');
-      }
-      const authData = await authResponse.json();
-      
-      // Choose endpoint based on user role
-      const endpoint = authData.role === 'applicant' 
-        ? '/api/applicant-portal/my-profile'
-        : '/api/admin/my-profile';
-      
-      const response = await fetch(endpoint);
+      const response = await fetch('/api/auth/me');
       if (!response.ok) {
         throw new Error(`Failed to fetch profile: ${response.status}`);
       }
-      const profileData = await response.json();
-      setProfile(profileData);
-      sessionStorage.setItem('applicant-profile', JSON.stringify(profileData));
+      const authData = await response.json();
+      
+      if (!authData.authenticated || !authData.user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Use the user data from auth/me as profile data
+      setProfile(authData.user);
+      sessionStorage.setItem('applicant-profile', JSON.stringify(authData.user));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       console.error('Profile fetch error:', err);
