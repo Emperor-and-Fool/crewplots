@@ -12,23 +12,26 @@ Crew Plots Pro is a hospitality management platform for streamlined applicant pr
 ## Documentation Categories
 Navigate through our organized documentation sections:
 
-### 📋 Project Foundation
+### 📋 Category 1: Project Foundation
 - Quick orientation and core architecture principles
 
-### 🏗️ Infrastructure Setup  
+### 🏗️ Category 2: Infrastructure Setup  
 - Docker containers, deployment, and system requirements
 
-### 👥 User Management
+### 👥 Category 3: DevOp Guide - System Users
 - User roles, permissions, and applicant workflows
 
-### 🔧 Application Development
+### 🔧 Category 4: DevOp Guide - Components
 - Components, messaging, and code architecture
 
-### 💾 Data & Storage
-- Database schemas and backend implementation
+### 💻 Category 5: DevOp Guide - Application Code Architecture
+- Frontend architecture, backend structure, and development patterns
 
-### 🔌 Integration & APIs
-- API endpoints and system integration
+### 💾 Category 6: DevOp Guide - Database
+- Database schemas and storage implementation
+
+### 🔌 Category 7: DevOp Guide - API/Backend
+- API endpoints and backend data compilation
 
 ## Quick Reference
 - **Tech Stack**: React + TypeScript, Express.js, PostgreSQL, MongoDB, Redis
