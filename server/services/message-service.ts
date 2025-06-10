@@ -83,19 +83,29 @@ export class MessageService {
   }
 
   /**
-   * Get messages with content compiled from MongoDB
+   * Get messages with content compiled from MongoDB (fallback to PostgreSQL if MongoDB unavailable)
    */
   async getMessagesByUser(userId: number): Promise<ServiceMessage[]> {
     try {
       // Step 1: Fetch message metadata from PostgreSQL
       const postgresMessages = await storage.getMessagesByUser(userId);
 
-      // Step 2: Compile messages with MongoDB content
-      const compiledMessages = await Promise.all(
-        postgresMessages.map(msg => this.compileMessage(msg))
-      );
+      // Step 2: Check if MongoDB is available
+      const mongoAvailable = await this.isMongoDBAvailable();
 
-      return compiledMessages;
+      if (mongoAvailable) {
+        // Compile messages with MongoDB content
+        const compiledMessages = await Promise.all(
+          postgresMessages.map(msg => this.compileMessage(msg))
+        );
+        return compiledMessages;
+      } else {
+        // Return PostgreSQL messages directly (fallback mode)
+        return postgresMessages.map(msg => ({
+          ...msg,
+          compiledContent: msg.content,
+        }));
+      }
     } catch (error) {
       console.error('MessageService.getMessagesByUser error:', error);
       throw new Error(`Failed to get messages: ${error instanceof Error ? error.message : String(error)}`);
@@ -103,34 +113,42 @@ export class MessageService {
   }
 
   /**
-   * Update message content in MongoDB
+   * Update message content (MongoDB or PostgreSQL based on availability)
    */
   async updateMessage(messageId: number, updates: { content?: string }): Promise<ServiceMessage> {
     try {
-      // Step 1: Get existing message to find MongoDB document ID
+      // Step 1: Get existing message
       const existingMessage = await storage.getMessage(messageId);
       if (!existingMessage) {
         throw new Error('Message not found');
       }
 
-      const documentId = existingMessage.content; // Content field stores MongoDB document ID
+      // Step 2: Check if MongoDB is available
+      const mongoAvailable = await this.isMongoDBAvailable();
 
-      // Step 2: Update content in MongoDB if provided
-      if (updates.content) {
-        await this.updateContentDocument(documentId, updates.content);
+      if (mongoAvailable && updates.content) {
+        // MongoDB path: Update document content
+        const documentId = existingMessage.content; // Content field stores MongoDB document ID
+        
+        if (documentId && this.isValidObjectId(documentId)) {
+          await this.updateContentDocument(documentId, updates.content);
+          
+          // Return compiled message
+          return await this.compileMessage(existingMessage);
+        }
       }
-
-      // Step 3: Update metadata in PostgreSQL if needed
-      const updatedMessage = await storage.updateMessage(messageId, {
-        // Note: content field remains the MongoDB document ID
-      });
-
+      
+      // Fallback path: Update content directly in PostgreSQL
+      const updatedMessage = await storage.updateMessage(messageId, updates);
+      
       if (!updatedMessage) {
         throw new Error('Failed to update message');
       }
 
-      // Step 4: Return compiled message
-      return await this.compileMessage(updatedMessage);
+      return {
+        ...updatedMessage,
+        compiledContent: updatedMessage.content,
+      };
     } catch (error) {
       console.error('MessageService.updateMessage error:', error);
       throw new Error(`Failed to update message: ${error instanceof Error ? error.message : String(error)}`);
@@ -162,6 +180,31 @@ export class MessageService {
     } catch (error) {
       console.error('MessageService.deleteMessage error:', error);
       throw new Error(`Failed to delete message: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Check if MongoDB is available and connected
+   */
+  private async isMongoDBAvailable(): Promise<boolean> {
+    try {
+      const db = mongoConnection.getDatabase();
+      await db.admin().ping();
+      return true;
+    } catch (error) {
+      console.log('MongoDB not available, using PostgreSQL fallback');
+      return false;
+    }
+  }
+
+  /**
+   * Check if string is a valid MongoDB ObjectId
+   */
+  private isValidObjectId(id: string): boolean {
+    try {
+      return ObjectId.isValid(id) && new ObjectId(id).toString() === id;
+    } catch {
+      return false;
     }
   }
 
