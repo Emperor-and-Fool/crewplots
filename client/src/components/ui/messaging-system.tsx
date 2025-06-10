@@ -332,15 +332,22 @@ export function MessagingSystem({
         return response.json();
       }
     },
+    onMutate: () => {
+      setIsAutoSaving(true);
+    },
     onSuccess: (message) => {
       setDraftMessageId(message.id);
       setLastSavedContent(message.content);
       setHasCreatedMessage(true);
+      setIsAutoSaving(false);
       
       // Refresh messages to show the draft
       queryClient.invalidateQueries({
         queryKey: ['/api/applicant-portal/messages', userId],
       });
+    },
+    onError: () => {
+      setIsAutoSaving(false);
     },
   });
 
@@ -349,7 +356,7 @@ export function MessagingSystem({
     if (editContent.trim() && editContent !== lastSavedContent) {
       const timeoutId = setTimeout(() => {
         autoSaveDraftMutation.mutate(editContent);
-      }, 1000); // Save after 1 second of no typing
+      }, 500); // Save after 500ms of no typing for faster response
 
       return () => clearTimeout(timeoutId);
     }
@@ -449,6 +456,25 @@ export function MessagingSystem({
                 <div className="flex items-center gap-2 justify-between">
                   <div className="text-xs text-muted-foreground">
                     {editContent.length}/1000 characters
+                  </div>
+                  
+                  {/* Auto-save status indicator */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {isAutoSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
+                          <span>Saving...</span>
+                        </>
+                      ) : draftMessageId ? (
+                        <>
+                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                          <span>Draft saved</span>
+                        </>
+                      ) : editContent.trim() ? (
+                        <span>Type to auto-save</span>
+                      ) : null}
+                    </div>
                   </div>
                   
                   <div className="flex gap-2">
