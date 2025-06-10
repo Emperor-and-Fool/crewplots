@@ -121,16 +121,11 @@ export function MessagingSystem({
     },
   });
 
-  // Fetch messages query
+  // Fetch messages query - use applicant-specific endpoint for applicants
   const { data: messages = [], isLoading, error } = useQuery<Message[]>({
-    queryKey: receiverId ? ['/api/messages', 'receiver', receiverId] : ['/api/messages', 'user', userId],
+    queryKey: ['/api/applicant-portal/messages', userId],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (receiverId) {
-        params.append('receiverId', receiverId.toString());
-      }
-      
-      const response = await fetch(`/api/messages?${params.toString()}`, {
+      const response = await fetch('/api/applicant-portal/messages', {
         credentials: 'include' // Ensure cookies are sent
       });
       
@@ -146,25 +141,20 @@ export function MessagingSystem({
     refetchOnWindowFocus: false,
   });
 
-  // Create message mutation
+  // Create message mutation - use applicant-specific endpoint
   const createMessageMutation = useMutation({
     mutationFn: async (data: MessageFormData): Promise<Message> => {
-      const messageData: InsertMessage = {
+      const messageData = {
         content: data.content,
-        messageType: data.messageType,
         priority: data.priority,
         isPrivate: data.isPrivate,
-        userId,
-        receiverId: data.receiverId,
-        isRead: false,
-        attachmentUrl: null,
-        metadata: null,
       };
 
-      const response = await fetch('/api/messages', {
+      const response = await fetch('/api/applicant-portal/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(messageData),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -176,7 +166,7 @@ export function MessagingSystem({
     onSuccess: (newMessage) => {
       // Invalidate and refetch messages
       queryClient.invalidateQueries({
-        queryKey: receiverId ? ['/api/messages', 'receiver', receiverId] : ['/api/messages', 'user', userId],
+        queryKey: ['/api/applicant-portal/messages', userId],
       });
       
       // Reset form

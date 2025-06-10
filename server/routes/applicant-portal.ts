@@ -5,6 +5,9 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
+import { db } from '../db';
+import { messages as messagesTable } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -127,6 +130,58 @@ router.put('/message', isApplicant, async (req: any, res) => {
     
     console.error('Error updating applicant message:', error);
     res.status(500).json({ error: 'Failed to update message' });
+  }
+});
+
+// Get messages for applicant
+router.get('/messages', isApplicant, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get messages for this user from the messages table
+    const messages = await db.select().from(messagesTable)
+      .where(eq(messagesTable.userId, userId))
+      .orderBy(messagesTable.createdAt);
+    
+    console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching applicant messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Create message for applicant
+router.post('/messages', isApplicant, async (req: any, res) => {
+  try {
+    const messageSchema = z.object({
+      content: z.string().min(1).max(1000),
+      priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+      isPrivate: z.boolean().default(false),
+    });
+    
+    const validatedData = messageSchema.parse(req.body);
+    const userId = req.user.id;
+    
+    // Insert message into database
+    const [newMessage] = await db.insert(messagesTable).values({
+      content: validatedData.content,
+      messageType: 'text',
+      userId: userId,
+      priority: validatedData.priority,
+      isPrivate: validatedData.isPrivate,
+      isRead: false,
+    }).returning();
+    
+    console.log(`Created message from applicant user ${userId}`);
+    res.status(201).json(newMessage);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid message data', details: error.errors });
+    }
+    
+    console.error('Error creating applicant message:', error);
+    res.status(500).json({ error: 'Failed to create message' });
   }
 });
 
