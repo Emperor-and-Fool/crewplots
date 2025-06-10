@@ -58,8 +58,12 @@ export default function NotesManager({ userId, userName, initialWorkflow = 'appl
   // Create note mutation
   const createNoteMutation = useMutation({
     mutationFn: async (noteData: { content: string; workflow: string; visibleToRoles: string[] }) => {
-      return apiRequest('/api/messages', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({
           content: noteData.content,
           userId: userId,
@@ -68,6 +72,10 @@ export default function NotesManager({ userId, userName, initialWorkflow = 'appl
           messageType: 'text'
         }),
       });
+      if (!response.ok) {
+        throw new Error('Failed to create note');
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/messages/notes', userId, selectedWorkflow] });
@@ -102,8 +110,9 @@ export default function NotesManager({ userId, userName, initialWorkflow = 'appl
     return WORKFLOWS.find(w => w.value === workflow) || WORKFLOWS[0];
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: string | Date) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
