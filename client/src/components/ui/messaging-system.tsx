@@ -400,7 +400,7 @@ export function MessagingSystem({
                   }}
                 >
                   <Edit2 className="h-5 w-5 mr-2" />
-                  Start a conversation
+                  write motivation
                 </Button>
               </div>
             )
