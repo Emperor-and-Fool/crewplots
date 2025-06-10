@@ -365,13 +365,6 @@ export function MessagingSystem({
   const filteredMessages = React.useMemo(() => {
     // Ensure we have an array to work with
     let filtered = Array.isArray(messages) ? messages : [];
-    
-    // Debug logging
-    console.log('Messages data:', messages);
-    console.log('Is array:', Array.isArray(messages));
-    console.log('Filtered length:', filtered.length);
-    console.log('User ID:', userId);
-    console.log('Show only user messages:', showOnlyUserMessages);
 
     if (showOnlyUserMessages) {
       filtered = filtered.filter(msg => msg.userId === userId);
@@ -381,7 +374,6 @@ export function MessagingSystem({
       filtered = filtered.filter(msg => msg.messageType !== 'system');
     }
 
-    console.log('Final filtered messages:', filtered);
     return filtered.sort((a, b) => 
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
