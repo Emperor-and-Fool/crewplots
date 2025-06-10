@@ -321,6 +321,25 @@ export const messageDocuments = pgTable("message_documents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Virtual Redis Cache - PostgreSQL fallback for Redis caching
+export const redisCache = pgTable("redis_cache", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value").notNull(), // Store any JSON data
+  expiresAt: timestamp("expires_at"), // TTL equivalent
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Virtual Redis Sessions - PostgreSQL fallback for session storage
+export const redisSessions = pgTable("redis_sessions", {
+  id: text("id").primaryKey(), // Session ID
+  sessionData: jsonb("session_data").notNull(), // Session content
+  expiresAt: timestamp("expires_at").notNull(), // Session expiry
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, public_id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
@@ -343,6 +362,8 @@ export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMessageDocumentSchema = createInsertSchema(messageDocuments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
