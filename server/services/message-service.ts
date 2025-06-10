@@ -144,25 +144,27 @@ export class MessageService {
       // Step 2: Check if MongoDB is available
       const mongoAvailable = await this.isMongoDBAvailable();
 
-      if (mongoAvailable && updates.content) {
-        // MongoDB path: Update document content
-        const documentId = existingMessage.content; // Content field stores MongoDB document ID
-        
-        if (documentId && this.isValidObjectId(documentId)) {
-          await this.updateContentDocument(documentId, updates.content);
+      if (updates.content) {
+        if (mongoAvailable) {
+          // MongoDB path: Update document content
+          const documentId = existingMessage.content; // Content field stores MongoDB document ID
           
-          // Return compiled message
-          return await this.compileMessage(existingMessage, 'mongodb');
-        }
-      } else {
-        // Virtual PostgreSQL mode: Update virtual document
-        const documentId = existingMessage.content;
-        
-        if (documentId && !isNaN(parseInt(documentId))) {
-          await this.updateVirtualDocument(documentId, updates.content);
+          if (documentId && this.isValidObjectId(documentId)) {
+            await this.updateContentDocument(documentId, updates.content);
+            
+            // Return compiled message
+            return await this.compileMessage(existingMessage, 'mongodb');
+          }
+        } else {
+          // Virtual PostgreSQL mode: Update virtual document
+          const documentId = existingMessage.content;
           
-          // Return compiled message
-          return await this.compileMessage(existingMessage, 'virtual');
+          if (documentId && !isNaN(parseInt(documentId))) {
+            await this.updateVirtualDocument(documentId, updates.content);
+            
+            // Return compiled message
+            return await this.compileMessage(existingMessage, 'virtual');
+          }
         }
       }
       
