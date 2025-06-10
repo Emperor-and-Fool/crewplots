@@ -321,10 +321,10 @@ export function MessagingSystem({
   return (
     <Card className={className}>
       <CardHeader className={compactMode ? 'pb-3' : ''}>
-        <CardTitle className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
+        <div className="flex items-center gap-2 text-base font-medium">
+          <MessageCircle className="h-4 w-4" />
           {title}
-        </CardTitle>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">

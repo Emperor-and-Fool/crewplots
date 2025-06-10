@@ -198,7 +198,6 @@ function ApplicantPortal() {
         <Card className="mb-8">
           <CardHeader className="pb-2">
             <CardTitle>Your Documents & Motivation here</CardTitle>
-            <CardDescription>Send messages about your application</CardDescription>
           </CardHeader>
           <CardContent>
             <MessagingSystem
