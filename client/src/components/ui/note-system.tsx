@@ -82,12 +82,12 @@ export function NoteSystem({
   React.useEffect(() => {
     if (notes.length > 0) {
       const note = notes[0]; // Should only be one note per user
-      setEditContent(note.compiledContent || note.content || '');
-      setLastSavedContent(note.compiledContent || note.content || '');
+      setEditContent(note.content || '');
+      setLastSavedContent(note.content || '');
       setNoteId(note.id);
       setHasNote(true);
       setShowEditor(false); // Show as card initially
-      form.setValue('content', note.compiledContent || note.content || '');
+      form.setValue('content', note.content || '');
     } else {
       setShowEditor(true); // Show editor if no note exists
     }
@@ -114,7 +114,7 @@ export function NoteSystem({
     },
     onSuccess: (note) => {
       setNoteId(note.id);
-      setLastSavedContent(note.compiledContent || note.content);
+      setLastSavedContent(note.content);
       setIsAutoSaving(false);
       setHasNote(true);
     },
@@ -263,7 +263,7 @@ export function NoteSystem({
         ) : (
           // Card view (display mode)
           <div className="space-y-4">
-            <MessageDisplay content={notes[0]?.compiledContent || notes[0]?.content || ''} />
+            <MessageDisplay content={notes[0]?.content || ''} />
           </div>
         )}
       </CardContent>
