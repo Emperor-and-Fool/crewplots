@@ -224,36 +224,86 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// GET /api/messages/applicant-notes/:applicantId - Get notes/messages sent by a specific applicant
-router.get('/applicant-notes/:applicantId', async (req, res) => {
+// GET /api/messages/notes/:userId/:workflow - Get workflow-specific notes from a user
+router.get('/notes/:userId/:workflow', async (req, res) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const applicantId = parseInt(req.params.applicantId);
+    const userId = parseInt(req.params.userId);
+    const workflow = req.params.workflow;
+    const currentUserRole = (req.user as any).role;
     
-    if (isNaN(applicantId)) {
-      return res.status(400).json({ error: 'Invalid applicant ID' });
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
     }
 
-    // Get all messages sent by this applicant (where receiverId is null = notes/general messages)
-    // These are notes the applicant left that staff can view
-    const applicantMessages = await db
+    // Get notes for this workflow where current user has permission to view
+    const workflowNotes = await db
       .select()
       .from(messages)
       .where(and(
-        eq(messages.userId, applicantId),
-        eq(messages.receiverId, null) // Only get general notes, not direct conversations
+        eq(messages.userId, userId),
+        eq(messages.workflow, workflow as any),
+        isNull(messages.receiverId) // Only notes, not conversations
       ))
       .orderBy(desc(messages.createdAt));
 
-    console.log(`Fetched ${applicantMessages.length} notes from applicant ${applicantId}`);
+    // Filter by role permissions
+    const visibleNotes = workflowNotes.filter(note => {
+      if (!note.visibleToRoles || note.visibleToRoles.length === 0) {
+        return true; // No restrictions = visible to all
+      }
+      return note.visibleToRoles.includes(currentUserRole);
+    });
+
+    console.log(`Fetched ${visibleNotes.length} ${workflow} notes from user ${userId} for role ${currentUserRole}`);
     
-    res.json(applicantMessages);
+    res.json(visibleNotes);
   } catch (error) {
-    console.error('Error fetching applicant messages:', error);
-    res.status(500).json({ error: 'Failed to fetch applicant messages' });
+    console.error('Error fetching workflow notes:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow notes' });
+  }
+});
+
+// GET /api/messages/notes/:userId/:workflow/count - Get count of workflow notes (for indicators)
+router.get('/notes/:userId/:workflow/count', async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = parseInt(req.params.userId);
+    const workflow = req.params.workflow;
+    const currentUserRole = (req.user as any).role;
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    // Get count of visible notes for this workflow
+    const workflowNotes = await db
+      .select()
+      .from(messages)
+      .where(and(
+        eq(messages.userId, userId),
+        eq(messages.workflow, workflow),
+        isNull(messages.receiverId)
+      ));
+
+    // Filter by role permissions
+    const visibleCount = workflowNotes.filter(note => {
+      if (!note.visibleToRoles || note.visibleToRoles.length === 0) {
+        return true;
+      }
+      return note.visibleToRoles.includes(currentUserRole);
+    }).length;
+
+    res.json({ count: visibleCount });
+  } catch (error) {
+    console.error('Error fetching workflow notes count:', error);
+    res.status(500).json({ error: 'Failed to fetch notes count' });
   }
 });
 

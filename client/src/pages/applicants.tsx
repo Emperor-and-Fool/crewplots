@@ -64,14 +64,14 @@ export default function Applicants() {
 
   // Component to display message count for an applicant
   const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
-    const { data: messages, isLoading, error } = useQuery<Message[]>({
-      queryKey: ['/api/messages', 'applicant-notes', applicantId],
+    const { data: countData, isLoading, error } = useQuery<{count: number}>({
+      queryKey: ['/api/messages/notes', applicantId, 'application', 'count'],
       queryFn: async () => {
-        const response = await fetch(`/api/messages/applicant-notes/${applicantId}`, {
+        const response = await fetch(`/api/messages/notes/${applicantId}/application/count`, {
           credentials: 'include'
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch applicant messages');
+          throw new Error('Failed to fetch note count');
         }
         return response.json();
       },
@@ -90,7 +90,7 @@ export default function Applicants() {
       console.error('MessageIndicator error:', error);
     }
 
-    const messageCount = messages?.length || 0;
+    const messageCount = countData?.count || 0;
 
     return (
       <div className="flex items-center gap-1">
