@@ -254,16 +254,66 @@ export function MessagingSystem({
 
       return response.json();
     },
-    onSuccess: (newMessage) => {
-      // Invalidate and refetch messages - use exact same key as the query
-      queryClient.invalidateQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
-      });
+    onMutate: async (data: MessageFormData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/applicant-portal/messages', userId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData<Message[]>(['/api/applicant-portal/messages', userId]);
+
+      // Optimistically update to the new value with a temporary message
+      const now = new Date();
+      const optimisticMessage = {
+        id: Date.now(), // Temporary ID
+        userId: userId!,
+        receiverId: null,
+        content: data.content,
+        messageType: data.messageType,
+        priority: data.priority,
+        isPrivate: data.isPrivate,
+        isRead: false,
+        workflow: 'application',
+        attachmentUrl: null,
+        documentReference: null,
+        metadata: null,
+        visibleToRoles: null,
+        createdAt: now,
+        updatedAt: now,
+      } as unknown as Message;
+
+      queryClient.setQueryData<Message[]>(
+        ['/api/applicant-portal/messages', userId],
+        (old = []) => [...old, optimisticMessage]
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousMessages };
+    },
+    onError: (error, _newMessage, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      queryClient.setQueryData(
+        ['/api/applicant-portal/messages', userId],
+        context?.previousMessages
+      );
       
-      // Also trigger an immediate refetch
-      queryClient.refetchQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
+      toast({
+        title: 'Failed to send note',
+        description: error.message,
+        variant: 'destructive',
       });
+    },
+    onSuccess: (newMessage) => {
+      // Replace the optimistic update with the real data
+      queryClient.setQueryData<Message[]>(
+        ['/api/applicant-portal/messages', userId],
+        (old = []) => {
+          // Remove the optimistic message and add the real one
+          const filtered = old.filter(msg => msg.id !== Date.now());
+          return [...filtered, newMessage].sort((a, b) => 
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        }
+      );
       
       // Reset form
       form.reset();
@@ -275,13 +325,6 @@ export function MessagingSystem({
       toast({
         title: 'Note sent',
         description: 'Your note has been successfully sent.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to send note',
-        description: error.message,
-        variant: 'destructive',
       });
     },
   });
