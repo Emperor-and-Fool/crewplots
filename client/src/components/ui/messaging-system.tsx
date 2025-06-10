@@ -477,11 +477,30 @@ export function MessagingSystem({
           )}
         </ScrollArea>
 
+        {/* Add New Note Button */}
+        {filteredMessages.length > 0 && (
+          <div className="py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                // Scroll to the form at bottom
+                const formElement = document.querySelector('[data-form="message-composition"]');
+                formElement?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Add a new note
+            </Button>
+          </div>
+        )}
+
         <Separator />
 
         {/* Message Composition Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3" data-form="message-composition">
             <FormField
               control={form.control}
               name="content"
@@ -491,7 +510,7 @@ export function MessagingSystem({
                     <RichTextEditor
                       content={field.value}
                       onChange={field.onChange}
-                      placeholder={placeholder}
+                      placeholder="Leave us a message..."
                       maxHeight={compactMode ? "120px" : "200px"}
                       className="min-h-[100px]"
                     />
