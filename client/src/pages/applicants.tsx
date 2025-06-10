@@ -24,7 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/components/applicants/applicant-form";
-import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip } from "lucide-react";
+import NotesManager from "@/components/notes/notes-manager";
+import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip, StickyNote } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { User, Location, Staff, Message } from "@shared/schema";
@@ -334,6 +335,23 @@ export default function Applicants() {
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
                                     <MessageIndicator applicantId={applicant.id} />
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="p-1" onClick={(e) => e.stopPropagation()}>
+                                          <StickyNote className="w-3 h-3 text-blue-600" />
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle>Notes - {applicant.name}</DialogTitle>
+                                        </DialogHeader>
+                                        <NotesManager 
+                                          userId={applicant.id} 
+                                          userName={applicant.name}
+                                          initialWorkflow="application"
+                                        />
+                                      </DialogContent>
+                                    </Dialog>
                                     {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
                                         <Paperclip className="w-3 h-3 text-green-600" />
