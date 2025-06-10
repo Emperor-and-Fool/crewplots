@@ -31,24 +31,36 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch profile data from API - use auth/me for all users
+  // Fetch complete profile data following DevDocs philosophy
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/auth/me');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch profile: ${response.status}`);
+      // First check authentication status
+      const authResponse = await fetch('/api/auth/me');
+      if (!authResponse.ok) {
+        throw new Error(`Authentication check failed: ${authResponse.status}`);
       }
-      const authData = await response.json();
+      const authData = await authResponse.json();
       
       if (!authData.authenticated || !authData.user) {
         throw new Error('User not authenticated');
       }
       
-      // Use the user data from auth/me as profile data
-      setProfile(authData.user);
-      sessionStorage.setItem('applicant-profile', JSON.stringify(authData.user));
+      // For applicants, fetch complete profile from applicant portal
+      if (authData.user.role === 'applicant') {
+        const profileResponse = await fetch('/api/applicant-portal/my-profile');
+        if (!profileResponse.ok) {
+          throw new Error(`Failed to fetch applicant profile: ${profileResponse.status}`);
+        }
+        const profileData = await profileResponse.json();
+        setProfile(profileData);
+        sessionStorage.setItem('applicant-profile', JSON.stringify(profileData));
+      } else {
+        // For non-applicants, use the auth data as profile
+        setProfile(authData.user);
+        sessionStorage.setItem('applicant-profile', JSON.stringify(authData.user));
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       console.error('Profile fetch error:', err);
