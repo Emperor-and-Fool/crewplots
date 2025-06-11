@@ -13,7 +13,6 @@ export class RedisCache {
       this.client = new Redis({
         host: '127.0.0.1',
         port: 6379,
-        retryDelayOnFailover: 100,
         enableReadyCheck: false,
         maxRetriesPerRequest: 3,
         connectTimeout: 5000,

@@ -201,6 +201,14 @@ void process_command(Client *client, char **args, int argc) {
         } else {
             queue_response(client, "-ERR wrong number of arguments for 'set' command\r\n");
         }
+    } else if (strcmp(cmd, "SETEX") == 0) {
+        if (argc >= 4) {
+            int ttl = atoi(args[2]);
+            set_key(args[1], args[3], ttl);
+            queue_response(client, "+OK\r\n");
+        } else {
+            queue_response(client, "-ERR wrong number of arguments for 'setex' command\r\n");
+        }
     } else if (strcmp(cmd, "GET") == 0) {
         if (argc >= 2) {
             char *value = get_key(args[1]);
