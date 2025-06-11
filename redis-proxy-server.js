@@ -1,310 +1,243 @@
-import express from 'express';
-import { createClient } from 'redis';
-import { spawn } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const { spawn } = require('child_process');
+const Redis = require('ioredis');
+const fs = require('fs');
+const path = require('path');
 
 class RedisProxyServer {
   constructor() {
     this.app = express();
-    this.redisClient = null;
     this.redisProcess = null;
-    this.port = 3002; // Different port from MongoDB proxy
-    this.redisPort = 6379;
+    this.redisClient = null;
+    this.port = 6380; // Redis proxy port
+    this.redisPort = 6379; // Redis server port
+    this.dataDir = path.join(__dirname, 'redis_data');
     
-    // Middleware
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true }));
+    // Ensure data directory exists
+    if (!fs.existsSync(this.dataDir)) {
+      fs.mkdirSync(this.dataDir, { recursive: true });
+    }
     
-    // Setup routes
     this.setupRoutes();
   }
 
   async startRedisServer() {
-    console.log('🚀 Starting Redis server...');
+    console.log('🔧 Starting Redis server with libc malloc...');
     
-    // Create redis data directory
-    const redisDataDir = path.join(__dirname, 'redis_data');
-    if (!fs.existsSync(redisDataDir)) {
-      fs.mkdirSync(redisDataDir, { recursive: true });
-    }
-
-    // Create Redis config optimized for Replit environment
-    const redisConfig = `
-# Redis configuration for Replit environment
-port 6379
-bind 127.0.0.1
-dir ${redisDataDir}
-
-# Disable daemonization for container environment
-daemonize no
-
-# Memory constraints for Replit environment
-maxmemory 64mb
-maxmemory-policy allkeys-lru
-
-# Persistence settings
-save 900 1
-save 300 10
-save 60 10000
-stop-writes-on-bgsave-error no
-rdbcompression yes
-rdbchecksum yes
-dbfilename dump.rdb
-
-# Connection settings
-timeout 0
-tcp-keepalive 300
-
-# Logging
-loglevel notice
-logfile ""
-
-# Disable potentially problematic features
-protected-mode no
-`;
-
-    const configPath = path.join(__dirname, 'redis-proxy.conf');
-    fs.writeFileSync(configPath, redisConfig);
+    // Redis configuration for Replit constraints
+    const redisConfig = [
+      '--maxmemory', '64mb',
+      '--maxmemory-policy', 'allkeys-lru',
+      '--save', '60', '1',
+      '--dir', this.dataDir,
+      '--port', this.redisPort.toString(),
+      '--bind', '127.0.0.1',
+      '--protected-mode', 'no',
+      '--daemonize', 'no',
+      '--logfile', '',
+      '--databases', '16'
+    ];
 
     return new Promise((resolve, reject) => {
-      // Start Redis server with environment variables to bypass jemalloc TLS issues
-      this.redisProcess = spawn('redis-server', [configPath], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        detached: false,
-        env: {
-          ...process.env,
-          MALLOC_CONF: 'background_thread:false,metadata_thp:disabled',
-          LD_PRELOAD: '', // Clear any existing LD_PRELOAD
-          JEMALLOC_SYS_WITH_LG_PAGE: '12'
-        }
+      this.redisProcess = spawn('redis-server', redisConfig, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        detached: false
       });
 
-      let started = false;
-      const timeout = setTimeout(() => {
-        if (!started) {
-          reject(new Error('Redis server startup timeout'));
-        }
-      }, 10000);
-
+      let startupOutput = '';
+      
       this.redisProcess.stdout.on('data', (data) => {
         const output = data.toString();
-        console.log('Redis server:', output.trim());
+        startupOutput += output;
+        console.log('Redis stdout:', output.trim());
         
-        if (output.includes('Ready to accept connections') && !started) {
-          started = true;
-          clearTimeout(timeout);
+        if (output.includes('Ready to accept connections')) {
+          console.log('✅ Redis server started successfully');
           resolve();
         }
       });
 
       this.redisProcess.stderr.on('data', (data) => {
-        console.error('Redis server error:', data.toString().trim());
-      });
-
-      this.redisProcess.on('exit', (code) => {
-        console.log(`Redis server exited with code ${code}`);
-        if (!started) {
-          reject(new Error(`Redis server failed to start (exit code ${code})`));
+        const output = data.toString();
+        startupOutput += output;
+        console.log('Redis stderr:', output.trim());
+        
+        // Check for common failure patterns
+        if (output.includes('Address already in use') || 
+            output.includes('Can\'t set up TLS') ||
+            output.includes('jemalloc') ||
+            output.includes('TLS block allocation')) {
+          console.log('❌ Redis startup failed with known issue');
+          reject(new Error(`Redis startup failed: ${output}`));
         }
       });
+
+      this.redisProcess.on('error', (error) => {
+        console.log('❌ Redis process error:', error.message);
+        reject(error);
+      });
+
+      this.redisProcess.on('exit', (code, signal) => {
+        console.log(`❌ Redis process exited with code ${code}, signal ${signal}`);
+        if (code !== 0 && !startupOutput.includes('Ready to accept connections')) {
+          reject(new Error(`Redis exited with code ${code}`));
+        }
+      });
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!startupOutput.includes('Ready to accept connections')) {
+          reject(new Error('Redis startup timeout'));
+        }
+      }, 10000);
     });
   }
 
   async connectToRedis() {
-    console.log('🔗 Connecting to Redis...');
+    console.log('🔌 Connecting to Redis...');
     
-    this.redisClient = createClient({
-      socket: {
-        host: '127.0.0.1',
-        port: this.redisPort,
-        connectTimeout: 5000,
-        commandTimeout: 5000
-      },
-      retry_strategy: (options) => {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
-          return new Error('Redis server connection refused');
-        }
-        if (options.total_retry_time > 1000 * 10) {
-          return new Error('Redis retry time exhausted');
-        }
-        if (options.attempt > 3) {
-          return new Error('Redis max retry attempts reached');
-        }
-        return Math.min(options.attempt * 100, 3000);
-      }
+    this.redisClient = new Redis({
+      host: '127.0.0.1',
+      port: this.redisPort,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true
     });
 
-    this.redisClient.on('error', (err) => {
-      console.error('Redis client error:', err);
-    });
-
-    this.redisClient.on('connect', () => {
-      console.log('✅ Redis client connected');
-    });
-
-    await this.redisClient.connect();
-    
-    // Test connection
-    await this.redisClient.ping();
-    console.log('✅ Redis ping successful');
+    try {
+      await this.redisClient.connect();
+      await this.redisClient.ping();
+      console.log('✅ Connected to Redis successfully');
+      return true;
+    } catch (error) {
+      console.log('❌ Redis connection failed:', error.message);
+      throw error;
+    }
   }
 
   setupRoutes() {
+    this.app.use(express.json());
+
     // Health check
-    this.app.get('/health', async (req, res) => {
-      try {
-        if (!this.redisClient) {
-          return res.status(503).json({ 
-            status: 'error', 
-            message: 'Redis client not connected' 
-          });
-        }
-        
-        const pong = await this.redisClient.ping();
-        res.json({ 
-          status: 'healthy', 
-          redis: pong,
-          timestamp: new Date().toISOString()
-        });
-      } catch (error) {
-        res.status(503).json({ 
-          status: 'error', 
-          message: error.message 
-        });
-      }
+    this.app.get('/health', (req, res) => {
+      res.json({ 
+        status: 'ok', 
+        redis: this.redisClient ? 'connected' : 'disconnected',
+        timestamp: new Date().toISOString()
+      });
     });
 
-    // Set key-value
+    // Redis SET operation
     this.app.post('/set', async (req, res) => {
       try {
         const { key, value, ttl } = req.body;
         
         if (!key || value === undefined) {
-          return res.status(400).json({ 
-            error: 'Missing required fields: key, value' 
-          });
+          return res.status(400).json({ error: 'Key and value are required' });
         }
 
         let result;
-        if (ttl && ttl > 0) {
-          result = await this.redisClient.setEx(key, ttl, JSON.stringify(value));
+        if (ttl) {
+          result = await this.redisClient.setex(key, ttl, JSON.stringify(value));
         } else {
           result = await this.redisClient.set(key, JSON.stringify(value));
         }
 
-        res.json({ 
-          success: true, 
-          key, 
-          result,
-          ttl: ttl || null,
-          timestamp: new Date().toISOString()
-        });
+        res.json({ success: true, result });
       } catch (error) {
         console.error('Redis SET error:', error);
-        res.status(500).json({ 
-          error: 'Failed to set value', 
-          details: error.message 
-        });
+        res.status(500).json({ error: error.message });
       }
     });
 
-    // Get value
+    // Redis GET operation
     this.app.get('/get/:key', async (req, res) => {
       try {
         const { key } = req.params;
         const value = await this.redisClient.get(key);
         
-        res.json({ 
-          key, 
-          value: value ? JSON.parse(value) : null,
-          exists: value !== null,
-          timestamp: new Date().toISOString()
-        });
+        if (value === null) {
+          return res.status(404).json({ error: 'Key not found' });
+        }
+
+        try {
+          const parsedValue = JSON.parse(value);
+          res.json({ key, value: parsedValue });
+        } catch {
+          res.json({ key, value });
+        }
       } catch (error) {
         console.error('Redis GET error:', error);
-        res.status(500).json({ 
-          error: 'Failed to get value', 
-          details: error.message 
-        });
+        res.status(500).json({ error: error.message });
       }
     });
 
-    // Delete key
+    // Redis DEL operation
     this.app.delete('/del/:key', async (req, res) => {
       try {
         const { key } = req.params;
         const result = await this.redisClient.del(key);
-        
-        res.json({ 
-          key, 
-          deleted: result === 1,
-          timestamp: new Date().toISOString()
-        });
+        res.json({ success: true, deleted: result });
       } catch (error) {
-        console.error('Redis DELETE error:', error);
-        res.status(500).json({ 
-          error: 'Failed to delete key', 
-          details: error.message 
-        });
+        console.error('Redis DEL error:', error);
+        res.status(500).json({ error: error.message });
       }
     });
 
-    // List keys (with pattern support)
+    // Redis EXISTS operation
+    this.app.get('/exists/:key', async (req, res) => {
+      try {
+        const { key } = req.params;
+        const exists = await this.redisClient.exists(key);
+        res.json({ key, exists: !!exists });
+      } catch (error) {
+        console.error('Redis EXISTS error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Redis KEYS operation (for development only)
     this.app.get('/keys/:pattern?', async (req, res) => {
       try {
         const pattern = req.params.pattern || '*';
         const keys = await this.redisClient.keys(pattern);
-        
-        res.json({ 
-          pattern, 
-          keys,
-          count: keys.length,
-          timestamp: new Date().toISOString()
-        });
+        res.json({ pattern, keys });
       } catch (error) {
         console.error('Redis KEYS error:', error);
-        res.status(500).json({ 
-          error: 'Failed to list keys', 
-          details: error.message 
-        });
+        res.status(500).json({ error: error.message });
       }
     });
 
-    // Redis info
-    this.app.get('/info', async (req, res) => {
+    // Redis TTL operation
+    this.app.get('/ttl/:key', async (req, res) => {
       try {
-        const info = await this.redisClient.info();
-        const dbSize = await this.redisClient.dbSize();
-        
-        res.json({ 
-          info: info.split('\n').reduce((acc, line) => {
-            const [key, value] = line.split(':');
-            if (key && value) {
-              acc[key.trim()] = value.trim();
-            }
-            return acc;
-          }, {}),
-          dbSize,
-          timestamp: new Date().toISOString()
-        });
+        const { key } = req.params;
+        const ttl = await this.redisClient.ttl(key);
+        res.json({ key, ttl });
       } catch (error) {
-        console.error('Redis INFO error:', error);
-        res.status(500).json({ 
-          error: 'Failed to get Redis info', 
-          details: error.message 
-        });
+        console.error('Redis TTL error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Redis FLUSHDB operation (for development)
+    this.app.post('/flush', async (req, res) => {
+      try {
+        await this.redisClient.flushdb();
+        res.json({ success: true, message: 'Database flushed' });
+      } catch (error) {
+        console.error('Redis FLUSH error:', error);
+        res.status(500).json({ error: error.message });
       }
     });
   }
 
   async start() {
     try {
-      // Start Redis server first
+      console.log('🚀 Starting Redis Proxy Server...');
+      
+      // Start Redis server
       await this.startRedisServer();
       
       // Wait a moment for Redis to fully initialize
@@ -313,56 +246,53 @@ protected-mode no
       // Connect to Redis
       await this.connectToRedis();
       
-      // Start HTTP proxy server
-      return new Promise((resolve) => {
-        this.app.listen(this.port, '0.0.0.0', () => {
-          console.log(`✅ Redis Proxy Server running on port ${this.port}`);
-          console.log(`📊 Health check: http://localhost:${this.port}/health`);
-          console.log(`🔧 Redis info: http://localhost:${this.port}/info`);
-          resolve();
-        });
+      // Start Express server
+      this.app.listen(this.port, '0.0.0.0', () => {
+        console.log(`✅ Redis Proxy Server running on port ${this.port}`);
+        console.log(`📊 Redis server running on port ${this.redisPort}`);
+        console.log(`🔗 Proxy endpoints available at http://localhost:${this.port}`);
       });
       
     } catch (error) {
-      console.error('❌ Failed to start Redis Proxy Server:', error);
-      throw error;
+      console.error('❌ Failed to start Redis proxy server:', error.message);
+      await this.stop();
+      process.exit(1);
     }
   }
 
   async stop() {
-    console.log('🛑 Stopping Redis Proxy Server...');
+    console.log('🛑 Shutting down Redis Proxy Server...');
     
     if (this.redisClient) {
       await this.redisClient.quit();
+      this.redisClient = null;
     }
     
     if (this.redisProcess) {
       this.redisProcess.kill('SIGTERM');
+      this.redisProcess = null;
     }
   }
 }
 
-// Start the server if run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = new RedisProxyServer();
-  
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n🛑 Received SIGINT, shutting down gracefully...');
-    await server.stop();
-    process.exit(0);
-  });
-  
-  process.on('SIGTERM', async () => {
-    console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
-    await server.stop();
-    process.exit(0);
-  });
-  
-  server.start().catch((error) => {
-    console.error('❌ Failed to start Redis Proxy Server:', error);
-    process.exit(1);
-  });
-}
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Received SIGINT, shutting down gracefully...');
+  if (global.redisProxy) {
+    await global.redisProxy.stop();
+  }
+  process.exit(0);
+});
 
-export default RedisProxyServer;
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+  if (global.redisProxy) {
+    await global.redisProxy.stop();
+  }
+  process.exit(0);
+});
+
+// Start the server
+const redisProxy = new RedisProxyServer();
+global.redisProxy = redisProxy;
+redisProxy.start();
