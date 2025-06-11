@@ -43,20 +43,12 @@ await noteSystem.createNote(content, workflow, visibleToRoles);
 ## Workflow Integration
 
 ### Supported Workflows
-- `application` - Job application process (automatically assigned to applicant portal messages)
+- `application` - Job application process
 - `crew` - Staff management  
 - `location` - Site-specific notes
 - `scheduling` - Shift and availability
 - `knowledge` - Training and procedures
 - `statistics` - Performance metrics
-
-### Automatic Workflow Assignment
-Messages created through specific interfaces are automatically tagged with appropriate workflows:
-- **Applicant Portal**: All messages tagged with `application` workflow
-- **Staff Dashboard**: Messages tagged with `crew` workflow
-- **Location Management**: Messages tagged with `location` workflow
-
-This ensures proper data categorization and role-based access control without requiring manual workflow selection.
 
 ### Role-Based Visibility
 Each note specifies which roles can view it:
