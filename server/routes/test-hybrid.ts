@@ -179,7 +179,7 @@ router.get('/status', async (req, res) => {
 
     const status = {
       hybridSystemActive: true,
-      mongoDBProxyAvailable,
+      mongoDBProxyAvailable: mongoProxyAvailable,
       mongoProxyHealth,
       fallbackToPostgreSQL: !mongoProxyAvailable,
       timestamp: new Date().toISOString()
