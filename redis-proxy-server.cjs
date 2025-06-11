@@ -22,26 +22,59 @@ class RedisProxyServer {
   }
 
   async startRedisServer() {
-    console.log('🔧 Starting Redis server with libc malloc...');
+    console.log('🔧 Starting Redis server with memory constraints...');
     
-    // Redis configuration for Replit constraints
-    const redisConfig = [
-      '--maxmemory', '64mb',
-      '--maxmemory-policy', 'allkeys-lru',
-      '--save', '60', '1',
-      '--dir', this.dataDir,
-      '--port', this.redisPort.toString(),
-      '--bind', '127.0.0.1',
-      '--protected-mode', 'no',
-      '--daemonize', 'no',
-      '--logfile', '',
-      '--databases', '16'
-    ];
+    // Create custom Redis config file to bypass jemalloc
+    const configPath = path.join(this.dataDir, 'redis-custom.conf');
+    const redisConfigContent = `
+# Custom Redis configuration for Replit compatibility
+port ${this.redisPort}
+bind 127.0.0.1
+protected-mode no
+daemonize no
+save 60 1
+dir ${this.dataDir}
+maxmemory 32mb
+maxmemory-policy allkeys-lru
+databases 4
+tcp-keepalive 300
+timeout 0
+tcp-backlog 128
+# Disable persistence to reduce memory usage
+save ""
+stop-writes-on-bgsave-error no
+rdbcompression no
+rdbchecksum no
+# Reduce memory overhead
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+list-compress-depth 0
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+stream-node-max-bytes 4096
+stream-node-max-entries 100
+`;
+    
+    fs.writeFileSync(configPath, redisConfigContent);
+    
+    // Use environment variable to potentially override allocator
+    const env = { 
+      ...process.env,
+      MALLOC_ARENA_MAX: '1',
+      MALLOC_MMAP_THRESHOLD_: '2048',
+      MALLOC_TRIM_THRESHOLD_: '128'
+    };
+    
+    const redisConfig = [configPath];
 
     return new Promise((resolve, reject) => {
       this.redisProcess = spawn('redis-server', redisConfig, {
         stdio: ['ignore', 'pipe', 'pipe'],
-        detached: false
+        detached: false,
+        env: env
       });
 
       let startupOutput = '';
