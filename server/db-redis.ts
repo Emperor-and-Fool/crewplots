@@ -15,7 +15,7 @@ export class RedisConnection {
     }
 
     try {
-      console.log('🔧 Starting Mini Redis server (jemalloc-free)...');
+      console.log('Starting Mini Redis server (jemalloc-free)...');
       
       // Start mini-redis process
       await this.startMiniRedis();
@@ -29,7 +29,8 @@ export class RedisConnection {
         port: 6380,
         lazyConnect: true,
         retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3
+        maxRetriesPerRequest: 3,
+        connectTimeout: 10000
       });
 
       await this.client.connect();
@@ -51,9 +52,13 @@ export class RedisConnection {
         detached: false
       });
 
+      let hasStarted = false;
+
       this.redisProcess.stdout?.on('data', (data) => {
         const output = data.toString();
-        if (output.includes('Ready to accept connections')) {
+        console.log('Mini Redis:', output.trim());
+        if (output.includes('Ready to accept connections') && !hasStarted) {
+          hasStarted = true;
           resolve();
         }
       });
@@ -63,7 +68,9 @@ export class RedisConnection {
       });
 
       this.redisProcess.on('error', (error) => {
-        reject(error);
+        if (!hasStarted) {
+          reject(error);
+        }
       });
 
       this.redisProcess.on('close', (code) => {
@@ -71,8 +78,12 @@ export class RedisConnection {
         this.isConnected = false;
       });
 
-      // Timeout if Redis doesn't start
-      setTimeout(() => reject(new Error('Mini Redis startup timeout')), 5000);
+      // Timeout if Redis doesn't start within 10 seconds
+      setTimeout(() => {
+        if (!hasStarted) {
+          reject(new Error('Mini Redis startup timeout after 10 seconds'));
+        }
+      }, 10000);
     });
   }
 
@@ -84,16 +95,26 @@ export class RedisConnection {
         clientSocket.pipe(redisSocket);
         redisSocket.pipe(clientSocket);
         
-        clientSocket.on('error', () => redisSocket.destroy());
-        redisSocket.on('error', () => clientSocket.destroy());
+        clientSocket.on('error', (err) => {
+          console.log('Client socket error:', err.message);
+          redisSocket.destroy();
+        });
+        
+        redisSocket.on('error', (err) => {
+          console.log('Redis socket error:', err.message);
+          clientSocket.destroy();
+        });
       });
 
       this.proxyServer.listen(6380, '127.0.0.1', () => {
-        console.log('Redis TCP proxy listening on port 6380');
+        console.log('✅ Redis TCP proxy listening on port 6380');
         resolve();
       });
 
-      this.proxyServer.on('error', reject);
+      this.proxyServer.on('error', (error) => {
+        console.error('Proxy server error:', error);
+        reject(error);
+      });
     });
   }
 
@@ -145,5 +166,5 @@ export class RedisConnection {
   }
 }
 
-// Global instance
+// Global instance - following the MongoDB pattern
 export const redisConnection = new RedisConnection();
