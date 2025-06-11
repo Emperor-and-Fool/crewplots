@@ -150,6 +150,20 @@ export function MessagingSystem({
     },
   });
 
+  // Create initial file when component mounts if no messages exist
+  React.useEffect(() => {
+    if (userId && messages.length === 0 && !isLoading && !hasCreatedMessage) {
+      // Create initial empty message file
+      createMessageMutation.mutate({
+        content: '',
+        messageType: 'rich-text',
+        priority: 'normal',
+        isPrivate: false,
+      });
+      setHasCreatedMessage(true);
+    }
+  }, [userId, messages.length, isLoading, hasCreatedMessage]);
+
   // Fetch messages query - use applicant-specific endpoint for applicants
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
     queryKey: ['/api/applicant-portal/messages', userId],
