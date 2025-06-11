@@ -145,7 +145,7 @@ export function MessagingSystem({
   });
 
   // Fetch messages query - use applicant-specific endpoint for applicants
-  const { data: messages = [], isLoading, error } = useQuery<Message[]>({
+  const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
     queryKey: ['/api/applicant-portal/messages', userId],
     queryFn: async () => {
       const response = await fetch('/api/applicant-portal/messages', {
@@ -162,7 +162,7 @@ export function MessagingSystem({
     enabled: !!userId,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    staleTime: 30000, // Cache for 30 seconds to prevent excessive refetches
+    staleTime: 0, // Always consider data stale for instant updates
   });
 
   // Delete message mutation
@@ -267,19 +267,60 @@ export function MessagingSystem({
 
       return response.json();
     },
-    onSuccess: async (newMessage) => {
-      // Set the flag to indicate a message was created
+    onMutate: async (newMessageData) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['/api/applicant-portal/messages', userId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData<Message[]>(['/api/applicant-portal/messages', userId]);
+
+      // Optimistically update with a temporary message
+      const optimisticMessage: Message = {
+        id: Date.now(), // Temporary ID
+        senderId: userId!,
+        receiverId: null,
+        content: newMessageData.content,
+        messageType: 'rich-text',
+        priority: newMessageData.priority,
+        isPrivate: newMessageData.isPrivate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        workflow: 'application',
+        sender: { id: userId!, username: 'You', role: 'applicant' },
+        receiver: null,
+      };
+
+      queryClient.setQueryData<Message[]>(['/api/applicant-portal/messages', userId], (old = []) => 
+        [...old, optimisticMessage]
+      );
+
+      // Set the flag immediately for UI state
       setHasCreatedMessage(true);
+
+      // Return a context object with the snapshotted value
+      return { previousMessages };
+    },
+    onError: (err, newMessageData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      queryClient.setQueryData(['/api/applicant-portal/messages', userId], context?.previousMessages);
+      setHasCreatedMessage(false);
       
-      // Immediately invalidate and refetch the messages query
-      await queryClient.invalidateQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
+      toast({
+        title: 'Failed to send note',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+    onSuccess: async (newMessage) => {
+      // Update cache with real server response
+      queryClient.setQueryData<Message[]>(['/api/applicant-portal/messages', userId], (old = []) => {
+        // Replace the optimistic message with the real one
+        const withoutOptimistic = old.filter(msg => msg.id !== Date.now());
+        return [...withoutOptimistic, newMessage];
       });
       
-      // Force an immediate refetch
-      await queryClient.refetchQueries({
-        queryKey: ['/api/applicant-portal/messages', userId],
-      });
+      // Also refetch to ensure we have the latest data
+      await refetch();
       
       // Reset form
       form.reset();
@@ -291,13 +332,6 @@ export function MessagingSystem({
       toast({
         title: 'Note sent',
         description: 'Your note has been successfully sent.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to send note',
-        description: error.message,
-        variant: 'destructive',
       });
     },
   });
