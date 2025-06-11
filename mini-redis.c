@@ -98,22 +98,52 @@ int parse_resp_array(char *buffer, char **args, int max_args) {
     if (*buffer != '*') return -1;
     
     int arg_count = atoi(buffer + 1);
-    if (arg_count > max_args) return -1;
+    if (arg_count > max_args || arg_count <= 0) return -1;
     
-    char *pos = strchr(buffer, '\n');
-    if (!pos) return -1;
-    pos++;
+    char *pos = buffer;
+    // Find first \r\n
+    while (*pos && !(*pos == '\r' && *(pos+1) == '\n')) pos++;
+    if (!*pos) return -1;
+    pos += 2; // Skip \r\n
     
     for (int i = 0; i < arg_count; i++) {
         if (*pos != '$') return -1;
         int len = atoi(pos + 1);
-        pos = strchr(pos, '\n');
-        if (!pos) return -1;
-        pos++;
+        if (len < 0) return -1;
+        
+        // Find \r\n after length
+        while (*pos && !(*pos == '\r' && *(pos+1) == '\n')) pos++;
+        if (!*pos) return -1;
+        pos += 2; // Skip \r\n
         
         args[i] = pos;
-        pos[len] = '\0'; // Null terminate the argument
-        pos += len + 2; // Skip \r\n
+        if (len > 0) {
+            // Ensure we don't read beyond buffer bounds
+            for (int j = 0; j < len; j++) {
+                if (!pos[j]) return -1;
+            }
+            // Null terminate the argument (temporary modification)
+            char saved = pos[len];
+            pos[len] = '\0';
+            pos += len;
+            
+            // Skip \r\n after data
+            if (*pos == '\r' && *(pos+1) == '\n') {
+                pos += 2;
+            } else {
+                // Restore character and fail
+                pos[-(len)] = saved;
+                return -1;
+            }
+        } else {
+            args[i] = "";
+            // Skip \r\n for empty string
+            if (*pos == '\r' && *(pos+1) == '\n') {
+                pos += 2;
+            } else {
+                return -1;
+            }
+        }
     }
     
     return arg_count;
@@ -124,8 +154,9 @@ void process_command(int client_fd, char *buffer) {
     int argc = parse_resp_array(buffer, args, 16);
     
     if (argc < 1) {
-        // Fallback to simple string parsing
-        char *cmd = strtok(buffer, " \r\n");
+        // Fallback to simple string parsing for inline commands
+        char *saveptr;
+        char *cmd = strtok_r(buffer, " \r\n", &saveptr);
         if (!cmd) return;
         
         // Convert to uppercase
@@ -232,7 +263,10 @@ void process_command(int client_fd, char *buffer) {
         send_response(client_fd, "+OK\r\n");
     } else if (strcmp(cmd, "INFO") == 0) {
         // Basic INFO command
-        send_response(client_fd, "$23\r\n# Server\r\nredis_version:7.0.0\r\n\r\n");
+        char info_response[] = "# Server\r\nredis_version:7.0.0\r\nredis_mode:standalone\r\n";
+        char response[512];
+        snprintf(response, sizeof(response), "$%ld\r\n%s\r\n", strlen(info_response), info_response);
+        send_response(client_fd, response);
     } else if (strcmp(cmd, "CLIENT") == 0) {
         if (argc >= 2) {
             char *subcmd = args[1];
