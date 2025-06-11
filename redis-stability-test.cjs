@@ -16,7 +16,7 @@ class RedisStabilityTest {
       console.log('Starting mini-redis server...');
       const miniRedisPath = path.join(process.cwd(), 'mini-redis');
       
-      this.redisProcess = spawn('./simple-redis', [], {
+      this.redisProcess = spawn('./production-redis', [], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
