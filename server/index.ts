@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { redisSupervisor } from "./redis-supervisor";
 import { mongoConnection } from "./db-mongo";
 
+
 const app = express();
 
 // Optimized body parsing middleware with smaller limits for better performance
@@ -66,15 +67,9 @@ app.use((req, res, next) => {
     console.log('MongoDB connection failed, document storage features disabled');
   });
 
-  // Start mini-redis service (jemalloc-free implementation)
-  try {
-    const { miniRedisService } = await import('./redis-service');
-    await miniRedisService.start();
-    console.log('✅ Mini Redis service started successfully');
-  } catch (error) {
-    console.warn('⚠️ Mini Redis service failed to start:', error.message);
-    console.log('Continuing without Redis caching...');
-  }
+  // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
+  console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
+  // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
