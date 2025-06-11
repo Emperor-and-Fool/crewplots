@@ -83,12 +83,17 @@ class RedisProxyServer {
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
-      lazyConnect: true
+      lazyConnect: true,
+      // Reduce command timeout for mini-redis compatibility
+      commandTimeout: 5000,
+      // Disable keepalive that might not be supported
+      keepAlive: false
     });
 
     try {
       await this.redisClient.connect();
-      await this.redisClient.ping();
+      // Test with a simple command instead of ping
+      await this.redisClient.set('test', 'connection');
       console.log('✅ Connected to Redis successfully');
       return true;
     } catch (error) {

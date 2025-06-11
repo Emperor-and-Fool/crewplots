@@ -155,6 +155,9 @@ void process_command(int client_fd, char *command) {
     } else if (strcmp(cmd, "FLUSHALL") == 0 || strcmp(cmd, "FLUSHDB") == 0) {
         store_count = 0;
         send_response(client_fd, "+OK\r\n");
+    } else if (strcmp(cmd, "QUIT") == 0) {
+        send_response(client_fd, "+OK\r\n");
+        return; // Client will close connection
     } else if (strcmp(cmd, "KEYS") == 0) {
         char *pattern = strtok(NULL, " \r\n");
         if (!pattern) pattern = "*";
@@ -177,6 +180,19 @@ void process_command(int client_fd, char *command) {
                 snprintf(key_response, sizeof(key_response), "$%ld\r\n%s\r\n", strlen(store[i].key), store[i].key);
                 send_response(client_fd, key_response);
             }
+        }
+    } else if (strcmp(cmd, "SELECT") == 0) {
+        // Simple SELECT command support (ignore database selection)
+        send_response(client_fd, "+OK\r\n");
+    } else if (strcmp(cmd, "INFO") == 0) {
+        // Basic INFO command
+        send_response(client_fd, "$23\r\n# Server\r\nredis_version:7.0.0\r\n\r\n");
+    } else if (strcmp(cmd, "CLIENT") == 0) {
+        char *subcmd = strtok(NULL, " \r\n");
+        if (subcmd && strcasecmp(subcmd, "SETNAME") == 0) {
+            send_response(client_fd, "+OK\r\n");
+        } else {
+            send_response(client_fd, "+OK\r\n");
         }
     } else {
         send_response(client_fd, "-ERR unknown command\r\n");
@@ -219,6 +235,7 @@ int main(int argc, char *argv[]) {
     
     printf("Mini Redis server listening on 127.0.0.1:%d\n", port);
     printf("Ready to accept connections\n");
+    fflush(stdout);
     
     while (running) {
         fd_set readfds;
