@@ -155,7 +155,7 @@ router.post('/messages', isApplicant, async (req: any, res) => {
   try {
     const messageSchema = z.object({
       content: z.string().max(10000), // Allow empty content for initial file creation
-      messageType: z.enum(['text', 'rich-text', 'system', 'notification']).optional(),
+      noteType: z.enum(['text', 'rich-text', 'system', 'notification']).optional(),
       priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
       isPrivate: z.boolean().default(false),
     });
