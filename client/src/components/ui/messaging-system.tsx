@@ -160,8 +160,9 @@ export function MessagingSystem({
       return data;
     },
     enabled: !!userId,
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
+    staleTime: 30000, // Cache for 30 seconds to prevent excessive refetches
   });
 
   // Delete message mutation
