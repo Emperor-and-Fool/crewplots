@@ -96,11 +96,11 @@ ifeq ($(USE_TCMALLOC_MINIMAL),yes)
 	MALLOC=tcmalloc_minimal
 endif
 
-ifeq ($(USE_JEMALLOC_DISABLED),yes)
+ifeq ($(USE_JEMALLOC),yes)
 	MALLOC=jemalloc
 endif
 
-ifeq ($(USE_JEMALLOC_DISABLED),no)
+ifeq ($(USE_JEMALLOC),no)
 	MALLOC=libc
 endif
 
@@ -279,7 +279,7 @@ endif
 
 ifeq ($(MALLOC),jemalloc)
 	DEPENDENCY_TARGETS+= jemalloc
-	FINAL_CFLAGS+= -DUSE_JEMALLOC_DISABLED -I../deps/jemalloc/include
+	FINAL_CFLAGS+= -DUSE_JEMALLOC -I../deps/jemalloc/include
 	FINAL_LIBS := ../deps/jemalloc/lib/libjemalloc.a $(FINAL_LIBS)
 endif
 
