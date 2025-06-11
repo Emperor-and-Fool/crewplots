@@ -93,34 +93,81 @@ void send_response(int client_fd, const char *response) {
     send(client_fd, response, strlen(response), 0);
 }
 
-void process_command(int client_fd, char *command) {
-    char *cmd = strtok(command, " \r\n");
-    if (!cmd) return;
+// Parse RESP-2 protocol array commands
+int parse_resp_array(char *buffer, char **args, int max_args) {
+    if (*buffer != '*') return -1;
     
+    int arg_count = atoi(buffer + 1);
+    if (arg_count > max_args) return -1;
+    
+    char *pos = strchr(buffer, '\n');
+    if (!pos) return -1;
+    pos++;
+    
+    for (int i = 0; i < arg_count; i++) {
+        if (*pos != '$') return -1;
+        int len = atoi(pos + 1);
+        pos = strchr(pos, '\n');
+        if (!pos) return -1;
+        pos++;
+        
+        args[i] = pos;
+        pos[len] = '\0'; // Null terminate the argument
+        pos += len + 2; // Skip \r\n
+    }
+    
+    return arg_count;
+}
+
+void process_command(int client_fd, char *buffer) {
+    char *args[16];
+    int argc = parse_resp_array(buffer, args, 16);
+    
+    if (argc < 1) {
+        // Fallback to simple string parsing
+        char *cmd = strtok(buffer, " \r\n");
+        if (!cmd) return;
+        
+        // Convert to uppercase
+        for (char *p = cmd; *p; p++) *p = toupper(*p);
+        
+        // Simple command processing
+        if (strcmp(cmd, "PING") == 0) {
+            send_response(client_fd, "+PONG\r\n");
+            return;
+        }
+        send_response(client_fd, "-ERR unknown command\r\n");
+        return;
+    }
+    
+    char *cmd = args[0];
     // Convert to uppercase
     for (char *p = cmd; *p; p++) *p = toupper(*p);
     
     if (strcmp(cmd, "PING") == 0) {
         send_response(client_fd, "+PONG\r\n");
+    } else if (strcmp(cmd, "AUTH") == 0) {
+        // Accept any auth for compatibility
+        send_response(client_fd, "+OK\r\n");
     } else if (strcmp(cmd, "SET") == 0) {
-        char *key = strtok(NULL, " \r\n");
-        char *value = strtok(NULL, " \r\n");
-        char *ex = strtok(NULL, " \r\n");
-        char *ttl_str = strtok(NULL, " \r\n");
-        
-        if (key && value) {
+        if (argc >= 3) {
+            char *key = args[1];
+            char *value = args[2];
             int ttl = 0;
-            if (ex && ttl_str && strcasecmp(ex, "EX") == 0) {
-                ttl = atoi(ttl_str);
+            
+            // Check for EX parameter
+            if (argc >= 5 && strcasecmp(args[3], "EX") == 0) {
+                ttl = atoi(args[4]);
             }
+            
             set_key(key, value, ttl);
             send_response(client_fd, "+OK\r\n");
         } else {
-            send_response(client_fd, "-ERR wrong number of arguments\r\n");
+            send_response(client_fd, "-ERR wrong number of arguments for 'set' command\r\n");
         }
     } else if (strcmp(cmd, "GET") == 0) {
-        char *key = strtok(NULL, " \r\n");
-        if (key) {
+        if (argc >= 2) {
+            char *key = args[1];
             char *value = get_key(key);
             if (value) {
                 char response[BUFFER_SIZE];
@@ -130,27 +177,27 @@ void process_command(int client_fd, char *command) {
                 send_response(client_fd, "$-1\r\n");
             }
         } else {
-            send_response(client_fd, "-ERR wrong number of arguments\r\n");
+            send_response(client_fd, "-ERR wrong number of arguments for 'get' command\r\n");
         }
     } else if (strcmp(cmd, "EXISTS") == 0) {
-        char *key = strtok(NULL, " \r\n");
-        if (key) {
+        if (argc >= 2) {
+            char *key = args[1];
             int exists = exists_key(key);
             char response[64];
             snprintf(response, sizeof(response), ":%d\r\n", exists);
             send_response(client_fd, response);
         } else {
-            send_response(client_fd, "-ERR wrong number of arguments\r\n");
+            send_response(client_fd, "-ERR wrong number of arguments for 'exists' command\r\n");
         }
     } else if (strcmp(cmd, "DEL") == 0) {
-        char *key = strtok(NULL, " \r\n");
-        if (key) {
+        if (argc >= 2) {
+            char *key = args[1];
             int deleted = delete_key(key);
             char response[64];
             snprintf(response, sizeof(response), ":%d\r\n", deleted);
             send_response(client_fd, response);
         } else {
-            send_response(client_fd, "-ERR wrong number of arguments\r\n");
+            send_response(client_fd, "-ERR wrong number of arguments for 'del' command\r\n");
         }
     } else if (strcmp(cmd, "FLUSHALL") == 0 || strcmp(cmd, "FLUSHDB") == 0) {
         store_count = 0;
@@ -159,8 +206,7 @@ void process_command(int client_fd, char *command) {
         send_response(client_fd, "+OK\r\n");
         return; // Client will close connection
     } else if (strcmp(cmd, "KEYS") == 0) {
-        char *pattern = strtok(NULL, " \r\n");
-        if (!pattern) pattern = "*";
+        char *pattern = (argc >= 2) ? args[1] : "*";
         
         char response[BUFFER_SIZE] = "";
         int count = 0;
@@ -188,14 +234,25 @@ void process_command(int client_fd, char *command) {
         // Basic INFO command
         send_response(client_fd, "$23\r\n# Server\r\nredis_version:7.0.0\r\n\r\n");
     } else if (strcmp(cmd, "CLIENT") == 0) {
-        char *subcmd = strtok(NULL, " \r\n");
-        if (subcmd && strcasecmp(subcmd, "SETNAME") == 0) {
-            send_response(client_fd, "+OK\r\n");
+        if (argc >= 2) {
+            char *subcmd = args[1];
+            if (strcasecmp(subcmd, "SETNAME") == 0) {
+                send_response(client_fd, "+OK\r\n");
+            } else if (strcasecmp(subcmd, "LIST") == 0) {
+                send_response(client_fd, "*0\r\n");
+            } else {
+                send_response(client_fd, "+OK\r\n");
+            }
         } else {
             send_response(client_fd, "+OK\r\n");
         }
+    } else if (strcmp(cmd, "COMMAND") == 0) {
+        // Basic COMMAND response for compatibility
+        send_response(client_fd, "*0\r\n");
     } else {
-        send_response(client_fd, "-ERR unknown command\r\n");
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), "-ERR unknown command '%s'\r\n", cmd);
+        send_response(client_fd, error_msg);
     }
 }
 
@@ -292,15 +349,78 @@ int main(int argc, char *argv[]) {
                         clients[i].buffer_len += copy_len;
                         clients[i].buffer[clients[i].buffer_len] = '\0';
                         
-                        char *line_end = strstr(clients[i].buffer, "\r\n");
-                        if (line_end) {
-                            *line_end = '\0';
-                            process_command(clients[i].fd, clients[i].buffer);
-                            
-                            int processed_len = line_end - clients[i].buffer + 2;
-                            memmove(clients[i].buffer, clients[i].buffer + processed_len, 
-                                   clients[i].buffer_len - processed_len);
-                            clients[i].buffer_len -= processed_len;
+                        // Process complete RESP commands
+                        char *current_pos = clients[i].buffer;
+                        while (clients[i].buffer_len > 0) {
+                            // Look for complete RESP array command
+                            if (*current_pos == '*') {
+                                // Parse array header
+                                char *header_end = strstr(current_pos, "\r\n");
+                                if (!header_end) break; // Incomplete header
+                                
+                                int arg_count = atoi(current_pos + 1);
+                                char *scan_pos = header_end + 2;
+                                int complete_command = 1;
+                                
+                                // Check if all arguments are complete
+                                for (int arg = 0; arg < arg_count; arg++) {
+                                    if (scan_pos >= clients[i].buffer + clients[i].buffer_len) {
+                                        complete_command = 0;
+                                        break;
+                                    }
+                                    if (*scan_pos != '$') {
+                                        complete_command = 0;
+                                        break;
+                                    }
+                                    
+                                    char *arg_len_end = strstr(scan_pos, "\r\n");
+                                    if (!arg_len_end) {
+                                        complete_command = 0;
+                                        break;
+                                    }
+                                    
+                                    int arg_len = atoi(scan_pos + 1);
+                                    scan_pos = arg_len_end + 2 + arg_len + 2; // Skip $len\r\ndata\r\n
+                                    
+                                    if (scan_pos > clients[i].buffer + clients[i].buffer_len) {
+                                        complete_command = 0;
+                                        break;
+                                    }
+                                }
+                                
+                                if (complete_command) {
+                                    // Process the complete command
+                                    int cmd_len = scan_pos - current_pos;
+                                    char temp_buffer[BUFFER_SIZE];
+                                    memcpy(temp_buffer, current_pos, cmd_len);
+                                    temp_buffer[cmd_len] = '\0';
+                                    
+                                    process_command(clients[i].fd, temp_buffer);
+                                    
+                                    // Remove processed command from buffer
+                                    memmove(clients[i].buffer, scan_pos, 
+                                           clients[i].buffer_len - (scan_pos - clients[i].buffer));
+                                    clients[i].buffer_len -= (scan_pos - clients[i].buffer);
+                                    current_pos = clients[i].buffer;
+                                } else {
+                                    break; // Wait for more data
+                                }
+                            } else {
+                                // Simple string command (fallback)
+                                char *line_end = strstr(current_pos, "\r\n");
+                                if (line_end) {
+                                    *line_end = '\0';
+                                    process_command(clients[i].fd, current_pos);
+                                    
+                                    int processed_len = line_end - current_pos + 2;
+                                    memmove(clients[i].buffer, line_end + 2, 
+                                           clients[i].buffer_len - processed_len);
+                                    clients[i].buffer_len -= processed_len;
+                                    current_pos = clients[i].buffer;
+                                } else {
+                                    break; // Wait for complete line
+                                }
+                            }
                         }
                     }
                 }

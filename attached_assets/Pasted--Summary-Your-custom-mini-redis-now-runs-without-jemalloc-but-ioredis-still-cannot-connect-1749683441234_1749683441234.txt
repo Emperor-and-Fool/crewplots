@@ -1,0 +1,76 @@
+## Summary
+
+Your custom “mini-redis” now runs without jemalloc, but **ioredis** still cannot connect because it expects a **full RESP-2 protocol implementation** with proper framing, pipelining support, and command replies exactly like Redis does ([stackoverflow.com][1], [npmjs.com][2]). This is entirely solvable—ioredis is purely a client and can work with any server that speaks the Redis wire protocol ([stackoverflow.com][1], [github.com][3]). You’ll need to complete your proxy by implementing or mocking the **Redis command protocol**, including bulk-string parsing, multi-bulk arrays, and reply types (`+OK`, `$<len>`, `*<count>`, `-ERR…`). Once your mini-server fully supports RESP and the lifecycle events (`connect`, `ready`, `error`), ioredis will connect and work normally ([deepwiki.com][4], [github.com][5]).
+
+---
+
+## 1. Respect the RESP-2 Protocol
+
+* **Bulk strings & arrays**: ioredis sends commands as multi-bulk arrays (e.g.
+  `*2\r\n$3\r\nGET\r\n$3\r\nkey\r\n`). Your server must parse these frames and respond with the correct reply types ([redis.io][6]).
+* **Simple strings & errors**: Return `+OK\r\n` for successful commands and prefixed errors for failures (e.g. `-ERR unknown command 'FOO'\r\n`) ([redis.io][6]).
+* **Integer replies**: Return integers as `:<number>\r\n` for commands like `EXISTS` or `DEL` ([redis.io][6]).
+
+---
+
+## 2. Support Pipelining and Queuing
+
+* ioredis by default queues multiple commands and sends them one by one; it also supports **auto-pipelining** (`enableAutoPipelining: true`) to batch them ([github.com][5]).
+* Your server must **read all incoming bytes** in a loop, correctly buffer partial frames, and process queued commands in order to satisfy pipelined requests.
+
+---
+
+## 3. Implement Connection Lifecycle Events
+
+* Emit the **`ready`** event only after your server has sent the initial server greeting and is prepared to handle commands ([deepwiki.com][4]).
+* Handle **`PING`** commands with `+PONG\r\n` so that ioredis marks the connection as alive.
+* Send **`+OK\r\n`** on `AUTH` if you support authentication (even if you’re bypassing it).
+
+---
+
+## 4. Use an ioredis Mock for Testing
+
+* During development, use **ioredis-mock** (a drop-in replacement) to verify your client logic without depending on the server ([ioredis.readthedocs.io][7]).
+* Once your mock tests pass, switch back to the real ioredis client against your mini-server.
+
+---
+
+## 5. Debug with ioredis Logs
+
+* Enable detailed logs by setting `DEBUG=ioredis:*` in your environment. This will print raw frames sent and received, helping you pinpoint mismatches ([ioredis.readthedocs.io][7]).
+
+---
+
+## 6. Verify with Example Code
+
+```js
+import Redis from "ioredis";
+
+const client = new Redis({
+  port: 6379,
+  host: "127.0.0.1",
+  enableAutoPipelining: true,
+});
+
+client.on("connect", () => console.log("Connected"));
+client.on("ready", () => console.log("Ready"));
+client.on("error", (err) => console.error("Error:", err));
+
+await client.set("foo", "bar");
+console.log(await client.get("foo")); // should log "bar"
+```
+
+Run this against your mini-server; if you see “Connected” → “Ready” and get back “bar”, your protocol is compatible.
+
+---
+
+**Conclusion:**
+Your mini-redis can fully support ioredis **once you finish the RESP-2 implementation**—jemalloc is no longer a blocker. Focus on accurate frame parsing, correct reply formats, and full command support (even for PING, AUTH, SELECT). With that in place, client connection protocols will work seamlessly without jemalloc.
+
+[1]: https://stackoverflow.com/questions/69161421/ioredis-how-to-run-a-redis-server-on-a-different-port-than-the-default-6379-por?utm_source=chatgpt.com "typescript - ioredis: How to run a Redis Server on a different port ..."
+[2]: https://www.npmjs.com/package/ioredis?utm_source=chatgpt.com "ioredis - npm"
+[3]: https://github.com/redis/ioredis/issues/1698?utm_source=chatgpt.com "Can't resolve 'tls', 'net', and 'dns' when connecting to redis host"
+[4]: https://deepwiki.com/redis/ioredis/1-overview?utm_source=chatgpt.com "redis/ioredis | DeepWiki"
+[5]: https://github.com/redis/ioredis?utm_source=chatgpt.com "GitHub - redis/ioredis: A robust, performance-focused, and full ..."
+[6]: https://redis.io/docs/latest/develop/clients/nodejs/migration/?utm_source=chatgpt.com "Migrate from ioredis | Docs"
+[7]: https://ioredis.readthedocs.io/en/stable/README/?utm_source=chatgpt.com "README - ioredis - Read the Docs"
