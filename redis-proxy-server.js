@@ -33,12 +33,21 @@ class RedisProxyServer {
       fs.mkdirSync(redisDataDir, { recursive: true });
     }
 
-    // Create Redis config optimized for Replit
+    // Create Redis config optimized for Replit environment
     const redisConfig = `
 # Redis configuration for Replit environment
 port 6379
 bind 127.0.0.1
 dir ${redisDataDir}
+
+# Disable daemonization for container environment
+daemonize no
+
+# Memory constraints for Replit environment
+maxmemory 64mb
+maxmemory-policy allkeys-lru
+
+# Persistence settings
 save 900 1
 save 300 10
 save 60 10000
@@ -46,20 +55,33 @@ stop-writes-on-bgsave-error no
 rdbcompression yes
 rdbchecksum yes
 dbfilename dump.rdb
-maxmemory 64mb
-maxmemory-policy allkeys-lru
+
+# Connection settings
 timeout 0
 tcp-keepalive 300
+
+# Logging
+loglevel notice
+logfile ""
+
+# Disable potentially problematic features
+protected-mode no
 `;
 
     const configPath = path.join(__dirname, 'redis-proxy.conf');
     fs.writeFileSync(configPath, redisConfig);
 
     return new Promise((resolve, reject) => {
-      // Start Redis server
+      // Start Redis server with environment variables to bypass jemalloc TLS issues
       this.redisProcess = spawn('redis-server', [configPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        detached: false
+        detached: false,
+        env: {
+          ...process.env,
+          MALLOC_CONF: 'background_thread:false,metadata_thp:disabled',
+          LD_PRELOAD: '', // Clear any existing LD_PRELOAD
+          JEMALLOC_SYS_WITH_LG_PAGE: '12'
+        }
       });
 
       let started = false;
