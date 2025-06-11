@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 #include <sys/select.h>
 #include <time.h>
 #include <ctype.h>
+#include <strings.h>
 
 #define MAX_CLIENTS 100
 #define BUFFER_SIZE 4096
@@ -118,12 +120,7 @@ int parse_resp_array(char *buffer, char **args, int max_args) {
         
         args[i] = pos;
         if (len > 0) {
-            // Ensure we don't read beyond buffer bounds
-            for (int j = 0; j < len; j++) {
-                if (!pos[j]) return -1;
-            }
-            // Null terminate the argument (temporary modification)
-            char saved = pos[len];
+            // Null terminate the argument in place
             pos[len] = '\0';
             pos += len;
             
@@ -131,12 +128,10 @@ int parse_resp_array(char *buffer, char **args, int max_args) {
             if (*pos == '\r' && *(pos+1) == '\n') {
                 pos += 2;
             } else {
-                // Restore character and fail
-                pos[-(len)] = saved;
                 return -1;
             }
         } else {
-            args[i] = "";
+            args[i] = pos; // Point to empty position
             // Skip \r\n for empty string
             if (*pos == '\r' && *(pos+1) == '\n') {
                 pos += 2;
