@@ -177,7 +177,7 @@ export function MessagingSystem({
       // Create initial empty message file
       createMessageMutation.mutate({
         content: '',
-        noteType: 'rich-text',
+        messageType: 'rich-text',
         priority: 'normal',
         isPrivate: false,
       });
