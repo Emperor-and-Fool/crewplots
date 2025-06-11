@@ -57,7 +57,9 @@ export class RedisConnection {
       this.redisProcess.stdout?.on('data', (data) => {
         const output = data.toString();
         console.log('Mini Redis:', output.trim());
-        if (output.includes('Ready to accept connections') && !hasStarted) {
+        // Strip ANSI escape codes and check for ready message
+        const cleanOutput = output.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+        if (cleanOutput.includes('Ready to accept connections') && !hasStarted) {
           hasStarted = true;
           resolve();
         }
