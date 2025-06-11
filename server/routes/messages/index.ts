@@ -3,7 +3,7 @@ import { authenticateUser } from '../../middleware/auth';
 import notesRoutes from './notes';
 import conversationsRoutes from './conversations';
 import { messagingService } from '../../services/messaging-service';
-import { insertMessageSchema } from '@shared/schema';
+import { insertNoteRefSchema } from '@shared/schema';
 import { z } from 'zod';
 
 const router = Router();
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 
     const messages = await messagingService.getConversationMessages(userId, receiverId, limit);
     
-    console.log(`Fetched ${messages.length} messages for user ${userId}`);
+    console.log(`Fetched ${noteRefs.length} messages for user ${userId}`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const validatedData = insertMessageSchema.extend({
+    const validatedData = insertNoteRefSchema.extend({
       content: z.string().min(1).max(1000),
       receiverId: z.number().optional(),
     }).parse(req.body);

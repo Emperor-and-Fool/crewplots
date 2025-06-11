@@ -1,6 +1,6 @@
 import { mongoConnection } from '../db-mongo';
 import { storage } from '../storage';
-import type { Message, InsertMessage } from '@shared/schema';
+import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
 
 // Service layer message with compiled content
@@ -57,7 +57,7 @@ export class MessageService {
     }
   ): Promise<string> {
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<MessageDocument>('message_documents');
+    const collection = db.collection<MessageDocument>('note_files');
 
     // Calculate content metadata
     const plainText = content.replace(/<[^>]*>/g, '');
@@ -83,7 +83,7 @@ export class MessageService {
   // Update MongoDB document with PostgreSQL message reference
   private async updateDocumentMessageReference(documentId: string, messageId: number): Promise<void> {
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<MessageDocument>('message_documents');
+    const collection = db.collection<MessageDocument>('note_files');
 
     await collection.updateOne(
       { _id: new ObjectId(documentId) },
@@ -100,7 +100,7 @@ export class MessageService {
   private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
     try {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<MessageDocument>('message_documents');
+      const collection = db.collection<MessageDocument>('note_files');
       
       return await collection.findOne({ _id: new ObjectId(documentId) });
     } catch (error) {
@@ -112,7 +112,7 @@ export class MessageService {
   // Update MongoDB document content
   private async updateContentDocument(documentId: string, newContent: string): Promise<void> {
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<MessageDocument>('message_documents');
+    const collection = db.collection<MessageDocument>('note_files');
 
     // Recalculate metadata for updated content
     const plainText = newContent.replace(/<[^>]*>/g, '');
@@ -160,7 +160,7 @@ export class MessageService {
   }
 
   // Create message with dual-database coordination
-  async createMessage(messageData: InsertMessage & { workflow?: string }): Promise<ServiceMessage> {
+  async createMessage(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
     const mongoAvailable = await this.isMongoDBAvailable();
     
     if (mongoAvailable) {
@@ -275,7 +275,7 @@ export class MessageService {
       if (ObjectId.isValid(documentId)) {
         try {
           const db = mongoConnection.getDatabase();
-          const collection = db.collection('message_documents');
+          const collection = db.collection('note_files');
           await collection.deleteOne({ _id: new ObjectId(documentId) });
         } catch (error) {
           console.error('Error deleting MongoDB document:', error);

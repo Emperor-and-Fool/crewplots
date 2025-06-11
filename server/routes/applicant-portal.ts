@@ -142,7 +142,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     // Use MessageService to get compiled messages (PostgreSQL + MongoDB)
     const messages = await messageService.getMessagesByUser(userId);
     
-    console.log(`Fetched ${messages.length} compiled messages for applicant user ${userId}`);
+    console.log(`Fetched ${noteRefs.length} compiled messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching applicant messages:', error);

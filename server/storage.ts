@@ -4,12 +4,12 @@ import {
   kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
   type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type CashCount, type KbCategory, type KbArticle, type Message,
+  type Shift, type CashCount, type KbCategory, type KbArticle, type NoteRef,
   type UploadedFile, type DocumentAttachment,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
   type InsertStaffCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
-  type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertMessage,
+  type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertNoteRef,
   type InsertUploadedFile, type InsertDocumentAttachment,
   generatePublicId
 } from "@shared/schema";
@@ -180,8 +180,8 @@ export interface IStorage {
   getMessages(): Promise<Message[]>;
   getMessagesByUser(userId: number): Promise<Message[]>;
   getMessagesByApplicant(applicantId: number): Promise<Message[]>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message | undefined>;
+  createMessage(message: InsertNoteRef): Promise<Message>;
+  updateMessage(id: number, message: Partial<InsertNoteRef>): Promise<Message | undefined>;
   deleteMessage(id: number): Promise<boolean>;
   userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
 }
@@ -1748,37 +1748,37 @@ export class DatabaseStorage implements IStorage {
 
   // Message operations
   async getMessage(id: number): Promise<Message | undefined> {
-    const [message] = await db.select().from(messages).where(eq(messages.id, id));
+    const [message] = await db.select().from(messages).where(eq(noteRefs.id, id));
     return message || undefined;
   }
 
   async getMessages(): Promise<Message[]> {
-    return await db.select().from(messages).orderBy(messages.createdAt);
+    return await db.select().from(messages).orderBy(noteRefs.createdAt);
   }
 
   async getMessagesByUser(userId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.userId, userId)).orderBy(messages.createdAt);
+    return await db.select().from(messages).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
   }
 
   async getMessagesByApplicant(applicantId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.applicantId, applicantId)).orderBy(messages.createdAt);
+    return await db.select().from(messages).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
   }
 
-  async createMessage(message: InsertMessage): Promise<Message> {
+  async createMessage(message: InsertNoteRef): Promise<Message> {
     const [createdMessage] = await db.insert(messages).values(message).returning();
     return createdMessage;
   }
 
-  async updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message | undefined> {
+  async updateMessage(id: number, message: Partial<InsertNoteRef>): Promise<Message | undefined> {
     const [updatedMessage] = await db.update(messages)
       .set(message)
-      .where(eq(messages.id, id))
+      .where(eq(noteRefs.id, id))
       .returning();
     return updatedMessage || undefined;
   }
 
   async deleteMessage(id: number): Promise<boolean> {
-    await db.delete(messages).where(eq(messages.id, id));
+    await db.delete(messages).where(eq(noteRefs.id, id));
     return true;
   }
 

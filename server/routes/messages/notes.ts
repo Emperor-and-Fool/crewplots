@@ -6,7 +6,7 @@ import { insertNoteRefSchema } from '@shared/schema';
 const router = Router();
 
 // Validation schemas
-const createNoteSchema = insertMessageSchema.extend({
+const createNoteSchema = insertNoteRefSchema.extend({
   content: z.string().min(1).max(1000),
   workflow: z.string(),
   visibleToRoles: z.array(z.string()).optional(),

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { messagingService } from '../../services/messaging-service';
-import { insertMessageSchema } from '@shared/schema';
+import { insertNoteRefSchema } from '@shared/schema';
 
 const router = Router();
 
 // Validation schemas
-const createConversationMessageSchema = insertMessageSchema.extend({
+const createConversationMessageSchema = insertNoteRefSchema.extend({
   content: z.string().min(1).max(1000),
   receiverId: z.number().optional(),
 });
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
       query.limit
     );
 
-    console.log(`Fetched ${messages.length} conversation messages for user ${userId}`);
+    console.log(`Fetched ${noteRefs.length} conversation messages for user ${userId}`);
     
     res.json(messages);
   } catch (error) {

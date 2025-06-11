@@ -1,7 +1,7 @@
 import { eq, and, desc, or, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { noteRefs, users } from '@shared/schema';
-import type { InsertMessage, Message, User } from '@shared/schema';
+import type { InsertNoteRef, Message, User } from '@shared/schema';
 import { documentService } from './document-service';
 
 // Compiled note type for frontend consumption
@@ -147,7 +147,7 @@ export class MessagingService {
   }
 
   // Create note with hybrid storage (metadata in PostgreSQL, content in MongoDB)
-  async createNote(noteData: InsertMessage, requestingUserId: number): Promise<CompiledNote> {
+  async createNote(noteData: InsertNoteRef, requestingUserId: number): Promise<CompiledNote> {
     let documentReference: string | null = null;
     
     // Store content in MongoDB if it exists
@@ -248,7 +248,7 @@ export class MessagingService {
       .limit(limit);
   }
 
-  async createConversationMessage(messageData: InsertMessage): Promise<Message> {
+  async createConversationMessage(messageData: InsertNoteRef): Promise<Message> {
     const [createdMessage] = await db
       .insert(messages)
       .values(messageData)
@@ -268,7 +268,7 @@ export class MessagingService {
     return message || null;
   }
 
-  async updateMessage(messageId: number, updates: Partial<InsertMessage>): Promise<Message | null> {
+  async updateMessage(messageId: number, updates: Partial<InsertNoteRef>): Promise<Message | null> {
     const [updatedMessage] = await db
       .update(messages)
       .set({ ...updates, updatedAt: new Date() })
