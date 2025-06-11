@@ -128,7 +128,7 @@ export class MessagingService {
   async getNotesCountByWorkflow(userId: number, workflow: string, userRole: string): Promise<number> {
     const workflowNotes = await db
       .select()
-      .from(messages)
+      .from(noteRefs)
       .where(and(
         eq(noteRefs.userId, userId),
         eq(noteRefs.workflow, workflow as any),
@@ -185,7 +185,7 @@ export class MessagingService {
     }
     
     const [createdNote] = await db
-      .insert(messages)
+      .insert(noteRefs)
       .values(noteToInsert)
       .returning();
 
@@ -197,7 +197,7 @@ export class MessagingService {
   async getCompiledNote(noteId: number, requestingUserId: number, requestingUserRole: string): Promise<CompiledNote | null> {
     const note = await db
       .select()
-      .from(messages)
+      .from(noteRefs)
       .where(eq(noteRefs.id, noteId))
       .limit(1);
 
@@ -242,7 +242,7 @@ export class MessagingService {
 
     return await db
       .select()
-      .from(messages)
+      .from(noteRefs)
       .where(whereConditions)
       .orderBy(desc(noteRefs.createdAt))
       .limit(limit);
@@ -250,7 +250,7 @@ export class MessagingService {
 
   async createConversationMessage(messageData: InsertNoteRef): Promise<NoteRef> {
     const [createdMessage] = await db
-      .insert(messages)
+      .insert(noteRefs)
       .values(messageData)
       .returning();
     
@@ -261,7 +261,7 @@ export class MessagingService {
   async getNoteRefById(messageId: number): Promise<NoteRef | null> {
     const [message] = await db
       .select()
-      .from(messages)
+      .from(noteRefs)
       .where(eq(noteRefs.id, messageId))
       .limit(1);
     
@@ -270,7 +270,7 @@ export class MessagingService {
 
   async updateNoteRef(messageId: number, updates: Partial<InsertNoteRef>): Promise<NoteRef | null> {
     const [updatedMessage] = await db
-      .update(messages)
+      .update(noteRefs)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(noteRefs.id, messageId))
       .returning();
@@ -280,7 +280,7 @@ export class MessagingService {
 
   async deleteNoteRef(messageId: number): Promise<boolean> {
     const result = await db
-      .delete(messages)
+      .delete(noteRefs)
       .where(eq(noteRefs.id, messageId));
     
     return (result.rowCount || 0) > 0;

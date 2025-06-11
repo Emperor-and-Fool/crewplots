@@ -1748,29 +1748,29 @@ export class DatabaseStorage implements IStorage {
 
   // Message operations
   async getNoteRef(id: number): Promise<NoteRef | undefined> {
-    const [message] = await db.select().from(messages).where(eq(noteRefs.id, id));
+    const [message] = await db.select().from(noteRefs).where(eq(noteRefs.id, id));
     return message || undefined;
   }
 
   async getNoteRefs(): Promise<NoteRef[]> {
-    return await db.select().from(messages).orderBy(noteRefs.createdAt);
+    return await db.select().from(noteRefs).orderBy(noteRefs.createdAt);
   }
 
   async getNoteRefsByUser(userId: number): Promise<NoteRef[]> {
-    return await db.select().from(messages).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
+    return await db.select().from(noteRefs).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
   }
 
   async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
-    return await db.select().from(messages).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
+    return await db.select().from(noteRefs).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
   }
 
   async createNoteRef(message: InsertNoteRef): Promise<NoteRef> {
-    const [createdMessage] = await db.insert(messages).values(message).returning();
+    const [createdMessage] = await db.insert(noteRefs).values(message).returning();
     return createdMessage;
   }
 
   async updateNoteRef(id: number, message: Partial<InsertNoteRef>): Promise<NoteRef | undefined> {
-    const [updatedMessage] = await db.update(messages)
+    const [updatedMessage] = await db.update(noteRefs)
       .set(message)
       .where(eq(noteRefs.id, id))
       .returning();
@@ -1778,7 +1778,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteNoteRef(id: number): Promise<boolean> {
-    await db.delete(messages).where(eq(noteRefs.id, id));
+    await db.delete(noteRefs).where(eq(noteRefs.id, id));
     return true;
   }
 
