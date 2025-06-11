@@ -22,59 +22,16 @@ class RedisProxyServer {
   }
 
   async startRedisServer() {
-    console.log('🔧 Starting Redis server with memory constraints...');
+    console.log('🔧 Starting Mini Redis server (jemalloc-free)...');
     
-    // Create custom Redis config file to bypass jemalloc
-    const configPath = path.join(this.dataDir, 'redis-custom.conf');
-    const redisConfigContent = `
-# Custom Redis configuration for Replit compatibility
-port ${this.redisPort}
-bind 127.0.0.1
-protected-mode no
-daemonize no
-save 60 1
-dir ${this.dataDir}
-maxmemory 32mb
-maxmemory-policy allkeys-lru
-databases 4
-tcp-keepalive 300
-timeout 0
-tcp-backlog 128
-# Disable persistence to reduce memory usage
-save ""
-stop-writes-on-bgsave-error no
-rdbcompression no
-rdbchecksum no
-# Reduce memory overhead
-hash-max-ziplist-entries 512
-hash-max-ziplist-value 64
-list-max-ziplist-size -2
-list-compress-depth 0
-set-max-intset-entries 512
-zset-max-ziplist-entries 128
-zset-max-ziplist-value 64
-hll-sparse-max-bytes 3000
-stream-node-max-bytes 4096
-stream-node-max-entries 100
-`;
+    // Use our custom mini-redis implementation
+    const miniRedisPath = path.join(__dirname, 'mini-redis');
     
-    fs.writeFileSync(configPath, redisConfigContent);
-    
-    // Use environment variable to potentially override allocator
-    const env = { 
-      ...process.env,
-      MALLOC_ARENA_MAX: '1',
-      MALLOC_MMAP_THRESHOLD_: '2048',
-      MALLOC_TRIM_THRESHOLD_: '128'
-    };
-    
-    const redisConfig = [configPath];
-
     return new Promise((resolve, reject) => {
-      this.redisProcess = spawn('redis-server', redisConfig, {
+      this.redisProcess = spawn(miniRedisPath, [this.redisPort.toString()], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env: env
+        cwd: __dirname
       });
 
       let startupOutput = '';
@@ -82,10 +39,10 @@ stream-node-max-entries 100
       this.redisProcess.stdout.on('data', (data) => {
         const output = data.toString();
         startupOutput += output;
-        console.log('Redis stdout:', output.trim());
+        console.log('Mini Redis stdout:', output.trim());
         
         if (output.includes('Ready to accept connections')) {
-          console.log('✅ Redis server started successfully');
+          console.log('✅ Mini Redis server started successfully');
           resolve();
         }
       });
@@ -93,36 +50,27 @@ stream-node-max-entries 100
       this.redisProcess.stderr.on('data', (data) => {
         const output = data.toString();
         startupOutput += output;
-        console.log('Redis stderr:', output.trim());
-        
-        // Check for common failure patterns
-        if (output.includes('Address already in use') || 
-            output.includes('Can\'t set up TLS') ||
-            output.includes('jemalloc') ||
-            output.includes('TLS block allocation')) {
-          console.log('❌ Redis startup failed with known issue');
-          reject(new Error(`Redis startup failed: ${output}`));
-        }
+        console.log('Mini Redis stderr:', output.trim());
       });
 
       this.redisProcess.on('error', (error) => {
-        console.log('❌ Redis process error:', error.message);
+        console.log('❌ Mini Redis process error:', error.message);
         reject(error);
       });
 
       this.redisProcess.on('exit', (code, signal) => {
-        console.log(`❌ Redis process exited with code ${code}, signal ${signal}`);
+        console.log(`❌ Mini Redis process exited with code ${code}, signal ${signal}`);
         if (code !== 0 && !startupOutput.includes('Ready to accept connections')) {
-          reject(new Error(`Redis exited with code ${code}`));
+          reject(new Error(`Mini Redis exited with code ${code}`));
         }
       });
 
-      // Timeout after 10 seconds
+      // Timeout after 5 seconds
       setTimeout(() => {
         if (!startupOutput.includes('Ready to accept connections')) {
-          reject(new Error('Redis startup timeout'));
+          reject(new Error('Mini Redis startup timeout'));
         }
-      }, 10000);
+      }, 5000);
     });
   }
 
