@@ -25,6 +25,7 @@ import messagesRoutes from './routes/messages/index';
 import documentsRoutes from './routes/documents';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
+import testHybridRoutes from './routes/test-hybrid';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -243,6 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messagesRoutes);
   app.use('/api/documents', documentsRoutes);
   app.use('/api/mongodb', mongodbMessagesRoutes);
+  app.use('/test-hybrid', testHybridRoutes);
   app.use('/api', dashboardRoutes);
 
   // QR Code Route - returns the URL for registration

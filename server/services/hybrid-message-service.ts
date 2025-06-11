@@ -140,7 +140,7 @@ class HybridMessageService {
         try {
           const response = await fetch(
             `${this.mongoProxyUrl}/collections/message_content/findOne?q=${encodeURIComponent(
-              JSON.stringify({ _id: pgMessage.documentId })
+              JSON.stringify({ _id: pgMessage.documentReference })
             )}`
           );
 
@@ -149,7 +149,7 @@ class HybridMessageService {
             if (mongoDoc) {
               content = mongoDoc.content;
               messageType = mongoDoc.messageType || pgMessage.messageType;
-              console.log(`✅ Retrieved content from MongoDB: ${pgMessage.documentId}`);
+              console.log(`✅ Retrieved content from MongoDB: ${pgMessage.documentReference}`);
             }
           }
         } catch (error) {
@@ -164,7 +164,7 @@ class HybridMessageService {
       receiverId: pgMessage.receiverId,
       isPrivate: pgMessage.isPrivate,
       workflow: pgMessage.workflow,
-      documentId: pgMessage.documentId || '',
+      documentId: pgMessage.documentReference || '',
       createdAt: pgMessage.createdAt,
       updatedAt: pgMessage.updatedAt,
       content,
