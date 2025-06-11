@@ -1,7 +1,7 @@
 import {
   users, locations, competencies, staff, staffCompetencies, userDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, documentAttachments, messages,
+  kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
   type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
   type Shift, type CashCount, type KbCategory, type KbArticle, type Message,

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { messagingService } from '../../services/messaging-service';
-import { insertMessageSchema } from '@shared/schema';
+import { insertNoteRefSchema } from '@shared/schema';
 
 const router = Router();
 

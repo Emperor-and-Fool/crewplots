@@ -1,6 +1,6 @@
 import { eq, and, desc, or, isNull } from 'drizzle-orm';
 import { db } from '../db';
-import { messages, users } from '@shared/schema';
+import { noteRefs, users } from '@shared/schema';
 import type { InsertMessage, Message, User } from '@shared/schema';
 import { documentService } from './document-service';
 
@@ -25,13 +25,13 @@ export class MessagingService {
   async getNotesByWorkflow(userId: number, workflow: string, userRole: string): Promise<CompiledNote[]> {
     const workflowNotes = await db
       .select()
-      .from(messages)
+      .from(noteRefs)
       .where(and(
-        eq(messages.userId, userId),
-        eq(messages.workflow, workflow as any),
-        isNull(messages.receiverId) // Only notes, not conversations
+        eq(noteRefs.userId, userId),
+        eq(noteRefs.workflow, workflow as any),
+        isNull(noteRefs.receiverId) // Only notes, not conversations
       ))
-      .orderBy(desc(messages.createdAt));
+      .orderBy(desc(noteRefs.createdAt));
 
     // Filter by role permissions
     const filteredNotes = workflowNotes.filter(note => {
@@ -130,9 +130,9 @@ export class MessagingService {
       .select()
       .from(messages)
       .where(and(
-        eq(messages.userId, userId),
-        eq(messages.workflow, workflow as any),
-        isNull(messages.receiverId)
+        eq(noteRefs.userId, userId),
+        eq(noteRefs.workflow, workflow as any),
+        isNull(noteRefs.receiverId)
       ));
 
     // Filter by role permissions
@@ -198,7 +198,7 @@ export class MessagingService {
     const note = await db
       .select()
       .from(messages)
-      .where(eq(messages.id, noteId))
+      .where(eq(noteRefs.id, noteId))
       .limit(1);
 
     if (note.length === 0) {
@@ -224,19 +224,19 @@ export class MessagingService {
       // Get messages between user and specific receiver
       whereConditions = and(
         or(
-          and(eq(messages.userId, userId), eq(messages.receiverId, receiverId)),
-          and(eq(messages.userId, receiverId), eq(messages.receiverId, userId))
+          and(eq(noteRefs.userId, userId), eq(noteRefs.receiverId, receiverId)),
+          and(eq(noteRefs.userId, receiverId), eq(noteRefs.receiverId, userId))
         ),
         or(
-          eq(messages.userId, userId),
-          eq(messages.isPrivate, false) // Include non-private messages from others
+          eq(noteRefs.userId, userId),
+          eq(noteRefs.isPrivate, false) // Include non-private messages from others
         )
       );
     } else {
       // Get user's general messages (sent or received)
       whereConditions = or(
-        eq(messages.userId, userId),
-        and(eq(messages.receiverId, userId), eq(messages.isPrivate, false))
+        eq(noteRefs.userId, userId),
+        and(eq(noteRefs.receiverId, userId), eq(noteRefs.isPrivate, false))
       );
     }
 
@@ -244,7 +244,7 @@ export class MessagingService {
       .select()
       .from(messages)
       .where(whereConditions)
-      .orderBy(desc(messages.createdAt))
+      .orderBy(desc(noteRefs.createdAt))
       .limit(limit);
   }
 
@@ -262,7 +262,7 @@ export class MessagingService {
     const [message] = await db
       .select()
       .from(messages)
-      .where(eq(messages.id, messageId))
+      .where(eq(noteRefs.id, messageId))
       .limit(1);
     
     return message || null;
@@ -272,7 +272,7 @@ export class MessagingService {
     const [updatedMessage] = await db
       .update(messages)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(messages.id, messageId))
+      .where(eq(noteRefs.id, messageId))
       .returning();
     
     return updatedMessage || null;
@@ -281,7 +281,7 @@ export class MessagingService {
   async deleteMessage(messageId: number): Promise<boolean> {
     const result = await db
       .delete(messages)
-      .where(eq(messages.id, messageId));
+      .where(eq(noteRefs.id, messageId));
     
     return (result.rowCount || 0) > 0;
   }
