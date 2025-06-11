@@ -7,7 +7,7 @@ import path from 'path';
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { db } from '../db';
-import { messages as messagesTable } from '@shared/schema';
+import { noteRefs as noteRefsTable } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 const router = express.Router();
@@ -142,7 +142,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     // Use MessageService to get compiled messages (PostgreSQL + MongoDB)
     const messages = await messageService.getNoteRefsByUser(userId);
     
-    console.log(`Fetched ${noteRefs.length} compiled messages for applicant user ${userId}`);
+    console.log(`Fetched ${messages.length} compiled messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching applicant messages:', error);

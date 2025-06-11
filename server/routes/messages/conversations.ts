@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
       query.limit
     );
 
-    console.log(`Fetched ${noteRefs.length} conversation messages for user ${userId}`);
+    console.log(`Fetched ${messages.length} conversation messages for user ${userId}`);
     
     res.json(messages);
   } catch (error) {
