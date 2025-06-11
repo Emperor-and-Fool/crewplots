@@ -4,7 +4,7 @@ import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
 
 // Service layer message with compiled content
-export interface ServiceMessage extends Message {
+export interface ServiceMessage extends NoteRef {
   documentId?: string;
   compiledContent?: string;
 }
@@ -97,7 +97,7 @@ export class MessageService {
   }
 
   // Get MongoDB document content
-  private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
+  private async getMongoDocument(documentId: string): Promise<NoteRefDocument | null> {
     try {
       const db = mongoConnection.getDatabase();
       const collection = db.collection<MessageDocument>('note_files');
@@ -160,7 +160,7 @@ export class MessageService {
   }
 
   // Create message with dual-database coordination
-  async createMessage(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
+  async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
     const mongoAvailable = await this.isMongoDBAvailable();
     
     if (mongoAvailable) {
@@ -173,7 +173,7 @@ export class MessageService {
       });
 
       // Step 2: Create relational record in PostgreSQL with MongoDB reference
-      const postgresMessage = await storage.createMessage({
+      const postgresMessage = await storage.createNoteRef({
         ...messageData,
         content: documentId, // Store MongoDB ObjectId as reference
       });
@@ -192,7 +192,7 @@ export class MessageService {
       console.log('MongoDB unavailable, using PostgreSQL virtual document tables');
       
       // Fallback to PostgreSQL-only mode
-      const postgresMessage = await storage.createMessage(messageData);
+      const postgresMessage = await storage.createNoteRef(messageData);
       return {
         ...postgresMessage,
         compiledContent: postgresMessage.content,
@@ -201,11 +201,11 @@ export class MessageService {
   }
 
   // Get messages by user with content compilation
-  async getMessagesByUser(userId: number): Promise<ServiceMessage[]> {
+  async getNoteRefsByUser(userId: number): Promise<ServiceMessage[]> {
     console.log('MongoDB not available, using PostgreSQL fallback');
     
     // Fetch metadata from PostgreSQL
-    const postgresMessages = await storage.getMessagesByUser(userId);
+    const postgresMessages = await storage.getNoteRefsByUser(userId);
 
     // Compile with MongoDB content in parallel
     const compiledMessages = await Promise.all(
@@ -217,11 +217,11 @@ export class MessageService {
   }
 
   // Update message with content coordination
-  async updateMessage(messageId: number, updates: { content?: string }): Promise<ServiceMessage> {
+  async updateNoteRef(messageId: number, updates: { content?: string }): Promise<ServiceMessage> {
     const mongoAvailable = await this.isMongoDBAvailable();
     
     // Get existing message
-    const existingMessage = await storage.getMessage(messageId);
+    const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage) {
       throw new Error('Message not found');
     }
@@ -236,7 +236,7 @@ export class MessageService {
         await this.updateContentDocument(documentId, updates.content);
         
         // Update PostgreSQL metadata if needed
-        const updatedMessage = await storage.updateMessage(messageId, {
+        const updatedMessage = await storage.updateNoteRef(messageId, {
           updatedAt: new Date(),
         });
         
@@ -251,7 +251,7 @@ export class MessageService {
     
     // Fallback to PostgreSQL-only update
     console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${existingMessage.userId}`);
-    const updatedMessage = await storage.updateMessage(messageId, updates);
+    const updatedMessage = await storage.updateNoteRef(messageId, updates);
     return {
       ...updatedMessage,
       compiledContent: updatedMessage.content,
@@ -259,11 +259,11 @@ export class MessageService {
   }
 
   // Delete message with cleanup
-  async deleteMessage(messageId: number): Promise<boolean> {
+  async deleteNoteRef(messageId: number): Promise<boolean> {
     const mongoAvailable = await this.isMongoDBAvailable();
     
     // Get existing message for MongoDB cleanup
-    const existingMessage = await storage.getMessage(messageId);
+    const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage) {
       return false;
     }
@@ -284,7 +284,7 @@ export class MessageService {
     }
 
     // Delete PostgreSQL record
-    return await storage.deleteMessage(messageId);
+    return await storage.deleteNoteRef(messageId);
   }
 
   // Health check for both databases

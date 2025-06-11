@@ -90,7 +90,7 @@ router.get('/:messageId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
 
-    const message = await messagingService.getMessageById(messageId);
+    const message = await messagingService.getNoteRefById(messageId);
     
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
@@ -116,7 +116,7 @@ router.put('/:messageId', async (req, res) => {
     }
 
     const updates = req.body;
-    const updatedMessage = await messagingService.updateMessage(messageId, updates);
+    const updatedMessage = await messagingService.updateNoteRef(messageId, updates);
     
     if (!updatedMessage) {
       return res.status(404).json({ error: 'Message not found' });
@@ -143,7 +143,7 @@ router.delete('/:messageId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
 
-    const deleted = await messagingService.deleteMessage(messageId);
+    const deleted = await messagingService.deleteNoteRef(messageId);
     
     if (!deleted) {
       return res.status(404).json({ error: 'Message not found' });

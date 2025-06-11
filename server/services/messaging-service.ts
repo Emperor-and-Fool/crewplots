@@ -217,7 +217,7 @@ export class MessagingService {
   }
 
   // Conversation-related business logic
-  async getConversationMessages(userId: number, receiverId?: number, limit: number = 50): Promise<Message[]> {
+  async getConversationMessages(userId: number, receiverId?: number, limit: number = 50): Promise<NoteRef[]> {
     let whereConditions;
 
     if (receiverId) {
@@ -248,7 +248,7 @@ export class MessagingService {
       .limit(limit);
   }
 
-  async createConversationMessage(messageData: InsertNoteRef): Promise<Message> {
+  async createConversationMessage(messageData: InsertNoteRef): Promise<NoteRef> {
     const [createdMessage] = await db
       .insert(messages)
       .values(messageData)
@@ -258,7 +258,7 @@ export class MessagingService {
   }
 
   // General message operations
-  async getMessageById(messageId: number): Promise<Message | null> {
+  async getNoteRefById(messageId: number): Promise<NoteRef | null> {
     const [message] = await db
       .select()
       .from(messages)
@@ -268,7 +268,7 @@ export class MessagingService {
     return message || null;
   }
 
-  async updateMessage(messageId: number, updates: Partial<InsertNoteRef>): Promise<Message | null> {
+  async updateNoteRef(messageId: number, updates: Partial<InsertNoteRef>): Promise<NoteRef | null> {
     const [updatedMessage] = await db
       .update(messages)
       .set({ ...updates, updatedAt: new Date() })
@@ -278,7 +278,7 @@ export class MessagingService {
     return updatedMessage || null;
   }
 
-  async deleteMessage(messageId: number): Promise<boolean> {
+  async deleteNoteRef(messageId: number): Promise<boolean> {
     const result = await db
       .delete(messages)
       .where(eq(noteRefs.id, messageId));

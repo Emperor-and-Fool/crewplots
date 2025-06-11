@@ -100,7 +100,7 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
 });
 
 // Schema for updating messages
-const updateMessageSchema = z.object({
+const updateNoteRefSchema = z.object({
   message: z.string().max(2000, 'Message must be less than 2000 characters')
 });
 
@@ -108,7 +108,7 @@ const updateMessageSchema = z.object({
 router.put('/message', isApplicant, async (req: any, res) => {
   try {
     // Validate input
-    const validatedData = updateMessageSchema.parse(req.body);
+    const validatedData = updateNoteRefSchema.parse(req.body);
     
     // Get the applicant
     const applicant = await storage.getApplicantByUserId(req.user.id);
@@ -140,7 +140,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     const userId = req.user.id;
     
     // Use MessageService to get compiled messages (PostgreSQL + MongoDB)
-    const messages = await messageService.getMessagesByUser(userId);
+    const messages = await messageService.getNoteRefsByUser(userId);
     
     console.log(`Fetched ${noteRefs.length} compiled messages for applicant user ${userId}`);
     res.json(messages);
@@ -197,13 +197,13 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     }
     
     // Verify message ownership through storage layer
-    const existingMessage = await storage.getMessage(messageId);
+    const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage || existingMessage.userId !== userId) {
       return res.status(404).json({ error: 'Message not found or not authorized' });
     }
     
     // Use MessageService to update message (PostgreSQL + MongoDB)
-    const updatedMessage = await messageService.updateMessage(messageId, {
+    const updatedMessage = await messageService.updateNoteRef(messageId, {
       content: content.trim()
     });
     
@@ -226,13 +226,13 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
     }
     
     // Verify message ownership through storage layer
-    const existingMessage = await storage.getMessage(messageId);
+    const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage || existingMessage.userId !== userId) {
       return res.status(404).json({ error: 'Message not found or not authorized' });
     }
     
     // Use MessageService to delete message (PostgreSQL + MongoDB)
-    const deleted = await messageService.deleteMessage(messageId);
+    const deleted = await messageService.deleteNoteRef(messageId);
     
     if (deleted) {
       console.log(`Deleted message ${messageId} with MongoDB cleanup for applicant user ${userId}`);

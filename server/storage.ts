@@ -175,14 +175,14 @@ export interface IStorage {
   deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean>;
   deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean>;
 
-  // Messages
-  getMessage(id: number): Promise<Message | undefined>;
-  getMessages(): Promise<Message[]>;
-  getMessagesByUser(userId: number): Promise<Message[]>;
-  getMessagesByApplicant(applicantId: number): Promise<Message[]>;
-  createMessage(message: InsertNoteRef): Promise<Message>;
-  updateMessage(id: number, message: Partial<InsertNoteRef>): Promise<Message | undefined>;
-  deleteMessage(id: number): Promise<boolean>;
+  // Note References
+  getNoteRef(id: number): Promise<NoteRef | undefined>;
+  getNoteRefs(): Promise<NoteRef[]>;
+  getNoteRefsByUser(userId: number): Promise<NoteRef[]>;
+  getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]>;
+  createNoteRef(noteRef: InsertNoteRef): Promise<NoteRef>;
+  updateNoteRef(id: number, noteRef: Partial<InsertNoteRef>): Promise<NoteRef | undefined>;
+  deleteNoteRef(id: number): Promise<boolean>;
   userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
 }
 
@@ -1747,29 +1747,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Message operations
-  async getMessage(id: number): Promise<Message | undefined> {
+  async getNoteRef(id: number): Promise<NoteRef | undefined> {
     const [message] = await db.select().from(messages).where(eq(noteRefs.id, id));
     return message || undefined;
   }
 
-  async getMessages(): Promise<Message[]> {
+  async getNoteRefs(): Promise<NoteRef[]> {
     return await db.select().from(messages).orderBy(noteRefs.createdAt);
   }
 
-  async getMessagesByUser(userId: number): Promise<Message[]> {
+  async getNoteRefsByUser(userId: number): Promise<NoteRef[]> {
     return await db.select().from(messages).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
   }
 
-  async getMessagesByApplicant(applicantId: number): Promise<Message[]> {
+  async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
     return await db.select().from(messages).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
   }
 
-  async createMessage(message: InsertNoteRef): Promise<Message> {
+  async createNoteRef(message: InsertNoteRef): Promise<NoteRef> {
     const [createdMessage] = await db.insert(messages).values(message).returning();
     return createdMessage;
   }
 
-  async updateMessage(id: number, message: Partial<InsertNoteRef>): Promise<Message | undefined> {
+  async updateNoteRef(id: number, message: Partial<InsertNoteRef>): Promise<NoteRef | undefined> {
     const [updatedMessage] = await db.update(messages)
       .set(message)
       .where(eq(noteRefs.id, id))
@@ -1777,7 +1777,7 @@ export class DatabaseStorage implements IStorage {
     return updatedMessage || undefined;
   }
 
-  async deleteMessage(id: number): Promise<boolean> {
+  async deleteNoteRef(id: number): Promise<boolean> {
     await db.delete(messages).where(eq(noteRefs.id, id));
     return true;
   }
