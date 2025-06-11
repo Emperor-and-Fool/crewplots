@@ -158,6 +158,7 @@ export class MessageService {
   // Create message with dual-database coordination
   async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
     const mongoAvailable = await this.isMongoDBAvailable();
+    console.log('DEBUG: mongoAvailable =', mongoAvailable);
     
     if (mongoAvailable) {
       console.log('MongoDB available, using MongoDB storage for applicant user', messageData.userId);
