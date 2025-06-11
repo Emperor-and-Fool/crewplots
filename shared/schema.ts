@@ -282,8 +282,8 @@ export const documentAttachments = pgTable("document_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Messages System - Reusable and Extensible
-export const messages = pgTable("messages", {
+// Note References - Main note metadata and references
+export const noteRefs = pgTable("note_refs", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(), // Stores MongoDB ObjectId OR actual content (fallback mode)
   messageType: text("message_type", { 
@@ -303,10 +303,10 @@ export const messages = pgTable("messages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Virtual MongoDB Documents - PostgreSQL fallback for MongoDB document storage
-export const messageDocuments = pgTable("message_documents", {
+// Note Files - PostgreSQL fallback for MongoDB document storage
+export const noteFiles = pgTable("note_files", {
   id: serial("id").primaryKey(),
-  messageId: integer("message_id").references(() => messages.id), // Back reference to PostgreSQL message
+  noteId: integer("note_id").references(() => noteRefs.id), // Back reference to PostgreSQL note
   content: text("content").notNull(), // Rich document content (HTML, markdown, etc.)
   contentType: text("content_type", { 
     enum: ["rich-text", "plain-text", "markdown"] 
@@ -360,8 +360,8 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, cre
 export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: true, createdAt: true });
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMessageDocumentSchema = createInsertSchema(messageDocuments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNoteRefSchema = createInsertSchema(noteRefs).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
@@ -413,7 +413,9 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertCashCount = z.infer<typeof insertCashCountSchema>;
 export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertMessage = z.infer<typeof insertNoteRefSchema>;
+export type InsertNoteRef = z.infer<typeof insertNoteRefSchema>;
+export type InsertNoteFile = z.infer<typeof insertNoteFileSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
 export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
 export type Login = z.infer<typeof loginSchema>;
@@ -440,7 +442,9 @@ export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DocumentAttachment = typeof documentAttachments.$inferSelect;
-export type Message = typeof messages.$inferSelect;
+export type Message = typeof noteRefs.$inferSelect;
+export type NoteRef = typeof noteRefs.$inferSelect;
+export type NoteFile = typeof noteFiles.$inferSelect;
 
 // Session storage for database sessions
 export const sessions = pgTable(
