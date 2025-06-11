@@ -9,7 +9,7 @@ class RedisProtocolTester {
   async startMiniRedis() {
     return new Promise((resolve, reject) => {
       console.log('Starting mini-redis...');
-      this.redisProcess = spawn('./mini-redis', [], {
+      this.redisProcess = spawn('./simple-redis', [], {
         stdio: ['ignore', 'pipe', 'pipe']
       });
 
