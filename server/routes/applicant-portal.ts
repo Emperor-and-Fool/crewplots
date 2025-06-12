@@ -213,13 +213,13 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
   console.log('- Request body:', req.body);
   
   try {
-    const messageId = req.params.id;
+    const messageId = parseInt(req.params.id);
     const userId = req.user.id;
     const { content } = req.body;
     
     console.log('- Extracted values:', { messageId, userId, contentLength: content?.length });
     
-    if (!messageId || typeof messageId !== 'string') {
+    if (isNaN(messageId)) {
       console.log('❌ Message ID validation failed');
       return res.status(400).json({ error: 'Invalid message ID' });
     }
@@ -229,42 +229,11 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
     
-    // Forward to MongoDB documents endpoint with same structure as creation
-    const forwardUrl = `http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${messageId}`;
-    console.log('🔄 Forwarding PUT request to match creation pattern:');
-    console.log('- URL:', forwardUrl);
-    console.log('- messageId:', messageId);
-    console.log('- content length:', content.trim().length);
+    // Use MessageService for proper hybrid ID handling
+    console.log('🔄 Using MessageService for hybrid update');
+    const updatedMessage = await messageService.updateNoteRef(messageId, { content });
     
-    let response;
-    try {
-      response = await fetch(forwardUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': req.get('Cookie') || ''
-        },
-        body: JSON.stringify({
-          content: content.trim()
-        })
-      });
-      console.log('✅ Fetch completed');
-    } catch (fetchError) {
-      console.log('❌ Fetch failed:', fetchError);
-      throw fetchError;
-    }
-    
-    console.log('📥 Response received:');
-    console.log('- status:', response.status);
-    console.log('- statusText:', response.statusText);
-
-    if (!response.ok) {
-      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
-    }
-
-    const updatedMessage = await response.json();
-    
-    console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${userId}`);
+    console.log(`Updated message ${messageId} with hybrid storage for applicant user ${userId}`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error updating applicant message:', error);
