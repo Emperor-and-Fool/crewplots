@@ -287,10 +287,8 @@ export class MemStorage implements IStorage {
       lastName: user.lastName ?? null,
       locationId: user.locationId ?? null,
       phoneNumber: user.phoneNumber ?? null,
-      uniqueCode: user.uniqueCode ?? null,
       resumeUrl: user.resumeUrl ?? null,
       notes: user.notes ?? null,
-      extraMessage: user.extraMessage ?? null,
       ...user
     };
     this.users.set(newUser.id, newUser);
