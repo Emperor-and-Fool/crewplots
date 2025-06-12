@@ -184,15 +184,27 @@ router.put('/documents/:documentId', async (req, res) => {
     const { content } = req.body;
     const documentId = req.params.documentId;
     
+    console.log('PUT /documents/:documentId - Debug Info:');
+    console.log('- documentId received:', documentId);
+    console.log('- documentId type:', typeof documentId);
+    console.log('- documentId length:', documentId?.length);
+    console.log('- content received:', content);
+    console.log('- isAuthenticated:', req.isAuthenticated());
+    console.log('- user:', req.user);
+    
     if (!req.isAuthenticated()) {
+      console.log('❌ Authentication failed');
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
     if (!content || content.trim().length === 0) {
+      console.log('❌ Content validation failed');
       return res.status(400).json({ error: 'Content is required' });
     }
 
+    console.log('- ObjectId.isValid check:', ObjectId.isValid(documentId));
     if (!ObjectId.isValid(documentId)) {
+      console.log('❌ ObjectId validation failed');
       return res.status(400).json({ error: 'Invalid document ID' });
     }
 
