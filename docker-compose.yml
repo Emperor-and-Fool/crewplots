@@ -1,85 +1,51 @@
 version: '3.8'
 
 services:
-  # Redis service
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DOCKER_ENV=true
+      - DATABASE_URL=postgresql://user:password@postgres:5432/crewplots
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URL=mongodb://mongo:27017/crewplots
+    depends_on:
+      - postgres
+      - redis
+      - mongo
+    volumes:
+      - ./uploads:/app/uploads
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=crewplots
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   redis:
-    image: redis:7.2-alpine
-    container_name: crewplots-redis
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
+    command: redis-server --appendonly yes
 
-  # PostgreSQL database (optional - if you want to use Docker for DB too)
-  postgres:
-    image: postgres:15-alpine
-    container_name: crewplots-postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ${PGDATABASE:-crewplots}
-      POSTGRES_USER: ${PGUSER:-postgres}
-      POSTGRES_PASSWORD: ${PGPASSWORD:-password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres}"]
-      interval: 30s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-
-  # MongoDB for document storage
-  mongodb:
-    image: mongo:7.0
-    container_name: crewplots-mongodb
+  mongo:
+    image: mongo:6
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-crewplots_documents}
     volumes:
-      - mongodb_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-
-  # Your application (optional - for full Docker deployment)
-  app:
-    build: .
-    container_name: crewplots-app
-    ports:
-      - "3000:3000"
+      - mongo_data:/data/db
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://${PGUSER:-postgres}:${PGPASSWORD:-password}@postgres:5432/${PGDATABASE:-crewplots}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - MONGODB_URL=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-crewplots_documents}?authSource=admin
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-    restart: unless-stopped
+      - MONGO_INITDB_DATABASE=crewplots
 
 volumes:
-  redis_data:
   postgres_data:
-  mongodb_data:
+  redis_data:
+  mongo_data:

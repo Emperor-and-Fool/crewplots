@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { redisSupervisor } from "./redis-supervisor";
 import { mongoConnection } from "./db-mongo";
 import { keepAliveService } from "./services/keepalive-service";
+import { cacheService } from "./services/cache-service";
 
 
 const app = express();
@@ -68,14 +69,9 @@ app.use((req, res, next) => {
     console.log('MongoDB connection failed, document storage features disabled');
   });
 
-  // Keepalive service disabled - switching to on-demand activation pattern
-  console.log('Integrated keepalive disabled - preparing for on-demand service activation');
-  // try {
-  //   await keepAliveService.startServices();
-  //   console.log('✅ Integrated keepalive service started - Redis and MongoDB now persistent');
-  // } catch (error) {
-  //   console.log('Keepalive service failed to start, continuing with fallback storage');
-  // }
+  // Initialize on-demand cache service (no persistent processes)
+  console.log('✅ On-demand cache service initialized - Redis will start when needed');
+  console.log('Cache status:', cacheService.getStatus());
 
   // Redis supervisor temporarily disabled - using integrated keepalive instead
   console.log('Redis supervisor disabled - using integrated keepalive service');
@@ -96,13 +92,13 @@ app.use((req, res, next) => {
   // Graceful shutdown handling
   process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
-    await keepAliveService.stopServices();
+    await cacheService.shutdown();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down gracefully...');
-    await keepAliveService.stopServices();
+    await cacheService.shutdown();
     process.exit(0);
   });
 })();

@@ -26,6 +26,7 @@ import documentsRoutes from './routes/documents';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import testHybridRoutes from './routes/test-hybrid';
+import cacheTestRoutes from './routes/cache-test';
 
 // Setup multer for file uploads
 const upload = multer({
