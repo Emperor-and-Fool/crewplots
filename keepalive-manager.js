@@ -1,5 +1,6 @@
-const { spawn } = require('child_process');
-const Redis = require('ioredis');
+import { spawn } from 'child_process';
+import Redis from 'ioredis';
+import http from 'http';
 
 class KeepAliveManager {
   constructor() {
@@ -74,7 +75,6 @@ class KeepAliveManager {
         await this.redisClient.setex('keepalive:heartbeat', 60, Date.now());
         
         // MongoDB proxy keepalive - HTTP health check
-        const http = require('http');
         const options = {
           hostname: 'localhost',
           port: 27018,
@@ -121,7 +121,6 @@ class KeepAliveManager {
 
     try {
       // Check MongoDB proxy
-      const http = require('http');
       const options = {
         hostname: 'localhost',
         port: 27018,
