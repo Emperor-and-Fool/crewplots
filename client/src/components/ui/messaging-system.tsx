@@ -672,41 +672,48 @@ export function MessagingSystem({
                         <RichTextEditor
                           content={editContent}
                           onChange={setEditContent}
-                          placeholder="Edit your note..."
-                          className="min-h-[100px]"
+                          placeholder="Leave us a message..."
+                          className="min-h-[120px]"
                         />
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (editContent.trim()) {
-                                editMessageMutation.mutate({
-                                  messageId: message.id,
-                                  content: editContent
-                                });
-                              }
-                            }}
-                            disabled={editMessageMutation.isPending || !editContent.trim()}
-                          >
-                            {editMessageMutation.isPending ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                            ) : (
-                              <Save className="h-3 w-3 mr-1" />
-                            )}
-                            Save
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingMessageId(null);
-                              setEditContent('');
-                            }}
-                            disabled={editMessageMutation.isPending}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Cancel
-                          </Button>
+                        
+                        <div className="flex items-center gap-2 justify-between">
+                          <div className="text-xs text-muted-foreground">
+                            {editContent.length}/1000 characters
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (editContent.trim()) {
+                                  editMessageMutation.mutate({
+                                    messageId: message.id,
+                                    content: editContent
+                                  });
+                                }
+                              }}
+                              disabled={editMessageMutation.isPending || !editContent.trim()}
+                            >
+                              {editMessageMutation.isPending ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                              ) : (
+                                <Send className="h-3 w-3 mr-1" />
+                              )}
+                              Send
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingMessageId(null);
+                                setEditContent('');
+                              }}
+                              disabled={editMessageMutation.isPending}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ) : (
