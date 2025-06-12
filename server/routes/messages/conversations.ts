@@ -103,33 +103,8 @@ router.get('/:messageId', async (req, res) => {
   }
 });
 
-// PUT /api/messages/conversations/:messageId - Update a conversation message
-router.put('/:messageId', async (req, res) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const messageId = parseInt(req.params.messageId);
-    if (isNaN(messageId)) {
-      return res.status(400).json({ error: 'Invalid message ID' });
-    }
-
-    const updates = req.body;
-    const updatedMessage = await messagingService.updateNoteRef(messageId, updates);
-    
-    if (!updatedMessage) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    console.log(`Updated conversation message ${messageId}`);
-    
-    res.json(updatedMessage);
-  } catch (error) {
-    console.error('Error updating message:', error);
-    res.status(500).json({ error: 'Failed to update message' });
-  }
-});
+// PUT route removed to prevent conflict with applicant-portal routing
+// Conversation message updates now handled through dedicated conversation endpoints
 
 // DELETE /api/messages/conversations/:messageId - Delete a conversation message
 router.delete('/:messageId', async (req, res) => {
