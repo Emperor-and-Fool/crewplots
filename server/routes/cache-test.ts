@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { cacheService } from '../services/cache-service';
+import { onDemandMongoService } from '../services/on-demand-mongodb';
 
 const router = Router();
 
@@ -181,6 +182,66 @@ router.get('/cache/status', (req, res) => {
       node_env: process.env.NODE_ENV
     }
   });
+});
+
+// Test MongoDB functionality
+router.post('/cache/mongodb/test', async (req, res) => {
+  try {
+    const testStart = process.hrtime.bigint();
+    
+    // Activate MongoDB service
+    const mongoReady = await onDemandMongoService.ensureReady();
+    
+    if (!mongoReady) {
+      return res.json({
+        success: false,
+        message: 'MongoDB service could not be activated',
+        status: onDemandMongoService.getStatus()
+      });
+    }
+
+    // Test MongoDB connection
+    const { MongoClient } = await import('mongodb');
+    const client = new MongoClient('mongodb://localhost:27017');
+    await client.connect();
+    
+    const db = client.db('test_database');
+    const collection = db.collection('test_collection');
+    
+    // Insert test document
+    const testDoc = {
+      timestamp: new Date(),
+      test: 'on-demand activation',
+      data: 'MongoDB is working properly'
+    };
+    
+    await collection.insertOne(testDoc);
+    
+    // Retrieve test document
+    const retrieved = await collection.findOne({ test: 'on-demand activation' });
+    
+    await client.close();
+    
+    const testEnd = process.hrtime.bigint();
+    const duration = Number(testEnd - testStart) / 1000000;
+
+    res.json({
+      success: true,
+      message: 'MongoDB test completed successfully',
+      duration_ms: duration,
+      inserted: testDoc,
+      retrieved: retrieved,
+      status: onDemandMongoService.getStatus()
+    });
+
+  } catch (error) {
+    console.error('[MongoDB Test] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      status: onDemandMongoService.getStatus()
+    });
+  }
 });
 
 export default router;

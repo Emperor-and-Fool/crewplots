@@ -1,4 +1,5 @@
 import { MongoClient, Db, GridFSBucket } from 'mongodb';
+import { onDemandMongoService } from './services/on-demand-mongodb';
 
 class MongoDBConnection {
   private client: MongoClient | null = null;
@@ -7,6 +8,12 @@ class MongoDBConnection {
 
   async connect(): Promise<void> {
     try {
+      // Try to activate on-demand MongoDB service first
+      const serviceReady = await onDemandMongoService.ensureReady();
+      if (!serviceReady && !process.env.DOCKER_ENV) {
+        throw new Error('On-demand MongoDB service failed to start');
+      }
+
       const mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017';
       const dbName = process.env.MONGODB_DB_NAME || 'crewplots_documents';
       
