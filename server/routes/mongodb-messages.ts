@@ -84,6 +84,14 @@ router.get('/documents/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
+    // Debug authentication state
+    console.log('MongoDB auth check:', {
+      isAuthenticated: req.isAuthenticated(),
+      userId: userId,
+      reqUserId: (req.user as any)?.id,
+      userMatch: (req.user as any)?.id === userId
+    });
+    
     if (!req.isAuthenticated() || (req.user as any)?.id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
