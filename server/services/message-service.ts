@@ -176,16 +176,29 @@ export class MessageService {
         workflow: messageData.workflow || 'application',
       });
 
-      // Step 2: Create relational record in PostgreSQL with MongoDB reference
+      // Step 2: Calculate metadata for PostgreSQL
+      const plainText = messageData.content.replace(/<[^>]*>/g, '');
+      const metadata = {
+        wordCount: plainText.trim().split(/\s+/).length,
+        characterCount: plainText.length,
+        htmlLength: messageData.content.length,
+      };
+
+      // Step 3: Create relational record in PostgreSQL with MongoDB reference and metadata
       const postgresMessage = await storage.createNoteRef({
         ...messageData,
         content: documentId, // Store MongoDB ObjectId as reference
+        documentId: documentId, // New hybrid architecture field
+        documentType: messageData.workflow || 'motivation',
+        wordCount: metadata.wordCount,
+        characterCount: metadata.characterCount,
+        htmlLength: metadata.htmlLength,
       });
 
-      // Step 3: Update MongoDB document with PostgreSQL reference
+      // Step 4: Update MongoDB document with PostgreSQL reference
       await this.updateDocumentMessageReference(documentId, postgresMessage.id);
 
-      // Step 4: Return unified data structure
+      // Step 5: Return unified data structure
       return {
         ...postgresMessage,
         documentId,
@@ -239,13 +252,23 @@ export class MessageService {
       if (ObjectId.isValid(documentId)) {
         await this.updateContentDocument(documentId, updates.content);
         
-        // Update PostgreSQL metadata if needed
+        // Calculate new metadata for PostgreSQL
+        const plainText = updates.content.replace(/<[^>]*>/g, '');
+        const metadata = {
+          wordCount: plainText.trim().split(/\s+/).length,
+          characterCount: plainText.length,
+          htmlLength: updates.content.length,
+        };
+        
+        // Update PostgreSQL metadata
         const updatedMessage = await storage.updateNoteRef(messageId, {
-          updatedAt: new Date(),
+          wordCount: metadata.wordCount,
+          characterCount: metadata.characterCount,
+          htmlLength: metadata.htmlLength,
         });
         
         return {
-          ...updatedMessage,
+          ...updatedMessage!,
           documentId,
           compiledContent: updates.content,
           content: updates.content,
@@ -254,11 +277,11 @@ export class MessageService {
     }
     
     // Fallback to PostgreSQL-only update
-    console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${existingMessage.userId}`);
+    console.log(`Updated message ${messageId} with PostgreSQL storage for applicant user ${existingMessage.userId}`);
     const updatedMessage = await storage.updateNoteRef(messageId, updates);
     return {
-      ...updatedMessage,
-      compiledContent: updatedMessage.content,
+      ...updatedMessage!,
+      compiledContent: updatedMessage!.content,
     };
   }
 
