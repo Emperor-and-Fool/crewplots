@@ -164,6 +164,7 @@ export function MessagingSystem({
       }
       
       const data = await response.json();
+      console.log('MongoDB documents fetched:', data);
       return data;
     },
     enabled: !!userId,
@@ -460,6 +461,16 @@ export function MessagingSystem({
       </Card>
     );
   }
+
+  // Debug component state
+  console.log('MessagingSystem render state:', {
+    isLoading,
+    messagesLength: messages.length,
+    filteredMessagesLength: filteredMessages.length,
+    editingMessageId,
+    createMutationPending: createMessageMutation.isPending,
+    isNoteMode
+  });
 
   return (
     <Card className={className}>
