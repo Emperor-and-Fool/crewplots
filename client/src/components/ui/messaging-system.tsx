@@ -472,24 +472,28 @@ export function MessagingSystem({
     isNoteMode
   });
 
-  // Development helper: Clear existing MongoDB documents to show empty state
+  // Clean slate trigger - force refetch when needed
   React.useEffect(() => {
-    if (messages.length > 0 && !isLoading) {
-      console.log('Development: Clearing existing MongoDB documents to restore empty state...');
-      messages.forEach(async (message: any) => {
-        try {
-          await fetch(`/api/mongodb/documents/${message.id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          });
-        } catch (error) {
-          console.log('Error clearing document:', error);
-        }
-      });
-      // Force refetch after clearing
-      setTimeout(() => refetch(), 1000);
-    }
-  }, [messages, isLoading, refetch]);
+    const cleanSlate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/messages', userId] });
+      refetch();
+    };
+    
+    // Listen for custom clean slate event
+    window.addEventListener('cleanSlate', cleanSlate);
+    
+    // Auto-trigger clean slate once to ensure fresh state
+    const timer = setTimeout(() => {
+      cleanSlate();
+    }, 100);
+    
+    return () => {
+      window.removeEventListener('cleanSlate', cleanSlate);
+      clearTimeout(timer);
+    };
+  }, [userId, queryClient, refetch]);
+
+
 
   return (
     <Card className={className}>
