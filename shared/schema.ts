@@ -80,12 +80,10 @@ export const users = pgTable("users", {
   // locationId kept for backward compatibility
   locationId: integer("location_id").references(() => locations.id),
   phoneNumber: text("phone_number"),        // Combined phone number in format +xx xxxxxxx
-  uniqueCode: text("unique_code").unique(), // Unique reference code for the user
   // Applicant-specific fields (for users with role="applicant")
   status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new"),
   resumeUrl: text("resume_url"),
   notes: text("notes"),
-  extraMessage: text("extra_message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
