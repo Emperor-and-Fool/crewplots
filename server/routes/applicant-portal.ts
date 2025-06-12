@@ -222,7 +222,13 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     }
     
     // Forward to MongoDB documents endpoint with on-demand service
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${messageId}`, {
+    const forwardUrl = `http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${messageId}`;
+    console.log('🔄 Forwarding PUT request:');
+    console.log('- URL:', forwardUrl);
+    console.log('- messageId:', messageId);
+    console.log('- content length:', content.trim().length);
+    
+    const response = await fetch(forwardUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -232,6 +238,10 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
         content: content.trim()
       })
     });
+    
+    console.log('📥 Response received:');
+    console.log('- status:', response.status);
+    console.log('- statusText:', response.statusText);
 
     if (!response.ok) {
       throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
