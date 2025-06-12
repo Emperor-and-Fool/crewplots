@@ -61,12 +61,15 @@ export class MessagingService {
         if (document && document.buffer) {
           content = document.buffer.toString('utf-8');
         } else {
-          content = note.content || 'Content temporarily unavailable';
+          // FALLBACK DISABLED: Previously would use PostgreSQL content fallback
+          // content = note.content || 'Content temporarily unavailable';
+          throw new Error('Document not found in MongoDB');
         }
       } catch (error) {
-        console.warn(`Failed to retrieve document content for note ${note.id}:`, error);
-        // Graceful degradation - use PostgreSQL content or show unavailable message
-        content = note.content || 'Content temporarily unavailable';
+        // FALLBACK DISABLED: Previously would gracefully degrade to PostgreSQL content
+        // console.warn(`Failed to retrieve document content for note ${note.id}:`, error);
+        // content = note.content || 'Content temporarily unavailable';
+        throw new Error(`Failed to retrieve document content for note ${note.id}: ${error}`);
       }
     }
 

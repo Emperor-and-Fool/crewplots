@@ -86,22 +86,29 @@ class HybridMessageService {
           contentStored = true;
           console.log(`✅ Message content stored in MongoDB: ${documentId}`);
         } else {
-          console.warn(`⚠️ MongoDB storage failed, will use PostgreSQL fallback`);
+          // FALLBACK DISABLED: Previously would use PostgreSQL fallback
+          // console.warn(`⚠️ MongoDB storage failed, will use PostgreSQL fallback`);
+          throw new Error('MongoDB storage failed');
         }
       } catch (error) {
-        console.warn(`⚠️ MongoDB proxy error:`, error);
+        // FALLBACK DISABLED: Previously would use PostgreSQL fallback
+        // console.warn(`⚠️ MongoDB proxy error:`, error);
+        throw new Error(`MongoDB proxy error: ${error}`);
       }
+    } else {
+      // FALLBACK DISABLED: Previously would use PostgreSQL fallback
+      throw new Error('MongoDB proxy not available');
     }
 
     // Step 2: Store metadata in PostgreSQL
     const pgMessageData: InsertMessage = {
       userId: messageData.userId,
-      content: contentStored ? `[MONGODB:${documentId}]` : messageData.content,
+      content: `[MONGODB:${documentId}]`,
       messageType: messageType as "text" | "rich-text" | "system" | "notification",
       receiverId: messageData.receiverId || null,
       isPrivate: messageData.isPrivate || false,
       workflow,
-      documentReference: contentStored ? documentId : null
+      documentReference: documentId
     };
 
     const [createdMessage] = await db.insert(messages).values(pgMessageData).returning();
@@ -153,8 +160,13 @@ class HybridMessageService {
             }
           }
         } catch (error) {
-          console.warn(`⚠️ Failed to retrieve from MongoDB, using PostgreSQL fallback:`, error);
+          // FALLBACK DISABLED: Previously would use PostgreSQL content fallback
+          // console.warn(`⚠️ Failed to retrieve from MongoDB, using PostgreSQL fallback:`, error);
+          throw new Error(`Failed to retrieve from MongoDB: ${error}`);
         }
+      } else {
+        // FALLBACK DISABLED: Previously would use PostgreSQL content fallback
+        throw new Error('MongoDB proxy not available for content retrieval');
       }
     }
 
