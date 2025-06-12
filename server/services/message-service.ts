@@ -39,9 +39,16 @@ export class MessageService {
 
   // Check if MongoDB is available
   private async isMongoDBAvailable(): Promise<boolean> {
-    // Force PostgreSQL fallback until MongoDB connection is properly established
-    console.log('MongoDB not available, using PostgreSQL fallback');
-    return false;
+    // FALLBACK DISABLED: Previously forced PostgreSQL fallback
+    // console.log('MongoDB not available, using PostgreSQL fallback');
+    // return false;
+    
+    try {
+      await mongoConnection.admin().ping();
+      return true;
+    } catch (error) {
+      throw new Error(`MongoDB connection required but unavailable: ${error}`);
+    }
   }
 
   // Store content document in MongoDB
