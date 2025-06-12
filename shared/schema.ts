@@ -299,6 +299,26 @@ export const noteRefs = pgTable("note_refs", {
   visibleToRoles: text("visible_to_roles").array(), // Array of roles that can view this note
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  
+  // New hybrid architecture fields
+  documentId: varchar("document_id", { length: 24 }), // MongoDB ObjectId reference
+  documentType: text("document_type").default("motivation"), // 'motivation', 'message', 'feedback', etc.
+  title: text("title"), // Optional short description/subject
+  status: text("status", { enum: ["draft", "published", "archived"] }).default("draft"),
+  
+  // Content Analytics
+  wordCount: integer("word_count").default(0),
+  characterCount: integer("character_count").default(0),
+  htmlLength: integer("html_length").default(0),
+  
+  // Access Control
+  visibility: text("visibility", { enum: ["private", "admins", "public"] }).default("private"),
+  isEditable: boolean("is_editable").default(true),
+  lastEditedAt: timestamp("last_edited_at"),
+  
+  // System Tracking
+  version: integer("version").default(1),
+  tags: jsonb("tags"), // JSON array for categorization
 });
 
 // Note Files - PostgreSQL fallback for MongoDB document storage
