@@ -286,22 +286,22 @@ router.delete('/documents/user/:userId', async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const db = mongoConnection.getDatabase();
-    const collection = db.collection<MotivationDocument>('motivation_documents');
-    
-    const result = await collection.deleteMany({ userId });
-    
-    res.json({ 
-      message: `Deleted ${result.deletedCount} documents for user ${userId}`,
-      deletedCount: result.deletedCount 
+    const result = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      const collection = db.collection<MotivationDocument>('motivation_documents');
+      
+      return await collection.deleteMany({ userId });
     });
+    
+    console.log(`Deleted ${result.deletedCount} documents for user ${userId}`);
+    res.json({ message: `Deleted ${result.deletedCount} documents`, deletedCount: result.deletedCount });
   } catch (error) {
-    console.error('Error deleting user documents:', error);
+    console.error('Error deleting documents:', error);
     res.status(500).json({ error: 'Failed to delete documents' });
   }
 });
 
-// Delete a document
+// Delete a specific document by ID
 router.delete('/documents/:documentId', async (req, res) => {
   try {
     const documentId = req.params.documentId;
@@ -314,23 +314,59 @@ router.delete('/documents/:documentId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid document ID' });
     }
 
-    const db = mongoConnection.getDatabase();
-    const collection = db.collection<MotivationDocument>('motivation_documents');
-    
-    // Verify the document belongs to the authenticated user before deleting
-    const result = await collection.deleteOne({ 
-      _id: new ObjectId(documentId),
-      userId: (req.user as any).id 
+    const result = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      const collection = db.collection<MotivationDocument>('motivation_documents');
+      
+      // First check if the document belongs to the authenticated user
+      const document = await collection.findOne({ _id: new ObjectId(documentId) });
+      if (!document) {
+        throw new Error('Document not found');
+      }
+      
+      if (document.userId !== (req.user as any).id) {
+        throw new Error('Unauthorized - document belongs to another user');
+      }
+      
+      return await collection.deleteOne({ _id: new ObjectId(documentId) });
     });
-
+    
     if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Document not found or unauthorized' });
+      return res.status(404).json({ error: 'Document not found' });
     }
-
-    res.json({ success: true, message: 'Document deleted successfully' });
+    
+    console.log(`Deleted document ${documentId}`);
+    res.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
+    if (error.message.includes('Unauthorized')) {
+      return res.status(403).json({ error: error.message });
+    }
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
+// Quick cleanup endpoint - delete all motivation documents (development only)
+router.delete('/documents/cleanup/all', async (req, res) => {
+  try {
+    const result = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      const collection = db.collection<MotivationDocument>('motivation_documents');
+      
+      return await collection.deleteMany({});
+    });
+    
+    console.log(`Cleanup: Deleted ${result.deletedCount} documents`);
+    res.json({ 
+      message: `Cleanup completed: Deleted ${result.deletedCount} documents`, 
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+    res.status(500).json({ error: 'Failed to cleanup documents' });
   }
 });
 
