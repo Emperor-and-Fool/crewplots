@@ -332,10 +332,8 @@ export function MessagingSystem({
         isPrivate: false,
       };
 
-      // Choose endpoint based on mode
-      const baseEndpoint = isNoteMode 
-        ? '/api/applicant-portal/messages' // Note mode uses upsert logic
-        : '/api/messages'; // Messages mode uses traditional messaging
+      // Use single endpoint for all operations
+      const baseEndpoint = '/api/applicant-portal/messages';
 
       if (draftMessageId) {
         // Update existing draft
