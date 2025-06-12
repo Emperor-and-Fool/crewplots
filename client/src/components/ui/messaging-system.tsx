@@ -472,6 +472,25 @@ export function MessagingSystem({
     isNoteMode
   });
 
+  // Development helper: Clear existing MongoDB documents to show empty state
+  React.useEffect(() => {
+    if (messages.length > 0 && !isLoading) {
+      console.log('Development: Clearing existing MongoDB documents to restore empty state...');
+      messages.forEach(async (message: any) => {
+        try {
+          await fetch(`/api/mongodb/documents/${message.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+        } catch (error) {
+          console.log('Error clearing document:', error);
+        }
+      });
+      // Force refetch after clearing
+      setTimeout(() => refetch(), 1000);
+    }
+  }, [messages, isLoading, refetch]);
+
   return (
     <Card className={className}>
       <CardHeader className={compactMode ? 'pb-3' : ''}>
