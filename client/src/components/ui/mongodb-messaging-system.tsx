@@ -78,7 +78,7 @@ export default function MongoDBMessagingSystem({
     error,
     refetch,
   } = useQuery({
-    queryKey: ['/api/mongodb/documents', userId],
+    queryKey: ['/api/mongodb/documents', userId, Date.now()],
     queryFn: async (): Promise<MotivationDocument[]> => {
       const response = await fetch(`/api/mongodb/documents/${userId}`, {
         credentials: 'include',
