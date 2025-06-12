@@ -44,7 +44,8 @@ export class MessageService {
       console.log('MongoDB availability check: AVAILABLE');
       return true;
     } catch (error) {
-      console.log('MongoDB availability check: UNAVAILABLE -', error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('MongoDB availability check: UNAVAILABLE -', errorMessage);
       return false;
     }
   }
