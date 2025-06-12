@@ -98,7 +98,14 @@ router.get('/documents/:userId', async (req, res) => {
         .toArray();
     });
     
-    res.json(documents);
+    // Transform MongoDB documents to frontend-expected format
+    const responseDocuments = documents.map(doc => ({
+      ...doc,
+      id: doc._id.toString(), // Convert ObjectId to string for frontend
+      _id: undefined // Remove MongoDB-specific field
+    })).map(({ _id, ...doc }) => doc); // Clean removal of _id
+    
+    res.json(responseDocuments);
   } catch (error) {
     console.error('Error fetching documents:', error);
     res.status(500).json({ error: 'Failed to fetch documents' });
@@ -146,10 +153,18 @@ router.post('/documents', async (req, res) => {
     
     const result = await collection.insertOne(document);
     
-    // Return the created document with the generated _id
+    // Return the created document with the generated _id, formatted for frontend
     const createdDocument = await collection.findOne({ _id: result.insertedId });
     
-    res.status(201).json(createdDocument);
+    // Transform MongoDB document to frontend-expected format
+    const responseDocument = {
+      ...createdDocument,
+      id: createdDocument._id.toString(), // Convert ObjectId to string for frontend
+      _id: undefined // Remove MongoDB-specific field
+    };
+    delete responseDocument._id;
+    
+    res.status(201).json(responseDocument);
   } catch (error) {
     console.error('Error creating document:', error);
     res.status(500).json({ error: 'Failed to create document' });
@@ -212,9 +227,18 @@ router.put('/documents/:documentId', async (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Return the updated document
+    // Return the updated document with frontend-expected format
     const updatedDocument = await collection.findOne({ _id: new ObjectId(documentId) });
-    res.json(updatedDocument);
+    
+    // Transform MongoDB document to frontend-expected format
+    const responseDocument = {
+      ...updatedDocument,
+      id: updatedDocument._id.toString(), // Convert ObjectId to string for frontend
+      _id: undefined // Remove MongoDB-specific field
+    };
+    delete responseDocument._id;
+    
+    res.json(responseDocument);
   } catch (error) {
     console.error('Error updating document:', error);
     res.status(500).json({ error: 'Failed to update document' });
