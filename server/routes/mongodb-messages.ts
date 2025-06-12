@@ -252,6 +252,35 @@ router.put('/documents/:documentId', async (req, res) => {
   }
 });
 
+// Delete all documents for a user (cleanup endpoint)
+router.delete('/documents/user/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Only allow users to delete their own documents
+    if ((req.user as any).id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const db = mongoConnection.getDatabase();
+    const collection = db.collection<MotivationDocument>('motivation_documents');
+    
+    const result = await collection.deleteMany({ userId });
+    
+    res.json({ 
+      message: `Deleted ${result.deletedCount} documents for user ${userId}`,
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error('Error deleting user documents:', error);
+    res.status(500).json({ error: 'Failed to delete documents' });
+  }
+});
+
 // Delete a document
 router.delete('/documents/:documentId', async (req, res) => {
   try {
