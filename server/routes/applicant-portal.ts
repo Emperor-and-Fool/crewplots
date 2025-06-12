@@ -134,14 +134,24 @@ router.put('/message', isApplicant, async (req: any, res) => {
   }
 });
 
-// Get messages for applicant
+// Get messages for applicant - redirect to MongoDB endpoint
 router.get('/messages', isApplicant, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Direct PostgreSQL query for messages
-    const messages = await storage.getNoteRefsByUser(userId);
-    
+    // Forward to MongoDB documents endpoint with on-demand service
+    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Cookie': req.get('Cookie') || ''
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
+    }
+
+    const messages = await response.json();
     console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
@@ -163,15 +173,26 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Store in PostgreSQL directly
-    const newMessage = await storage.createNoteRef({
-      userId,
-      content: validatedData.content,
-      workflow: 'application',
-      messageType: validatedData.messageType || 'rich-text',
-      priority: validatedData.priority,
-      isPrivate: validatedData.isPrivate
+    // Forward to MongoDB documents endpoint with on-demand service
+    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': req.get('Cookie') || ''
+      },
+      body: JSON.stringify({
+        ...req.body,
+        userId: req.user.id,
+        documentType: 'motivation',
+        workflow: 'application'
+      })
     });
+
+    if (!response.ok) {
+      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
+    }
+
+    const newMessage = await response.json();
     
     console.log(`Created message with MongoDB storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
