@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
-import { MessageService } from '../services/message-service';
+import { messageService } from '../services/message-service';
 
 import multer from 'multer';
 import fs from 'fs';
@@ -181,28 +181,20 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Forward to MongoDB documents endpoint with on-demand service
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': req.get('Cookie') || ''
-      },
-      body: JSON.stringify({
-        ...req.body,
-        userId: req.user.id,
-        documentType: 'motivation',
-        workflow: 'application'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
-    }
-
-    const newMessage = await response.json();
+    // Use MessageService for hybrid metadata storage
+    const noteRefData = {
+      content: validatedData.content,
+      messageType: validatedData.messageType || 'rich-text',
+      userId: userId,
+      priority: validatedData.priority,
+      isPrivate: validatedData.isPrivate,
+      workflow: 'application',
+      documentType: 'motivation'
+    };
     
-    console.log(`Created message with MongoDB storage for applicant user ${userId}`);
+    const newMessage = await messageService.createNoteRef(noteRefData);
+    
+    console.log(`Created message with hybrid storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
