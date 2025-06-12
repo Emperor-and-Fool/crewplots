@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { redisSupervisor } from "./redis-supervisor";
 import { mongoConnection } from "./db-mongo";
+import { keepAliveService } from "./services/keepalive-service";
 
 
 const app = express();
@@ -67,8 +68,16 @@ app.use((req, res, next) => {
     console.log('MongoDB connection failed, document storage features disabled');
   });
 
-  // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
-  console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
+  // Start integrated keepalive service for Redis and MongoDB
+  try {
+    await keepAliveService.startServices();
+    console.log('✅ Integrated keepalive service started - Redis and MongoDB now persistent');
+  } catch (error) {
+    console.log('Keepalive service failed to start, continuing with fallback storage');
+  }
+
+  // Redis supervisor temporarily disabled - using integrated keepalive instead
+  console.log('Redis supervisor disabled - using integrated keepalive service');
   // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
@@ -81,5 +90,18 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+  });
+
+  // Graceful shutdown handling
+  process.on('SIGTERM', async () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    await keepAliveService.stopServices();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    await keepAliveService.stopServices();
+    process.exit(0);
   });
 })();
