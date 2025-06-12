@@ -1,21 +1,32 @@
-// Quick script to delete the existing MongoDB document
-import fetch from 'node-fetch';
+// Quick script to delete the existing MongoDB document directly
+import { MongoClient, ObjectId } from 'mongodb';
+
+const client = new MongoClient('mongodb://localhost:27017');
 
 async function deleteDocument() {
   try {
-    const response = await fetch('http://localhost:5173/api/mongodb/documents/684abdb040957034170d19f3', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'connect.sid=s%3ASijp8IKqOmRErn8za6JPWE52zxdxcFgU.%2F9y8EjOa%2BJjjMSkxz%2Bp3uVRyO0RrqZs3t7w%2FpMPyArE'
-      }
+    await client.connect();
+    console.log('Connected to MongoDB');
+
+    const db = client.db('shiftpro');
+    const collection = db.collection('applicant_documents');
+
+    // Delete the specific document
+    const result = await collection.deleteOne({ 
+      _id: new ObjectId('684abdb040957034170d19f3') 
     });
-    
-    console.log('Delete response status:', response.status);
-    const result = await response.text();
-    console.log('Delete response:', result);
+
+    if (result.deletedCount === 1) {
+      console.log('Document deleted successfully');
+    } else {
+      console.log('No document found with that ID');
+    }
+
   } catch (error) {
     console.error('Error:', error);
+  } finally {
+    await client.close();
+    console.log('MongoDB connection closed');
   }
 }
 
