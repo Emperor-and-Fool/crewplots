@@ -105,6 +105,12 @@ router.get('/documents/:userId', async (req, res) => {
       _id: undefined // Remove MongoDB-specific field
     })).map(({ _id, ...doc }) => doc); // Clean removal of _id
     
+    // Add cache-busting headers to prevent stale data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.json(responseDocuments);
   } catch (error) {
     console.error('Error fetching documents:', error);
