@@ -134,15 +134,15 @@ router.put('/message', isApplicant, async (req: any, res) => {
   }
 });
 
-// Get messages for applicant (using service layer)
+// Get messages for applicant
 router.get('/messages', isApplicant, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Use HybridMessageService to get compiled messages (PostgreSQL + MongoDB)
-    const messages = await hybridMessageService.getMessagesForUser(userId);
+    // Direct PostgreSQL query for messages
+    const messages = await storage.getNoteRefsByUser(userId);
     
-    console.log(`Fetched ${messages.length} compiled messages for applicant user ${userId}`);
+    console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching applicant messages:', error);
@@ -163,14 +163,14 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Use HybridMessageService to create note with dual-database coordination
-    const newMessage = await hybridMessageService.createMessage({
+    // Store in PostgreSQL directly
+    const newMessage = await storage.createNoteRef({
       userId,
       content: validatedData.content,
       workflow: 'application',
-      messageType: 'rich-text',
-      priority: 'normal',
-      isPrivate: false
+      messageType: validatedData.messageType || 'rich-text',
+      priority: validatedData.priority,
+      isPrivate: validatedData.isPrivate
     });
     
     console.log(`Created message with MongoDB storage for applicant user ${userId}`);
