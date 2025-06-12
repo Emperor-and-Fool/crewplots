@@ -246,8 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/documents', documentsRoutes);
   app.use('/api/mongodb', mongodbMessagesRoutes);
   app.use('/test-hybrid', testHybridRoutes);
-  app.use('/api', dashboardRoutes);
   app.use('/api', cacheTestRoutes);
+  app.use('/api', dashboardRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
