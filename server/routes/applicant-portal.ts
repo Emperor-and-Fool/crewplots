@@ -209,11 +209,11 @@ router.post('/messages', isApplicant, async (req: any, res) => {
 // Update message for applicant (using service layer)
 router.put('/messages/:id', isApplicant, async (req: any, res) => {
   try {
-    const messageId = parseInt(req.params.id);
+    const messageId = req.params.id;
     const userId = req.user.id;
     const { content } = req.body;
     
-    if (isNaN(messageId)) {
+    if (!messageId || typeof messageId !== 'string') {
       return res.status(400).json({ error: 'Invalid message ID' });
     }
     
