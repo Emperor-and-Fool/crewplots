@@ -1006,17 +1006,62 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   // Users
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select({
+      id: users.id,
+      public_id: users.public_id,
+      username: users.username,
+      password: users.password,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      name: users.name,
+      role: users.role,
+      locationId: users.locationId,
+      phoneNumber: users.phoneNumber,
+      status: users.status,
+      resumeUrl: users.resumeUrl,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.id, id));
     return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select({
+      id: users.id,
+      public_id: users.public_id,
+      username: users.username,
+      password: users.password,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      name: users.name,
+      role: users.role,
+      locationId: users.locationId,
+      phoneNumber: users.phoneNumber,
+      status: users.status,
+      resumeUrl: users.resumeUrl,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.username, username));
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db.select({
+      id: users.id,
+      public_id: users.public_id,
+      username: users.username,
+      password: users.password,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      name: users.name,
+      role: users.role,
+      locationId: users.locationId,
+      phoneNumber: users.phoneNumber,
+      status: users.status,
+      resumeUrl: users.resumeUrl,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.email, email));
     return user;
   }
 
