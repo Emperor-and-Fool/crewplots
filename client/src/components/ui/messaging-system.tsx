@@ -150,16 +150,16 @@ export function MessagingSystem({
     },
   });
 
-  // Fetch messages query - use applicant-specific endpoint for applicants
+  // Fetch messages query - MongoDB only for document storage mode
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: ['/api/applicant-portal/messages', userId],
+    queryKey: ['/api/mongodb/documents', userId],
     queryFn: async () => {
-      const response = await fetch('/api/applicant-portal/messages', {
+      const response = await fetch(`/api/mongodb/documents/${userId}`, {
         credentials: 'include' // Ensure cookies are sent
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+        throw new Error(`Failed to fetch documents from MongoDB: ${response.statusText}`);
       }
       
       const data = await response.json();
