@@ -707,7 +707,7 @@ export function MessagingSystem({
         </ScrollArea>
 
         {/* Add New Note Button */}
-        {filteredMessages.length > 0 && (
+        {(isNoteMode || filteredMessages.length > 0) && (
           <div className="py-2">
             <Button
               variant="outline"
@@ -720,7 +720,7 @@ export function MessagingSystem({
               }}
             >
               <Edit2 className="h-4 w-4 mr-2" />
-              Add a new note
+              {isNoteMode ? 'Write your motivation' : 'Add a new note'}
             </Button>
           </div>
         )}
