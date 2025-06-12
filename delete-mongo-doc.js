@@ -1,9 +1,9 @@
 // Quick script to delete the existing MongoDB document
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 async function deleteDocument() {
   try {
-    const response = await fetch('http://localhost:5173/api/mongodb/documents/684aadb9b40ba343aef67462', {
+    const response = await fetch('http://localhost:5173/api/mongodb/documents/684abdb040957034170d19f3', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
