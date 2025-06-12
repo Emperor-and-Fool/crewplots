@@ -1,5 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
+import { MessageService } from '../services/message-service';
 
 import multer from 'multer';
 import fs from 'fs';
