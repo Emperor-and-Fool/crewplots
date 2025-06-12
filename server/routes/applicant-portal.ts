@@ -139,19 +139,16 @@ router.get('/messages', isApplicant, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Forward to MongoDB documents endpoint with on-demand service
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Cookie': req.get('Cookie') || ''
-      }
+    // Import and use MongoDB logic directly
+    const { mongoConnection } = await import('../db-mongo');
+    const { withMongoDBRetry } = await import('./mongodb-messages');
+
+    const messages = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      const collection = db.collection('motivation_documents');
+      
+      return await collection.find({ userId }).sort({ createdAt: -1 }).toArray();
     });
-
-    if (!response.ok) {
-      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
-    }
-
-    const messages = await response.json();
     console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
@@ -171,26 +168,42 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     });
     
     const validatedData = messageSchema.parse(req.body);
-    const userId = req.user.id;
     
-    // Forward to MongoDB documents endpoint with on-demand service
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': req.get('Cookie') || ''
-      },
-      body: JSON.stringify({
-        content: validatedData.content,
-        documentType: 'motivation'
-      })
+    // Import and use MongoDB logic directly
+    const { mongoConnection } = await import('../db-mongo');
+    const { withMongoDBRetry } = await import('./mongodb-messages');
+    
+    const userId = req.user.id;
+    const userPublicId = req.user.public_id || req.user.username;
+    const content = validatedData.content;
+    
+    // Calculate metadata
+    const plainText = content.replace(/<[^>]*>/g, '');
+    const wordCount = plainText.trim().split(/\s+/).length;
+    const characterCount = plainText.length;
+    const htmlLength = content.length;
+
+    const document = {
+      userId,
+      userPublicId,
+      content,
+      documentType: 'motivation',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: {
+        wordCount,
+        characterCount,
+        htmlLength
+      }
+    };
+
+    const newMessage = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      const collection = db.collection('motivation_documents');
+      
+      const result = await collection.insertOne(document);
+      return await collection.findOne({ _id: result.insertedId });
     });
-
-    if (!response.ok) {
-      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
-    }
-
-    const newMessage = await response.json();
     
     console.log(`Created message with MongoDB storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
