@@ -135,6 +135,7 @@ export function MessagingSystem({
   const [draftMessageId, setDraftMessageId] = React.useState<number | null>(null);
   const [lastSavedContent, setLastSavedContent] = React.useState<string>('');
   const [isAutoSaving, setIsAutoSaving] = React.useState<boolean>(false);
+  const [hasSaveError, setHasSaveError] = React.useState<boolean>(false);
 
 
 
@@ -368,17 +369,20 @@ export function MessagingSystem({
     },
     onMutate: () => {
       setIsAutoSaving(true);
+      setHasSaveError(false);
     },
     onSuccess: (message) => {
       setDraftMessageId(message.id);
       setLastSavedContent(message.content);
       setIsAutoSaving(false);
+      setHasSaveError(false);
       
       // Don't change UI state or invalidate cache during auto-save
       // This keeps the editor visible while saving in background
     },
     onError: () => {
       setIsAutoSaving(false);
+      setHasSaveError(true);
     },
   });
 
@@ -499,6 +503,11 @@ export function MessagingSystem({
                         <>
                           <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
                           <span>Saving...</span>
+                        </>
+                      ) : hasSaveError ? (
+                        <>
+                          <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                          <span>Save failed</span>
                         </>
                       ) : draftMessageId ? (
                         <>
