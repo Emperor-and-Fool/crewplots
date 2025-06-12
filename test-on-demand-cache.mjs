@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test script for on-demand cache service
-import fetch from 'node-fetch';
+// Using native fetch (available in Node.js 18+)
 
 const BASE_URL = 'http://localhost:5000/api';
 
