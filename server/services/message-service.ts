@@ -38,16 +38,14 @@ export class MessageService {
 
   // Check if MongoDB is available
   private async isMongoDBAvailable(): Promise<boolean> {
-    // FALLBACK DISABLED: Previously forced PostgreSQL fallback
-    // console.log('MongoDB not available, using PostgreSQL fallback');
-    // return false;
-    
     try {
       const db = mongoConnection.getDatabase();
       const result = await db.admin().ping();
+      console.log('MongoDB availability check: AVAILABLE');
       return true;
     } catch (error) {
-      throw new Error(`MongoDB connection required but unavailable: ${error}`);
+      console.log('MongoDB availability check: UNAVAILABLE -', error.message);
+      return false;
     }
   }
 
@@ -219,7 +217,13 @@ export class MessageService {
 
   // Get messages by user with content compilation
   async getNoteRefsByUser(userId: number): Promise<ServiceMessage[]> {
-    console.log('MongoDB not available, using PostgreSQL fallback');
+    const mongoAvailable = await this.isMongoDBAvailable();
+    
+    if (mongoAvailable) {
+      console.log('MongoDB available, using hybrid storage for applicant user', userId);
+    } else {
+      console.log('MongoDB not available, using PostgreSQL fallback for applicant user', userId);
+    }
     
     // Fetch metadata from PostgreSQL
     const postgresMessages = await storage.getNoteRefsByUser(userId);
