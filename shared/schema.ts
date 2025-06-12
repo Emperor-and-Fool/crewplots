@@ -83,6 +83,7 @@ export const users = pgTable("users", {
   // Applicant-specific fields (for users with role="applicant")
   status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new"),
   resumeUrl: text("resume_url"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
