@@ -229,8 +229,7 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
         'Cookie': req.get('Cookie') || ''
       },
       body: JSON.stringify({
-        content: content.trim(),
-        userId: req.user.id
+        content: content.trim()
       })
     });
 
