@@ -30,7 +30,7 @@ async function startMongoDBOnDemand(): Promise<boolean> {
 }
 
 // Retry MongoDB operation with on-demand service
-export async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
+async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
   let lastError: any;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
