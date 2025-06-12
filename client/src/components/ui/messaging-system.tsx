@@ -721,9 +721,9 @@ export function MessagingSystem({
                               {editMessageMutation.isPending ? (
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
                               ) : (
-                                <Send className="h-3 w-3 mr-1" />
+                                <Save className="h-3 w-3 mr-1" />
                               )}
-                              Send
+                              Save
                             </Button>
                             <Button
                               variant="outline"
