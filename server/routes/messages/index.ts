@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateUser } from '../../middleware/auth';
 import notesRoutes from './notes';
-import conversationsRoutes from './conversations';
+// conversationsRoutes removed - conversations will be handled within messaging-system component
 import { messagingService } from '../../services/messaging-service';
 import { insertNoteRefSchema } from '@shared/schema';
 import { z } from 'zod';
@@ -70,6 +70,6 @@ router.post('/', async (req, res) => {
 
 // Mount sub-routes
 router.use('/notes', notesRoutes);
-router.use('/conversations', conversationsRoutes);
+// conversations routing removed - will be handled within messaging-system component
 
 export default router;
