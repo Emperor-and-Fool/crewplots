@@ -472,26 +472,7 @@ export function MessagingSystem({
     isNoteMode
   });
 
-  // Clean slate trigger - force refetch when needed
-  React.useEffect(() => {
-    const cleanSlate = () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/messages', userId] });
-      refetch();
-    };
-    
-    // Listen for custom clean slate event
-    window.addEventListener('cleanSlate', cleanSlate);
-    
-    // Auto-trigger clean slate once to ensure fresh state
-    const timer = setTimeout(() => {
-      cleanSlate();
-    }, 100);
-    
-    return () => {
-      window.removeEventListener('cleanSlate', cleanSlate);
-      clearTimeout(timer);
-    };
-  }, [userId, queryClient, refetch]);
+
 
 
 
