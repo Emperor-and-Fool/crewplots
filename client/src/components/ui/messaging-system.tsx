@@ -151,20 +151,20 @@ export function MessagingSystem({
     },
   });
 
-  // Fetch messages query - MongoDB only for document storage mode
+  // Fetch messages via proper hybrid architecture - PostgreSQL first, then MongoDB content
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: ['/api/mongodb/documents', userId],
+    queryKey: ['/api/applicant-portal/messages', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/mongodb/documents/${userId}`, {
-        credentials: 'include' // Ensure cookies are sent
+      const response = await fetch(`/api/applicant-portal/messages?userId=${userId}`, {
+        credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch documents from MongoDB: ${response.statusText}`);
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('MongoDB documents fetched:', data);
+      console.log('Messages fetched via hybrid architecture:', data);
       return data;
     },
     enabled: !!userId,
