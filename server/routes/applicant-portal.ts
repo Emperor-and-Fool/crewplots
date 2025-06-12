@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
-import { messageService } from '../services/message-service';
+import { hybridMessageService } from '../services/hybrid-message-service';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -163,8 +163,8 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     const validatedData = messageSchema.parse(req.body);
     const userId = req.user.id;
     
-    // Use MessageService to create note with dual-database coordination
-    const newMessage = await messageService.createNoteRef({
+    // Use HybridMessageService to create note with dual-database coordination
+    const newMessage = await hybridMessageService.createMessage({
       userId,
       content: validatedData.content,
       workflow: 'application',
