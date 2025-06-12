@@ -53,10 +53,22 @@ router.post('/cache/session/test', async (req, res) => {
   try {
     const testUser = {
       id: 999,
+      public_id: null,
       username: 'cache-test-user',
+      password: 'test-password',
       email: 'test@cache.com',
+      firstName: 'Cache',
+      lastName: 'User',
       role: 'administrator' as const,
-      name: 'Cache Test User'
+      name: 'Cache Test User',
+      phoneNumber: null,
+      status: null,
+      resumeUrl: null,
+      notes: null,
+      extraMessage: null,
+      createdAt: new Date(),
+      passwordResetToken: null,
+      passwordResetExpires: null
     };
 
     const sessionId = `test-session-${Date.now()}`;
@@ -101,10 +113,22 @@ router.post('/cache/batch/test', async (req, res) => {
     const testData = {
       session: {
         id: userId,
+        public_id: null,
         username: 'batch-test-user',
+        password: 'test-password',
         email: 'batch@test.com',
+        firstName: 'Batch',
+        lastName: 'User',
         role: 'manager' as const,
-        name: 'Batch Test User'
+        name: 'Batch Test User',
+        phoneNumber: '+1234567890',
+        status: null,
+        resumeUrl: null,
+        notes: null,
+        extraMessage: null,
+        createdAt: new Date(),
+        passwordResetToken: null,
+        passwordResetExpires: null
       },
       messages: [
         { id: 1, content: 'Test message 1', timestamp: Date.now() },
@@ -122,7 +146,7 @@ router.post('/cache/batch/test', async (req, res) => {
     const startTime = process.hrtime.bigint();
 
     // Warmup user cache with batch operation
-    await cacheService.warmupUserCache(userId, testData, { skipInDocker: false });
+    await cacheService.warmupUserCache(userId, testData);
 
     const endTime = process.hrtime.bigint();
     const duration = Number(endTime - startTime) / 1000000;
