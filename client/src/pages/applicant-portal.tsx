@@ -77,9 +77,6 @@ function ApplicantPortal() {
             <div className="text-red-700">
               <p className="font-bold">Error loading data</p>
               <p>There was a problem fetching your information: {errorMessage}</p>
-              <div className="mt-4">
-                <Button onClick={() => window.location.reload()}>Try Again</Button>
-              </div>
             </div>
           </div>
         </div>
