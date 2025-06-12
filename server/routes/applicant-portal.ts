@@ -140,7 +140,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     const userId = req.user.id;
     
     // Use HybridMessageService to get compiled messages (PostgreSQL + MongoDB)
-    const messages = await hybridMessageService.getMessagesByUser(userId);
+    const messages = await hybridMessageService.getMessagesForUser(userId);
     
     console.log(`Fetched ${messages.length} compiled messages for applicant user ${userId}`);
     res.json(messages);
