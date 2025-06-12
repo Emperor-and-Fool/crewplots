@@ -706,24 +706,7 @@ export function MessagingSystem({
           )}
         </ScrollArea>
 
-        {/* Add New Note Button */}
-        {(isNoteMode || filteredMessages.length > 0) && (
-          <div className="py-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                // Scroll to the form at bottom
-                const formElement = document.querySelector('[data-form="message-composition"]');
-                formElement?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              {isNoteMode ? 'Write your motivation' : 'Add a new note'}
-            </Button>
-          </div>
-        )}
+
       </CardContent>
     </Card>
   );
