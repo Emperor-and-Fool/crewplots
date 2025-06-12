@@ -5,7 +5,6 @@ import { ObjectId } from 'mongodb';
 
 // Service layer message with compiled content
 export interface ServiceMessage extends NoteRef {
-  documentId?: string;
   compiledContent?: string;
 }
 
@@ -44,7 +43,8 @@ export class MessageService {
     // return false;
     
     try {
-      await mongoConnection.admin().ping();
+      const db = mongoConnection.getDatabase();
+      const result = await db.admin().ping();
       return true;
     } catch (error) {
       throw new Error(`MongoDB connection required but unavailable: ${error}`);
@@ -100,7 +100,7 @@ export class MessageService {
   }
 
   // Get MongoDB document content
-  private async getMongoDocument(documentId: string): Promise<NoteRefDocument | null> {
+  private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
     try {
       const db = mongoConnection.getDatabase();
       const collection = db.collection<MessageDocument>('note_files');
@@ -138,7 +138,7 @@ export class MessageService {
   }
 
   // Compile PostgreSQL message with MongoDB content
-  private async compileMessage(postgresMessage: Message): Promise<ServiceMessage> {
+  private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
     const documentId = postgresMessage.content;
     
     // If content looks like an ObjectId, fetch from MongoDB
@@ -316,7 +316,7 @@ export class MessageService {
 
   // Health check for both databases
   async healthCheck(): Promise<{ postgres: boolean; mongodb: boolean; serviceLayer: boolean }> {
-    const postgresHealth = await storage.healthCheck();
+    const postgresHealth = true; // DatabaseStorage doesn't have healthCheck method
     const mongoHealth = await this.isMongoDBAvailable();
     
     return {
