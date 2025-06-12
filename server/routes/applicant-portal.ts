@@ -221,16 +221,24 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
     
-    // Verify message ownership through storage layer
-    const existingMessage = await storage.getNoteRef(messageId);
-    if (!existingMessage || existingMessage.userId !== userId) {
-      return res.status(404).json({ error: 'Message not found or not authorized' });
-    }
-    
-    // Use MessageService to update message (PostgreSQL + MongoDB)
-    const updatedMessage = await messageService.updateNoteRef(messageId, {
-      content: content.trim()
+    // Forward to MongoDB documents endpoint with on-demand service
+    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${messageId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': req.get('Cookie') || ''
+      },
+      body: JSON.stringify({
+        content: content.trim(),
+        userId: req.user.id
+      })
     });
+
+    if (!response.ok) {
+      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
+    }
+
+    const updatedMessage = await response.json();
     
     console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${userId}`);
     res.json(updatedMessage);
