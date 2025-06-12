@@ -208,16 +208,24 @@ router.post('/messages', isApplicant, async (req: any, res) => {
 
 // Update message for applicant (using service layer)
 router.put('/messages/:id', isApplicant, async (req: any, res) => {
+  console.log('📝 PUT /messages/:id started');
+  console.log('- Route params:', req.params);
+  console.log('- Request body:', req.body);
+  
   try {
     const messageId = req.params.id;
     const userId = req.user.id;
     const { content } = req.body;
     
+    console.log('- Extracted values:', { messageId, userId, contentLength: content?.length });
+    
     if (!messageId || typeof messageId !== 'string') {
+      console.log('❌ Message ID validation failed');
       return res.status(400).json({ error: 'Invalid message ID' });
     }
     
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      console.log('❌ Content validation failed');
       return res.status(400).json({ error: 'Content is required' });
     }
     
@@ -228,16 +236,23 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     console.log('- messageId:', messageId);
     console.log('- content length:', content.trim().length);
     
-    const response = await fetch(forwardUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': req.get('Cookie') || ''
-      },
-      body: JSON.stringify({
-        content: content.trim()
-      })
-    });
+    let response;
+    try {
+      response = await fetch(forwardUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': req.get('Cookie') || ''
+        },
+        body: JSON.stringify({
+          content: content.trim()
+        })
+      });
+      console.log('✅ Fetch completed');
+    } catch (fetchError) {
+      console.log('❌ Fetch failed:', fetchError);
+      throw fetchError;
+    }
     
     console.log('📥 Response received:');
     console.log('- status:', response.status);
