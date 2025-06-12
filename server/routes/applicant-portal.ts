@@ -52,15 +52,22 @@ const upload = multer({
 
 // Middleware to check if user is an applicant
 const isApplicant = async (req: any, res: any, next: any) => {
+  console.log('🔒 isApplicant middleware called for:', req.method, req.path);
+  console.log('- isAuthenticated:', req.isAuthenticated());
+  console.log('- user:', req.user);
+  
   if (!req.isAuthenticated()) {
+    console.log('❌ Authentication failed in middleware');
     return res.status(401).json({ error: 'Authentication required' });
   }
 
   // Check if user has applicant role
   if (req.user.role !== 'applicant') {
+    console.log('❌ Role check failed in middleware - role:', req.user.role);
     return res.status(403).json({ error: 'Access denied. Only applicants can access this resource.' });
   }
 
+  console.log('✅ Middleware passed, calling next()');
   next();
 };
 
