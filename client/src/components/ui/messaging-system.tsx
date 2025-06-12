@@ -502,7 +502,6 @@ export function MessagingSystem({
                   onChange={setEditContent}
                   placeholder="Leave us a message..."
                   className="min-h-[120px]"
-                  maxHeight="300px"
                 />
                 
                 <div className="flex items-center gap-2 justify-between">
@@ -675,7 +674,6 @@ export function MessagingSystem({
                           onChange={setEditContent}
                           placeholder="Edit your note..."
                           className="min-h-[100px]"
-                          maxHeight="300px"
                         />
                         <div className="flex items-center gap-2">
                           <Button
