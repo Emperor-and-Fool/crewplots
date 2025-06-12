@@ -236,9 +236,9 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
     
-    // Forward to MongoDB documents endpoint with on-demand service
+    // Forward to MongoDB documents endpoint with same structure as creation
     const forwardUrl = `http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${messageId}`;
-    console.log('🔄 Forwarding PUT request:');
+    console.log('🔄 Forwarding PUT request to match creation pattern:');
     console.log('- URL:', forwardUrl);
     console.log('- messageId:', messageId);
     console.log('- content length:', content.trim().length);
@@ -252,7 +252,10 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
           'Cookie': req.get('Cookie') || ''
         },
         body: JSON.stringify({
-          content: content.trim()
+          content: content.trim(),
+          userId: userId,
+          documentType: 'motivation',
+          workflow: 'application'
         })
       });
       console.log('✅ Fetch completed');
