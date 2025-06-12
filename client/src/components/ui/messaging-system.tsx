@@ -681,6 +681,30 @@ export function MessagingSystem({
                             {editContent.length}/1000 characters
                           </div>
                           
+                          {/* Auto-save status indicator */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {isAutoSaving ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
+                                  <span>Saving...</span>
+                                </>
+                              ) : hasSaveError ? (
+                                <>
+                                  <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                                  <span>Save failed</span>
+                                </>
+                              ) : draftMessageId ? (
+                                <>
+                                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                  <span>Draft saved</span>
+                                </>
+                              ) : editContent.trim() ? (
+                                <span>Type to auto-save</span>
+                              ) : null}
+                            </div>
+                          </div>
+                          
                           <div className="flex gap-2">
                             <Button
                               size="sm"
