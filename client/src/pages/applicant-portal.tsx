@@ -60,9 +60,7 @@ function ApplicantPortal() {
     if (isProfileError) {
       console.error("Error loading profile:", profileError);
     }
-    if (profile) {
-      console.log("Profile data loaded:", profile);
-    }
+    // Profile logging removed to prevent sensitive data exposure
   }, [profile, isProfileError, profileError]);
 
   // Ghost timeout warning completely removed - ProfileScraperInit handles loading efficiently
