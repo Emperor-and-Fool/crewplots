@@ -68,13 +68,14 @@ app.use((req, res, next) => {
     console.log('MongoDB connection failed, document storage features disabled');
   });
 
-  // Start integrated keepalive service for Redis and MongoDB
-  try {
-    await keepAliveService.startServices();
-    console.log('✅ Integrated keepalive service started - Redis and MongoDB now persistent');
-  } catch (error) {
-    console.log('Keepalive service failed to start, continuing with fallback storage');
-  }
+  // Keepalive service disabled - switching to on-demand activation pattern
+  console.log('Integrated keepalive disabled - preparing for on-demand service activation');
+  // try {
+  //   await keepAliveService.startServices();
+  //   console.log('✅ Integrated keepalive service started - Redis and MongoDB now persistent');
+  // } catch (error) {
+  //   console.log('Keepalive service failed to start, continuing with fallback storage');
+  // }
 
   // Redis supervisor temporarily disabled - using integrated keepalive instead
   console.log('Redis supervisor disabled - using integrated keepalive service');
