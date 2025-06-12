@@ -112,7 +112,7 @@ router.get('/documents/:userId', async (req, res) => {
   }
 });
 
-// Create a new motivation document
+// Create or update motivation document (upsert for single document per user)
 router.post('/documents', async (req, res) => {
   try {
     const { content, documentType = 'motivation' } = req.body;
@@ -134,12 +134,15 @@ router.post('/documents', async (req, res) => {
     const characterCount = plainText.length;
     const htmlLength = content.length;
 
-    const document: MotivationDocument = {
+    const db = mongoConnection.getDatabase();
+    const collection = db.collection<MotivationDocument>('motivation_documents');
+    
+    // Use upsert to update existing document or create new one (one document per user)
+    const updateData = {
       userId,
       userPublicId,
       content,
       documentType,
-      createdAt: new Date(),
       updatedAt: new Date(),
       metadata: {
         wordCount,
@@ -148,18 +151,22 @@ router.post('/documents', async (req, res) => {
       }
     };
 
-    const db = mongoConnection.getDatabase();
-    const collection = db.collection<MotivationDocument>('motivation_documents');
+    const result = await collection.updateOne(
+      { userId, documentType }, // Find by userId and documentType
+      { 
+        $set: updateData,
+        $setOnInsert: { createdAt: new Date() } // Only set createdAt on insert
+      },
+      { upsert: true } // Create if doesn't exist, update if exists
+    );
     
-    const result = await collection.insertOne(document);
-    
-    // Return the created document with the generated _id, formatted for frontend
-    const createdDocument = await collection.findOne({ _id: result.insertedId });
+    // Return the updated/created document
+    const document = await collection.findOne({ userId, documentType });
     
     // Transform MongoDB document to frontend-expected format
     const responseDocument = {
-      ...createdDocument,
-      id: createdDocument._id.toString(), // Convert ObjectId to string for frontend
+      ...document,
+      id: document._id.toString(), // Convert ObjectId to string for frontend
       _id: undefined // Remove MongoDB-specific field
     };
     delete responseDocument._id;
