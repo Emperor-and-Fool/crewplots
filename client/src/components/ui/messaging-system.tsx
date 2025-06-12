@@ -560,7 +560,7 @@ export function MessagingSystem({
                   }}
                 >
                   <Edit2 className="h-5 w-5 mr-2" />
-                  write motivation
+                  {isNoteMode ? 'Write your motivation' : 'Start writing'}
                 </Button>
               </div>
             )
