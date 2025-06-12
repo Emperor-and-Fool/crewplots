@@ -169,8 +169,8 @@ export class MessagingService {
         );
         documentReference = document.documentId;
       } catch (error) {
-        console.warn('Failed to store note content in MongoDB, falling back to PostgreSQL:', error);
-        // Content will remain in PostgreSQL as fallback
+        console.error('ERROR: Failed to store note content in MongoDB - note creation failed:', error);
+        throw new Error('MongoDB storage not available. Notes require MongoDB to be running.');
       }
     }
 
