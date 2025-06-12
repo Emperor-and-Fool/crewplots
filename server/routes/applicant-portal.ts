@@ -181,10 +181,8 @@ router.post('/messages', isApplicant, async (req: any, res) => {
         'Cookie': req.get('Cookie') || ''
       },
       body: JSON.stringify({
-        ...req.body,
-        userId: req.user.id,
-        documentType: 'motivation',
-        workflow: 'application'
+        content: validatedData.content,
+        documentType: 'motivation'
       })
     });
 
