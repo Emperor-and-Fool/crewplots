@@ -1785,7 +1785,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNoteRefsByUser(userId: number): Promise<NoteRef[]> {
-    return await db.select().from(noteRefs).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
+    console.log(`Storage: Getting notes for user ${userId}`);
+    const results = await db.select().from(noteRefs).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
+    console.log(`Storage: Found ${results.length} notes for user ${userId}`);
+    return results;
   }
 
   async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
