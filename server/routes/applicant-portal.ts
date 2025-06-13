@@ -142,24 +142,15 @@ router.put('/message', isApplicant, async (req: any, res) => {
   }
 });
 
-// Get messages for applicant - redirect to MongoDB endpoint
+// Get messages for applicant (using service layer)
 router.get('/messages', isApplicant, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Forward to MongoDB documents endpoint with on-demand service
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/mongodb/documents/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Cookie': req.get('Cookie') || ''
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`MongoDB endpoint failed: ${response.statusText}`);
-    }
-
-    const messages = await response.json();
+    // Use MessageService for proper hybrid retrieval
+    console.log('🔍 Using MessageService for hybrid retrieval');
+    const messages = await messageService.getNoteRefsByUser(userId);
+    
     console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
   } catch (error) {
