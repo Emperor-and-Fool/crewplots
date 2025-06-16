@@ -143,6 +143,7 @@ router.put('/message', isApplicant, async (req: any, res) => {
   }
 });
 
+/* MESSAGE ROUTES MOVED TO server/routes/notes.ts FOR REUSABILITY
 // Get messages for applicant (using service layer)
 router.get('/messages', isApplicant, async (req: any, res) => {
   try {
@@ -159,7 +160,9 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
+*/
 
+/* CREATE MESSAGE ROUTE MOVED TO server/routes/notes.ts FOR REUSABILITY
 // Create message for applicant (using service layer)
 router.post('/messages', isApplicant, async (req: any, res) => {
   try {
@@ -197,7 +200,9 @@ router.post('/messages', isApplicant, async (req: any, res) => {
     res.status(500).json({ error: 'Failed to create message' });
   }
 });
+*/
 
+/* UPDATE/DELETE MESSAGE ROUTES MOVED TO server/routes/notes.ts FOR REUSABILITY
 // Update message for applicant (using service layer)
 router.put('/messages/:id', isApplicant, async (req: any, res) => {
   console.log('📝 PUT /messages/:id started');
@@ -265,6 +270,7 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
     res.status(500).json({ error: 'Failed to delete message' });
   }
 });
+*/
 
 // Upload document
 router.post('/documents', isApplicant, upload.single('document'), async (req: any, res) => {
