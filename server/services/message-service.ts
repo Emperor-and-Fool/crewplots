@@ -73,11 +73,15 @@ export class MessageService {
       workflow: string;
     }
   ): Promise<string> {
+    console.log(`🔍 STORING CONTENT: length=${content.length}, type=${options.contentType}`);
+    
     const db = this.getDatabase();
     if (!db) {
+      console.error('❌ MONGODB CONNECTION FAILED');
       throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
+    console.log(`✅ MongoDB connection established, using collection: documents`);
     const collection = db.collection<MessageDocument>('documents');
 
     // Calculate content metadata
@@ -97,12 +101,19 @@ export class MessageService {
       updatedAt: new Date(),
     };
 
+    console.log(`🔄 INSERTING DOCUMENT: ${JSON.stringify({ contentType: options.contentType, workflow: options.workflow, metadata })}`);
     const result = await collection.insertOne(document);
+    
+    console.log(`📊 INSERT RESULT: acknowledged=${result.acknowledged}, insertedId=${result.insertedId}`);
+    
     if (!result.insertedId) {
+      console.error('❌ MONGODB INSERTION FAILED - NO INSERTED ID');
       throw new Error('CRITICAL: MongoDB document insertion failed - no fallback allowed');
     }
     
-    return result.insertedId.toString();
+    const objectIdString = result.insertedId.toString();
+    console.log(`✅ MONGODB DOCUMENT CREATED: ${objectIdString}`);
+    return objectIdString;
   }
 
   // Update MongoDB document with PostgreSQL message reference
