@@ -36,18 +36,9 @@ export class MessageService {
     return MessageService.instance;
   }
 
-  // Check if MongoDB is available
-  private async isMongoDBAvailable(): Promise<boolean> {
-    try {
-      const db = mongoConnection.getDatabase();
-      const result = await db.admin().ping();
-      console.log('MongoDB availability check: AVAILABLE');
-      return true;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log('MongoDB availability check: UNAVAILABLE -', errorMessage);
-      return false;
-    }
+  // MongoDB connection - always required
+  private getDatabase() {
+    return mongoConnection.getDatabase();
   }
 
   // Store content document in MongoDB
@@ -58,7 +49,7 @@ export class MessageService {
       workflow: string;
     }
   ): Promise<string> {
-    const db = mongoConnection.getDatabase();
+    const db = this.getDatabase();
     const collection = db.collection<MessageDocument>('note_files');
 
     // Calculate content metadata
@@ -84,7 +75,7 @@ export class MessageService {
 
   // Update MongoDB document with PostgreSQL message reference
   private async updateDocumentMessageReference(documentId: string, messageId: number): Promise<void> {
-    const db = mongoConnection.getDatabase();
+    const db = this.getDatabase();
     const collection = db.collection<MessageDocument>('note_files');
 
     await collection.updateOne(
@@ -100,15 +91,10 @@ export class MessageService {
 
   // Get MongoDB document content
   private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
-    try {
-      const db = mongoConnection.getDatabase();
-      const collection = db.collection<MessageDocument>('note_files');
-      
-      return await collection.findOne({ _id: new ObjectId(documentId) });
-    } catch (error) {
-      console.error('Error fetching MongoDB document:', error);
-      return null;
-    }
+    const db = this.getDatabase();
+    const collection = db.collection<MessageDocument>('note_files');
+    
+    return await collection.findOne({ _id: new ObjectId(documentId) });
   }
 
   // Update MongoDB document content
