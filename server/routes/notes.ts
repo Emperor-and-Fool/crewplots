@@ -59,7 +59,9 @@ router.post('/', requireAuth, async (req: any, res) => {
       documentType: validatedData.documentType || 'note'
     };
     
-    const newMessage = await messageService.createNoteRef(noteRefData);
+    const newMessage = await withMongoDBRetry(() => 
+      messageService.createNoteRef(noteRefData)
+    );
     
     console.log(`Created note with hybrid storage for user ${userId}`);
     res.status(201).json(newMessage);
