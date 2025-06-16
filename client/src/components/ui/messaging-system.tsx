@@ -502,6 +502,7 @@ export function MessagingSystem({
                   onChange={setEditContent}
                   placeholder="Leave us a message..."
                   className="min-h-[120px]"
+                  maxHeight="none"
                 />
                 
                 <div className="flex items-center gap-2 justify-between">
@@ -686,6 +687,7 @@ export function MessagingSystem({
                           onChange={setEditContent}
                           placeholder="Leave us a message..."
                           className="min-h-[120px]"
+                          maxHeight="none"
                         />
                         
                         <div className="flex items-center gap-2 justify-between">
