@@ -1,210 +1,159 @@
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
-import Link from '@tiptap/extension-link'
-import TextStyle from '@tiptap/extension-text-style'
-import Color from '@tiptap/extension-color'
-import { Button } from '@/components/ui/button'
+import React from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Placeholder from '@tiptap/extension-placeholder';
+import { Button } from '@/components/ui/button';
 import { 
   Bold, 
   Italic, 
+  Link as LinkIcon, 
   List, 
-  ListOrdered, 
-  Link as LinkIcon,
-  Undo,
-  Redo,
-  Type,
-  Palette
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import React from 'react'
+  ListOrdered 
+} from 'lucide-react';
 
 interface RichTextEditorProps {
-  content: string
-  onChange: (html: string) => void
-  placeholder?: string
-  className?: string
-  editable?: boolean
-  maxHeight?: string
+  content: string;
+  onChange: (content: string) => void;
+  placeholder?: string;
+  className?: string;
+  maxHeight?: string;
+  readOnly?: boolean;
 }
 
-const MenuBar = ({ editor }: { editor: any }) => {
-  if (!editor) {
-    return null
-  }
-
-  const setLink = React.useCallback(() => {
-    const previousUrl = editor.getAttributes('link').href
-    const url = window.prompt('URL', previousUrl)
-
-    // cancelled
-    if (url === null) {
-      return
-    }
-
-    // empty
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
-
-    // update link
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  }, [editor])
-
-  return (
-    <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-muted/30">
-      <Button
-        variant={editor.isActive('bold') ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        disabled={!editor.can().chain().focus().toggleBold().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        variant={editor.isActive('italic') ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        disabled={!editor.can().chain().focus().toggleItalic().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-
-      <Button
-        variant={editor.isActive('bulletList') ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className="h-8 w-8 p-0"
-      >
-        <List className="h-4 w-4" />
-      </Button>
-
-      <Button
-        variant={editor.isActive('orderedList') ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className="h-8 w-8 p-0"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Button>
-
-      <Button
-        variant={editor.isActive('link') ? 'default' : 'ghost'}
-        size="sm"
-        onClick={setLink}
-        className="h-8 w-8 p-0"
-      >
-        <LinkIcon className="h-4 w-4" />
-      </Button>
-
-      <div className="w-px bg-border mx-1" />
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().chain().focus().undo().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Undo className="h-4 w-4" />
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().chain().focus().redo().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Redo className="h-4 w-4" />
-      </Button>
-
-      <div className="w-px bg-border mx-1" />
-
-      <input
-        type="color"
-        onInput={(event) => editor.chain().focus().setColor((event.target as HTMLInputElement).value).run()}
-        value={editor.getAttributes('textStyle').color || '#000000'}
-        className="h-8 w-8 rounded border border-border cursor-pointer"
-        title="Text Color"
-      />
-    </div>
-  )
+interface MessageDisplayProps {
+  content: string;
+  className?: string;
 }
 
-export function RichTextEditor({ 
-  content, 
-  onChange, 
-  placeholder = "Start typing...",
-  className,
-  editable = true,
-  maxHeight = "200px"
+export function RichTextEditor({
+  content,
+  onChange,
+  placeholder = 'Start typing...',
+  className = '',
+  maxHeight = '200px',
+  readOnly = false,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({
-        placeholder,
-      }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-primary underline cursor-pointer',
+          class: 'text-blue-600 hover:text-blue-800 underline',
         },
       }),
       TextStyle,
       Color,
+      Placeholder.configure({
+        placeholder,
+        emptyEditorClass: 'cursor-text before:content-[attr(data-placeholder)] before:absolute before:text-gray-400 before:pointer-events-none',
+      }),
     ],
     content,
-    editable,
+    editable: !readOnly,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: cn(
-          'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[80px] px-3 py-2',
-          `max-h-[${maxHeight}] overflow-y-auto`
-        ),
+        class: `prose prose-sm max-w-none focus:outline-none ${className}`,
+        style: maxHeight === 'none' ? '' : `max-height: ${maxHeight}; overflow-y: auto;`,
       },
     },
-  })
+  });
 
   React.useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content);
     }
-  }, [content, editor])
+  }, [editor, content]);
+
+  const addLink = () => {
+    const url = window.prompt('Enter URL:');
+    if (url) {
+      editor?.chain().focus().setLink({ href: url }).run();
+    }
+  };
+
+  const removeLink = () => {
+    editor?.chain().focus().unsetLink().run();
+  };
 
   if (!editor) {
-    return null
+    return <div className="h-32 bg-gray-50 rounded animate-pulse" />;
   }
 
   return (
-    <div className={cn("border border-border rounded-md bg-background", className)}>
-      {editable && <MenuBar editor={editor} />}
-      <div 
-        className="prose-editor-content"
-        style={{ maxHeight: editable ? maxHeight : 'none' }}
-      >
+    <div className="border rounded-lg">
+      {!readOnly && (
+        <div className="border-b px-3 py-2 flex gap-1 bg-gray-50">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={editor.isActive('bold') ? 'bg-gray-200' : ''}
+          >
+            <Bold className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={editor.isActive('italic') ? 'bg-gray-200' : ''}
+          >
+            <Italic className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={editor.isActive('bulletList') ? 'bg-gray-200' : ''}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={editor.isActive('orderedList') ? 'bg-gray-200' : ''}
+          >
+            <ListOrdered className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={editor.isActive('link') ? removeLink : addLink}
+            className={editor.isActive('link') ? 'bg-gray-200' : ''}
+          >
+            <LinkIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      <div className="p-3 min-h-[120px]" style={{ maxHeight: maxHeight === 'none' ? 'none' : maxHeight }}>
         <EditorContent editor={editor} />
       </div>
     </div>
-  )
+  );
 }
 
-// Read-only version for displaying messages
-export function MessageDisplay({ content, className }: { content: string; className?: string }) {
+export function MessageDisplay({ content, className = '' }: MessageDisplayProps) {
   return (
-    <RichTextEditor
-      content={content}
-      onChange={() => {}}
-      editable={false}
-      className={cn("border-0 bg-transparent", className)}
+    <div 
+      className={`prose prose-sm max-w-none ${className}`}
+      dangerouslySetInnerHTML={{ __html: content }}
     />
-  )
+  );
 }

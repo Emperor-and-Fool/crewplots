@@ -5,26 +5,21 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Clock, AlertCircle, CheckCircle, User, Trash2, Edit2, Save, X } from 'lucide-react';
+import { MessageCircle, Send, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import type { Message as BaseMessage, InsertMessage } from '@shared/schema';
 import { RichTextEditor, MessageDisplay } from '@/components/ui/rich-text-editor';
 
-// Extended Message type that includes joined user data
 interface Message extends BaseMessage {
   sender?: { id: number; username: string; role: string } | null;
   receiver?: { id: number; username: string; role: string } | null;
+  compiledContent?: string; // Added by MessageService during hybrid compilation
 }
 
-// Message form validation schema with extensible features
 const messageFormSchema = z.object({
   content: z.string()
     .min(1, 'Message content is required')
@@ -32,55 +27,36 @@ const messageFormSchema = z.object({
   messageType: z.enum(['text', 'rich-text', 'system', 'notification']).default('rich-text'),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   isPrivate: z.boolean().default(false),
-  receiverId: z.number().optional(), // Who receives the message
+  receiverId: z.number().optional(),
 });
 
 type MessageFormData = z.infer<typeof messageFormSchema>;
 
-// Extensible props interface for future customization
 interface MessagingSystemProps {
-  // Core configuration
   userId: number;
-  receiverId?: number; // Optional - who receives the message
-  
-  // Module selection - determines behavior
-  mode?: 'note' | 'messages'; // Default: 'messages'
-  
-  // UI customization
+  receiverId?: number;
+  mode?: 'note' | 'messages';
   title?: string;
   placeholder?: string;
   showPriority?: boolean;
   showPrivateToggle?: boolean;
   showMessageTypes?: boolean;
   maxHeight?: string;
-  
-  // Workflow categorization
-  workflow?: 'application' | 'crew' | 'location' | 'scheduling' | 'knowledge' | 'statistics';
-  
-  // Document storage integration
-  documentStorage?: boolean;
-  
-  // Feature toggles for future extensibility
   enableRichText?: boolean;
   enableFileAttachments?: boolean;
   enableEmoji?: boolean;
   enableMarkdown?: boolean;
-  
-  // Filtering and display options
   showOnlyUserMessages?: boolean;
   showSystemMessages?: boolean;
   allowMessageDeletion?: boolean;
-  
-  // Event handlers
   onMessageSent?: (message: Message) => void;
   onMessageClick?: (message: Message) => void;
-  
-  // Custom styling
   className?: string;
   compactMode?: boolean;
+  workflow?: 'application' | 'crew' | 'location' | 'scheduling' | 'knowledge' | 'statistics';
+  documentStorage?: boolean;
 }
 
-// Priority badge styling
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
@@ -91,19 +67,10 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
-// Message type icon
-const getMessageIcon = (messageType: string) => {
-  switch (messageType) {
-    case 'system': return <AlertCircle className="h-4 w-4" />;
-    case 'notification': return <CheckCircle className="h-4 w-4" />;
-    default: return <MessageCircle className="h-4 w-4" />;
-  }
-};
-
 export function MessagingSystem({
   userId,
   receiverId,
-  mode = 'messages', // Default to messages mode
+  mode = 'messages',
   title = 'Messages',
   placeholder = 'Type your message here...',
   showPriority = true,
@@ -124,11 +91,9 @@ export function MessagingSystem({
 }: MessagingSystemProps) {
   const { toast } = useToast();
   
-  // Mode-specific behavior configuration
   const isNoteMode = mode === 'note';
   const isMessagesMode = mode === 'messages';
   
-  // Edit state management
   const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);
   const [editContent, setEditContent] = React.useState<string>('');
   const [hasCreatedMessage, setHasCreatedMessage] = React.useState<boolean>(false);
@@ -137,7 +102,6 @@ export function MessagingSystem({
   const [isAutoSaving, setIsAutoSaving] = React.useState<boolean>(false);
   const [hasSaveError, setHasSaveError] = React.useState<boolean>(false);
 
-  // Form setup with validation
   const form = useForm<MessageFormData>({
     resolver: zodResolver(messageFormSchema),
     defaultValues: {
@@ -149,7 +113,6 @@ export function MessagingSystem({
     },
   });
 
-  // Fetch data via proper hybrid architecture - PostgreSQL first, then MongoDB content
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
     queryKey: isNoteMode ? ['/api/messaging/notes', userId] : ['/api/messaging/messages', userId],
     queryFn: async () => {
@@ -169,12 +132,9 @@ export function MessagingSystem({
     enabled: !!userId,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always consider data stale for instant updates
+    staleTime: 0,
   });
 
-
-
-  // Delete message mutation
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: number): Promise<void> => {
       const response = await fetch(`/api/messaging/notes/${messageId}`, {
@@ -187,12 +147,10 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, deletedMessageId) => {
-      // Directly update cache by removing the deleted message
       queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return old.filter(msg => msg.id !== deletedMessageId);
       });
       
-      // Also refetch to ensure consistency
       refetch();
       
       toast({
@@ -209,7 +167,6 @@ export function MessagingSystem({
     },
   });
 
-  // Edit message mutation
   const editMessageMutation = useMutation({
     mutationFn: async ({ messageId, content }: { messageId: number, content: string }): Promise<void> => {
       const response = await fetch(`/api/messaging/notes/${messageId}`, {
@@ -226,7 +183,6 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, { messageId, content }) => {
-      // Directly update cache with the new content
       queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return old.map(msg => 
           msg.id === messageId 
@@ -235,34 +191,34 @@ export function MessagingSystem({
         );
       });
       
-      // Also refetch to ensure consistency
       refetch();
-      
-      // Reset edit state
       setEditingMessageId(null);
       setEditContent('');
+      setDraftMessageId(null);
+      setLastSavedContent('');
       
       toast({
-        title: 'Motivation saved',
-        description: 'Your motivation has been saved.',
+        title: isNoteMode ? 'Note updated' : 'Message updated',
+        description: isNoteMode ? 'Your note has been saved.' : 'Your message has been updated.',
       });
     },
     onError: (error) => {
       toast({
-        title: 'Failed to update note',
+        title: isNoteMode ? 'Failed to update note' : 'Failed to update message',
         description: error.message,
         variant: 'destructive',
       });
     },
   });
 
-  // Create message mutation - use applicant-specific endpoint
   const createMessageMutation = useMutation({
     mutationFn: async (data: MessageFormData): Promise<Message> => {
       const messageData = {
         content: data.content,
+        messageType: data.messageType,
         priority: data.priority,
         isPrivate: data.isPrivate,
+        receiverId: data.receiverId,
       };
 
       const response = await fetch('/api/messaging/notes', {
@@ -279,24 +235,18 @@ export function MessagingSystem({
       return response.json();
     },
     onSuccess: async (newMessage) => {
-      // Set the flag to indicate a message was created
       setHasCreatedMessage(true);
       
-      // Directly update cache with server response (setQueryData strategy)
       queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return [...(old || []), newMessage];
       });
       
-      // Also use programmatic refetch for guaranteed fresh data
       await refetch();
       
-      // Reset form
       form.reset();
       
-      // Call custom handler
       onMessageSent?.(newMessage);
       
-      // Show success toast
       toast({
         title: isNoteMode ? 'Note saved' : 'Message sent',
         description: isNoteMode ? 'Your note has been saved.' : 'Your message has been sent.',
@@ -311,21 +261,10 @@ export function MessagingSystem({
     },
   });
 
-  // Auto-save draft mutation - handles both note and message modes
   const autoSaveDraftMutation = useMutation({
     mutationFn: async (content: string): Promise<Message> => {
-      const messageData = {
-        content,
-        priority: 'normal' as const,
-        isPrivate: false,
-      };
-
-      // Use single endpoint for all operations
-      const baseEndpoint = '/api/messaging/notes';
-
       if (draftMessageId) {
-        // Update existing draft
-        const response = await fetch(`${baseEndpoint}/${draftMessageId}`, {
+        const response = await fetch(`/api/messaging/notes/${draftMessageId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content }),
@@ -333,38 +272,37 @@ export function MessagingSystem({
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to update draft: ${response.statusText}`);
+          throw new Error(`Failed to auto-save note: ${response.statusText}`);
         }
 
         return response.json();
       } else {
-        // Create new draft - in note mode this will upsert
-        const response = await fetch(baseEndpoint, {
+        const response = await fetch('/api/messaging/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(messageData),
+          body: JSON.stringify({
+            content,
+            messageType: 'rich-text',
+            priority: 'normal',
+            isPrivate: false
+          }),
           credentials: 'include',
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to create draft: ${response.statusText}`);
+          throw new Error(`Failed to create note: ${response.statusText}`);
         }
 
         return response.json();
       }
     },
-    onMutate: () => {
-      setIsAutoSaving(true);
-      setHasSaveError(false);
-    },
-    onSuccess: (message) => {
-      setDraftMessageId(message.id);
-      setLastSavedContent(message.content);
+    onSuccess: (savedMessage) => {
+      if (!draftMessageId) {
+        setDraftMessageId(savedMessage.id);
+      }
+      setLastSavedContent(editContent);
       setIsAutoSaving(false);
       setHasSaveError(false);
-      
-      // Don't change UI state or invalidate cache during auto-save
-      // This keeps the editor visible while saving in background
     },
     onError: () => {
       setIsAutoSaving(false);
@@ -372,47 +310,41 @@ export function MessagingSystem({
     },
   });
 
-  // Filter messages based on props
   const filteredMessages = React.useMemo(() => {
-    // Ensure we have an array to work with
-    let filtered = Array.isArray(messages) ? messages : [];
-
+    if (!messages) return [];
+    
+    let filtered = messages;
+    
     if (showOnlyUserMessages) {
       filtered = filtered.filter(msg => msg.userId === userId);
     }
-
+    
     if (!showSystemMessages) {
       filtered = filtered.filter(msg => msg.messageType !== 'system');
     }
-
-    return filtered.sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
+    
+    return filtered;
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
 
-  // Debounced auto-save effect - behavior depends on mode
   React.useEffect(() => {
-    if (editContent.trim() && editContent !== lastSavedContent) {
-      const timeoutId = setTimeout(() => {
-        if (isNoteMode) {
-          // Note mode: ensure only one note per user - SET DRAFT ID FIRST
-          if (filteredMessages.length > 0 && !draftMessageId) {
-            setDraftMessageId(filteredMessages[0].id);
-            // Wait for state update before auto-saving
-            setTimeout(() => autoSaveDraftMutation.mutate(editContent), 100);
-            return;
-          }
-        }
-        autoSaveDraftMutation.mutate(editContent);
-      }, 500);
+    if (editContent && filteredMessages.length > 0) {
+      const shouldAutoSave = editContent.trim() !== lastSavedContent.trim() && 
+                           editContent.trim().length > 0 && 
+                           !isAutoSaving;
 
-      return () => clearTimeout(timeoutId);
+      if (shouldAutoSave && isNoteMode) {
+        setIsAutoSaving(true);
+        
+        const timeoutId = setTimeout(() => {
+          autoSaveDraftMutation.mutate(editContent);
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [editContent, lastSavedContent, draftMessageId, filteredMessages, isNoteMode]);
 
-  // Handle form submission
   const onSubmit = (data: MessageFormData) => {
-    // If we have a draft, use the proper edit mutation like the Save button
     if (draftMessageId && editContent.trim()) {
       editMessageMutation.mutate({
         messageId: draftMessageId,
@@ -435,13 +367,11 @@ export function MessagingSystem({
     setHasCreatedMessage(false);
   };
 
-  // Handle loading and error states
   if (error) {
     return (
       <Card className={className}>
         <CardContent className="p-6">
           <div className="flex items-center justify-center text-red-600 dark:text-red-400">
-            <AlertCircle className="h-5 w-5 mr-2" />
             Failed to load {isNoteMode ? 'notes' : 'messages'}
           </div>
         </CardContent>
@@ -449,7 +379,6 @@ export function MessagingSystem({
     );
   }
 
-  // Debug component state
   console.log('MessagingSystem render state:', {
     isLoading,
     messagesLength: messages.length,
@@ -458,10 +387,6 @@ export function MessagingSystem({
     createMutationPending: createMessageMutation.isPending,
     isNoteMode
   });
-
-
-
-
 
   return (
     <Card className={className}>
@@ -473,7 +398,6 @@ export function MessagingSystem({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Messages Display */}
         <ScrollArea className={`rounded-md border p-3`} style={{ maxHeight: 'none' }}>
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -482,12 +406,11 @@ export function MessagingSystem({
             </div>
           ) : filteredMessages.length === 0 && !createMessageMutation.isPending ? (
             editingMessageId === -1 ? (
-              // Show editor when creating first message
-              <div className="space-y-3 p-3">
+              <div className="space-y-3">
                 <RichTextEditor
                   content={editContent}
                   onChange={setEditContent}
-                  placeholder="Leave us a message..."
+                  placeholder={placeholder}
                   className="min-h-[120px]"
                   maxHeight="none"
                 />
@@ -497,43 +420,33 @@ export function MessagingSystem({
                     {editContent.length}/1000 characters
                   </div>
                   
-                  {/* Auto-save status indicator */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {isAutoSaving ? (
                         <>
-                          <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
-                          <span>Saving...</span>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                          Auto-saving...
                         </>
                       ) : hasSaveError ? (
-                        <>
-                          <div className="h-2 w-2 bg-red-500 rounded-full"></div>
-                          <span>Save failed</span>
-                        </>
-                      ) : draftMessageId ? (
-                        <>
-                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                          <span>Draft saved</span>
-                        </>
-                      ) : editContent.trim() ? (
-                        <span>Type to auto-save</span>
+                        <span className="text-red-500">Save failed</span>
+                      ) : lastSavedContent.trim() && editContent.trim() === lastSavedContent.trim() ? (
+                        <span className="text-green-600">Saved</span>
                       ) : null}
                     </div>
                   </div>
                   
                   <div className="flex gap-2">
                     <Button
+                      variant="default"
                       size="sm"
                       onClick={() => {
                         if (editContent.trim()) {
                           if (draftMessageId) {
-                            // Use edit mutation (PUT) for existing draft
                             editMessageMutation.mutate({
                               messageId: draftMessageId,
                               content: editContent
                             });
                           } else {
-                            // Only create new if no draft exists
                             createMessageMutation.mutate({
                               content: editContent,
                               messageType: 'rich-text',
@@ -570,35 +483,27 @@ export function MessagingSystem({
                 </div>
               </div>
             ) : (
-              // Show button when no messages exist
-              <div className="flex flex-col items-center justify-center py-8">
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">No messages yet</p>
+                <p className="text-sm mt-1">Start the conversation!</p>
                 <Button
                   variant="outline"
-                  size="lg"
-                  className="w-full max-w-sm"
-                  onClick={() => {
-                    setEditingMessageId(-1);
-                    setEditContent('');
-                  }}
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => setEditingMessageId(-1)}
                 >
-                  <Edit2 className="h-5 w-5 mr-2" />
-                  {isNoteMode ? 'Write your motivation' : 'Start writing'}
+                  Create First Message
                 </Button>
               </div>
             )
-          ) : hasCreatedMessage && filteredMessages.length === 0 && (isAutoSaving || autoSaveDraftMutation.isPending) ? (
-            // Show loading state only when actively saving and no messages loaded yet
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
-              <span className="ml-2">Loading your message...</span>
-            </div>
           ) : (
-            <div className="space-y-3">
-              {filteredMessages.map((message, index) => (
+            <div className="space-y-4">
+              {filteredMessages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
-                    message.userId === userId 
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    editingMessageId === message.id 
                       ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' 
                       : 'bg-gray-50 dark:bg-gray-900/20'
                   }`}
@@ -613,59 +518,17 @@ export function MessagingSystem({
                         </Badge>
                       )}
                       
-                      {message.isPrivate && (
-                        <Badge variant="outline">
-                          Private
-                        </Badge>
-                      )}
-                      
                       <span className="text-xs text-muted-foreground ml-auto">
                         {format(new Date(message.createdAt), 'MMM d, h:mm a')}
                       </span>
-
-                      {/* Edit and Delete buttons - only show for user's own messages */}
-                      {message.userId === userId && (
-                        <div className="flex items-center gap-1 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-blue-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingMessageId(message.id);
-                              setEditContent(message.content);
-                            }}
-                            disabled={editMessageMutation.isPending}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          
-                          {allowMessageDeletion && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this note?')) {
-                                  deleteMessageMutation.mutate(message.id);
-                                }
-                              }}
-                              disabled={deleteMessageMutation.isPending}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      )}
                     </div>
                     
                     {editingMessageId === message.id ? (
-                      <div className="space-y-3">
+                      <div className="space-y-3 mt-3">
                         <RichTextEditor
                           content={editContent}
                           onChange={setEditContent}
-                          placeholder="Leave us a message..."
+                          placeholder={placeholder}
                           className="min-h-[120px]"
                           maxHeight="none"
                         />
@@ -675,40 +538,30 @@ export function MessagingSystem({
                             {editContent.length}/1000 characters
                           </div>
                           
-                          {/* Auto-save status indicator */}
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {isAutoSaving ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
-                                  <span>Saving...</span>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                  Auto-saving...
                                 </>
                               ) : hasSaveError ? (
-                                <>
-                                  <div className="h-2 w-2 bg-red-500 rounded-full"></div>
-                                  <span>Save failed</span>
-                                </>
-                              ) : draftMessageId ? (
-                                <>
-                                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                                  <span>Draft saved</span>
-                                </>
-                              ) : editContent.trim() ? (
-                                <span>Type to auto-save</span>
+                                <span className="text-red-500">Save failed</span>
+                              ) : lastSavedContent.trim() && editContent.trim() === lastSavedContent.trim() ? (
+                                <span className="text-green-600">Saved</span>
                               ) : null}
                             </div>
                           </div>
                           
                           <div className="flex gap-2">
                             <Button
+                              variant="default"
                               size="sm"
                               onClick={() => {
-                                if (editContent.trim()) {
-                                  editMessageMutation.mutate({
-                                    messageId: message.id,
-                                    content: editContent
-                                  });
-                                }
+                                editMessageMutation.mutate({
+                                  messageId: message.id,
+                                  content: editContent
+                                });
                               }}
                               disabled={editMessageMutation.isPending || !editContent.trim()}
                             >
@@ -735,28 +588,94 @@ export function MessagingSystem({
                         </div>
                       </div>
                     ) : (
-                      message.messageType === 'rich-text' ? (
-                        <MessageDisplay 
-                          content={message.content} 
-                          className="text-sm"
-                        />
-                      ) : (
-                        <p className="text-sm text-foreground break-words">
-                          {message.content}
-                        </p>
-                      )
+                      <div 
+                        className="mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingMessageId(message.id);
+                          setEditContent((message as any).compiledContent || message.content);
+                        }}
+                      >
+                        <MessageDisplay content={(message as any).compiledContent || message.content} />
+                      </div>
                     )}
                   </div>
                 </div>
               ))}
+              
+              {filteredMessages.length > 0 && editingMessageId === -1 && (
+                <div className="space-y-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                  <RichTextEditor
+                    content={editContent}
+                    onChange={setEditContent}
+                    placeholder={placeholder}
+                    className="min-h-[120px]"
+                    maxHeight="none"
+                  />
+                  
+                  <div className="flex items-center gap-2 justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      {editContent.length}/1000 characters
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          if (editContent.trim()) {
+                            createMessageMutation.mutate({
+                              content: editContent,
+                              messageType: 'rich-text',
+                              priority: 'normal',
+                              isPrivate: false
+                            });
+                            setEditingMessageId(null);
+                            setEditContent('');
+                          }
+                        }}
+                        disabled={createMessageMutation.isPending || !editContent.trim()}
+                      >
+                        {createMessageMutation.isPending ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                        ) : (
+                          <Send className="h-3 w-3 mr-1" />
+                        )}
+                        {isNoteMode ? 'Save' : 'Send'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingMessageId(null);
+                          setEditContent('');
+                        }}
+                        disabled={createMessageMutation.isPending}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>
 
-
+        {filteredMessages.length > 0 && editingMessageId !== -1 && (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditingMessageId(-1)}
+              disabled={createMessageMutation.isPending}
+            >
+              Add New Message
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
-
-export default MessagingSystem;
