@@ -151,20 +151,21 @@ export function MessagingSystem({
     },
   });
 
-  // Fetch messages via proper hybrid architecture - PostgreSQL first, then MongoDB content
+  // Fetch data via proper hybrid architecture - PostgreSQL first, then MongoDB content
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: ['/api/messaging/notes', userId],
+    queryKey: isNoteMode ? ['/api/messaging/notes', userId] : ['/api/messaging/messages', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/messaging/notes`, {
+      const endpoint = isNoteMode ? '/api/messaging/notes' : '/api/messaging/messages';
+      const response = await fetch(endpoint, {
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+        throw new Error(`Failed to fetch ${isNoteMode ? 'notes' : 'messages'}: ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('Messages fetched via hybrid architecture:', data);
+      console.log(`${isNoteMode ? 'Notes' : 'Messages'} fetched via hybrid architecture:`, data);
       return data;
     },
     enabled: !!userId,
@@ -311,13 +312,13 @@ export function MessagingSystem({
       
       // Show success toast
       toast({
-        title: 'Motivation sent',
-        description: 'Your motivation has been sent.',
+        title: isNoteMode ? 'Note saved' : 'Message sent',
+        description: isNoteMode ? 'Your note has been saved.' : 'Your message has been sent.',
       });
     },
     onError: (error) => {
       toast({
-        title: 'Failed to send note',
+        title: isNoteMode ? 'Failed to save note' : 'Failed to send message',
         description: error.message,
         variant: 'destructive',
       });
@@ -455,7 +456,7 @@ export function MessagingSystem({
         <CardContent className="p-6">
           <div className="flex items-center justify-center text-red-600 dark:text-red-400">
             <AlertCircle className="h-5 w-5 mr-2" />
-            Failed to load messages
+            Failed to load {isNoteMode ? 'notes' : 'messages'}
           </div>
         </CardContent>
       </Card>
@@ -565,7 +566,7 @@ export function MessagingSystem({
                       ) : (
                         <Send className="h-3 w-3 mr-1" />
                       )}
-                      Send
+                      {isNoteMode ? 'Save' : 'Send'}
                     </Button>
                     <Button
                       variant="outline"
