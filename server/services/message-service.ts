@@ -3,6 +3,30 @@ import { storage } from '../storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
 
+/*
+ * CRITICAL ARCHITECTURE RULE - NO SQL FALLBACK FOR CONTENT
+ * 
+ * This service implements a strict hybrid database architecture:
+ * - PostgreSQL: stores ONLY metadata and MongoDB ObjectId references
+ * - MongoDB: stores ONLY rich text content and files
+ * 
+ * FALLBACK PROHIBITION:
+ * Creating any SQL fallback mechanism for content or files is STRICTLY FORBIDDEN
+ * as it represents complete corruption of the system's architectural intent.
+ * 
+ * The system MUST fail explicitly when MongoDB is unavailable rather than
+ * silently storing content in PostgreSQL, which would:
+ * 1. Corrupt data integrity
+ * 2. Create inconsistent storage patterns
+ * 3. Violate the hybrid architecture principles
+ * 4. Make the system unreliable and unpredictable
+ * 
+ * REQUIRED BEHAVIOR:
+ * - MongoDB unavailable = System fails with clear error message
+ * - PostgreSQL content field = MongoDB ObjectId reference ONLY
+ * - No content ever stored in PostgreSQL under any circumstances
+ */
+
 // Service layer message with compiled content
 export interface ServiceMessage extends NoteRef {
   compiledContent?: string;
