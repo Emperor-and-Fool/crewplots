@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/contexts/profile-context';
+
 import { 
   Card, 
   CardContent, 
@@ -11,14 +12,15 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/components/ui/messaging-system';
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading, error: profileError } = useProfile();
+  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
   const isAuthenticated = !!user;
   const isApplicant = user?.role === 'applicant';
 
@@ -35,8 +37,10 @@ function ApplicantPortal() {
 
   const isProfileError = !profile && !profileLoading && profileError;
 
+  // Handle profile API errors only
   if (isProfileError) {
     const errorMessage = profileError?.message || 'Unknown error';
+
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
@@ -52,6 +56,7 @@ function ApplicantPortal() {
     );
   }
 
+  // Show loading state for profile loading only
   if (profileLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -60,10 +65,17 @@ function ApplicantPortal() {
         <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
           <div className="h-full bg-primary animate-pulse"></div>
         </div>
+        {/* Debug info */}
+        <div className="mt-8 text-xs text-gray-500">
+          <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+          <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
+        </div>
       </div>
     );
   }
 
+  // Get the applicant status badge color
+  // Function to get the class name for status badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'new':
@@ -117,6 +129,7 @@ function ApplicantPortal() {
                   <p className="text-sm font-medium text-gray-500">Phone</p>
                   <p className="text-lg">{profile.phone}</p>
                 </div>
+
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="text-lg">
@@ -137,6 +150,7 @@ function ApplicantPortal() {
                   <p className="text-gray-700">{profile.extraMessage}</p>
                 </div>
               )}
+
             </div>
           ) : (
             <div className="py-4">
@@ -146,6 +160,7 @@ function ApplicantPortal() {
         </CardContent>
       </Card>
 
+      {/* Messaging system - only show when profile data is loaded */}
       {profile && (
         <Card className="mb-8">
           <CardHeader className="pb-2">
@@ -169,6 +184,25 @@ function ApplicantPortal() {
                 });
               }}
             />
+          </CardContent>
+        </Card>
+      )}
+
+
+
+      {process.env.NODE_ENV !== 'production' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Information</CardTitle>
+            <CardDescription>Profile debugging data (only visible in development)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Profile Data</h3>
+              <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
+                {JSON.stringify(profile, null, 2)}
+              </pre>
+            </div>
           </CardContent>
         </Card>
       )}
