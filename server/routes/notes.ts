@@ -18,7 +18,7 @@ const requireAuth = (req: any, res: any, next: any) => {
 router.get('/', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user.id;
-    console.log(`Fetching notes for user ${userId}`);
+    console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
     
     // Use MessageService for proper hybrid retrieval
     console.log('🔍 Using MessageService for hybrid retrieval');
@@ -73,7 +73,7 @@ router.post('/', requireAuth, async (req: any, res) => {
 
 // Update note for authenticated user
 router.put('/:id', requireAuth, async (req: any, res) => {
-  console.log('📝 PUT /notes/:id started');
+  console.log('✅ NOTES ROUTE HIT: PUT /api/messaging/notes/:id started');
   console.log('- Route params:', req.params);
   console.log('- Request body:', req.body);
   

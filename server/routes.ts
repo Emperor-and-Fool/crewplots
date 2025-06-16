@@ -238,6 +238,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug middleware to track all requests
+  app.use((req, res, next) => {
+    console.log(`🔍 REQUEST TRACKER: ${req.method} ${req.originalUrl} ${req.path}`);
+    if (req.method === 'PUT') {
+      console.log(`🚨 PUT REQUEST DETAILS:`);
+      console.log(`- Original URL: ${req.originalUrl}`);
+      console.log(`- Path: ${req.path}`);
+      console.log(`- Headers: ${JSON.stringify(req.headers, null, 2)}`);
+    }
+    next();
+  });
+
   // Use route modules
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
