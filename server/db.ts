@@ -48,13 +48,13 @@ export const db = drizzle(pool, { schema });
 
 // Initial connection check (don't block server startup)
 checkDatabaseConnection()
-  .then(isConnected => {
-    if (isConnected) {
+  .then((connected) => {
+    if (connected) {
       console.log('✅ Database connection established successfully');
     } else {
-      console.error('❌ Failed to connect to database');
+      console.warn('⚠️ Database connection check failed at startup');
     }
   })
-  .catch(err => {
-    console.error('❌ Error checking database connection:', err);
+  .catch((error) => {
+    console.error('❌ Database startup check failed:', error);
   });

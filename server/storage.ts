@@ -194,42 +194,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select({
-      id: users.id,
-      public_id: users.public_id,
-      username: users.username,
-      password: users.password,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      name: users.name,
-      role: users.role,
-      locationId: users.locationId,
-      phoneNumber: users.phoneNumber,
-      status: users.status,
-      resumeUrl: users.resumeUrl,
-      createdAt: users.createdAt
-    }).from(users).where(eq(users.username, username));
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select({
-      id: users.id,
-      public_id: users.public_id,
-      username: users.username,
-      password: users.password,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      name: users.name,
-      role: users.role,
-      locationId: users.locationId,
-      phoneNumber: users.phoneNumber,
-      status: users.status,
-      resumeUrl: users.resumeUrl,
-      createdAt: users.createdAt
-    }).from(users).where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
 
@@ -257,7 +227,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersByRole(role: string): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.role, role));
+    return await db.select().from(users).where(eq(users.role, role as any));
   }
 
   async getUsersByLocation(locationId: number): Promise<User[]> {
@@ -391,7 +361,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicantsByStatus(status: string): Promise<User[]> {
-    return await db.select().from(users).where(and(eq(users.role, 'applicant'), eq(users.status, status)));
+    return await db.select().from(users).where(and(eq(users.role, 'applicant'), eq(users.status, status as any)));
   }
 
   async getApplicantByUserId(userId: number): Promise<User | undefined> {
@@ -706,7 +676,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
-    return await db.select().from(noteRefs).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
+    return await db.select().from(noteRefs).where(eq(noteRefs.userId, applicantId)).orderBy(noteRefs.createdAt);
   }
 
   async createNoteRef(message: InsertNoteRef): Promise<NoteRef> {
@@ -739,7 +709,7 @@ export class DatabaseStorage implements IStorage {
     
     // Check if user is the applicant themselves
     const applicant = await this.getApplicant(applicantId);
-    if (applicant && applicant.userId === userId) {
+    if (applicant && applicant.id === userId) {
       return true;
     }
     
