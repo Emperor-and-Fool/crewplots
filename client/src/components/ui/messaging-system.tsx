@@ -617,15 +617,8 @@ export function MessagingSystem({
                   }`}
                   onClick={() => onMessageClick?.(message)}
                 >
-                  <div className="flex-shrink-0">
-                    {getMessageIcon(message.messageType)}
-                  </div>
-                  
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium">
-                        {message.userId === userId ? 'You' : 'System'}
-                      </span>
                       
                       {message.priority !== 'normal' && (
                         <Badge className={getPriorityColor(message.priority)}>
