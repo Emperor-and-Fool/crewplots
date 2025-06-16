@@ -201,7 +201,7 @@ export function MessagingSystem({
     },
     onSuccess: (_, deletedMessageId) => {
       // Directly update cache by removing the deleted message
-      queryClient.setQueryData<Message[]>(['/api/notes', userId], (old = []) => {
+      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return old.filter(msg => msg.id !== deletedMessageId);
       });
       
@@ -225,7 +225,7 @@ export function MessagingSystem({
   // Edit message mutation
   const editMessageMutation = useMutation({
     mutationFn: async ({ messageId, content }: { messageId: number, content: string }): Promise<void> => {
-      const response = await fetch(`/api/notes/${messageId}`, {
+      const response = await fetch(`/api/messaging/notes/${messageId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ export function MessagingSystem({
     },
     onSuccess: (_, { messageId, content }) => {
       // Directly update cache with the new content
-      queryClient.setQueryData<Message[]>(['/api/notes', userId], (old = []) => {
+      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return old.map(msg => 
           msg.id === messageId 
             ? { ...msg, content, updatedAt: new Date() }
@@ -278,7 +278,7 @@ export function MessagingSystem({
         isPrivate: data.isPrivate,
       };
 
-      const response = await fetch('/api/notes', {
+      const response = await fetch('/api/messaging/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(messageData),
@@ -296,7 +296,7 @@ export function MessagingSystem({
       setHasCreatedMessage(true);
       
       // Directly update cache with server response (setQueryData strategy)
-      queryClient.setQueryData<Message[]>(['/api/notes', userId], (old = []) => {
+      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
         return [...(old || []), newMessage];
       });
       
