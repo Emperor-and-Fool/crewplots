@@ -506,9 +506,6 @@ export function MessagingSystem({
                 />
                 
                 <div className="flex items-center gap-2 justify-between">
-                  <div className="text-xs text-muted-foreground">
-                    {editContent.length}/1000 characters
-                  </div>
                   
                   {/* Auto-save status indicator */}
                   <div className="flex items-center justify-between mb-2">
@@ -691,9 +688,6 @@ export function MessagingSystem({
                         />
                         
                         <div className="flex items-center gap-2 justify-between">
-                          <div className="text-xs text-muted-foreground">
-                            {editContent.length}/1000 characters
-                          </div>
                           
                           {/* Auto-save status indicator */}
                           <div className="flex items-center justify-between mb-2">
