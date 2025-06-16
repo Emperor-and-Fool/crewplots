@@ -256,8 +256,8 @@ export function MessagingSystem({
       setEditContent('');
       
       toast({
-        title: 'Note updated',
-        description: 'Your note has been successfully updated.',
+        title: 'Motivation saved',
+        description: 'Your motivation has been saved.',
       });
     },
     onError: (error) => {
@@ -311,8 +311,8 @@ export function MessagingSystem({
       
       // Show success toast
       toast({
-        title: 'Note sent',
-        description: 'Your note has been successfully sent.',
+        title: 'Motivation sent',
+        description: 'Your motivation has been sent.',
       });
     },
     onError: (error) => {
