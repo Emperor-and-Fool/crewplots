@@ -538,14 +538,26 @@ export function MessagingSystem({
                       size="sm"
                       onClick={() => {
                         if (editContent.trim()) {
-                          form.setValue('content', editContent);
-                          form.setValue('messageType', 'rich-text');
-                          form.handleSubmit(onSubmit)();
+                          if (draftMessageId) {
+                            // Use edit mutation (PUT) for existing draft
+                            editMessageMutation.mutate({
+                              messageId: draftMessageId,
+                              content: editContent
+                            });
+                          } else {
+                            // Only create new if no draft exists
+                            createMessageMutation.mutate({
+                              content: editContent,
+                              messageType: 'rich-text',
+                              priority: 'normal',
+                              isPrivate: false
+                            });
+                          }
                           setEditingMessageId(null);
                           setEditContent('');
                         }
                       }}
-                      disabled={createMessageMutation.isPending || !editContent.trim()}
+                      disabled={editMessageMutation.isPending || createMessageMutation.isPending || !editContent.trim()}
                     >
                       {createMessageMutation.isPending ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
