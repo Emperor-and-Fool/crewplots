@@ -22,7 +22,9 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     // Use MessageService for proper hybrid retrieval
     console.log('🔍 Using MessageService for hybrid retrieval');
-    const messages = await messageService.getNoteRefsByUser(userId);
+    const messages = await withMongoDBRetry(() => 
+      messageService.getNoteRefsByUser(userId)
+    );
     
     console.log(`Fetched ${messages.length} notes for user ${userId}`);
     res.json(messages);
