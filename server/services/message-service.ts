@@ -178,16 +178,22 @@ export class MessageService {
   private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
     const documentId = postgresMessage.content;
     
+    console.log(`🔍 COMPILING MESSAGE: PostgreSQL content field = ${documentId}`);
+    
     // Content must be a valid ObjectId referencing MongoDB
     if (!ObjectId.isValid(documentId)) {
+      console.error(`❌ INVALID OBJECTID: ${documentId}`);
       throw new Error(`Invalid document reference: ${documentId}`);
     }
     
+    console.log(`✅ Valid ObjectId, fetching from MongoDB: ${documentId}`);
     const document = await this.getMongoDocument(documentId);
     if (!document) {
+      console.error(`❌ MONGODB DOCUMENT NOT FOUND: ${documentId}`);
       throw new Error(`MongoDB document not found: ${documentId}`);
     }
     
+    console.log(`✅ MongoDB document found, content length: ${document.content.length}`);
     return {
       ...postgresMessage,
       documentId,
