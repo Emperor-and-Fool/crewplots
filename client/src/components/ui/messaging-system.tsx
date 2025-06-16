@@ -487,7 +487,7 @@ export function MessagingSystem({
 
       <CardContent className="space-y-4">
         {/* Messages Display */}
-        <ScrollArea className={`rounded-md border p-3`} style={{ maxHeight }}>
+        <ScrollArea className={`rounded-md border p-3`}>
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>

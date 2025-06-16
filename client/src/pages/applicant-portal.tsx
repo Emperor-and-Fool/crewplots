@@ -202,7 +202,6 @@ function ApplicantPortal() {
               placeholder="Type your note about your application..."
               showPriority={false}
               showPrivateToggle={false}
-              maxHeight="300px"
               compactMode={true}
               workflow="application"
               documentStorage={true}
