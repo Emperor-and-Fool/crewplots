@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messagesRoutes);
   app.use('/api/documents', documentsRoutes);
   app.use('/api/mongodb', mongodbMessagesRoutes);
-  app.use('/api/notes', notesRoutes);
+  app.use('/api/messaging/notes', notesRoutes);
 
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);

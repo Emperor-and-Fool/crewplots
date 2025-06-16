@@ -153,9 +153,9 @@ export function MessagingSystem({
 
   // Fetch messages via proper hybrid architecture - PostgreSQL first, then MongoDB content
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: ['/api/notes', userId],
+    queryKey: ['/api/messaging/notes', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/notes`, {
+      const response = await fetch(`/api/messaging/notes`, {
         credentials: 'include'
       });
       
@@ -190,7 +190,7 @@ export function MessagingSystem({
   // Delete message mutation
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: number): Promise<void> => {
-      const response = await fetch(`/api/notes/${messageId}`, {
+      const response = await fetch(`/api/messaging/notes/${messageId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
