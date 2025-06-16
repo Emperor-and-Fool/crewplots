@@ -408,13 +408,13 @@ export function MessagingSystem({
     if (editContent.trim() && editContent !== lastSavedContent) {
       const timeoutId = setTimeout(() => {
         if (isNoteMode) {
-          // Note mode: ensure only one note per user
-          if (filteredMessages.length > 0) {
+          // Note mode: ensure only one note per user - SET DRAFT ID FIRST
+          if (filteredMessages.length > 0 && !draftMessageId) {
             setDraftMessageId(filteredMessages[0].id);
+            // Wait for state update before auto-saving
+            setTimeout(() => autoSaveDraftMutation.mutate(editContent), 100);
+            return;
           }
-        } else {
-          // Messages mode: traditional messaging behavior
-          // Auto-save as draft but allow multiple messages
         }
         autoSaveDraftMutation.mutate(editContent);
       }, 500);
