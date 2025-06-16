@@ -14,24 +14,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, Calendar, Clock, AlertCircle, CheckCircle, FileText, LogOut, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
 import { MessagingSystem } from '@/components/ui/messaging-system';
-
-// Interface already defined in profile-context.tsx - no need to duplicate
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Redirect if not authenticated or not an applicant
   const isAuthenticated = !!user;
   const isApplicant = user?.role === 'applicant';
-  const userId = user?.id;
 
   React.useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isApplicant)) {
@@ -44,26 +35,7 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  // Now using persistent profile context - no more null states!
-  
   const isProfileError = !profile && !profileLoading && profileError;
-
-  // Documents system removed - was causing API cascade failures
-  // All applicants debug query removed - not needed for profile view
-  // Timeout detection removed - ProfileScraperInit handles loading efficiently
-  // Removed redundant refresh mechanism since ProfileScraperInit handles data persistence
-  // Retry function removed - ProfileScraperInit handles loading efficiently
-  // All ghost timeout detection completely removed
-  // Simplified debug logging - only profile
-
-  React.useEffect(() => {
-    if (isProfileError) {
-      console.error("Error loading profile:", profileError);
-    }
-    // Profile logging removed to prevent sensitive data exposure
-  }, [profile, isProfileError, profileError]);
-
-  // Ghost timeout warning completely removed - ProfileScraperInit handles loading efficiently
 
   // Handle profile API errors only
   if (isProfileError) {
@@ -218,9 +190,6 @@ function ApplicantPortal() {
 
 
 
-      {/* Documents section removed - was causing API cascade issues */}
-
-      {/* Debug section simplified - only profile data */}
       {process.env.NODE_ENV !== 'production' && (
         <Card>
           <CardHeader>

@@ -137,8 +137,6 @@ export function MessagingSystem({
   const [isAutoSaving, setIsAutoSaving] = React.useState<boolean>(false);
   const [hasSaveError, setHasSaveError] = React.useState<boolean>(false);
 
-
-
   // Form setup with validation
   const form = useForm<MessageFormData>({
     resolver: zodResolver(messageFormSchema),
@@ -174,19 +172,7 @@ export function MessagingSystem({
     staleTime: 0, // Always consider data stale for instant updates
   });
 
-  // Disabled automatic message creation - user must explicitly click button
-  // React.useEffect(() => {
-  //   if (userId && messages.length === 0 && !isLoading && !hasCreatedMessage) {
-  //     // Create initial empty message file
-  //     createMessageMutation.mutate({
-  //       content: '',
-  //       messageType: 'rich-text',
-  //       priority: 'normal',
-  //       isPrivate: false,
-  //     });
-  //     setHasCreatedMessage(true);
-  //   }
-  // }, [userId, messages.length, isLoading, hasCreatedMessage]);
+
 
   // Delete message mutation
   const deleteMessageMutation = useMutation({
