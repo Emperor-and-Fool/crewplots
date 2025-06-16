@@ -99,7 +99,7 @@ export class MessageService {
 
   // Update MongoDB document content
   private async updateContentDocument(documentId: string, newContent: string): Promise<void> {
-    const db = mongoConnection.getDatabase();
+    const db = this.getDatabase();
     const collection = db.collection<MessageDocument>('note_files');
 
     // Recalculate metadata for updated content
@@ -126,91 +126,68 @@ export class MessageService {
   private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
     const documentId = postgresMessage.content;
     
-    // If content looks like an ObjectId, fetch from MongoDB
-    if (ObjectId.isValid(documentId)) {
-      const document = await this.getMongoDocument(documentId);
-      
-      if (document) {
-        return {
-          ...postgresMessage,
-          documentId,
-          compiledContent: document.content,
-          content: document.content, // Replace for frontend consumption
-        };
-      }
+    // Content must be a valid ObjectId referencing MongoDB
+    if (!ObjectId.isValid(documentId)) {
+      throw new Error(`Invalid document reference: ${documentId}`);
     }
     
-    // Fallback to PostgreSQL content
+    const document = await this.getMongoDocument(documentId);
+    if (!document) {
+      throw new Error(`MongoDB document not found: ${documentId}`);
+    }
+    
     return {
       ...postgresMessage,
-      compiledContent: postgresMessage.content,
+      documentId,
+      compiledContent: document.content,
+      content: document.content, // Replace for frontend consumption
     };
   }
 
   // Create message with dual-database coordination
   async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
-    const mongoAvailable = await this.isMongoDBAvailable();
-    console.log('DEBUG: mongoAvailable =', mongoAvailable);
+    console.log('Creating message with MongoDB storage for applicant user', messageData.userId);
     
-    if (mongoAvailable) {
-      console.log('MongoDB available, using MongoDB storage for applicant user', messageData.userId);
-      
-      // Step 1: Store rich content in MongoDB
-      const documentId = await this.storeContentDocument(messageData.content, {
-        contentType: 'rich-text',
-        workflow: messageData.workflow || 'application',
-      });
+    // Step 1: Store rich content in MongoDB
+    const documentId = await this.storeContentDocument(messageData.content, {
+      contentType: 'rich-text',
+      workflow: messageData.workflow || 'application',
+    });
 
-      // Step 2: Calculate metadata for PostgreSQL
-      const plainText = messageData.content.replace(/<[^>]*>/g, '');
-      const metadata = {
-        wordCount: plainText.trim().split(/\s+/).length,
-        characterCount: plainText.length,
-        htmlLength: messageData.content.length,
-      };
+    // Step 2: Calculate metadata for PostgreSQL
+    const plainText = messageData.content.replace(/<[^>]*>/g, '');
+    const metadata = {
+      wordCount: plainText.trim().split(/\s+/).length,
+      characterCount: plainText.length,
+      htmlLength: messageData.content.length,
+    };
 
-      // Step 3: Create relational record in PostgreSQL with MongoDB reference and metadata
-      const postgresMessage = await storage.createNoteRef({
-        ...messageData,
-        content: documentId, // Store MongoDB ObjectId as reference
-        documentId: documentId, // New hybrid architecture field
-        documentType: messageData.workflow || 'motivation',
-        wordCount: metadata.wordCount,
-        characterCount: metadata.characterCount,
-        htmlLength: metadata.htmlLength,
-      });
+    // Step 3: Create relational record in PostgreSQL with MongoDB reference and metadata
+    const postgresMessage = await storage.createNoteRef({
+      ...messageData,
+      content: documentId, // Store MongoDB ObjectId as reference
+      documentId: documentId, // New hybrid architecture field
+      documentType: messageData.workflow || 'motivation',
+      wordCount: metadata.wordCount,
+      characterCount: metadata.characterCount,
+      htmlLength: metadata.htmlLength,
+    });
 
-      // Step 4: Update MongoDB document with PostgreSQL reference
-      await this.updateDocumentMessageReference(documentId, postgresMessage.id);
+    // Step 4: Update MongoDB document with PostgreSQL reference
+    await this.updateDocumentMessageReference(documentId, postgresMessage.id);
 
-      // Step 5: Return unified data structure
-      return {
-        ...postgresMessage,
-        documentId,
-        compiledContent: messageData.content,
-        content: messageData.content, // Keep original content for frontend
-      };
-    } else {
-      console.log('MongoDB unavailable, using PostgreSQL virtual document tables');
-      
-      // Fallback to PostgreSQL-only mode
-      const postgresMessage = await storage.createNoteRef(messageData);
-      return {
-        ...postgresMessage,
-        compiledContent: postgresMessage.content,
-      };
-    }
+    // Step 5: Return unified data structure
+    return {
+      ...postgresMessage,
+      documentId,
+      compiledContent: messageData.content,
+      content: messageData.content, // Keep original content for frontend
+    };
   }
 
   // Get messages by user with content compilation
   async getNoteRefsByUser(userId: number): Promise<ServiceMessage[]> {
-    const mongoAvailable = await this.isMongoDBAvailable();
-    
-    if (mongoAvailable) {
-      console.log('MongoDB available, using hybrid storage for applicant user', userId);
-    } else {
-      console.log('MongoDB not available, using PostgreSQL fallback for applicant user', userId);
-    }
+    console.log('Using hybrid storage for applicant user', userId);
     
     // Fetch metadata from PostgreSQL
     const postgresMessages = await storage.getNoteRefsByUser(userId);
@@ -226,79 +203,65 @@ export class MessageService {
 
   // Update message with content coordination
   async updateNoteRef(messageId: number, updates: { content?: string }): Promise<ServiceMessage> {
-    const mongoAvailable = await this.isMongoDBAvailable();
-    
     // Get existing message
     const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage) {
       throw new Error('Message not found');
     }
 
-    if (mongoAvailable && updates.content) {
-      console.log(`Updated message ${messageId} with MongoDB storage for applicant user ${existingMessage.userId}`);
-      
-      const documentId = existingMessage.content;
-      
-      // If content is MongoDB ObjectId, update MongoDB document
-      if (ObjectId.isValid(documentId)) {
-        await this.updateContentDocument(documentId, updates.content);
-        
-        // Calculate new metadata for PostgreSQL
-        const plainText = updates.content.replace(/<[^>]*>/g, '');
-        const metadata = {
-          wordCount: plainText.trim().split(/\s+/).length,
-          characterCount: plainText.length,
-          htmlLength: updates.content.length,
-        };
-        
-        // Update PostgreSQL metadata
-        const updatedMessage = await storage.updateNoteRef(messageId, {
-          wordCount: metadata.wordCount,
-          characterCount: metadata.characterCount,
-          htmlLength: metadata.htmlLength,
-        });
-        
-        return {
-          ...updatedMessage!,
-          documentId,
-          compiledContent: updates.content,
-          content: updates.content,
-        };
-      }
+    if (!updates.content) {
+      throw new Error('Content update required');
     }
+
+    console.log(`Updating message ${messageId} with MongoDB storage for applicant user ${existingMessage.userId}`);
     
-    // Fallback to PostgreSQL-only update
-    console.log(`Updated message ${messageId} with PostgreSQL storage for applicant user ${existingMessage.userId}`);
-    const updatedMessage = await storage.updateNoteRef(messageId, updates);
+    const documentId = existingMessage.content;
+    
+    // Content must be a MongoDB ObjectId
+    if (!ObjectId.isValid(documentId)) {
+      throw new Error(`Invalid document reference: ${documentId}`);
+    }
+
+    await this.updateContentDocument(documentId, updates.content);
+    
+    // Calculate new metadata for PostgreSQL
+    const plainText = updates.content.replace(/<[^>]*>/g, '');
+    const metadata = {
+      wordCount: plainText.trim().split(/\s+/).length,
+      characterCount: plainText.length,
+      htmlLength: updates.content.length,
+    };
+    
+    // Update PostgreSQL metadata
+    const updatedMessage = await storage.updateNoteRef(messageId, {
+      wordCount: metadata.wordCount,
+      characterCount: metadata.characterCount,
+      htmlLength: metadata.htmlLength,
+    });
+    
     return {
       ...updatedMessage!,
-      compiledContent: updatedMessage!.content,
+      documentId,
+      compiledContent: updates.content,
+      content: updates.content,
     };
   }
 
   // Delete message with cleanup
   async deleteNoteRef(messageId: number): Promise<boolean> {
-    const mongoAvailable = await this.isMongoDBAvailable();
-    
     // Get existing message for MongoDB cleanup
     const existingMessage = await storage.getNoteRef(messageId);
     if (!existingMessage) {
       return false;
     }
 
-    if (mongoAvailable) {
-      const documentId = existingMessage.content;
-      
-      // Delete MongoDB document if it exists
-      if (ObjectId.isValid(documentId)) {
-        try {
-          const db = mongoConnection.getDatabase();
-          const collection = db.collection('note_files');
-          await collection.deleteOne({ _id: new ObjectId(documentId) });
-        } catch (error) {
-          console.error('Error deleting MongoDB document:', error);
-        }
-      }
+    const documentId = existingMessage.content;
+    
+    // Delete MongoDB document if it exists
+    if (ObjectId.isValid(documentId)) {
+      const db = this.getDatabase();
+      const collection = db.collection('note_files');
+      await collection.deleteOne({ _id: new ObjectId(documentId) });
     }
 
     // Delete PostgreSQL record
@@ -308,7 +271,15 @@ export class MessageService {
   // Health check for both databases
   async healthCheck(): Promise<{ postgres: boolean; mongodb: boolean; serviceLayer: boolean }> {
     const postgresHealth = true; // DatabaseStorage doesn't have healthCheck method
-    const mongoHealth = await this.isMongoDBAvailable();
+    
+    let mongoHealth = false;
+    try {
+      const db = this.getDatabase();
+      await db.admin().ping();
+      mongoHealth = true;
+    } catch (error) {
+      mongoHealth = false;
+    }
     
     return {
       postgres: postgresHealth,
