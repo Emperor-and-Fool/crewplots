@@ -238,6 +238,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug middleware to catch all requests
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/notes')) {
+      console.log(`🔍 Request intercepted: ${req.method} ${req.path} -> routing to notes handler`);
+    }
+    next();
+  });
+
   // Use route modules
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
@@ -256,6 +264,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const baseUrl = req.protocol + '://' + req.get('host');
     const registerUrl = `${baseUrl}/register?source=qrcode`;
     res.json({ url: registerUrl });
+  });
+
+  // Catch-all for unhandled API routes
+  app.use('/api/*', (req, res) => {
+    console.log(`🚨 Unhandled API request: ${req.method} ${req.path}`);
+    res.status(404).json({ error: 'API endpoint not found' });
+  });
+
+  // Debug catch-all for non-API routes
+  app.use('*', (req, res, next) => {
+    if (req.method === 'PUT' && !req.path.startsWith('/api/')) {
+      console.log(`🚨 Non-API PUT request caught: ${req.method} ${req.path}`);
+    }
+    next();
   });
 
   // Create HTTP server
