@@ -334,7 +334,7 @@ export function MessagingSystem({
       };
 
       // Use single endpoint for all operations
-      const baseEndpoint = '/api/applicant-portal/messages';
+      const baseEndpoint = '/api/messaging/notes';
 
       if (draftMessageId) {
         // Update existing draft
