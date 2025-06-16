@@ -41,7 +41,7 @@ export class MessageService {
     return mongoConnection.getDatabase();
   }
 
-  // Store content document in MongoDB
+  // Store content document in MongoDB - NO FALLBACK ALLOWED
   private async storeContentDocument(
     content: string, 
     options: { 
@@ -50,7 +50,11 @@ export class MessageService {
     }
   ): Promise<string> {
     const db = this.getDatabase();
-    const collection = db.collection<MessageDocument>('note_files');
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
+    }
+    
+    const collection = db.collection<MessageDocument>('documents');
 
     // Calculate content metadata
     const plainText = content.replace(/<[^>]*>/g, '');
@@ -70,15 +74,23 @@ export class MessageService {
     };
 
     const result = await collection.insertOne(document);
+    if (!result.insertedId) {
+      throw new Error('CRITICAL: MongoDB document insertion failed - no fallback allowed');
+    }
+    
     return result.insertedId.toString();
   }
 
   // Update MongoDB document with PostgreSQL message reference
   private async updateDocumentMessageReference(documentId: string, messageId: number): Promise<void> {
     const db = this.getDatabase();
-    const collection = db.collection<MessageDocument>('note_files');
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
+    }
+    
+    const collection = db.collection<MessageDocument>('documents');
 
-    await collection.updateOne(
+    const result = await collection.updateOne(
       { _id: new ObjectId(documentId) },
       { 
         $set: { 
@@ -87,12 +99,20 @@ export class MessageService {
         } 
       }
     );
+    
+    if (result.matchedCount === 0) {
+      throw new Error(`CRITICAL: MongoDB document ${documentId} not found for reference update`);
+    }
   }
 
   // Get MongoDB document content
   private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
     const db = this.getDatabase();
-    const collection = db.collection<MessageDocument>('note_files');
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
+    }
+    
+    const collection = db.collection<MessageDocument>('documents');
     
     return await collection.findOne({ _id: new ObjectId(documentId) });
   }
@@ -100,7 +120,11 @@ export class MessageService {
   // Update MongoDB document content
   private async updateContentDocument(documentId: string, newContent: string): Promise<void> {
     const db = this.getDatabase();
-    const collection = db.collection<MessageDocument>('note_files');
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
+    }
+    
+    const collection = db.collection<MessageDocument>('documents');
 
     // Recalculate metadata for updated content
     const plainText = newContent.replace(/<[^>]*>/g, '');
@@ -110,7 +134,7 @@ export class MessageService {
       htmlLength: newContent.length,
     };
 
-    await collection.updateOne(
+    const result = await collection.updateOne(
       { _id: new ObjectId(documentId) },
       {
         $set: {
@@ -120,6 +144,10 @@ export class MessageService {
         }
       }
     );
+    
+    if (result.matchedCount === 0) {
+      throw new Error(`CRITICAL: MongoDB document ${documentId} not found for content update`);
+    }
   }
 
   // Compile PostgreSQL message with MongoDB content
@@ -144,15 +172,20 @@ export class MessageService {
     };
   }
 
-  // Create message with dual-database coordination
+  // Create message with dual-database coordination - MONGODB REQUIRED
   async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
     console.log('Creating message with MongoDB storage for applicant user', messageData.userId);
     
-    // Step 1: Store rich content in MongoDB
+    // Step 1: Store rich content in MongoDB - MUST SUCCEED
     const documentId = await this.storeContentDocument(messageData.content, {
       contentType: 'rich-text',
       workflow: messageData.workflow || 'application',
     });
+
+    // CRITICAL: Verify MongoDB document was created
+    if (!documentId || !ObjectId.isValid(documentId)) {
+      throw new Error('CRITICAL: MongoDB document creation failed - no fallback allowed');
+    }
 
     // Step 2: Calculate metadata for PostgreSQL
     const plainText = messageData.content.replace(/<[^>]*>/g, '');
@@ -162,10 +195,10 @@ export class MessageService {
       htmlLength: messageData.content.length,
     };
 
-    // Step 3: Create relational record in PostgreSQL with MongoDB reference and metadata
+    // Step 3: Create relational record in PostgreSQL with MongoDB reference ONLY
     const postgresMessage = await storage.createNoteRef({
       ...messageData,
-      content: documentId, // Store MongoDB ObjectId as reference
+      content: documentId, // ONLY MongoDB ObjectId - NEVER actual content
       documentId: documentId, // New hybrid architecture field
       documentType: messageData.workflow || 'motivation',
       wordCount: metadata.wordCount,
