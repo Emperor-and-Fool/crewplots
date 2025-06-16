@@ -25,6 +25,7 @@ import messagesRoutes from './routes/messages/index';
 import documentsRoutes from './routes/documents';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
+import notesRoutes from './routes/notes';
 
 import cacheTestRoutes from './routes/cache-test';
 
@@ -245,6 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messagesRoutes);
   app.use('/api/documents', documentsRoutes);
   app.use('/api/mongodb', mongodbMessagesRoutes);
+  app.use('/api/notes', notesRoutes);
 
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);
