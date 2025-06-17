@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { mongoConnection } from '../db-mongo';
+import { mongoConnection } from '../infrastructure/replit/mongo-proxy';
 import { ObjectId } from 'mongodb';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
