@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
-import { messageService } from '../services/message-service';
+import { messageStorageService } from '../services/message-storage-service';
 import { withMongoDBRetry } from '../utils/replit-mongodb-ondemand';
 
 import multer from 'multer';
