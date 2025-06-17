@@ -6,7 +6,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 
 import { RedisStore } from "connect-redis";
-import Redis from "ioredis";
+import { createClient } from "redis";
 import { pool } from "./database/db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
@@ -44,206 +44,82 @@ const upload = multer({
 
 
 
-// Complete Redis client interface for connect-redis compatibility
-class OnDemandRedisClient {
-  private static instance: OnDemandRedisClient;
+// Create Redis client for session store using official redis package
+async function createRedisClient() {
+  // Get Redis connection details from on-demand service
+  const redisPort = 6379;
+  const redisHost = '127.0.0.1';
   
-  static getInstance(): OnDemandRedisClient {
-    if (!OnDemandRedisClient.instance) {
-      OnDemandRedisClient.instance = new OnDemandRedisClient();
+  const client = createClient({
+    socket: {
+      host: redisHost,
+      port: redisPort,
+      connectTimeout: 10000,
+      reconnectStrategy: (retries) => {
+        // Exponential backoff with max delay
+        const delay = Math.min(retries * 50, 2000);
+        console.log(`Redis reconnect attempt ${retries} in ${delay}ms`);
+        return delay;
+      }
     }
-    return OnDemandRedisClient.instance;
-  }
+  });
 
-  // Basic Redis operations
-  async get(key: string): Promise<string | null> {
+  client.on('error', (err) => {
+    console.log('Redis client error:', err.message);
+    // Don't throw here, let the retry logic handle it
+  });
+
+  client.on('connect', () => {
+    console.log('✅ Redis client connected successfully');
+  });
+
+  client.on('reconnecting', () => {
+    console.log('🔄 Redis client reconnecting...');
+  });
+
+  client.on('ready', () => {
+    console.log('✅ Redis client ready');
+  });
+
+  // Connection with retry logic for on-demand service
+  let connected = false;
+  let retries = 0;
+  const maxRetries = 10;
+  
+  while (!connected && retries < maxRetries) {
     try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.get(key);
-      }, { connectionId: 'session-get', keepAlive: 5000 });
+      // Start on-demand Redis if needed
+      await onDemandRedis.withConnection(async () => {
+        // This ensures Redis server is running
+        return true;
+      }, { connectionId: 'session-startup', keepAlive: 1000 });
       
-      return result;
-    } catch (error) {
-      console.error('❌ Redis GET failed:', error);
-      return null;
-    }
-  }
-
-  async set(key: string, value: string, options?: any): Promise<string> {
-    console.log('🔧 Redis SET called:', { key: key.substring(0, 20) + '...', valueLength: value.length, options });
-    try {
-      await onDemandRedis.withConnection(async (redis: any) => {
-        if (options && options.expiration && options.expiration.type === 'EX') {
-          console.log('🔧 Using SETEX with TTL:', options.expiration.value);
-          await redis.setex(key, options.expiration.value, value);
-        } else if (options && options.EX) {
-          console.log('🔧 Using SETEX with EX:', options.EX);
-          await redis.setex(key, options.EX, value);
-        } else {
-          console.log('🔧 Using basic SET');
-          await redis.set(key, value);
-        }
-      }, { connectionId: 'session-set', keepAlive: 5000 });
+      // Small delay to ensure server is ready
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log('✅ Redis SET completed successfully');
-      return 'OK';
+      await client.connect();
+      connected = true;
+      console.log('✅ Redis session client connected');
     } catch (error) {
-      console.error('❌ Redis SET failed:', error);
-      throw error;
-    }
-  }
-
-  async setex(key: string, ttl: number, value: string): Promise<string> {
-    try {
-      await onDemandRedis.withConnection(async (redis: any) => {
-        await redis.setex(key, ttl, value);
-      }, { connectionId: 'session-set', keepAlive: 5000 });
+      retries++;
+      console.log(`Redis connection attempt ${retries}/${maxRetries} failed:`, error.message);
       
-      return 'OK';
-    } catch (error) {
-      console.error('❌ Redis SETEX failed:', error);
-      throw error;
+      if (retries < maxRetries) {
+        const delay = Math.min(retries * 1000, 5000);
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-  }
-
-  async del(...keys: string[]): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.del(...keys);
-      }, { connectionId: 'session-delete', keepAlive: 5000 });
-      
-      return result;
-    } catch (error) {
-      console.error('❌ Redis DEL failed:', error);
-      return 0;
-    }
-  }
-
-  // Multi-get operation
-  async mget(...keys: string[]): Promise<(string | null)[]> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.mget(...keys);
-      }, { connectionId: 'session-mget', keepAlive: 5000 });
-      
-      return result || [];
-    } catch (error) {
-      console.error('❌ Redis MGET failed:', error);
-      return new Array(keys.length).fill(null);
-    }
-  }
-
-  // Key existence check
-  async exists(...keys: string[]): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.exists(...keys);
-      }, { connectionId: 'session-exists', keepAlive: 5000 });
-      
-      return result || 0;
-    } catch (error) {
-      console.error('❌ Redis EXISTS failed:', error);
-      return 0;
-    }
-  }
-
-  // Time-to-live operations
-  async ttl(key: string): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.ttl(key);
-      }, { connectionId: 'session-ttl', keepAlive: 5000 });
-      
-      return result || -1;
-    } catch (error) {
-      console.error('❌ Redis TTL failed:', error);
-      return -1;
-    }
-  }
-
-  async pttl(key: string): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.pttl(key);
-      }, { connectionId: 'session-pttl', keepAlive: 5000 });
-      
-      return result || -1;
-    } catch (error) {
-      console.error('❌ Redis PTTL failed:', error);
-      return -1;
-    }
-  }
-
-  // Expiry operations
-  async expire(key: string, seconds: number): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.expire(key, seconds);
-      }, { connectionId: 'session-expire', keepAlive: 5000 });
-      
-      return result || 0;
-    } catch (error) {
-      console.error('❌ Redis EXPIRE failed:', error);
-      return 0;
-    }
-  }
-
-  async pexpire(key: string, milliseconds: number): Promise<number> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.pexpire(key, milliseconds);
-      }, { connectionId: 'session-pexpire', keepAlive: 5000 });
-      
-      return result || 0;
-    } catch (error) {
-      console.error('❌ Redis PEXPIRE failed:', error);
-      return 0;
-    }
-  }
-
-  // connect-redis specific methods
-  async destroy(key: string): Promise<number> {
-    return this.del(key);
-  }
-
-  async touch(key: string, ttl: number): Promise<number> {
-    return this.expire(key, ttl);
-  }
-
-  // Event emitter interface (required by connect-redis)
-  on(event: string, listener: (...args: any[]) => void): this { 
-    // No-op for our implementation
-    return this; 
   }
   
-  emit(event: string, ...args: any[]): boolean { 
-    // No-op for our implementation
-    return true; 
+  if (!connected) {
+    throw new Error('Failed to connect to Redis after maximum retries');
   }
   
-  removeAllListeners(event?: string): this { 
-    // No-op for our implementation
-    return this; 
-  }
-  
-  // Connection lifecycle methods
-  async quit(): Promise<string> { 
-    // On-demand service handles connection cleanup
-    return 'OK'; 
-  }
-  
-  async disconnect(): Promise<void> { 
-    // On-demand service handles connection cleanup
-    return; 
-  }
-
-  // Connection status (for connect-redis health checks)
-  get status(): string {
-    return 'ready';
-  }
+  return client;
 }
 
-const redisClient = OnDemandRedisClient.getInstance();
+let redisClient: any = null;
 
 // Suppress Redis connection error spam by overriding global error handler
 process.on('uncaughtException', (error) => {
@@ -266,7 +142,15 @@ process.on('unhandledRejection', (reason) => {
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session middleware
+  // Initialize Redis client for sessions
+  try {
+    redisClient = await createRedisClient();
+    console.log('✅ Redis session store initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Redis session store:', error);
+    throw error;
+  }
+
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
@@ -281,18 +165,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: '/'
       },
       store: new RedisStore({
-        client: redisClient as any,
+        client: redisClient,
         prefix: 'sess:',
-        ttl: 86400, // 24 hours
-        serializer: {
-          stringify: JSON.stringify,
-          parse: JSON.parse
-        },
-        disableTouch: true,
-        disableTTL: true
+        ttl: 86400 // 24 hours
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: false, // Don't save session if unmodified - reduces Redis load
+      resave: false, // Don't save session if unmodified
       saveUninitialized: false, // Don't create session until something stored
       name: 'crewplots.sid', // Custom name to avoid conflicts
       rolling: false // Don't reset cookie on every request
