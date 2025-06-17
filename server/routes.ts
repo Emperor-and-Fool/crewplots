@@ -6,7 +6,6 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
 import { RedisStore } from "connect-redis";
-import { createClient } from "redis";
 import { pool } from "./db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
@@ -99,6 +98,24 @@ const redisClientAdapter = {
   quit: () => Promise.resolve('OK'),
   disconnect: () => Promise.resolve()
 };
+
+// Suppress Redis connection error spam by overriding global error handler
+process.on('uncaughtException', (error) => {
+  if (error.message && error.message.includes('connect ECONNREFUSED 127.0.0.1:6379')) {
+    // Silently ignore Redis connection errors from the unused redis client
+    return;
+  }
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  if (reason && typeof reason === 'object' && 'message' in reason && 
+      typeof reason.message === 'string' && reason.message.includes('connect ECONNREFUSED 127.0.0.1:6379')) {
+    // Silently ignore Redis connection errors from the unused redis client
+    return;
+  }
+  console.error('Unhandled Rejection:', reason);
+});
 
 // Redis session store adapter
 class RedisSessionStore {

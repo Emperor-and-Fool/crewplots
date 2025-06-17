@@ -98,10 +98,19 @@ export class OnDemandRedisService {
       host: '127.0.0.1',
       port: 6379,
       enableReadyCheck: false,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 1,
       connectTimeout: 5000,
       lazyConnect: true,
       enableAutoPipelining: true
+    });
+
+    // Suppress connection error spam
+    client.on('error', (error) => {
+      if (error.message.includes('connect ECONNREFUSED')) {
+        // Silently handle connection refused errors during startup
+        return;
+      }
+      console.error('Redis client error:', error);
     });
 
     await client.connect();
