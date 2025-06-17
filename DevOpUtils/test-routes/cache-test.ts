@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { cacheService } from '../services/cache-service';
+import { cacheService } from '../../server/services/cache-service';
 import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 
 const router = Router();
