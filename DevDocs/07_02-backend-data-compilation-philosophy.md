@@ -84,11 +84,11 @@ The backend implements a data compilation strategy that merges PostgreSQL metada
 }
 ```
 
-### MessageStorageService Compilation Logic
+### MessageStorageService Note Compilation Logic
 
-#### Core Compilation Method
+#### Core Note Compilation Method
 ```typescript
-private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
+private async compileNote(postgresMessage: NoteRef): Promise<ServiceMessage> {
   console.log('🔍 COMPILING MESSAGE: PostgreSQL content field =', postgresMessage.content);
   
   // Validate ObjectId format

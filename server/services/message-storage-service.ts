@@ -185,11 +185,11 @@ export class MessageService {
     }
   }
 
-  // Compile PostgreSQL message with MongoDB content
-  private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
+  // Compile PostgreSQL note with MongoDB content
+  private async compileNote(postgresMessage: NoteRef): Promise<ServiceMessage> {
     const documentId = postgresMessage.content;
     
-    console.log(`🔍 COMPILING MESSAGE: PostgreSQL content field = ${documentId}`);
+    console.log(`🔍 COMPILING NOTE: PostgreSQL content field = ${documentId}`);
     
     // Content must be a valid ObjectId referencing MongoDB
     if (!ObjectId.isValid(documentId)) {
@@ -268,7 +268,7 @@ export class MessageService {
 
     // Compile with MongoDB content in parallel
     const compiledMessages = await Promise.all(
-      postgresMessages.map(msg => this.compileMessage(msg))
+      postgresMessages.map(msg => this.compileNote(msg))
     );
 
     console.log(`Fetched ${compiledMessages.length} compiled messages for applicant user ${userId}`);
