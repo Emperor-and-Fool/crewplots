@@ -28,9 +28,9 @@ import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/notes';
 
-import cacheTestRoutes from './routes/cache-test';
-import redisTestRoutes from './routes/redis-test';
-import redisMonitorRoutes from './routes/redis-monitor';
+import cacheTestRoutes from '../DevOpUtils/test-routes/cache-test';
+import redisTestRoutes from '../DevOpUtils/test-routes/redis-test';
+import redisMonitorRoutes from '../DevOpUtils/test-routes/redis-monitor';
 import { onDemandRedis } from '../adapters-repl/redis-ondemand/on-demand-service';
 
 // Setup multer for file uploads
