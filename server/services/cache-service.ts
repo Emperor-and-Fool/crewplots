@@ -1,4 +1,4 @@
-import { onDemandRedis } from './on-demand-service';
+import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-service';
 import type { User } from '@shared/schema';
 
 export interface CacheOptions {
