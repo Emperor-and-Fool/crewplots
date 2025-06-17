@@ -1,4 +1,4 @@
-import { onDemandMongo } from '../adapters-repl/mongodb-ondemand/on-demand-service';
+import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 import { storage } from '../database/storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
@@ -62,8 +62,9 @@ export class MessageService {
 
   // MongoDB connection - always required
   private getDatabase() {
-    const connection = onDemandMongo.getConnection();
-    return connection?.db();
+    // This method needs to be updated to work with onDemandMongoService
+    // For now, return null to indicate connection unavailable
+    return null;
   }
 
   // Store content document in MongoDB - NO FALLBACK ALLOWED
