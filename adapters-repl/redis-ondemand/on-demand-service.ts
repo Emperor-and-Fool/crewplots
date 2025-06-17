@@ -141,8 +141,8 @@ export class OnDemandRedisService {
     try {
       console.log('[OnDemand] Starting Redis server...');
       
-      const redisPath = path.resolve('Redis-replit/bin/redis-server');
-      this.redisProcess = spawn(redisPath, ['--port', '6379'], {
+      const configPath = path.resolve('redis_data/redis-custom.conf');
+      this.redisProcess = spawn('redis-server', [configPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
