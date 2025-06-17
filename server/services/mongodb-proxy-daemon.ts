@@ -58,6 +58,17 @@ class MongoDBProxyDaemon {
           throw new Error('MongoDB not connected');
         }
 
+        // Convert string _id to ObjectId if needed
+        if (filter._id && typeof filter._id === 'string') {
+          const { ObjectId } = await import('mongodb');
+          try {
+            filter._id = new ObjectId(filter._id);
+            console.log(`🔄 Converted string ID to ObjectId: ${filter._id}`);
+          } catch (err) {
+            console.log(`⚠️ String ID not valid ObjectId format, using as-is: ${filter._id}`);
+          }
+        }
+
         const document = await this.mongoDb.collection(collection).findOne(filter);
         res.json(document);
       } catch (error: any) {

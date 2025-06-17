@@ -146,7 +146,8 @@ export class MessageService {
       await this.initializeMongoProxy();
     }
     
-    return await mongoProxyClient.findOne('documents', { _id: new ObjectId(documentId) });
+    // Use string ID - ObjectId conversion happens in the proxy daemon
+    return await mongoProxyClient.findOne('message-content', { _id: documentId });
   }
 
   // Update MongoDB document content via proxy
@@ -164,8 +165,8 @@ export class MessageService {
     };
 
     const result = await mongoProxyClient.updateOne(
-      'documents',
-      { _id: new ObjectId(documentId) },
+      'message-content',
+      { _id: documentId },
       {
         $set: {
           content: newContent,
