@@ -69,16 +69,23 @@ class OnDemandRedisClient {
     }
   }
 
-  async set(key: string, value: string, ...args: any[]): Promise<string> {
+  async set(key: string, value: string, options?: any): Promise<string> {
+    console.log('🔧 Redis SET called:', { key: key.substring(0, 20) + '...', valueLength: value.length, options });
     try {
       await onDemandRedis.withConnection(async (redis: any) => {
-        if (args.length > 0 && args[0] === 'EX') {
-          await redis.setex(key, args[1], value);
+        if (options && options.expiration && options.expiration.type === 'EX') {
+          console.log('🔧 Using SETEX with TTL:', options.expiration.value);
+          await redis.setex(key, options.expiration.value, value);
+        } else if (options && options.EX) {
+          console.log('🔧 Using SETEX with EX:', options.EX);
+          await redis.setex(key, options.EX, value);
         } else {
+          console.log('🔧 Using basic SET');
           await redis.set(key, value);
         }
       }, { connectionId: 'session-set', keepAlive: 5000 });
       
+      console.log('✅ Redis SET completed successfully');
       return 'OK';
     } catch (error) {
       console.error('❌ Redis SET failed:', error);
@@ -281,8 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stringify: JSON.stringify,
           parse: JSON.parse
         },
-        disableTouch: false,
-        disableTTL: false
+        disableTouch: true,
+        disableTTL: true
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: false, // Don't save session if unmodified - reduces Redis load
