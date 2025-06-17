@@ -1,4 +1,4 @@
-import { mongoProxyClient } from './mongodb-proxy-client';
+import { mongoConnection } from '../database/db-mongo';
 import { storage } from '../database/storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
@@ -60,17 +60,12 @@ export class MessageService {
     return MessageService.instance;
   }
 
-  // Initialize MongoDB proxy connection
-  private async initializeMongoProxy() {
-    try {
-      await mongoProxyClient.connect();
-      console.log('✅ Message service connected to MongoDB proxy');
-    } catch (error) {
-      throw new Error('CRITICAL: MongoDB proxy connection failed - system requires MongoDB');
-    }
+  // MongoDB connection - always required
+  private getDatabase() {
+    return mongoConnection.getDatabase();
   }
 
-  // Store content document in MongoDB via proxy - NO FALLBACK ALLOWED
+  // Store content document in MongoDB - NO FALLBACK ALLOWED
   private async storeContentDocument(
     content: string, 
     options: { 
@@ -80,11 +75,14 @@ export class MessageService {
   ): Promise<string> {
     console.log(`🔍 STORING CONTENT: length=${content.length}, type=${options.contentType}`);
     
-    if (!mongoProxyClient.isConnected()) {
-      await this.initializeMongoProxy();
+    const db = this.getDatabase();
+    if (!db) {
+      console.error('❌ MONGODB CONNECTION FAILED');
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
-    console.log(`✅ MongoDB proxy connection established, using collection: documents`);
+    console.log(`✅ MongoDB connection established, using collection: documents`);
+    const collection = db.collection<MessageDocument>('documents');
 
     // Calculate content metadata
     const plainText = content.replace(/<[^>]*>/g, '');
@@ -104,9 +102,9 @@ export class MessageService {
     };
 
     console.log(`🔄 INSERTING DOCUMENT: ${JSON.stringify({ contentType: options.contentType, workflow: options.workflow, metadata })}`);
-    const result = await mongoProxyClient.insertOne('documents', document);
+    const result = await collection.insertOne(document);
     
-    console.log(`📊 INSERT RESULT: insertedId=${result.insertedId}`);
+    console.log(`📊 INSERT RESULT: acknowledged=${result.acknowledged}, insertedId=${result.insertedId}`);
     
     if (!result.insertedId) {
       console.error('❌ MONGODB INSERTION FAILED - NO INSERTED ID');
@@ -120,12 +118,14 @@ export class MessageService {
 
   // Update MongoDB document with PostgreSQL message reference
   private async updateDocumentMessageReference(documentId: string, messageId: number): Promise<void> {
-    if (!mongoProxyClient.isConnected()) {
-      await this.initializeMongoProxy();
+    const db = this.getDatabase();
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
+    
+    const collection = db.collection<MessageDocument>('documents');
 
-    const result = await mongoProxyClient.updateOne(
-      'documents',
+    const result = await collection.updateOne(
       { _id: new ObjectId(documentId) },
       { 
         $set: { 
@@ -135,26 +135,31 @@ export class MessageService {
       }
     );
     
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       throw new Error(`CRITICAL: MongoDB document ${documentId} not found for reference update`);
     }
   }
 
-  // Get MongoDB document content via proxy
+  // Get MongoDB document content
   private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
-    if (!mongoProxyClient.isConnected()) {
-      await this.initializeMongoProxy();
+    const db = this.getDatabase();
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
-    // Use string ID - ObjectId conversion happens in the proxy daemon
-    return await mongoProxyClient.findOne('message-content', { _id: documentId });
+    const collection = db.collection<MessageDocument>('documents');
+    
+    return await collection.findOne({ _id: new ObjectId(documentId) });
   }
 
-  // Update MongoDB document content via proxy
+  // Update MongoDB document content
   private async updateContentDocument(documentId: string, newContent: string): Promise<void> {
-    if (!mongoProxyClient.isConnected()) {
-      await this.initializeMongoProxy();
+    const db = this.getDatabase();
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
+    
+    const collection = db.collection<MessageDocument>('documents');
 
     // Recalculate metadata for updated content
     const plainText = newContent.replace(/<[^>]*>/g, '');
@@ -164,9 +169,8 @@ export class MessageService {
       htmlLength: newContent.length,
     };
 
-    const result = await mongoProxyClient.updateOne(
-      'message-content',
-      { _id: documentId },
+    const result = await collection.updateOne(
+      { _id: new ObjectId(documentId) },
       {
         $set: {
           content: newContent,
@@ -176,16 +180,16 @@ export class MessageService {
       }
     );
     
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       throw new Error(`CRITICAL: MongoDB document ${documentId} not found for content update`);
     }
   }
 
-  // Compile PostgreSQL note with MongoDB content
-  private async compileNote(postgresMessage: NoteRef): Promise<ServiceMessage> {
+  // Compile PostgreSQL message with MongoDB content
+  private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage> {
     const documentId = postgresMessage.content;
     
-    console.log(`🔍 COMPILING NOTE: PostgreSQL content field = ${documentId}`);
+    console.log(`🔍 COMPILING MESSAGE: PostgreSQL content field = ${documentId}`);
     
     // Content must be a valid ObjectId referencing MongoDB
     if (!ObjectId.isValid(documentId)) {
@@ -264,7 +268,7 @@ export class MessageService {
 
     // Compile with MongoDB content in parallel
     const compiledMessages = await Promise.all(
-      postgresMessages.map(msg => this.compileNote(msg))
+      postgresMessages.map(msg => this.compileMessage(msg))
     );
 
     console.log(`Fetched ${compiledMessages.length} compiled messages for applicant user ${userId}`);
@@ -329,10 +333,9 @@ export class MessageService {
     
     // Delete MongoDB document if it exists
     if (ObjectId.isValid(documentId)) {
-      if (!mongoProxyClient.isConnected()) {
-        await this.initializeMongoProxy();
-      }
-      await mongoProxyClient.deleteOne('documents', { _id: new ObjectId(documentId) });
+      const db = this.getDatabase();
+      const collection = db.collection('note_files');
+      await collection.deleteOne({ _id: new ObjectId(documentId) });
     }
 
     // Delete PostgreSQL record
@@ -341,12 +344,13 @@ export class MessageService {
 
   // Health check for both databases
   async healthCheck(): Promise<{ postgres: boolean; mongodb: boolean; serviceLayer: boolean }> {
-    const postgresHealth = !!storage;
+    const postgresHealth = true; // DatabaseStorage doesn't have healthCheck method
     
     let mongoHealth = false;
     try {
-      const health = await mongoProxyClient.checkHealth();
-      mongoHealth = health.mongodb;
+      const db = this.getDatabase();
+      await db.admin().ping();
+      mongoHealth = true;
     } catch (error) {
       mongoHealth = false;
     }
@@ -360,4 +364,4 @@ export class MessageService {
 }
 
 // Export singleton instance
-export const messageStorageService = MessageService.getInstance();
+export const messageService = MessageService.getInstance();

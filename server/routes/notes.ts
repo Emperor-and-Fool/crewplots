@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../database/storage';
-import { messageStorageService } from '../services/message-storage-service';
+import { messageService } from '../services/message-storage-service';
 
 import { z } from 'zod';
 
