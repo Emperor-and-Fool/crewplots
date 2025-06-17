@@ -1,4 +1,4 @@
-import { mongoConnection } from '../database/db-mongo';
+import { mongoProxyClient } from './mongodb-proxy-client';
 import { storage } from '../database/storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
