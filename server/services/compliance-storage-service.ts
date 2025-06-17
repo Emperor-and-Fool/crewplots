@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { noteRefs, type NoteRef, type InsertNoteRef } from "@shared/schema";
 import { storage } from "../storage";
-import { mongoConnection } from "../db-mongo";
+// import { mongoConnection } from "../db-mongo";
 import { ObjectId } from "mongodb";
 
 export interface ServiceMessage extends NoteRef {
@@ -24,9 +24,12 @@ interface MessageDocument {
 }
 
 /**
- * ComplianceStorageService - Hybrid PostgreSQL + MongoDB storage service for compliance documents
+ * ComplianceStorageService - TEMPLATE FILE FOR BACKLOG
  * 
- * Architecture:
+ * This is a template based on message-storage-service.ts for future compliance storage implementation.
+ * Not functional - contains commented implementations to show architectural pattern.
+ * 
+ * Intended Architecture:
  * - PostgreSQL: Stores compliance metadata and references
  * - MongoDB: Stores compliance content and rich data
  * - Explicit failure: No silent fallbacks - fails visibly when MongoDB unavailable
@@ -44,7 +47,8 @@ export class ComplianceStorageService {
   }
 
   private getDatabase() {
-    return mongoConnection.getDatabase();
+    // return mongoConnection.getDatabase();
+    throw new Error("Template file - MongoDB connection not implemented");
   }
 
   private async storeContentDocument(
