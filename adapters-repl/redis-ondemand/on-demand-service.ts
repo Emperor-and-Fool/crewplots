@@ -2,6 +2,31 @@ import { spawn, ChildProcess } from 'child_process';
 import Redis from 'ioredis';
 import path from 'path';
 
+/*
+ * CRITICAL ARCHITECTURE RULE - NO FALLBACK FOR REDIS SESSIONS
+ * 
+ * This service implements a strict Redis-only session architecture:
+ * - Redis: stores ALL session data, authentication state, and caching
+ * - NO PostgreSQL fallback for sessions under any circumstances
+ * 
+ * FALLBACK PROHIBITION:
+ * Creating any PostgreSQL fallback mechanism for sessions is STRICTLY FORBIDDEN
+ * as it represents complete corruption of the system's architectural intent.
+ * 
+ * The system MUST fail explicitly when Redis is unavailable rather than
+ * silently storing sessions in PostgreSQL, which would:
+ * 1. Corrupt session integrity
+ * 2. Create inconsistent authentication patterns
+ * 3. Violate the pure Redis architecture principles
+ * 4. Make session management unreliable and unpredictable
+ * 
+ * REQUIRED BEHAVIOR:
+ * - Redis unavailable = System fails with clear error message
+ * - Session store = Redis ONLY, never PostgreSQL
+ * - No session data ever stored in PostgreSQL under any circumstances
+ * - Authentication depends entirely on Redis session availability
+ */
+
 interface ServiceConnection<T> {
   client: T;
   cleanup: () => Promise<void>;
