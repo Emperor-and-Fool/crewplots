@@ -56,21 +56,9 @@ export class MessagingService {
     // 1. Get content from MongoDB or fallback to PostgreSQL
     let content = note.content || '';
     if (note.documentReference) {
-      try {
-        const document = await documentService.getDocument(note.documentReference);
-        if (document && document.buffer) {
-          content = document.buffer.toString('utf-8');
-        } else {
-          // FALLBACK DISABLED: Previously would use PostgreSQL content fallback
-          // content = note.content || 'Content temporarily unavailable';
-          throw new Error('Document not found in MongoDB');
-        }
-      } catch (error) {
-        // FALLBACK DISABLED: Previously would gracefully degrade to PostgreSQL content
-        // console.warn(`Failed to retrieve document content for note ${note.id}:`, error);
-        // content = note.content || 'Content temporarily unavailable';
-        throw new Error(`Failed to retrieve document content for note ${note.id}: ${error}`);
-      }
+      // Document service functionality moved to template files
+      // Implementation pending for document attachment retrieval
+      console.warn('Document reference found but document service not implemented');
     }
 
     // 2. Resolve author information
@@ -156,6 +144,8 @@ export class MessagingService {
     // Store content in MongoDB if it exists
     if (noteData.content && noteData.content.trim()) {
       try {
+        // Document storage functionality moved to template files - commenting out for now
+        /*
         const contentBuffer = Buffer.from(noteData.content, 'utf-8');
         const document = await documentService.storeDocument(
           contentBuffer,
@@ -168,6 +158,8 @@ export class MessagingService {
           }
         );
         documentReference = document.documentId;
+        */
+        documentReference = null;
       } catch (error) {
         console.error('ERROR: Failed to store note content in MongoDB - note creation failed:', error);
         throw new Error('MongoDB storage not available. Notes require MongoDB to be running.');
