@@ -14,7 +14,7 @@ Development and monitoring API routes (mounted at `/api/`):
 - `cache-test.ts` - Cache service testing endpoints
 - `redis-test.ts` - Redis connection and operation testing
 - `redis-monitor.ts` - Redis lifecycle monitoring endpoints
-- `mongodb-messages.ts` - Direct MongoDB document operations (development only)
+- `mongodb-direct.ts` - Direct MongoDB document operations (bypasses hybrid architecture)
 
 ### `/utilities/`
 General development utilities (currently empty)

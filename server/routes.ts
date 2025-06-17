@@ -25,7 +25,7 @@ import applicantPortalRoutes from './routes/applicant-portal';
 import messagesRoutes from './routes/messages/index';
 // Documents routes removed - functionality moved to template files
 import dashboardRoutes from './routes/dashboard';
-import mongodbMessagesRoutes from '../DevOpUtils/test-routes/mongodb-messages';
+import mongodbDirectRoutes from '../DevOpUtils/test-routes/mongodb-direct';
 import notesRoutes from './routes/notes';
 
 import cacheTestRoutes from '../DevOpUtils/test-routes/cache-test';
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messagesRoutes);
   // Documents routes disabled - functionality moved to template files
   // app.use('/api/documents', documentsRoutes);
-  app.use('/api/mongodb', mongodbMessagesRoutes);
+  app.use('/api/mongodb', mongodbDirectRoutes);
   app.use('/api/messaging/notes', notesRoutes);
 
   app.use('/api', cacheTestRoutes);
