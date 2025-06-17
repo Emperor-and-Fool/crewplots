@@ -1,320 +1,187 @@
-# Dual-Database Service Layer Architecture
+# Dual Database Service Architecture
 
 ## Overview
-The service layer implements a sophisticated dual-database architecture where PostgreSQL handles relational metadata while MongoDB stores rich document content. This pattern provides optimal data storage for different data types while maintaining unified access through the service layer.
 
-## Architecture Design
+The ShiftPro platform implements a hybrid database architecture that leverages both PostgreSQL and MongoDB to optimize data storage and retrieval patterns for different types of content.
 
-### Database Responsibilities
+## Architecture Principles
 
-#### PostgreSQL - Relational Metadata
-- User relationships and authentication
-- Message metadata (timestamps, priorities, read status)
-- Workflow categorization
-- References to MongoDB documents
-- Foreign key constraints and data integrity
+### Database Separation Strategy
+- **PostgreSQL**: Relational metadata, references, and structured data
+- **MongoDB**: Rich content, documents, and unstructured data
+- **Explicit Failure Policy**: No fallback mechanisms between databases
 
-#### MongoDB - Rich Document Storage
-- HTML/Markdown content
-- Document metadata (word counts, character counts)
-- Content versioning
-- Rich text formatting
-- Large document storage via GridFS
+### Service Layer Integration
+The system uses a service layer pattern to compile data from both databases, ensuring consistent data presentation while maintaining database-specific optimizations.
 
-### Service Layer Coordination
-The `MessageService` acts as the orchestration layer:
+## Current Implementation
 
-```typescript
-class MessageService {
-  // Coordinates between PostgreSQL and MongoDB
-  // Compiles unified data for frontend consumption
-  // Handles cross-database transactions
-}
-```
+### Notes System Implementation
+The notes system demonstrates the full hybrid architecture:
 
-## Data Flow Architecture
-
-### Creating Messages
-```mermaid
-sequenceDiagram
-    Frontend->>+Service: createMessage(content, metadata)
-    Service->>+MongoDB: storeContentDocument(richContent)
-    MongoDB-->>-Service: documentId
-    Service->>+PostgreSQL: createMessage(metadata, documentId)
-    PostgreSQL-->>-Service: messageRecord
-    Service->>MongoDB: updateDocumentReference(messageId)
-    Service-->>-Frontend: compiledMessage
-```
-
-### Retrieving Messages
-```mermaid
-sequenceDiagram
-    Frontend->>+Service: getMessagesByUser(userId)
-    Service->>+PostgreSQL: getMessageMetadata(userId)
-    PostgreSQL-->>-Service: messageRecords[]
-    Service->>+MongoDB: getDocumentContent(documentIds[])
-    MongoDB-->>-Service: richContent[]
-    Service->>Service: compileMessages()
-    Service-->>-Frontend: unifiedMessages[]
-```
-
-## Implementation Details
-
-### MongoDB Document Structure
-```typescript
-interface MessageDocument {
-  _id: ObjectId;
-  messageId?: number;              // Reference to PostgreSQL
-  content: string;                 // Rich HTML/Markdown content
-  contentType: 'rich-text' | 'plain-text' | 'markdown';
-  workflow: 'application' | 'crew' | 'location' | 'scheduling' | 'knowledge';
-  metadata: {
-    wordCount: number;
-    characterCount: number;
-    htmlLength: number;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
-### PostgreSQL Message Schema
+#### PostgreSQL Storage (`note_refs` table)
 ```sql
-CREATE TABLE messages (
+CREATE TABLE note_refs (
   id SERIAL PRIMARY KEY,
-  content TEXT NOT NULL,              -- Stores MongoDB ObjectId
+  content TEXT,                    -- MongoDB ObjectId reference
+  user_id INTEGER NOT NULL,
   message_type TEXT DEFAULT 'rich-text',
-  user_id INTEGER REFERENCES users(id),
-  receiver_id INTEGER REFERENCES users(id),
-  is_private BOOLEAN DEFAULT false,
-  priority TEXT DEFAULT 'normal',
-  workflow TEXT,
-  is_read BOOLEAN DEFAULT false,
+  workflow TEXT DEFAULT 'general',
+  document_id TEXT,               -- MongoDB ObjectId
+  word_count INTEGER DEFAULT 0,
+  character_count INTEGER DEFAULT 0,
+  html_length INTEGER DEFAULT 0,
+  visibility TEXT DEFAULT 'private',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-### Service Layer Methods
+#### MongoDB Document Storage
+```javascript
+{
+  _id: ObjectId("..."),
+  messageId: 38,                   // Reference to PostgreSQL ID
+  content: "<p>Rich HTML content...</p>",
+  contentType: "rich-text",
+  workflow: "general",
+  metadata: {
+    wordCount: 32,
+    characterCount: 179,
+    htmlLength: 323
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
-#### Document Storage
+## Service Layer Architecture
+
+### MessageService Class
+Central service managing hybrid database operations:
+
 ```typescript
-async storeContentDocument(content: string, options: {
-  contentType: 'rich-text' | 'plain-text' | 'markdown';
-  workflow?: string;
-}): Promise<string> {
-  // Calculate metadata
-  const plainText = content.replace(/<[^>]*>/g, '');
-  const wordCount = plainText.trim().split(/\s+/).length;
+class MessageService {
+  // Compiles PostgreSQL metadata with MongoDB content
+  private async compileMessage(postgresMessage: NoteRef): Promise<ServiceMessage>
   
-  // Store in MongoDB
-  const document = await collection.insertOne({
-    content,
-    contentType: options.contentType,
-    workflow: options.workflow,
-    metadata: { wordCount, characterCount: plainText.length, htmlLength: content.length },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
+  // Creates note with hybrid storage
+  async createNoteRef(messageData: InsertNoteRef): Promise<ServiceMessage>
   
-  return document.insertedId.toString();
-}
-```
-
-#### Data Compilation
-```typescript
-async compileMessage(postgresMessage: Message): Promise<ServiceMessage> {
-  // Extract MongoDB document ID from PostgreSQL content field
-  const documentId = postgresMessage.content;
+  // Retrieves compiled notes for user
+  async getNoteRefsByUser(userId: number): Promise<ServiceMessage[]>
   
-  // Fetch rich content from MongoDB
-  const document = await mongoCollection.findOne({ 
-    _id: new ObjectId(documentId) 
-  });
+  // Updates note content and metadata
+  async updateNoteRef(messageId: number, updates: { content?: string }): Promise<ServiceMessage>
   
-  // Return unified message
-  return {
-    ...postgresMessage,
-    documentId,
-    compiledContent: document.content,
-    content: document.content  // Replace for frontend consumption
-  };
+  // Deletes note from both databases
+  async deleteNoteRef(messageId: number): Promise<boolean>
 }
 ```
 
-## Benefits of Dual-Database Architecture
+### Data Compilation Process
+1. Query PostgreSQL for structured metadata
+2. Extract MongoDB document references from PostgreSQL records
+3. Fetch rich content from MongoDB using ObjectId
+4. Compile complete objects combining both data sources
+5. Return unified data structure to frontend
 
-### Performance Optimization
-- **PostgreSQL**: Fast relational queries for user lookups, filtering, sorting
-- **MongoDB**: Efficient document storage and retrieval for rich content
-- **Indexing**: Optimized indexes on each database for their specific use cases
+## Database Connection Management
 
-### Scalability Patterns
-- **Horizontal scaling**: MongoDB collections can be sharded by workflow or user
-- **Vertical scaling**: PostgreSQL handles increasing relational complexity
-- **Caching**: Service layer can implement Redis caching for compiled results
+### PostgreSQL Connection
+- **Driver**: Neon Serverless PostgreSQL
+- **ORM**: Drizzle ORM for type-safe queries
+- **Connection Pooling**: Automatic connection management
+- **Schema Management**: Drizzle migrations
 
-### Data Integrity
-- **ACID compliance**: PostgreSQL ensures transactional integrity for metadata
-- **Document consistency**: MongoDB handles document versioning and updates
-- **Cross-database references**: Service layer maintains referential integrity
+### MongoDB Connection
+- **Driver**: Native MongoDB driver
+- **Connection**: Direct connection with authentication
+- **Document Storage**: Flexible schema for rich content
+- **Indexing**: ObjectId-based efficient retrieval
 
-### Development Benefits
-- **Type safety**: Strong typing for both relational and document data
-- **Query optimization**: Use optimal query patterns for each database type
-- **Maintenance**: Clear separation of concerns between data types
+## Error Handling Strategy
 
-## Workflow-Based Storage
+### Explicit Failure Design
+The system is designed to fail explicitly when either database is unavailable:
 
-### Content Categorization
-```typescript
-enum WorkflowType {
-  APPLICATION = 'application',    // Applicant motivational content
-  CREW = 'crew',                 // Staff notes and communication
-  LOCATION = 'location',         // Venue-specific information
-  SCHEDULING = 'scheduling',     // Shift-related notes
-  KNOWLEDGE = 'knowledge',       // Training and documentation
-  STATISTICS = 'statistics'      // Analytics and reporting
-}
-```
+- **No Fallback Mechanisms**: Prevents data inconsistency
+- **Clear Error Messages**: Users receive specific failure notifications
+- **Service Health Monitoring**: Proactive issue detection
+- **Graceful Degradation**: UI shows appropriate error states
 
-### Storage Strategy by Workflow
-- **Application**: Rich motivational text, resumes, cover letters
-- **Crew**: Formatted notes, performance evaluations, feedback
-- **Knowledge**: Structured documentation, training materials, SOPs
-- **Location**: Venue descriptions, policies, local information
+### Error Scenarios
+1. **MongoDB Unavailable**: Notes creation/editing disabled with clear message
+2. **PostgreSQL Unavailable**: Complete system unavailable
+3. **Network Issues**: Retry mechanisms with exponential backoff
+4. **Data Corruption**: Validation and integrity checks
 
-## Advanced Features
+## Performance Optimizations
 
-### Document Versioning
-```typescript
-interface DocumentVersion {
-  documentId: ObjectId;
-  version: number;
-  content: string;
-  changeType: 'created' | 'updated' | 'restored';
-  changedBy: number;  // User ID
-  timestamp: Date;
-}
-```
+### Query Optimization
+- **Indexed Queries**: PostgreSQL queries optimized with proper indexing
+- **Batch Operations**: Minimize database round trips
+- **Connection Pooling**: Efficient resource utilization
+- **Query Caching**: Strategic caching at service layer
 
-### Search Capabilities
-```typescript
-// MongoDB text search across document content
-async searchDocuments(query: string, workflow?: string) {
-  return await collection.find({
-    $text: { $search: query },
-    ...(workflow && { workflow })
-  }).toArray();
-}
+### Data Loading Patterns
+- **Lazy Loading**: Compile content only when needed
+- **Pagination**: Handle large datasets efficiently
+- **Selective Fields**: Load only required data fields
+- **Background Sync**: Non-blocking data synchronization
 
-// PostgreSQL metadata search
-async searchMetadata(filters: MessageFilters) {
-  return await db.select().from(messages)
-    .where(and(...buildFilters(filters)));
-}
-```
+## Security Implementation
 
-### Bulk Operations
-```typescript
-async bulkUpdateWorkflow(messageIds: number[], newWorkflow: string) {
-  // Update PostgreSQL metadata
-  await db.update(messages)
-    .set({ workflow: newWorkflow })
-    .where(inArray(messages.id, messageIds));
-    
-  // Update MongoDB documents
-  await collection.updateMany(
-    { messageId: { $in: messageIds } },
-    { $set: { workflow: newWorkflow, updatedAt: new Date() } }
-  );
-}
-```
+### Database Access Control
+- **User-Scoped Queries**: All queries filtered by user authentication
+- **Connection Security**: Encrypted connections to both databases
+- **Input Validation**: Prevent injection attacks across both systems
+- **Audit Logging**: Track all database operations
 
-## Monitoring and Health Checks
+### Data Protection
+- **Content Sanitization**: HTML content sanitized before storage
+- **Access Permissions**: Role-based access control
+- **Data Encryption**: Sensitive data encryption at rest
+- **Backup Security**: Secure backup procedures for both databases
 
-### Database Health Monitoring
-```typescript
-async healthCheck(): Promise<HealthStatus> {
-  const postgresHealth = await db.select().from(users).limit(1);
-  const mongoHealth = await db.admin().ping();
-  
-  return {
-    postgres: !!postgresHealth,
-    mongodb: !!mongoHealth,
-    serviceLayer: postgresHealth && mongoHealth
-  };
-}
-```
+## Scalability Considerations
 
-### Performance Metrics
-- Document retrieval latency
-- Compilation time for large message sets
-- Cross-database query performance
-- Storage utilization by workflow type
+### Horizontal Scaling
+- **Database Separation**: Independent scaling of PostgreSQL and MongoDB
+- **Read Replicas**: Distribute read operations across replicas
+- **Sharding Strategy**: MongoDB sharding for large document collections
+- **Load Balancing**: Distribute service layer operations
 
-## Error Handling and Recovery
+### Monitoring and Maintenance
+- **Performance Metrics**: Track query performance across both databases
+- **Resource Monitoring**: Monitor connection pools and memory usage
+- **Health Checks**: Automated health monitoring for both services
+- **Backup Strategy**: Coordinated backup procedures
 
-### Transaction Management
-```typescript
-async createMessageTransaction(messageData: CreateMessageData) {
-  const session = await mongodb.startSession();
-  
-  try {
-    await session.withTransaction(async () => {
-      // Store document in MongoDB
-      const documentId = await storeContentDocument(messageData.content);
-      
-      // Store metadata in PostgreSQL
-      const message = await storage.createMessage({
-        ...messageData,
-        content: documentId
-      });
-      
-      // Update cross-reference
-      await updateDocumentReference(documentId, message.id);
-    });
-  } catch (error) {
-    // Rollback logic for both databases
-    await rollbackTransaction(session);
-    throw error;
-  }
-}
-```
+## Development Guidelines
 
-### Data Consistency Checks
-```typescript
-async validateDataConsistency(): Promise<ConsistencyReport> {
-  // Find PostgreSQL messages without MongoDB documents
-  const orphanedMessages = await findOrphanedMessages();
-  
-  // Find MongoDB documents without PostgreSQL references
-  const orphanedDocuments = await findOrphanedDocuments();
-  
-  return { orphanedMessages, orphanedDocuments };
-}
-```
+### Data Model Design
+- **Clear Separation**: Define what belongs in each database
+- **Reference Integrity**: Maintain consistent references between databases
+- **Schema Evolution**: Plan for schema changes in both systems
+- **Type Safety**: Use TypeScript for consistent data structures
 
-## Deployment Considerations
+### API Design Patterns
+- **Service Layer Abstraction**: Hide database complexity from API routes
+- **Consistent Interfaces**: Unified response formats regardless of data source
+- **Error Handling**: Standardized error responses across services
+- **Testing Strategy**: Comprehensive testing for both databases
 
-### Environment Configuration
-```env
-# PostgreSQL Configuration
-DATABASE_URL=postgresql://user:pass@host:5432/database
+## Future Enhancements
 
-# MongoDB Configuration
-MONGODB_URL=mongodb://user:pass@host:27017/database
-MONGODB_DATABASE=crew_plots_documents
+### Planned Improvements
+- **Real-time Sync**: WebSocket-based real-time data synchronization
+- **Advanced Caching**: Redis integration for improved performance
+- **Search Integration**: Full-text search across both databases
+- **Analytics**: Cross-database analytics and reporting
 
-# Service Layer Configuration
-ENABLE_DOCUMENT_VERSIONING=true
-DOCUMENT_CACHE_TTL=3600
-```
-
-### Infrastructure Requirements
-- **PostgreSQL**: Standard relational database hosting
-- **MongoDB**: Document database with GridFS support
-- **Network**: Low-latency connection between databases
-- **Monitoring**: Health checks for both database connections
-
-This dual-database architecture provides the foundation for sophisticated document management while maintaining the performance and integrity benefits of relational data structures.
+### Technology Evolution
+- **Database Upgrades**: Plan for database version upgrades
+- **Driver Updates**: Keep database drivers current
+- **Performance Tuning**: Continuous optimization based on usage patterns
+- **Disaster Recovery**: Enhanced backup and recovery procedures

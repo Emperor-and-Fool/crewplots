@@ -1,284 +1,196 @@
 # Messaging System Documentation
 
 ## Overview
-The CrewPlotsManager includes a sophisticated, extensible messaging system designed for communication between different user types (admins, managers, applicants) with support for conversations, individual messages, and customizable views.
 
-## Database Schema
+The messaging system provides dual-mode functionality for user communications within the ShiftPro platform. It operates in two distinct modes: **Notes** and **Messages**, each serving different purposes and user workflows.
 
-### Messages Table
-```sql
-CREATE TABLE messages (
-  id SERIAL PRIMARY KEY,
-  content TEXT NOT NULL,
-  userId INTEGER NOT NULL REFERENCES users(id),
-  applicantId INTEGER REFERENCES applicants(id),
-  priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
-  messageType TEXT DEFAULT 'text',
-  isPrivate BOOLEAN DEFAULT false,
-  isRead BOOLEAN DEFAULT false,
-  attachmentUrl TEXT,
-  metadata JSON,
-  createdAt TIMESTAMP DEFAULT NOW() NOT NULL
-);
-```
+## System Architecture
 
-### Key Features
-- **User Association**: Every message is linked to a user (who wrote it)
-- **Applicant Conversations**: Optional applicantId for applicant-specific conversations
-- **Priority System**: Support for low, normal, high, urgent priority levels
-- **Message Types**: Extensible messageType field (text, rich-text, system, notification)
-- **Privacy Control**: isPrivate flag for internal/private messages
-- **Read Status**: isRead tracking for message status
-- **Attachments**: Support for file attachments via attachmentUrl
-- **Metadata**: JSON field for extensible message data
+### Dual-Mode Operation
 
-### Type Definitions
+The messaging system supports two operational modes:
+
+1. **Note Mode**: For personal notes, motivational content, and individual documentation
+2. **Message Mode**: For inter-user communication and team messaging
+
+### Mode Selection
+
+Mode is determined by the `mode` prop in the MessagingSystem component:
 ```typescript
-export type Message = {
-  id: number;
-  content: string;
-  userId: number;
-  applicantId: number | null;
-  priority: "low" | "normal" | "high" | "urgent" | null;
-  messageType: string | null;
-  isPrivate: boolean | null;
-  isRead: boolean | null;
-  attachmentUrl: string | null;
-  metadata: any | null;
-  createdAt: Date;
-};
-
-export type InsertMessage = {
-  content: string;
-  userId: number;
-  applicantId?: number | null;
-  priority?: "low" | "normal" | "high" | "urgent" | null;
-  messageType?: string | null;
-  isPrivate?: boolean | null;
-  isRead?: boolean | null;
-  attachmentUrl?: string | null;
-  metadata?: any | null;
-};
+<MessagingSystem 
+  userId={user.id} 
+  mode="note"  // or "messages"
+  title="My Motivational Notes" 
+/>
 ```
 
-## Storage Layer (server/storage.ts)
+## Current Implementation Status
 
-### Available Methods
-```typescript
-interface IStorage {
-  // Message operations
-  getMessage(id: number): Promise<Message | undefined>;
-  getMessages(): Promise<Message[]>;
-  getMessagesByUser(userId: number): Promise<Message[]>;
-  getMessagesByApplicant(applicantId: number): Promise<Message[]>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message | undefined>;
-  deleteMessage(id: number): Promise<boolean>;
-  userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
-}
+### Working Features
+
+#### Notes Mode
+- **Rich Text Editing**: Full TipTap-based rich text editor with formatting toolbar
+- **Auto-Save**: Automatic saving with draft management
+- **Hybrid Storage**: PostgreSQL metadata + MongoDB rich content
+- **Dynamic Height**: Editor grows with content automatically
+- **Real-time Preview**: Live preview of formatted content
+
+#### Message Mode
+- **Placeholder**: Basic structure in place for future development
+- **API Endpoints**: Prepared for messaging functionality
+
+### Technical Implementation
+
+#### Frontend Component Structure
+```
+MessagingSystem
+├── Mode Detection (note vs messages)
+├── Rich Text Editor Integration
+├── Form Handling with React Hook Form
+├── Query Management with TanStack Query
+└── UI Components (Cards, Buttons, Scrollable Areas)
 ```
 
-### Implementation Details
-- **Database Integration**: Uses Drizzle ORM with PostgreSQL
-- **Ordering**: Messages ordered by createdAt timestamp
-- **Access Control**: Built-in permission checking for applicant access
-- **Error Handling**: Comprehensive error handling with proper return types
+#### API Integration
+- **Notes Endpoint**: `/api/messaging/notes`
+- **CRUD Operations**: Create, Read, Update, Delete
+- **User-specific**: All operations scoped to authenticated user
 
-## API Routes (server/routes/messages.ts)
+#### Data Flow
+1. User creates/edits note in rich text editor
+2. Content auto-saves with debouncing
+3. PostgreSQL stores metadata (ID, timestamps, user reference)
+4. MongoDB stores rich HTML content
+5. Service layer compiles data for display
 
-### GET /api/messages/:identifier?
-**Purpose**: Fetch messages for user or specific applicant
+## Use Cases
 
-**Authentication**: Required (uses requireAuth middleware)
+### Primary Use Case: Applicant Motivational Notes
+- Applicants write and maintain personal motivational content
+- Rich text formatting for emphasis and structure
+- Private notes visible only to the note creator
+- Auto-save prevents data loss during editing
 
-**Parameters**:
-- `identifier` (optional): If provided and numeric, treated as applicantId
-- If no identifier: returns messages for current authenticated user
-- If identifier provided: returns messages for that applicant
+### Future Use Cases
+- Team messaging between staff members
+- Notifications and system announcements
+- Document collaboration and feedback
+- Workflow-specific communications
 
-**Response**: Array of Message objects ordered by creation time
+## API Reference
 
-**Examples**:
-```javascript
-// Get messages for current user
-GET /api/messages
+### Notes Endpoints
 
-// Get messages for applicant with ID 5
-GET /api/messages/5
-```
+#### GET /api/messaging/notes
+Retrieves all notes for the authenticated user
+- **Authentication**: Required
+- **Response**: Array of compiled note objects with rich content
 
-### POST /api/messages
-**Purpose**: Create a new message
+#### POST /api/messaging/notes
+Creates a new note
+- **Authentication**: Required
+- **Body**: Note content and metadata
+- **Response**: Created note object
 
-**Authentication**: Required
+#### PUT /api/messaging/notes/:id
+Updates existing note
+- **Authentication**: Required
+- **Body**: Updated note content
+- **Response**: Updated note object
 
-**Request Body**: InsertMessage object (minus userId which is auto-populated)
+#### DELETE /api/messaging/notes/:id
+Deletes a note
+- **Authentication**: Required
+- **Response**: Success confirmation
 
-**Validation**: 
-- Uses insertMessageSchema for validation
-- Verifies applicant exists if applicantId provided
-- Automatically sets userId from authenticated user
+## Component Configuration
 
-**Response**: Created Message object
+### MessagingSystem Props
 
-**Example**:
-```javascript
-POST /api/messages
-{
-  "content": "Great interview! Looking forward to having you on the team.",
-  "applicantId": 5,
-  "priority": "normal",
-  "messageType": "text"
-}
-```
-
-### PATCH /api/messages/:messageId/read
-**Purpose**: Mark a message as read
-
-**Authentication**: Required
-
-**Access Control**: 
-- Message author can mark own messages as read
-- Users with applicant access can mark applicant messages as read
-
-**Response**: Updated Message object
-
-### DELETE /api/messages/:messageId
-**Purpose**: Delete a message
-
-**Authentication**: Required
-
-**Access Control**: Only message author can delete their own messages
-
-**Response**: Success confirmation
-
-## Existing Messaging Component (client/src/components/ui/messaging-system.tsx)
-
-### Current Component Interface
 ```typescript
 interface MessagingSystemProps {
-  applicantId: number;
-  currentUserId: number;
-  messages: Message[];
-  onMessageSave: (content: string) => void;
+  userId: number;                    // Required: User ID
+  mode?: 'note' | 'messages';       // Default: 'messages'
+  title?: string;                    // Custom title
+  placeholder?: string;              // Editor placeholder
+  maxHeight?: string;                // Max container height
+  workflow?: string;                 // Workflow categorization
+  enableRichText?: boolean;          // Rich text toggle
+  allowMessageDeletion?: boolean;    // Delete permission
+  className?: string;                // Custom styling
 }
 ```
 
-### Key Features Implemented
-1. **Text Formatting Functions**:
-   - `insertFormatting(before, after)`: Adds formatting around selected text
-   - `insertEmoji(emoji)`: Inserts emoji at cursor position
-   - `renderMessageContent(content)`: Renders **bold** and *italic* formatting
+### Rich Text Editor Features
 
-2. **Rich Text Toolbar**:
-   - Bold button (wraps selection with `**`)
-   - Italic button (wraps selection with `*`)
-   - Emoji buttons (😊, 👍, ❤️)
+- **Bold/Italic**: Text formatting
+- **Lists**: Bullet and numbered lists
+- **Links**: URL embedding
+- **Undo/Redo**: Action history
+- **Color**: Text coloring (future enhancement)
+- **Dynamic Sizing**: Auto-height adjustment
 
-3. **Message Display**:
-   - Conversation-style layout
-   - Author identification (You vs Admin)
-   - Timestamp formatting
-   - Different styling for own vs other messages
+## Data Storage Strategy
 
-4. **Form Handling**:
-   - Character count (0/1000)
-   - Loading states
-   - Form validation
-   - Toast notifications
+### PostgreSQL (Metadata)
+- Note references and relationships
+- User associations
+- Timestamps and versioning
+- Access permissions
 
-### Current Limitations
-The component appears to be designed for a different data flow than the current API structure. It expects:
-- Messages to be passed as props
-- A callback function for saving messages
-- Manual message list management
+### MongoDB (Content)
+- Rich HTML content
+- Large text documents
+- Content versioning
+- Document metadata
 
-## Integration Requirements
+### No Fallback Policy
+The system fails explicitly when MongoDB is unavailable rather than falling back to PostgreSQL storage. This ensures data consistency and prevents mixed storage states.
 
-To properly integrate the existing messaging system with the applicant management workflow, the following adjustments need to be made:
+## Security and Permissions
 
-### 1. Update Component to Use API Directly
-The component should:
-- Use `useQuery` to fetch messages from `/api/messages/:applicantId`
-- Use `useMutation` to create messages via `POST /api/messages`
-- Handle loading/error states appropriately
-- Automatically refresh message list after sending
+### Authentication
+All messaging operations require valid user authentication through the session system.
 
-### 2. Proper Data Flow Integration
-For applicant detail pages:
-```typescript
-// In applicant-detail.tsx
-<MessagingSystem
-  applicantId={applicant.id}
-  currentUserId={currentUser.id}
-  // Remove messages prop - component should fetch directly
-  // Remove onMessageSave prop - component should handle API calls
-/>
-```
+### Authorization
+- Users can only access their own notes
+- Future: Role-based access for team messaging
+- Private notes remain user-specific
 
-### 3. Support Different Message Types
-Extend the component to support:
-- Internal notes (messageType: "text", isPrivate: true)
-- Communications (messageType: "text", isPrivate: false)
-- System notifications (messageType: "system")
-- Priority indicators
+### Data Validation
+- Content length restrictions
+- HTML sanitization
+- Input validation on all endpoints
 
-### 4. Access Control Integration
-Ensure the component respects:
-- User roles and permissions
-- Private vs public message visibility
-- Applicant-specific access rights
+## Performance Considerations
 
-## Usage Patterns
+### Optimization Features
+- Debounced auto-save (prevents excessive API calls)
+- Efficient query patterns with TanStack Query
+- Lazy loading for large note collections
+- Optimistic updates for better UX
 
-### For Applicant Management
-```typescript
-// Admin/Manager viewing applicant messages
-<MessagingSystem
-  applicantId={applicant.id}
-  currentUserId={currentUser.id}
-  showPrivateMessages={true}
-  allowPrivateNotes={true}
-  enablePriority={true}
-/>
-```
+### Caching Strategy
+- Client-side caching of note data
+- Invalidation on mutations
+- Background refresh for stale data
 
-### For Applicant Portal
-```typescript
-// Applicant viewing their own messages
-<MessagingSystem
-  applicantId={applicant.id}
-  currentUserId={currentUser.id}
-  showPrivateMessages={false}
-  allowPrivateNotes={false}
-  enablePriority={false}
-/>
-```
+## Development Status
 
-## Security Considerations
+### Completed Features
+- ✅ Notes mode fully functional
+- ✅ Rich text editing with TipTap
+- ✅ Hybrid database storage
+- ✅ Auto-save functionality
+- ✅ User authentication integration
 
-1. **Authentication**: All API endpoints require valid authentication
-2. **Authorization**: Users can only access messages they have permission for
-3. **Data Validation**: All inputs validated via Zod schemas
-4. **SQL Injection**: Protected by Drizzle ORM parameterized queries
-5. **XSS Protection**: Message content should be sanitized when rendering HTML
+### In Development
+- 🔄 Message mode implementation
+- 🔄 File attachment support
+- 🔄 Enhanced rich text features
 
-## Extension Points
-
-The messaging system is designed to be highly extensible:
-
-1. **Message Types**: Add new messageType values for different use cases
-2. **Priority Levels**: Extend priority enum for more granular control
-3. **Metadata**: Use JSON metadata field for custom message data
-4. **Attachments**: File attachment system already scaffolded
-5. **Real-time Updates**: WebSocket integration points available
-6. **Custom Rendering**: Component supports different view modes
-
-## Next Steps for Integration
-
-1. **Analyze Current Component**: Understand the exact data flow expectations
-2. **Update API Calls**: Modify component to use direct API integration
-3. **Test Message Flow**: Verify end-to-end message creation and display
-4. **Add Rich Text**: Ensure formatting buttons actually work
-5. **Implement Access Control**: Add proper permission checking
-6. **Add Real-time Updates**: Consider WebSocket integration for live updates
+### Future Enhancements
+- 📋 Real-time messaging
+- 📋 Team collaboration features
+- 📋 Notification system
+- 📋 Advanced formatting options

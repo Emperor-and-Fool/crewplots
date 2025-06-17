@@ -1,83 +1,62 @@
-# Notes Architecture Documentation
+# Notes Architecture
 
-## Overview
-The ShiftPro application uses a hybrid database architecture for note/message management, combining PostgreSQL for metadata and MongoDB for content storage.
+## Current Implementation
 
-## Database Schema Design
+The notes system is fully operational as a personal documentation tool for users, specifically designed for applicants to write motivational content and personal notes.
 
-### PostgreSQL Metadata Structure (`note_refs` table)
+### Working Features
 
-#### Essential Metadata
-- `id` - Primary key (auto-increment integer)
-- `userId` - Foreign key to users table (integer, required)
-- `documentId` - MongoDB ObjectId reference (VARCHAR(24), required)
-- `documentType` - Type classifier (VARCHAR, e.g., 'motivation', 'message', 'feedback')
-- `title` - Optional short description/subject (VARCHAR, nullable)
-- `status` - Document state (ENUM: 'draft', 'published', 'archived')
-- `createdAt` - Timestamp when created (TIMESTAMP, auto-generated)
-- `updatedAt` - Timestamp when last modified (TIMESTAMP, auto-updated)
+#### Core Functionality
+- **Rich Text Editing**: TipTap-based editor with formatting toolbar (bold, italic, lists, links)
+- **Auto-Save**: Debounced automatic saving prevents data loss
+- **Dynamic UI**: Editor height grows automatically with content
+- **User-Scoped**: Each user can only access their own notes
 
-#### Content Analytics
-- `wordCount` - Number of words in content (INTEGER)
-- `characterCount` - Character count excluding HTML tags (INTEGER)
-- `htmlLength` - Raw HTML content length including markup (INTEGER)
+#### Data Storage
+- **Hybrid Architecture**: PostgreSQL stores metadata, MongoDB stores rich content
+- **Explicit Failure**: No fallback to PostgreSQL when MongoDB unavailable
+- **Content Compilation**: Service layer combines PostgreSQL references with MongoDB documents
 
-#### Access Control
-- `visibility` - Who can see the document (ENUM: 'private', 'admins', 'public')
-- `isEditable` - Whether user can still modify content (BOOLEAN, default: true)
-- `lastEditedAt` - When content was last changed (TIMESTAMP)
+### Technical Stack
 
-#### System Tracking
-- `version` - Document version number for history tracking (INTEGER, default: 1)
-- `tags` - JSON array for categorization and filtering (JSONB, nullable)
-- `priority` - Importance level for admin review (INTEGER, default: 0)
-
-### MongoDB Content Structure
-
-MongoDB stores the actual rich text content with minimal metadata:
-
-```javascript
-{
-  _id: ObjectId,
-  content: String,        // HTML rich text content
-  userId: Number,         // User reference for auth
-  documentType: String,   // Type classifier
-  createdAt: Date,
-  updatedAt: Date,
-  metadata: {
-    wordCount: Number,
-    characterCount: Number,
-    htmlLength: Number
-  }
-}
+#### Frontend Components
+```
+ApplicantPortal
+└── MessagingSystem (mode="note")
+    └── RichTextEditor (TipTap-based)
 ```
 
-## Architectural Principles
+#### Backend Services
+- **Notes API**: `/api/messaging/notes` (GET, POST, PUT, DELETE)
+- **MessageService**: Handles hybrid data compilation
+- **Authentication**: Session-based user verification
 
-### Data Separation
-- **PostgreSQL**: Metadata, relationships, search indexes, analytics
-- **MongoDB**: Rich text content, large text blobs, flexible content structure
-- **Bridge**: `documentId` field links PostgreSQL records to MongoDB documents
+#### Database Schema
+- **PostgreSQL**: `note_refs` table with metadata and MongoDB references
+- **MongoDB**: Rich HTML content documents with ObjectId references
 
-### Content Flow
-1. User creates/edits content in TipTap rich text editor
-2. Content saved to MongoDB with analytics calculated
-3. Metadata extracted and stored in PostgreSQL `note_refs`
-4. Both systems updated atomically or fail visibly
+### Current Use Case
+Primary use case is applicant motivational notes - private, personal content that users can format and edit with rich text features.
 
-### Access Patterns
-- **Listing/Filtering**: Query PostgreSQL metadata only
-- **Content Display**: Fetch MongoDB document via `documentId`
-- **Search**: Use PostgreSQL indexes on metadata fields
-- **Analytics**: Aggregate from PostgreSQL analytics fields
+### API Endpoints
+- `GET /api/messaging/notes` - Retrieve user's notes
+- `POST /api/messaging/notes` - Create new note
+- `PUT /api/messaging/notes/:id` - Update existing note  
+- `DELETE /api/messaging/notes/:id` - Delete note
 
-## Implementation Notes
+### Data Flow
+1. User types in rich text editor
+2. Content auto-saves with debouncing
+3. PostgreSQL stores note metadata
+4. MongoDB stores rich HTML content
+5. Service layer compiles for display
 
-### No Fallback Policy
-The system must fail visibly when MongoDB is unavailable rather than silently falling back to PostgreSQL-only operation. This ensures data integrity and prevents inconsistent states.
+### Security
+- User authentication required for all operations
+- Users can only access their own notes
+- HTML content sanitization for XSS prevention
 
-### Editability Control
-The `isEditable` flag in access control allows administrators to lock documents while preserving content. This supports workflow states like "under review" or "finalized".
-
-### Version Tracking
-The `version` field enables future implementation of document history without requiring schema changes.
+### Performance
+- Debounced auto-save prevents excessive API calls
+- TanStack Query provides caching and optimistic updates
+- Efficient hybrid database queries
