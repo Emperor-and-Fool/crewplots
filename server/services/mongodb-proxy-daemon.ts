@@ -48,6 +48,24 @@ class MongoDBProxyDaemon {
       }
     });
 
+    // Find one document
+    this.app.post('/collections/:collection/findOne', async (req, res) => {
+      try {
+        const { collection } = req.params;
+        const { filter = {} } = req.body;
+        
+        if (!this.mongoDb) {
+          throw new Error('MongoDB not connected');
+        }
+
+        const document = await this.mongoDb.collection(collection).findOne(filter);
+        res.json(document);
+      } catch (error: any) {
+        console.error('FindOne error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Insert document
     this.app.post('/collections/:collection/insert', async (req, res) => {
       try {
