@@ -69,6 +69,23 @@ class OnDemandRedisClient {
     }
   }
 
+  async set(key: string, value: string, options?: any): Promise<string> {
+    try {
+      await onDemandRedis.withConnection(async (redis: any) => {
+        if (options && options.EX) {
+          await redis.setex(key, options.EX, value);
+        } else {
+          await redis.set(key, value);
+        }
+      }, { connectionId: 'session-set', keepAlive: 5000 });
+      
+      return 'OK';
+    } catch (error) {
+      console.error('❌ Redis session SET failed:', error);
+      throw error;
+    }
+  }
+
   async setex(key: string, ttl: number, value: string): Promise<string> {
     try {
       await onDemandRedis.withConnection(async (redis: any) => {
@@ -93,6 +110,10 @@ class OnDemandRedisClient {
       console.error('❌ Redis session DELETE failed:', error);
       return 0;
     }
+  }
+
+  async destroy(key: string): Promise<number> {
+    return this.del(key);
   }
 
   // Required event emitter methods for connect-redis
