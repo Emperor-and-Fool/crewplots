@@ -4,7 +4,7 @@ import { storage } from "./database/storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import connectPgSimple from "connect-pg-simple";
+
 import { RedisStore } from "connect-redis";
 import { pool } from "./database/db";
 import { 
@@ -41,8 +41,7 @@ const upload = multer({
   },
 });
 
-// Setup session stores
-const PgStore = connectPgSimple(session);
+
 
 // Create Redis client adapter that works with our on-demand service
 const redisClientAdapter = {
