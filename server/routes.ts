@@ -6,6 +6,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 
 import { RedisStore } from "connect-redis";
+import Redis from "ioredis";
 import { pool } from "./database/db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
@@ -43,60 +44,68 @@ const upload = multer({
 
 
 
-// Create Redis client adapter that works with our on-demand service
-const redisClientAdapter = {
-  get: async (key: string) => {
-    console.log(`🔍 Redis session GET: ${key}`);
+// Create Redis client that integrates with on-demand service
+class OnDemandRedisClient {
+  private static instance: OnDemandRedisClient;
+  
+  static getInstance(): OnDemandRedisClient {
+    if (!OnDemandRedisClient.instance) {
+      OnDemandRedisClient.instance = new OnDemandRedisClient();
+    }
+    return OnDemandRedisClient.instance;
+  }
+
+  // Standard ioredis-compatible interface for connect-redis
+  async get(key: string): Promise<string | null> {
     try {
       const result = await onDemandRedis.withConnection(async (redis: any) => {
         return await redis.get(key);
       }, { connectionId: 'session-get', keepAlive: 5000 });
       
-      console.log(`✅ Session retrieved from Redis: ${key}`);
       return result;
     } catch (error) {
       console.error('❌ Redis session GET failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return null;
     }
-  },
+  }
 
-  set: async (key: string, value: string, options?: any) => {
-    console.log(`💾 Redis session SET: ${key}`);
+  async setex(key: string, ttl: number, value: string): Promise<string> {
     try {
       await onDemandRedis.withConnection(async (redis: any) => {
-        const ttl = options?.EX || 86400; // Default 24 hours
         await redis.setex(key, ttl, value);
       }, { connectionId: 'session-set', keepAlive: 5000 });
       
-      console.log(`✅ Session stored in Redis: ${key}`);
       return 'OK';
     } catch (error) {
       console.error('❌ Redis session SET failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
-  },
+  }
 
-  del: async (key: string) => {
-    console.log(`🗑️ Redis session DELETE: ${key}`);
+  async del(key: string): Promise<number> {
     try {
       const result = await onDemandRedis.withConnection(async (redis: any) => {
         return await redis.del(key);
       }, { connectionId: 'session-delete', keepAlive: 5000 });
       
-      console.log(`✅ Session deleted from Redis: ${key}`);
       return result;
     } catch (error) {
       console.error('❌ Redis session DELETE failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return 0;
     }
-  },
+  }
 
-  // Required interface methods for connect-redis
-  on: () => {},
-  emit: () => {},
-  quit: () => Promise.resolve('OK'),
-  disconnect: () => Promise.resolve()
-};
+  // Required event emitter methods for connect-redis
+  on(event: string, listener: (...args: any[]) => void): this { return this; }
+  emit(event: string, ...args: any[]): boolean { return true; }
+  removeAllListeners(): this { return this; }
+  
+  // Connection methods
+  async quit(): Promise<string> { return 'OK'; }
+  async disconnect(): Promise<void> { return; }
+}
+
+const redisClient = OnDemandRedisClient.getInstance();
 
 // Suppress Redis connection error spam by overriding global error handler
 process.on('uncaughtException', (error) => {
@@ -116,50 +125,7 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
 });
 
-// Redis session store adapter
-class RedisSessionStore {
-  async getSession(sessionId: string): Promise<any> {
-    try {
-      const result = await onDemandRedis.withConnection(async (redis: any) => {
-        const sessionData = await redis.get(`sess:${sessionId}`);
-        return sessionData ? JSON.parse(sessionData) : null;
-      }, { connectionId: 'session-get', keepAlive: 5000 });
-      
-      return result;
-    } catch (error) {
-      console.error('❌ Redis session get failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
 
-  async setSession(sessionId: string, sessionData: any, ttl: number = 86400): Promise<void> {
-    try {
-      await onDemandRedis.withConnection(async (redis) => {
-        await redis.setex(`sess:${sessionId}`, ttl, JSON.stringify(sessionData));
-      }, { connectionId: 'session-set', keepAlive: 5000 });
-      
-      console.log(`✅ Session stored in Redis: ${sessionId}`);
-    } catch (error) {
-      console.error('❌ Redis session set failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async deleteSession(sessionId: string): Promise<void> {
-    try {
-      await onDemandRedis.withConnection(async (redis: any) => {
-        await redis.del(`sess:${sessionId}`);
-      }, { connectionId: 'session-delete', keepAlive: 5000 });
-      
-      console.log(`✅ Session deleted from Redis: ${sessionId}`);
-    } catch (error) {
-      console.error('❌ Redis session delete failed:', error);
-      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-}
-
-const redisSessionStore = new RedisSessionStore();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -177,15 +143,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: '/'
       },
       store: new RedisStore({
-        client: redisClientAdapter as any,
+        client: redisClient as any,
         prefix: 'sess:',
         ttl: 86400 // 24 hours
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: true, // Force session save on each request to ensure cross-frame compatibility
-      saveUninitialized: true, // Create session for tracking before user logs in
+      resave: false, // Don't save session if unmodified - reduces Redis load
+      saveUninitialized: false, // Don't create session until something stored
       name: 'crewplots.sid', // Custom name to avoid conflicts
-      rolling: true, // Force cookies to be set on every response
+      rolling: false // Don't reset cookie on every request
     })
   );
 
