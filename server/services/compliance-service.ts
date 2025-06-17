@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { mongoConnection } from '../db-mongo';
+import { mongoConnection } from '../database/db-mongo';
 import crypto from 'crypto';
 import { Readable } from 'stream';
 

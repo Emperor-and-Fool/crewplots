@@ -1,5 +1,5 @@
 import { MongoClient, Db, GridFSBucket } from 'mongodb';
-import { onDemandMongoService } from '../adapters-repl/mongodb-ondemand/on-demand-mongodb';
+import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 
 class MongoDBConnection {
   private client: MongoClient | null = null;
