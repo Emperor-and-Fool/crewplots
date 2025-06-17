@@ -2,7 +2,7 @@ import { eq, and, desc, or, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { noteRefs, users } from '@shared/schema';
 import type { InsertNoteRef, Message, User } from '@shared/schema';
-import { documentService } from './document-service';
+
 
 // Compiled note type for frontend consumption
 export interface CompiledNote extends Omit<Message, 'content'> {

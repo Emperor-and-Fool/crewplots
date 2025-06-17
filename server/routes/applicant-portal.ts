@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../storage';
 import { messageStorageService } from '../services/message-storage-service';
-import { withMongoDBRetry } from '../utils/replit-mongodb-ondemand';
+
 
 import multer from 'multer';
 import fs from 'fs';
@@ -228,9 +228,7 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     
     // Use MessageService for proper hybrid ID handling
     console.log('🔄 Using MessageService for hybrid update');
-    const updatedMessage = await withMongoDBRetry(() => 
-      messageStorageService.updateNoteRef(messageId, { content })
-    );
+    const updatedMessage = await messageStorageService.updateNoteRef(messageId, { content });
     
     console.log(`Updated message ${messageId} with hybrid storage for applicant user ${userId}`);
     res.json(updatedMessage);
