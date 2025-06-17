@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { noteRefs, type NoteRef, type InsertNoteRef } from "@shared/schema";
-import { storage } from "../storage";
+import { storage } from "../database/storage";
 // import { mongoConnection } from "../db-mongo";
 import { ObjectId } from "mongodb";
 
