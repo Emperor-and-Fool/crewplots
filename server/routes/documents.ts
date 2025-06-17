@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
-import { documentService } from '../services/document-service';
+// Document service moved to template files - functionality not yet implemented
 
 const router = Router();
 
@@ -44,6 +44,10 @@ router.post('/upload', upload.single('document'), async (req, res) => {
     const validatedData = uploadDocumentSchema.parse(req.body);
     
     // Store encrypted document in MongoDB
+    // Document service functionality not yet implemented
+    res.status(501).json({ error: 'Document upload feature not yet implemented' });
+    return;
+    /*
     const documentRef = await documentService.storeDocument(req.file.buffer, {
       filename: req.file.originalname,
       contentType: req.file.mimetype,
@@ -77,7 +81,9 @@ router.get('/:documentId', async (req, res) => {
     const currentUserRole = (req.user as any).role;
     
     // Get document metadata first for permission check
-    const metadata = await documentService.getDocumentMetadata(documentId);
+    res.status(501).json({ error: 'Document metadata feature not yet implemented' });
+    return;
+    // const metadata = await documentService.getDocumentMetadata(documentId);
     if (!metadata) {
       return res.status(404).json({ error: 'Document not found' });
     }
@@ -93,7 +99,9 @@ router.get('/:documentId', async (req, res) => {
     }
 
     // Retrieve and decrypt document
-    const document = await documentService.getDocument(documentId);
+    res.status(501).json({ error: 'Document download feature not yet implemented' });
+    return;
+    // const document = await documentService.getDocument(documentId);
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
     }
@@ -135,7 +143,9 @@ router.get('/user/:userId', async (req, res) => {
     }
 
     const documentType = req.query.type as string | undefined;
-    const documents = await documentService.getUserDocuments(userId, documentType);
+    res.status(501).json({ error: 'Document listing feature not yet implemented' });
+    return;
+    // const documents = await documentService.getUserDocuments(userId, documentType);
     
     res.json(documents);
   } catch (error) {
@@ -155,7 +165,9 @@ router.delete('/:documentId', async (req, res) => {
     const currentUserRole = (req.user as any).role;
     
     // Get document metadata for permission check
-    const metadata = await documentService.getDocumentMetadata(documentId);
+    res.status(501).json({ error: 'Document update feature not yet implemented' });
+    return;
+    // const metadata = await documentService.getDocumentMetadata(documentId);
     if (!metadata) {
       return res.status(404).json({ error: 'Document not found' });
     }
@@ -170,6 +182,9 @@ router.delete('/:documentId', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    res.status(501).json({ error: 'Document deletion feature not yet implemented' });
+    return;
+    /*
     const deleted = await documentService.deleteDocument(documentId);
     if (!deleted) {
       return res.status(404).json({ error: 'Document not found' });
@@ -178,6 +193,7 @@ router.delete('/:documentId', async (req, res) => {
     console.log(`Deleted document ${documentId} by user ${userId}`);
     
     res.json({ success: true });
+    */
   } catch (error) {
     console.error('Error deleting document:', error);
     res.status(500).json({ error: 'Failed to delete document' });
