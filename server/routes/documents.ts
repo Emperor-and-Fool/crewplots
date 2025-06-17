@@ -60,6 +60,7 @@ router.post('/upload', upload.single('document'), async (req, res) => {
     console.log(`Uploaded encrypted document for user ${validatedData.userId}: ${req.file.originalname}`);
     
     res.status(201).json(documentRef);
+    */
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid upload data', details: error.errors });
