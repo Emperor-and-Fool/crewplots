@@ -50,6 +50,10 @@ app.use((req, res, next) => {
   try {
     await mongoConnection.connect();
     console.log('✅ MongoDB initialized during startup');
+    
+    // Start MongoDB proxy daemon after MongoDB is connected
+    await mongoProxyDaemon.start();
+    console.log('✅ MongoDB proxy daemon started successfully');
   } catch (error) {
     console.error('❌ MongoDB startup initialization failed:', error);
     // Continue startup anyway - on-demand service will handle it later

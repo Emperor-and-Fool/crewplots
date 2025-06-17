@@ -105,24 +105,28 @@ class MongoDBProxyDaemon {
 
   private async checkMongoDB(): Promise<boolean> {
     try {
+      console.log('🔍 MongoDB Proxy: Checking existing MongoDB instance...');
       const testClient = new MongoClient('mongodb://127.0.0.1:27017');
       await testClient.connect();
       await testClient.db('test').admin().ping();
       await testClient.close();
+      console.log('✅ MongoDB Proxy: Found existing MongoDB instance');
       return true;
     } catch (error) {
+      console.log('❌ MongoDB Proxy: No existing MongoDB instance found');
       return false;
     }
   }
 
   private async connectToMongoDB(): Promise<void> {
     try {
+      console.log('🔌 MongoDB Proxy: Connecting to MongoDB...');
       this.mongoClient = new MongoClient('mongodb://127.0.0.1:27017');
       await this.mongoClient.connect();
       this.mongoDb = this.mongoClient.db('applicant_system');
-      console.log('✅ MongoDB Proxy connected successfully');
+      console.log('✅ MongoDB Proxy: Connected successfully to applicant_system database');
     } catch (error) {
-      console.error('❌ MongoDB connection failed:', error);
+      console.error('❌ MongoDB Proxy: Connection failed:', error);
       throw error;
     }
   }
