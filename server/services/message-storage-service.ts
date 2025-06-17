@@ -1,5 +1,5 @@
-import { mongoConnection } from '../db-mongo';
-import { storage } from '../storage';
+import { mongoConnection } from '../database/db-mongo';
+import { storage } from '../database/storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
 

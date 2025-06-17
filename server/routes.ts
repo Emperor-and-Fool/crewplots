@@ -1,12 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./database/storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
 import { RedisStore } from "connect-redis";
-import { pool } from "./db";
+import { pool } from "./database/db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,

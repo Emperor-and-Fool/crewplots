@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-import { mongoConnection } from "./db-mongo";
+import { mongoConnection } from "./database/db-mongo";
 // Keepalive service removed - using on-demand Redis service instead
 import { cacheService } from "./services/cache-service";
 

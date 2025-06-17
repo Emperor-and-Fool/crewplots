@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
-import { db } from '../db';
+import { db } from '../database/db';
 import { noteRefs as noteRefsTable } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
