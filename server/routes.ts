@@ -5,6 +5,7 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
+import RedisStore from "connect-redis";
 import { pool } from "./db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
@@ -42,7 +43,6 @@ const upload = multer({
 
 // Setup session stores
 const PgStore = connectPgSimple(session);
-const RedisStore = connectRedis(session);
 
 // Redis session store adapter
 class RedisSessionStore {
@@ -104,36 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new RedisStore({
-        client: {
-          get: (key: string, callback: (err: any, result?: string) => void) => {
-            console.log(`🔍 Redis session GET: ${key}`);
-            const sessionId = key.replace('sess:', '');
-            redisSessionStore.getSession(sessionId)
-              .then(result => callback(null, result ? JSON.stringify(result) : null))
-              .catch(err => callback(err));
-          },
-          set: (key: string, value: string, callback: (err?: any) => void) => {
-            console.log(`💾 Redis session SET: ${key}`);
-            const sessionId = key.replace('sess:', '');
-            const sessionData = JSON.parse(value);
-            redisSessionStore.setSession(sessionId, sessionData)
-              .then(() => callback())
-              .catch(err => callback(err));
-          },
-          del: (key: string, callback: (err?: any) => void) => {
-            console.log(`🗑️ Redis session DELETE: ${key}`);
-            const sessionId = key.replace('sess:', '');
-            redisSessionStore.deleteSession(sessionId)
-              .then(() => callback())
-              .catch(err => callback(err));
-          },
-          // Required Redis client interface methods
-          on: () => {},
-          emit: () => {},
-          end: () => {},
-          quit: () => Promise.resolve()
-        }
+      store: new (RedisStore(session))({
+        client: redisClient,
+        prefix: 'sess:',
+        ttl: 86400 // 24 hours
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
