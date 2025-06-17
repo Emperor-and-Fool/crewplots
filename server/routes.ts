@@ -44,7 +44,7 @@ const upload = multer({
 
 
 
-// Create Redis client that integrates with on-demand service
+// Complete Redis client interface for connect-redis compatibility
 class OnDemandRedisClient {
   private static instance: OnDemandRedisClient;
   
@@ -55,7 +55,7 @@ class OnDemandRedisClient {
     return OnDemandRedisClient.instance;
   }
 
-  // Standard ioredis-compatible interface for connect-redis
+  // Basic Redis operations
   async get(key: string): Promise<string | null> {
     try {
       const result = await onDemandRedis.withConnection(async (redis: any) => {
@@ -64,16 +64,16 @@ class OnDemandRedisClient {
       
       return result;
     } catch (error) {
-      console.error('❌ Redis session GET failed:', error);
+      console.error('❌ Redis GET failed:', error);
       return null;
     }
   }
 
-  async set(key: string, value: string, options?: any): Promise<string> {
+  async set(key: string, value: string, ...args: any[]): Promise<string> {
     try {
       await onDemandRedis.withConnection(async (redis: any) => {
-        if (options && options.EX) {
-          await redis.setex(key, options.EX, value);
+        if (args.length > 0 && args[0] === 'EX') {
+          await redis.setex(key, args[1], value);
         } else {
           await redis.set(key, value);
         }
@@ -81,7 +81,7 @@ class OnDemandRedisClient {
       
       return 'OK';
     } catch (error) {
-      console.error('❌ Redis session SET failed:', error);
+      console.error('❌ Redis SET failed:', error);
       throw error;
     }
   }
@@ -94,36 +94,146 @@ class OnDemandRedisClient {
       
       return 'OK';
     } catch (error) {
-      console.error('❌ Redis session SET failed:', error);
+      console.error('❌ Redis SETEX failed:', error);
       throw error;
     }
   }
 
-  async del(key: string): Promise<number> {
+  async del(...keys: string[]): Promise<number> {
     try {
       const result = await onDemandRedis.withConnection(async (redis: any) => {
-        return await redis.del(key);
+        return await redis.del(...keys);
       }, { connectionId: 'session-delete', keepAlive: 5000 });
       
       return result;
     } catch (error) {
-      console.error('❌ Redis session DELETE failed:', error);
+      console.error('❌ Redis DEL failed:', error);
       return 0;
     }
   }
 
+  // Multi-get operation
+  async mget(...keys: string[]): Promise<(string | null)[]> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.mget(...keys);
+      }, { connectionId: 'session-mget', keepAlive: 5000 });
+      
+      return result || [];
+    } catch (error) {
+      console.error('❌ Redis MGET failed:', error);
+      return new Array(keys.length).fill(null);
+    }
+  }
+
+  // Key existence check
+  async exists(...keys: string[]): Promise<number> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.exists(...keys);
+      }, { connectionId: 'session-exists', keepAlive: 5000 });
+      
+      return result || 0;
+    } catch (error) {
+      console.error('❌ Redis EXISTS failed:', error);
+      return 0;
+    }
+  }
+
+  // Time-to-live operations
+  async ttl(key: string): Promise<number> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.ttl(key);
+      }, { connectionId: 'session-ttl', keepAlive: 5000 });
+      
+      return result || -1;
+    } catch (error) {
+      console.error('❌ Redis TTL failed:', error);
+      return -1;
+    }
+  }
+
+  async pttl(key: string): Promise<number> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.pttl(key);
+      }, { connectionId: 'session-pttl', keepAlive: 5000 });
+      
+      return result || -1;
+    } catch (error) {
+      console.error('❌ Redis PTTL failed:', error);
+      return -1;
+    }
+  }
+
+  // Expiry operations
+  async expire(key: string, seconds: number): Promise<number> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.expire(key, seconds);
+      }, { connectionId: 'session-expire', keepAlive: 5000 });
+      
+      return result || 0;
+    } catch (error) {
+      console.error('❌ Redis EXPIRE failed:', error);
+      return 0;
+    }
+  }
+
+  async pexpire(key: string, milliseconds: number): Promise<number> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.pexpire(key, milliseconds);
+      }, { connectionId: 'session-pexpire', keepAlive: 5000 });
+      
+      return result || 0;
+    } catch (error) {
+      console.error('❌ Redis PEXPIRE failed:', error);
+      return 0;
+    }
+  }
+
+  // connect-redis specific methods
   async destroy(key: string): Promise<number> {
     return this.del(key);
   }
 
-  // Required event emitter methods for connect-redis
-  on(event: string, listener: (...args: any[]) => void): this { return this; }
-  emit(event: string, ...args: any[]): boolean { return true; }
-  removeAllListeners(): this { return this; }
+  async touch(key: string, ttl: number): Promise<number> {
+    return this.expire(key, ttl);
+  }
+
+  // Event emitter interface (required by connect-redis)
+  on(event: string, listener: (...args: any[]) => void): this { 
+    // No-op for our implementation
+    return this; 
+  }
   
-  // Connection methods
-  async quit(): Promise<string> { return 'OK'; }
-  async disconnect(): Promise<void> { return; }
+  emit(event: string, ...args: any[]): boolean { 
+    // No-op for our implementation
+    return true; 
+  }
+  
+  removeAllListeners(event?: string): this { 
+    // No-op for our implementation
+    return this; 
+  }
+  
+  // Connection lifecycle methods
+  async quit(): Promise<string> { 
+    // On-demand service handles connection cleanup
+    return 'OK'; 
+  }
+  
+  async disconnect(): Promise<void> { 
+    // On-demand service handles connection cleanup
+    return; 
+  }
+
+  // Connection status (for connect-redis health checks)
+  get status(): string {
+    return 'ready';
+  }
 }
 
 const redisClient = OnDemandRedisClient.getInstance();
@@ -166,7 +276,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new RedisStore({
         client: redisClient as any,
         prefix: 'sess:',
-        ttl: 86400 // 24 hours
+        ttl: 86400, // 24 hours
+        serializer: {
+          stringify: JSON.stringify,
+          parse: JSON.parse
+        },
+        disableTouch: false,
+        disableTTL: false
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: false, // Don't save session if unmodified - reduces Redis load
