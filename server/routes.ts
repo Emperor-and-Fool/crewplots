@@ -30,6 +30,7 @@ import notesRoutes from './routes/notes';
 import cacheTestRoutes from './routes/cache-test';
 import redisTestRoutes from './routes/redis-test';
 import redisMonitorRoutes from './routes/redis-monitor';
+import { onDemandRedis } from '../adapters-repl/redis-ondemand/on-demand-service';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -39,8 +40,54 @@ const upload = multer({
   },
 });
 
-// Setup PostgreSQL session store
+// Setup session stores
 const PgStore = connectPgSimple(session);
+const RedisStore = connectRedis(session);
+
+// Redis session store adapter
+class RedisSessionStore {
+  async getSession(sessionId: string): Promise<any> {
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        const sessionData = await redis.get(`sess:${sessionId}`);
+        return sessionData ? JSON.parse(sessionData) : null;
+      }, { connectionId: 'session-get', keepAlive: 5000 });
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Redis session get failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async setSession(sessionId: string, sessionData: any, ttl: number = 86400): Promise<void> {
+    try {
+      await onDemandRedis.withConnection(async (redis) => {
+        await redis.setex(`sess:${sessionId}`, ttl, JSON.stringify(sessionData));
+      }, { connectionId: 'session-set', keepAlive: 5000 });
+      
+      console.log(`✅ Session stored in Redis: ${sessionId}`);
+    } catch (error) {
+      console.error('❌ Redis session set failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    try {
+      await onDemandRedis.withConnection(async (redis: any) => {
+        await redis.del(`sess:${sessionId}`);
+      }, { connectionId: 'session-delete', keepAlive: 5000 });
+      
+      console.log(`✅ Session deleted from Redis: ${sessionId}`);
+    } catch (error) {
+      console.error('❌ Redis session delete failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+}
+
+const redisSessionStore = new RedisSessionStore();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -57,11 +104,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new PgStore({
-        pool: pool,
-        tableName: 'sessions',
-        createTableIfMissing: true,
-        ttl: 86400000 // 24 hours
+      store: new RedisStore({
+        client: {
+          get: (key: string, callback: (err: any, result?: string) => void) => {
+            console.log(`🔍 Redis session GET: ${key}`);
+            const sessionId = key.replace('sess:', '');
+            redisSessionStore.getSession(sessionId)
+              .then(result => callback(null, result ? JSON.stringify(result) : null))
+              .catch(err => callback(err));
+          },
+          set: (key: string, value: string, callback: (err?: any) => void) => {
+            console.log(`💾 Redis session SET: ${key}`);
+            const sessionId = key.replace('sess:', '');
+            const sessionData = JSON.parse(value);
+            redisSessionStore.setSession(sessionId, sessionData)
+              .then(() => callback())
+              .catch(err => callback(err));
+          },
+          del: (key: string, callback: (err?: any) => void) => {
+            console.log(`🗑️ Redis session DELETE: ${key}`);
+            const sessionId = key.replace('sess:', '');
+            redisSessionStore.deleteSession(sessionId)
+              .then(() => callback())
+              .catch(err => callback(err));
+          },
+          // Required Redis client interface methods
+          on: () => {},
+          emit: () => {},
+          end: () => {},
+          quit: () => Promise.resolve()
+        }
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
