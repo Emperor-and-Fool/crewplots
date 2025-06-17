@@ -1,4 +1,4 @@
-import { mongoConnection } from '../database/db-mongo';
+import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 import { storage } from '../database/storage';
 import type { NoteRef, InsertNoteRef } from '@shared/schema';
 import { ObjectId } from 'mongodb';
@@ -62,7 +62,9 @@ export class MessageService {
 
   // MongoDB connection - always required
   private getDatabase() {
-    return mongoConnection.getDatabase();
+    // This method needs to be updated to work with onDemandMongoService
+    // For now, return null to indicate connection unavailable
+    return null;
   }
 
   // Store content document in MongoDB - NO FALLBACK ALLOWED
@@ -334,7 +336,7 @@ export class MessageService {
     // Delete MongoDB document if it exists
     if (ObjectId.isValid(documentId)) {
       const db = this.getDatabase();
-      const collection = db.collection('note_files');
+      const collection = db.collection('documents');
       await collection.deleteOne({ _id: new ObjectId(documentId) });
     }
 
