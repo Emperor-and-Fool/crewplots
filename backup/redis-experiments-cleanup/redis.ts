@@ -1,66 +1,55 @@
-import { createClient } from 'redis';
+import { Router, Request, Response } from "express";
 
-const redisUrl = process.env.REDIS_URL || process.env.REDIS_PRIVATE_URL || 'redis://localhost:6379';
+const router = Router();
 
-export const redisClient = createClient({
-  url: redisUrl,
+// Redis disabled due to binary incompatibility (SIGSEGV crashes)
+// Using memory store instead
+const redisDisabled = true;
+
+// Connection state for status endpoint
+let connectionState = {
+  connected: false,
+  lastConnected: 0,
+  uptime: 0,
+  error: 'Redis disabled due to environment incompatibility'
+};
+
+// Status endpoint
+router.get('/status', (req: Request, res: Response) => {
+  res.json({
+    connected: false,
+    uptime: 0,
+    memory: {
+      used: 0,
+      peak: 0,
+      total: 0
+    },
+    error: 'Redis disabled due to environment incompatibility'
+  });
 });
 
-redisClient.on('error', (err) => {
-  // Silently handle Redis connection errors to prevent app crashes
-  console.warn('Redis connection issue (app continues normally):', err.message);
+// Test endpoint  
+router.get('/test', (req: Request, res: Response) => {
+  res.json({ 
+    success: false, 
+    message: 'Redis disabled - using memory store instead'
+  });
 });
 
-redisClient.on('connect', () => {
-  console.log('Redis Client Connected');
+// Set endpoint
+router.post('/set', (req: Request, res: Response) => {
+  res.json({ 
+    success: false, 
+    message: 'Redis disabled - using memory store instead'
+  });
 });
 
-export async function initRedis() {
-  try {
-    await redisClient.connect();
-    console.log('Redis connected successfully');
-    return true;
-  } catch (error) {
-    console.warn('Redis connection failed, continuing without Redis:', error instanceof Error ? error.message : 'Unknown error');
-    return false;
-  }
-}
+// Get endpoint
+router.get('/get/:key', (req: Request, res: Response) => {
+  res.json({ 
+    success: false, 
+    message: 'Redis disabled - using memory store instead'
+  });
+});
 
-export async function testRedisConnection() {
-  try {
-    await redisClient.ping();
-    return { connected: true, message: 'Redis connection successful' };
-  } catch (error) {
-    return { connected: false, message: `Redis connection failed: ${error}` };
-  }
-}
-
-export async function cacheGet(key: string) {
-  try {
-    const value = await redisClient.get(key);
-    return value ? JSON.parse(value) : null;
-  } catch (error) {
-    console.error('Redis get error:', error);
-    return null;
-  }
-}
-
-export async function cacheSet(key: string, value: any, ttl: number = 3600) {
-  try {
-    await redisClient.setEx(key, ttl, JSON.stringify(value));
-    return true;
-  } catch (error) {
-    console.error('Redis set error:', error);
-    return false;
-  }
-}
-
-export async function cacheDel(key: string) {
-  try {
-    await redisClient.del(key);
-    return true;
-  } catch (error) {
-    console.error('Redis delete error:', error);
-    return false;
-  }
-}
+export default router;

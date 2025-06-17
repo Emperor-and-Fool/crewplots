@@ -20,7 +20,7 @@ import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
-import redisRoutes from './routes/redis';
+// Redis routes moved to backup - using single Redis implementation
 import messagesRoutes from './routes/messages/index';
 // Documents routes removed - functionality moved to template files
 import dashboardRoutes from './routes/dashboard';
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/applicant-portal', applicantPortalRoutes);
-  app.use('/api/redis', redisRoutes);
+  // Redis routes disabled - using single Redis implementation
   app.use('/api/messages', messagesRoutes);
   // Documents routes disabled - functionality moved to template files
   // app.use('/api/documents', documentsRoutes);
