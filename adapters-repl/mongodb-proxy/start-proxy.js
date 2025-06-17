@@ -123,9 +123,36 @@ async function startProxyServer() {
     
     // Start Express server
     const PORT = 3001;
-    app.listen(PORT, '127.0.0.1', () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ MongoDB Proxy Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    });
+
+    // Handle server errors
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+      process.exit(1);
+    });
+
+    // Keep the process alive
+    process.on('SIGTERM', () => {
+      console.log('🛑 Received SIGTERM, gracefully shutting down');
+      server.close(() => {
+        if (mongoClient) {
+          mongoClient.close();
+        }
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      console.log('🛑 Received SIGINT, gracefully shutting down');
+      server.close(() => {
+        if (mongoClient) {
+          mongoClient.close();
+        }
+        process.exit(0);
+      });
     });
     
   } catch (error) {
