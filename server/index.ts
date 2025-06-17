@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 import { mongoConnection } from "./db-mongo";
-import { keepAliveService } from "../adapters-repl/keepalive-service";
+// Keepalive service removed - using on-demand Redis service instead
 import { cacheService } from "./services/cache-service";
 
 
@@ -73,8 +73,8 @@ app.use((req, res, next) => {
   console.log('✅ On-demand cache service initialized - Redis will start when needed');
   console.log('Cache status:', cacheService.getStatus());
 
-  // Redis supervisor temporarily disabled - using integrated keepalive instead
-  console.log('Redis supervisor disabled - using integrated keepalive service');
+  // Using on-demand Redis service instead of persistent keepalive
+  console.log('Redis supervisor disabled - using on-demand Redis service');
   // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
