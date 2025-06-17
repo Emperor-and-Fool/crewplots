@@ -106,7 +106,7 @@ export class MessageService {
     console.log(`🔄 INSERTING DOCUMENT: ${JSON.stringify({ contentType: options.contentType, workflow: options.workflow, metadata })}`);
     const result = await mongoProxyClient.insertOne('documents', document);
     
-    console.log(`📊 INSERT RESULT: acknowledged=${result.acknowledged}, insertedId=${result.insertedId}`);
+    console.log(`📊 INSERT RESULT: insertedId=${result.insertedId}`);
     
     if (!result.insertedId) {
       console.error('❌ MONGODB INSERTION FAILED - NO INSERTED ID');

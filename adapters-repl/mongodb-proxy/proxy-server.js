@@ -1,6 +1,6 @@
 import express from 'express';
 import { MongoClient } from 'mongodb';
-import { onDemandMongoService } from '../mongodb-ondemand/on-demand-mongodb.js';
+import { onDemandMongoService } from '../mongodb-ondemand/on-demand-mongodb.ts';
 
 const app = express();
 app.use(express.json());
