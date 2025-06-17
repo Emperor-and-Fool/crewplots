@@ -171,6 +171,10 @@ router.post('/documents', async (req, res) => {
     // Return the updated/created document
     const document = await collection.findOne({ userId, documentType });
     
+    if (!document) {
+      return res.status(500).json({ error: 'Failed to retrieve created document' });
+    }
+    
     // Transform MongoDB document to frontend-expected format
     const responseDocument = {
       ...document,
@@ -257,6 +261,10 @@ router.put('/documents/:documentId', async (req, res) => {
     // Return the updated document with frontend-expected format
     const updatedDocument = await collection.findOne({ _id: new ObjectId(documentId) });
     
+    if (!updatedDocument) {
+      return res.status(404).json({ error: 'Document not found after update' });
+    }
+    
     // Transform MongoDB document to frontend-expected format
     const responseDocument = {
       ...updatedDocument,
@@ -339,11 +347,12 @@ router.delete('/documents/:documentId', async (req, res) => {
     res.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({ error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('Unauthorized')) {
+      return res.status(403).json({ error: errorMessage });
     }
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ error: error.message });
+    if (errorMessage.includes('not found')) {
+      return res.status(404).json({ error: errorMessage });
     }
     res.status(500).json({ error: 'Failed to delete document' });
   }

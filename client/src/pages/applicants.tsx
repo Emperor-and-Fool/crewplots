@@ -38,7 +38,7 @@ export default function Applicants() {
   const [selectedApplicant, setSelectedApplicant] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hireDialogOpen, setHireDialogOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
@@ -110,7 +110,7 @@ export default function Applicants() {
 
   // Filter applicants by location
   const filteredApplicants = applicants?.filter((applicant: User) => 
-    !selectedLocation || selectedLocation === "all" || applicant.locationId === Number(selectedLocation)
+    !selectedLocation || applicant.locationId === selectedLocation
   );
 
   // Delete mutation
@@ -260,10 +260,6 @@ export default function Applicants() {
                 </div>
                 <ApplicantForm 
                   applicant={selectedApplicant || undefined} 
-                  onSuccess={() => {
-                    setShowForm(false);
-                    setSelectedApplicant(null);
-                  }}
                   isEditing={!!selectedApplicant} 
                 />
               </div>
@@ -292,8 +288,8 @@ export default function Applicants() {
                       <div className="flex items-center justify-between">
                         <label htmlFor="location-filter" className="text-sm font-medium text-gray-700">Filter by Location:</label>
                         <Select 
-                          value={selectedLocation || ""} 
-                          onValueChange={(value) => setSelectedLocation(value || null)}
+                          value={selectedLocation?.toString() || ""} 
+                          onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}
                         >
                           <SelectTrigger id="location-filter" className="w-[200px]">
                             <SelectValue placeholder="All Locations" />
@@ -582,7 +578,7 @@ export default function Applicants() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Select onValueChange={(value) => setSelectedLocation(parseInt(value))}>
+            <Select onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
