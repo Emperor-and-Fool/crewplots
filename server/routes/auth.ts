@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { storage } from '../storage';
+import { storage } from '../database/storage';
 import { insertUserSchema, loginSchema, registerSchema, User } from '@shared/schema';
 import { ZodError } from 'zod';
 import bcrypt from 'bcryptjs';
