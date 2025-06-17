@@ -38,8 +38,8 @@ export class KeepAliveService {
     
     try {
       // Start Redis
-      const redisPath = path.resolve('./production-redis');
-      this.redisProcess = spawn(redisPath, [], {
+      const redisPath = path.resolve('Redis-replit/bin/redis-server');
+      this.redisProcess = spawn(redisPath, ['--port', '6379'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
@@ -233,8 +233,8 @@ export class KeepAliveService {
     }
 
     setTimeout(async () => {
-      const redisPath = path.resolve('./production-redis');
-      this.redisProcess = spawn(redisPath, [], {
+      const redisPath = path.resolve('Redis-replit/bin/redis-server');
+      this.redisProcess = spawn(redisPath, ['--port', '6379'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
