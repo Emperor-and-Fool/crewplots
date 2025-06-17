@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 
 async function deleteDocument() {
   try {
-    const response = await fetch('http://localhost:5173/api/mongodb/documents/684aadb9b40ba343aef67462', {
+    const response = await fetch('http://localhost:5000/api/mongodb/documents/684aadb9b40ba343aef67462', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

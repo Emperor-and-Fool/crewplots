@@ -14,6 +14,7 @@ Development and monitoring API routes (mounted at `/api/`):
 - `cache-test.ts` - Cache service testing endpoints
 - `redis-test.ts` - Redis connection and operation testing
 - `redis-monitor.ts` - Redis lifecycle monitoring endpoints
+- `mongodb-messages.ts` - Direct MongoDB document operations (development only)
 
 ### `/utilities/`
 General development utilities (currently empty)
@@ -25,6 +26,7 @@ The test routes are automatically mounted in the main application:
 - `/api/cache/*` - Cache testing endpoints
 - `/api/redis-test/*` - Redis testing endpoints  
 - `/api/redis-monitor/*` - Redis monitoring endpoints
+- `/api/mongodb/*` - Direct MongoDB document operations (development only)
 
 ### Scripts
 Run scripts from the project root:

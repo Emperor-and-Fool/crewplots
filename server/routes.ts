@@ -25,7 +25,7 @@ import applicantPortalRoutes from './routes/applicant-portal';
 import messagesRoutes from './routes/messages/index';
 // Documents routes removed - functionality moved to template files
 import dashboardRoutes from './routes/dashboard';
-import mongodbMessagesRoutes from './routes/mongodb-messages';
+import mongodbMessagesRoutes from '../DevOpUtils/test-routes/mongodb-messages';
 import notesRoutes from './routes/notes';
 
 import cacheTestRoutes from '../DevOpUtils/test-routes/cache-test';
