@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { redisSupervisor } from "./redis-supervisor";
 import { mongoConnection } from "./db-mongo";
-import { keepAliveService } from "./services/keepalive-service";
+import { keepAliveService } from "../adapters-repl/keepalive-service";
 import { cacheService } from "./services/cache-service";
 
 
