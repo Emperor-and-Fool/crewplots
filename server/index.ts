@@ -45,6 +45,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize MongoDB connection during startup
+  try {
+    await mongoConnection.connect();
+    console.log('✅ MongoDB initialized during startup');
+  } catch (error) {
+    console.error('❌ MongoDB startup initialization failed:', error);
+    // Continue startup anyway - on-demand service will handle it later
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -63,11 +72,6 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-
-  // Initialize MongoDB connection (non-blocking)
-  mongoConnection.connect().catch((error) => {
-    console.log('MongoDB connection failed, document storage features disabled');
-  });
 
   // Initialize on-demand cache service (no persistent processes)
   console.log('✅ On-demand cache service initialized - Redis will start when needed');
