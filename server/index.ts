@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { mongoConnection } from "./database/db-mongo";
 // Keepalive service removed - using on-demand Redis service instead
 import { cacheService } from "./services/cache-service";
+import { mongoProxyDaemon } from "./services/mongodb-proxy-daemon.js";
 
 
 const app = express();
@@ -96,12 +97,14 @@ app.use((req, res, next) => {
   // Graceful shutdown handling
   process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
+    await mongoProxyDaemon.stop();
     await cacheService.shutdown();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down gracefully...');
+    await mongoProxyDaemon.stop();
     await cacheService.shutdown();
     process.exit(0);
   });
