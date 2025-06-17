@@ -45,60 +45,59 @@ const upload = multer({
 // Setup session stores
 const PgStore = connectPgSimple(session);
 
-// Create Redis client that bridges our on-demand service with standard Redis client interface
-const redisClient = createClient({
-  url: 'redis://localhost:6379',
-  socket: {
-    connectTimeout: 5000,
-    lazyConnect: true
-  }
-});
+// Create Redis client adapter that works with our on-demand service
+const redisClientAdapter = {
+  get: async (key: string) => {
+    console.log(`🔍 Redis session GET: ${key}`);
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.get(key);
+      }, { connectionId: 'session-get', keepAlive: 5000 });
+      
+      console.log(`✅ Session retrieved from Redis: ${key}`);
+      return result;
+    } catch (error) {
+      console.error('❌ Redis session GET failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-// Override Redis client methods to use our on-demand service
-redisClient.get = async (key: string) => {
-  console.log(`🔍 Redis session GET: ${key}`);
-  try {
-    const result = await onDemandRedis.withConnection(async (redis: any) => {
-      return await redis.get(key);
-    }, { connectionId: 'session-get', keepAlive: 5000 });
-    
-    console.log(`✅ Session retrieved from Redis: ${key}`);
-    return result;
-  } catch (error) {
-    console.error('❌ Redis session GET failed:', error);
-    throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+  set: async (key: string, value: string, options?: any) => {
+    console.log(`💾 Redis session SET: ${key}`);
+    try {
+      await onDemandRedis.withConnection(async (redis: any) => {
+        const ttl = options?.EX || 86400; // Default 24 hours
+        await redis.setex(key, ttl, value);
+      }, { connectionId: 'session-set', keepAlive: 5000 });
+      
+      console.log(`✅ Session stored in Redis: ${key}`);
+      return 'OK';
+    } catch (error) {
+      console.error('❌ Redis session SET failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-redisClient.set = async (key: string, value: string, options?: any) => {
-  console.log(`💾 Redis session SET: ${key}`);
-  try {
-    await onDemandRedis.withConnection(async (redis: any) => {
-      const ttl = options?.EX || 86400; // Default 24 hours
-      await redis.setex(key, ttl, value);
-    }, { connectionId: 'session-set', keepAlive: 5000 });
-    
-    console.log(`✅ Session stored in Redis: ${key}`);
-    return 'OK';
-  } catch (error) {
-    console.error('❌ Redis session SET failed:', error);
-    throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+  del: async (key: string) => {
+    console.log(`🗑️ Redis session DELETE: ${key}`);
+    try {
+      const result = await onDemandRedis.withConnection(async (redis: any) => {
+        return await redis.del(key);
+      }, { connectionId: 'session-delete', keepAlive: 5000 });
+      
+      console.log(`✅ Session deleted from Redis: ${key}`);
+      return result;
+    } catch (error) {
+      console.error('❌ Redis session DELETE failed:', error);
+      throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-redisClient.del = async (key: string) => {
-  console.log(`🗑️ Redis session DELETE: ${key}`);
-  try {
-    const result = await onDemandRedis.withConnection(async (redis: any) => {
-      return await redis.del(key);
-    }, { connectionId: 'session-delete', keepAlive: 5000 });
-    
-    console.log(`✅ Session deleted from Redis: ${key}`);
-    return result;
-  } catch (error) {
-    console.error('❌ Redis session DELETE failed:', error);
-    throw new Error(`Session store unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+  // Required interface methods for connect-redis
+  on: () => {},
+  emit: () => {},
+  quit: () => Promise.resolve('OK'),
+  disconnect: () => Promise.resolve()
 };
 
 // Redis session store adapter
@@ -162,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: '/'
       },
       store: new RedisStore({
-        client: redisClient,
+        client: redisClientAdapter as any,
         prefix: 'sess:',
         ttl: 86400 // 24 hours
       }),
