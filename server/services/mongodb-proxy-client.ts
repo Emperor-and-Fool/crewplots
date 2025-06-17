@@ -56,8 +56,13 @@ export class MongoDBProxyClient {
       throw new Error('MongoDB proxy not connected');
     }
 
-    const queryParam = encodeURIComponent(JSON.stringify(query));
-    const response = await fetch(`${this.baseUrl}/collections/${collectionName}/findOne?q=${queryParam}`);
+    const response = await fetch(`${this.baseUrl}/collections/${collectionName}/findOne`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filter: query })
+    });
 
     if (!response.ok) {
       const error = await response.json();
