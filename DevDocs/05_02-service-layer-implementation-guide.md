@@ -98,14 +98,14 @@ The service layer integrates with API routes in `server/routes/notes.ts`:
 // GET /api/messaging/notes
 app.get('/api/messaging/notes', async (req, res) => {
   const userId = req.user.id;
-  const notes = await messageService.getNoteRefsByUser(userId);
+  const notes = await messageStorageService.getNoteRefsByUser(userId);
   res.json(notes);
 });
 
 // POST /api/messaging/notes
 app.post('/api/messaging/notes', async (req, res) => {
   const noteData = { ...req.body, userId: req.user.id };
-  const note = await messageService.createNoteRef(noteData);
+  const note = await messageStorageService.createNoteRef(noteData);
   res.json(note);
 });
 
@@ -113,14 +113,14 @@ app.post('/api/messaging/notes', async (req, res) => {
 app.put('/api/messaging/notes/:id', async (req, res) => {
   const messageId = parseInt(req.params.id);
   const updates = req.body;
-  const note = await messageService.updateNoteRef(messageId, updates);
+  const note = await messageStorageService.updateNoteRef(messageId, updates);
   res.json(note);
 });
 
 // DELETE /api/messaging/notes/:id
 app.delete('/api/messaging/notes/:id', async (req, res) => {
   const messageId = parseInt(req.params.id);
-  const success = await messageService.deleteNoteRef(messageId);
+  const success = await messageStorageService.deleteNoteRef(messageId);
   res.json({ success });
 });
 ```

@@ -84,7 +84,7 @@ The backend implements a data compilation strategy that merges PostgreSQL metada
 }
 ```
 
-### MessageService Compilation Logic
+### MessageStorageService Compilation Logic
 
 #### Core Compilation Method
 ```typescript
