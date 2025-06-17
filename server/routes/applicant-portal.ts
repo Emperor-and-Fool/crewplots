@@ -151,7 +151,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     
     // Use MessageService for proper hybrid retrieval
     console.log('🔍 Using MessageService for hybrid retrieval');
-    const messages = await messageStorageService.getNoteRefsByUser(userId);
+    const messages = await messageService.getNoteRefsByUser(userId);
     
     console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
@@ -187,7 +187,7 @@ router.post('/messages', isApplicant, async (req: any, res) => {
       documentType: 'motivation'
     };
     
-    const newMessage = await messageStorageService.createNoteRef(noteRefData);
+    const newMessage = await messageService.createNoteRef(noteRefData);
     
     console.log(`Created message with hybrid storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
@@ -228,7 +228,7 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     
     // Use MessageService for proper hybrid ID handling
     console.log('🔄 Using MessageService for hybrid update');
-    const updatedMessage = await messageStorageService.updateNoteRef(messageId, { content });
+    const updatedMessage = await messageService.updateNoteRef(messageId, { content });
     
     console.log(`Updated message ${messageId} with hybrid storage for applicant user ${userId}`);
     res.json(updatedMessage);
@@ -255,7 +255,7 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
     }
     
     // Use MessageService to delete message (PostgreSQL + MongoDB)
-    const deleted = await messageStorageService.deleteNoteRef(messageId);
+    const deleted = await messageService.deleteNoteRef(messageId);
     
     if (deleted) {
       console.log(`Deleted message ${messageId} with MongoDB cleanup for applicant user ${userId}`);
