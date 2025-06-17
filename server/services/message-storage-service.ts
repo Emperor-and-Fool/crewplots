@@ -140,16 +140,13 @@ export class MessageService {
     }
   }
 
-  // Get MongoDB document content
+  // Get MongoDB document content via proxy
   private async getMongoDocument(documentId: string): Promise<MessageDocument | null> {
-    const db = this.getDatabase();
-    if (!db) {
-      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
+    if (!mongoProxyClient.isConnected()) {
+      await this.initializeMongoProxy();
     }
     
-    const collection = db.collection<MessageDocument>('documents');
-    
-    return await collection.findOne({ _id: new ObjectId(documentId) });
+    return await mongoProxyClient.findOne('documents', { _id: new ObjectId(documentId) });
   }
 
   // Update MongoDB document content
