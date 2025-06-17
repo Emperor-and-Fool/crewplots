@@ -1,8 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { redisSupervisor } from "./infrastructure/replit/redis-supervisor";
-import { mongoConnection } from "./infrastructure/replit/mongo-proxy";
+import { redisSupervisor } from "./redis-supervisor";
+import { mongoConnection } from "./db-mongo";
 import { keepAliveService } from "./services/keepalive-service";
 import { cacheService } from "./services/cache-service";
 
