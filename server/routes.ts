@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { HybridSessionStore } from "./services/hybrid-session-store";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -27,6 +28,7 @@ import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/notes';
 
 import cacheTestRoutes from './routes/cache-test';
+import redisTestRoutes from './routes/redis-test';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -54,7 +56,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new HybridSessionStore(),
+      store: new PgStore({
+        pool: pool,
+        tableName: 'sessions',
+        createTableIfMissing: true,
+        ttl: 86400000 // 24 hours
+      }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
@@ -257,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);
+  app.use('/api/redis-test', redisTestRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
