@@ -1,8 +1,12 @@
-const express = require('express');
-const { MongoClient } = require('mongodb');
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import { MongoClient } from 'mongodb';
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -11,58 +15,20 @@ let mongoClient = null;
 let mongoDb = null;
 let mongoProcess = null;
 
-// Start MongoDB process
-async function startMongoDB() {
-  return new Promise((resolve, reject) => {
-    console.log('🚀 Starting MongoDB server...');
-    
-    // Ensure data directory exists
-    const dataDir = path.join(process.cwd(), '../../mongodb_data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
-    const mongodPath = '/nix/store/fwh4fxd747m0py3ib3s5abamia9nrf90-mongodb-4.4.29/bin/mongod';
-    
-    mongoProcess = spawn(mongodPath, [
-      '--dbpath', dataDir,
-      '--port', '27017',
-      '--bind_ip', '127.0.0.1',
-      '--nojournal',
-      '--noprealloc',
-      '--smallfiles',
-      '--quiet'
-    ], {
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    mongoProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      if (output.includes('waiting for connections')) {
-        console.log('✅ MongoDB server started successfully');
-        resolve(true);
-      }
-    });
-
-    mongoProcess.stderr.on('data', (data) => {
-      console.log('MongoDB stderr:', data.toString());
-    });
-
-    mongoProcess.on('error', (error) => {
-      console.error('❌ MongoDB process error:', error);
-      reject(error);
-    });
-
-    // Timeout after 30 seconds
-    setTimeout(() => {
-      if (mongoProcess && mongoProcess.pid) {
-        console.log('✅ MongoDB process appears to be running');
-        resolve(true);
-      } else {
-        reject(new Error('MongoDB startup timeout'));
-      }
-    }, 30000);
-  });
+// Check if MongoDB is already running (on-demand service)
+async function checkMongoDB() {
+  try {
+    console.log('🔍 Checking for existing MongoDB instance...');
+    const testClient = new MongoClient('mongodb://127.0.0.1:27017');
+    await testClient.connect();
+    await testClient.db('test').admin().ping();
+    await testClient.close();
+    console.log('✅ Found existing MongoDB instance');
+    return true;
+  } catch (error) {
+    console.log('❌ No existing MongoDB instance found');
+    return false;
+  }
 }
 
 // Connect to MongoDB
@@ -146,13 +112,13 @@ async function startProxyServer() {
   try {
     console.log('🚀 Starting MongoDB Proxy Server...');
     
-    // Start MongoDB first
-    await startMongoDB();
+    // Check if MongoDB is already running
+    const mongoRunning = await checkMongoDB();
+    if (!mongoRunning) {
+      throw new Error('MongoDB service not available');
+    }
     
-    // Wait a bit for MongoDB to be ready
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Connect to MongoDB
+    // Connect to existing MongoDB
     await connectToMongoDB();
     
     // Start Express server
@@ -176,9 +142,7 @@ process.on('SIGINT', async () => {
     await mongoClient.close();
   }
   
-  if (mongoProcess) {
-    mongoProcess.kill('SIGTERM');
-  }
+  // MongoDB is managed by on-demand service, don't kill it
   
   process.exit(0);
 });
