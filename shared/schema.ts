@@ -159,11 +159,11 @@ export const staffCompetencies = pgTable("staff_competencies", {
 
 
 // User Documents
-export const userDocuments = pgTable("user_documents", {
+export const userNotes = pgTable("user_notes", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  documentName: text("document_name").notNull(),
-  documentUrl: text("document_url").notNull(),
+  noteName: text("note_name").notNull(),
+  noteUrl: text("note_url").notNull(),
   fileType: text("file_type"),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   verifiedAt: timestamp("verified_at"),
@@ -370,7 +370,7 @@ export const insertPositionCompetencySchema = createInsertSchema(positionCompete
 export const insertCompetencySchema = createInsertSchema(competencies).omit({ id: true, createdAt: true });
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
 export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
-export const insertUserDocumentSchema = createInsertSchema(userDocuments).omit({ id: true, uploadedAt: true, verifiedAt: true });
+export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
@@ -410,7 +410,7 @@ export const registerSchema = z.object({
 });
 
 // Types for drizzle tables
-export type UserDocument = typeof userDocuments.$inferSelect;
+export type UserNote = typeof userNotes.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
@@ -423,7 +423,7 @@ export type InsertPositionCompetency = z.infer<typeof insertPositionCompetencySc
 export type InsertCompetency = z.infer<typeof insertCompetencySchema>;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type InsertStaffCompetency = z.infer<typeof insertStaffCompetencySchema>;
-export type InsertUserDocument = z.infer<typeof insertUserDocumentSchema>;
+export type InsertUserNote = z.infer<typeof insertUserNoteSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;
@@ -435,7 +435,7 @@ export type InsertMessage = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteRef = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteFile = z.infer<typeof insertNoteFileSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
-export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
+export type InsertNoteAttachment = z.infer<typeof insertNoteAttachmentSchema>;
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
