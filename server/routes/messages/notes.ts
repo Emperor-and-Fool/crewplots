@@ -1,8 +1,32 @@
 import express from 'express';
 import { storage } from '../../storage';
 import { messageStorageService } from '../../services/message-storage-service';
+import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 
 import { z } from 'zod';
+
+// MongoDB retry wrapper with on-demand service integration
+async function withMongoDBRetry<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error: any) {
+    console.log(`[MongoDB Retry] Operation failed, attempting to restart MongoDB service: ${error.message}`);
+    
+    try {
+      const serviceStarted = await onDemandMongoService.ensureReady();
+      if (serviceStarted) {
+        console.log('[MongoDB Retry] Service restarted successfully, retrying operation');
+        return await operation();
+      } else {
+        console.error('[MongoDB Retry] Failed to restart MongoDB service');
+        throw new Error(`MongoDB service unavailable: ${error.message}`);
+      }
+    } catch (retryError: any) {
+      console.error('[MongoDB Retry] Retry failed:', retryError.message);
+      throw new Error(`MongoDB operation failed after retry: ${retryError.message}`);
+    }
+  }
+}
 
 const router = express.Router();
 
@@ -20,9 +44,9 @@ router.get('/', requireAuth, async (req: any, res) => {
     const userId = req.user.id;
     console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
     
-    // Use MessageService for proper hybrid retrieval
-    console.log('🔍 Using MessageService for hybrid retrieval');
-    const messages = await messageStorageService.getNoteRefsByUser(userId);
+    // Use MessageService for proper hybrid retrieval with MongoDB retry
+    console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
+    const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(userId));
     
     console.log(`Fetched ${messages.length} notes for user ${userId}`);
     res.json(messages);
@@ -57,7 +81,7 @@ router.post('/', requireAuth, async (req: any, res) => {
       documentType: validatedData.documentType || 'note'
     };
     
-    const newMessage = await messageStorageService.createNoteRef(noteRefData);
+    const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));
     
     console.log(`Created note with hybrid storage for user ${userId}`);
     res.status(201).json(newMessage);
@@ -100,8 +124,8 @@ router.put('/:id', requireAuth, async (req: any, res) => {
       return res.status(404).json({ error: 'Note not found or not authorized' });
     }
     
-    console.log('🔄 Using MessageService for hybrid update');
-    const updatedMessage = await messageStorageService.updateNoteRef(messageId, { content });
+    console.log('🔄 Using MessageService for hybrid update with MongoDB retry');
+    const updatedMessage = await withMongoDBRetry(() => messageStorageService.updateNoteRef(messageId, { content }));
     
     console.log(`Updated note ${messageId} with hybrid storage for user ${userId}`);
     res.json(updatedMessage);
@@ -127,8 +151,8 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
       return res.status(404).json({ error: 'Note not found or not authorized' });
     }
     
-    // Use MessageService to delete note (PostgreSQL + MongoDB)
-    const deleted = await messageStorageService.deleteNoteRef(messageId);
+    // Use MessageService to delete note (PostgreSQL + MongoDB) with retry
+    const deleted = await withMongoDBRetry(() => messageStorageService.deleteNoteRef(messageId));
     
     if (deleted) {
       console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId}`);
