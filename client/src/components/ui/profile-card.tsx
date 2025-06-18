@@ -16,7 +16,7 @@ interface ApplicantProfile {
   id: number;
   name: string;
   email: string;
-  phone?: string;
+  phoneNumber?: string;
   status?: string;
   resumeUrl: string | null;
   notes?: any;
@@ -39,6 +39,7 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
   } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
     queryFn: async () => {
+      console.log('ProfileCard: Fetching profile data...');
       const response = await fetch('/api/applicant-portal/my-profile', {
         credentials: 'include'
       });
@@ -47,7 +48,9 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         throw new Error(`Failed to fetch profile: ${response.statusText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('ProfileCard: Profile data received:', data);
+      return data;
     },
     enabled: true, // Always enabled - let the server handle auth validation
     refetchOnMount: true,
@@ -78,12 +81,20 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
   };
 
 
+  console.log('ProfileCard render state:', { 
+    isLoading, 
+    hasProfile: !!profile, 
+    error: error?.message,
+    profileData: profile ? { name: profile.name, email: profile.email } : null
+  });
 
   if (isLoading) {
+    console.log('ProfileCard: Showing skeleton loader');
     return <PortalProfileSkeleton />;
   }
 
   if (error) {
+    console.log('ProfileCard: Showing error state:', error);
     return (
       <Card className={className}>
         <CardHeader>
@@ -94,6 +105,20 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
           <p className="text-sm text-gray-500 mt-2">
             {error instanceof Error ? error.message : 'Unknown error'}
           </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!profile) {
+    console.log('ProfileCard: No profile data available');
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle>No Profile Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>No profile information available.</p>
         </CardContent>
       </Card>
     );
@@ -128,10 +153,10 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {profile.phone && (
+        {profile.phoneNumber && (
           <div>
             <p className="text-sm font-medium text-gray-600">Phone</p>
-            <p>{profile.phone}</p>
+            <p>{profile.phoneNumber}</p>
           </div>
         )}
         
