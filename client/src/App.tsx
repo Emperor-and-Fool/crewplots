@@ -35,16 +35,11 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     </div>;
   }
   
-  if (!user) {
-    return <Redirect to="/login" />;
+  if (user) {
+    return <Component {...rest} />;
   }
   
-  // If user is applicant and trying to access non-applicant route, redirect to applicant portal
-  if (user.role === 'applicant' && Component !== ApplicantPortal) {
-    return <Redirect to="/applicant-portal" />;
-  }
-  
-  return <Component {...rest} />;
+  return <Redirect to="/login" />;
 };
 
 // Role-based protected route using AuthContext properly
@@ -88,122 +83,34 @@ function App() {
           <div className="flex-grow">
             <Router>
               <Switch>
-                {/* PUBLIC ROUTES - accessible without authentication */}
+                {/* PUBLIC ROUTES */}
                 <Route path="/login" component={Login} />
                 <Route path="/register" component={Register} />
                 <Route path="/registration-success" component={RegistrationSuccess} />
                 
-                {/* PROTECTED ROUTES - require authentication */}
+                {/* PROTECTED ROUTES - use simple ProtectedRoute */}
                 <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-                
-                <Route path="/locations" component={() => 
-                  <RoleProtectedRoute 
-                    component={Locations} 
-                    requiredRoles={["manager"]} 
-                  />
-                } />
-                
-                <Route path="/staff-management" component={() => 
-                  <RoleProtectedRoute 
-                    component={StaffManagement} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/scheduling" component={() => 
-                  <RoleProtectedRoute 
-                    component={Scheduling} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/view-calendar" component={() => 
-                  <RoleProtectedRoute 
-                    component={ViewCalendar} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/applicants" component={() => 
-                  <RoleProtectedRoute 
-                    component={Applicants} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/applicants/:id" component={() => 
-                  <RoleProtectedRoute 
-                    component={ApplicantDetail} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/applicant/:id" component={() => 
-                  <RoleProtectedRoute 
-                    component={ApplicantDetail} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
-                <Route path="/cash-management" component={() => 
-                  <RoleProtectedRoute 
-                    component={CashManagement} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-                
+                <Route path="/locations" component={() => <ProtectedRoute component={Locations} />} />
+                <Route path="/staff-management" component={() => <ProtectedRoute component={StaffManagement} />} />
+                <Route path="/scheduling" component={() => <ProtectedRoute component={Scheduling} />} />
+                <Route path="/view-calendar" component={() => <ProtectedRoute component={ViewCalendar} />} />
+                <Route path="/applicants" component={() => <ProtectedRoute component={Applicants} />} />
+                <Route path="/applicants/:id" component={() => <ProtectedRoute component={ApplicantDetail} />} />
+                <Route path="/applicant/:id" component={() => <ProtectedRoute component={ApplicantDetail} />} />
+                <Route path="/cash-management" component={() => <ProtectedRoute component={CashManagement} />} />
                 <Route path="/knowledge-base" component={() => <ProtectedRoute component={KnowledgeBase} />} />
+                <Route path="/applicant-portal" component={() => <ProtectedRoute component={ApplicantPortal} />} />
+                <Route path="/reports" component={() => <ProtectedRoute component={Reports} />} />
                 
-                <Route path="/applicant-portal" component={() => 
-                  <RoleProtectedRoute 
-                    component={ApplicantPortal} 
-                    requiredRoles={["applicant"]} 
-                  />
-                } />
+                {/* Default route */}
+                <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
                 
-                <Route path="/reports" component={() => 
-                  <RoleProtectedRoute 
-                    component={Reports} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  />
-                } />
-              
-
-              
-              {/* Default route - redirect based on user role */}
-              <Route path="/" component={() => {
-                const { user, isLoading } = useAuth();
-                
-                if (isLoading) {
-                  return <div className="flex h-screen items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-                      <p className="mt-4">Loading...</p>
-                    </div>
-                  </div>;
-                }
-                
-                if (!user) {
-                  return <Redirect to="/login" />;
-                }
-                
-                // Redirect based on user role
-                if (user.role === 'applicant') {
-                  return <Redirect to="/applicant-portal" />;
-                }
-                
-                return <Redirect to="/dashboard" />;
-              }} />
-              
-              {/* Not found - should be the very last */}
-              <Route component={NotFound} />
-            </Switch>
-          </Router>
-        </div>
-        {/* Only show footer on non-login/register pages to avoid duplicating it */}
-        {window.location.pathname !== '/login' && window.location.pathname !== '/register' && (
+                {/* Not found */}
+                <Route component={NotFound} />
+              </Switch>
+            </Router>
+          </div>
           <Footer />
-        )}
         </div>
       </TooltipProvider>
     </ProfileScraperInit>
