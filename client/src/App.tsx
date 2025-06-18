@@ -254,7 +254,13 @@ function App() {
               </Route>
               
               <Route path="/applicant-portal">
-                <ApplicantPortal />
+                {serverAuthState.authenticated ? 
+                  <RoleProtectedRoute 
+                    component={ApplicantPortal} 
+                    requiredRoles={["applicant"]} 
+                  /> : 
+                  <Redirect to="/login" />
+                }
               </Route>
               
               <Route path="/reports">
