@@ -91,11 +91,32 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
       });
     }
     
-    console.log('Successfully retrieved applicant profile:', 
-      { id: applicant.id, name: applicant.name, email: applicant.email });
+    // Get notes from hybrid system instead of deprecated notes field
+    const notes = await messageStorageService.getNoteRefsByUser(req.user.id);
+    const notesContent = notes.length > 0 ? notes[0].compiledContent : null;
     
-    // Send complete applicant data
-    res.json(applicant);
+    // Check if resume file actually exists
+    let validResumeUrl = null;
+    if (applicant.resumeUrl) {
+      const resumePath = path.join(process.cwd(), applicant.resumeUrl);
+      if (fs.existsSync(resumePath)) {
+        validResumeUrl = applicant.resumeUrl;
+      } else {
+        console.warn(`Resume file not found: ${resumePath}`);
+      }
+    }
+
+    const profileData = {
+      ...applicant,
+      notes: notesContent, // Show actual notes from hybrid system
+      resumeUrl: validResumeUrl // Only show if file exists
+    };
+    
+    console.log('Successfully retrieved applicant profile:', 
+      { id: applicant.id, name: applicant.name, email: applicant.email, hasNotes: !!notesContent, hasResume: !!validResumeUrl });
+    
+    // Send enhanced applicant data
+    res.json(profileData);
   } catch (error) {
     console.error('Error fetching applicant profile:', error);
     
