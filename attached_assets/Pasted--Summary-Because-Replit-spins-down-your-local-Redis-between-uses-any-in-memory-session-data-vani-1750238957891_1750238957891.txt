@@ -1,0 +1,116 @@
+## Summary
+
+Because Replit spins down your local Redis between uses, any in-memory session data vanishes and you see a brand-new session ID on each restart. To avoid that, you can treat Redis **not** as your source of truth for sessions but as a **cache layer**, and keep your durable session store in PostgreSQL. On each request, your app will: 1) **read** from Redis; 2) on a cache‐miss, **fetch** from Postgres and populate Redis (read-through); 3) on session‐writes, **write** to Postgres then **update** Redis (write-through). This way, when Redis goes away, your user’s session still lives in Postgres and will be re-cached seamlessly ([dev.to][1], [stackoverflow.com][2]).
+
+---
+
+## 1. Why Your Sessions Reset on Redis Restart
+
+* **Ephemeral In-Memory Store:** A local Redis server in Replit holds all data in RAM; Replit containers are recycled, wiping Redis’s memory every time your app sleeps or redeploys ([dev.to][3]).
+* **Session IDs in Cookies:** Since the cookie’s session ID key points at missing data in Redis, Express-Session generates a fresh session object and ID, hence your 401s ([stackoverflow.com][4]).
+
+---
+
+## 2. Hybrid Session Store + Cache Architecture
+
+### 2.1 Read-Through Cache (Cache-Aside)
+
+1. **On incoming request:**
+
+   * **Try Redis:** `get(sessionID)` from Redis cache.
+   * **Cache-miss:** fall back to Postgres session table (e.g. via `connect-pg-simple`) ([stackoverflow.com][2]).
+   * **Repopulate Redis:** `set(sessionID, sessionData)` with a TTL.
+
+2. **On session update:**
+
+   * **Write to Postgres first** (durable store).
+   * **Then update Redis** cache so future reads hit in-memory.
+
+### 2.2 Write-Through / Write-Back Variations
+
+* **Write-Through:** immediately write to both Postgres and Redis, ensuring strong consistency at the cost of two writes ([redis.io][5]).
+* **Write-Back (Buffered):** write to Redis first, and asynchronously persist to Postgres (faster writes, but risk of data loss if Redis goes down before flush) ([redis.io][5]).
+
+---
+
+## 3. Example Custom Session Store Wrapper
+
+```ts
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+import connectRedis from 'connect-redis';
+import { createClient } from 'redis';
+import { Pool } from 'pg';
+
+const RedisStore = connectRedis(session);
+const PgStore   = connectPgSimple(session);
+const redisClient = createClient({ url: process.env.REDIS_URL });
+await redisClient.connect();
+const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// Middleware to handle hybrid sessions
+app.use(session({
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  store: new (class HybridStore extends session.Store {
+    private redis = new RedisStore({ client: redisClient });
+    private pg    = new PgStore({ pool: pgPool });
+
+    // Read: try Redis → fallback Postgres → cache
+    async get(sid: string, cb: Function) {
+      this.redis.get(sid, async (err, sess) => {
+        if (sess || err) return cb(err, sess);
+        this.pg.get(sid, async (err2, sess2) => {
+          if (sess2) await redisClient.set(`sess:${sid}`, JSON.stringify(sess2));
+          cb(err2, sess2);
+        });
+      });
+    }
+
+    // Write: durable store then cache
+    async set(sid: string, sess: any, cb: Function) {
+      this.pg.set(sid, sess, (err) => {
+        if (err) return cb(err);
+        redisClient.set(`sess:${sid}`, JSON.stringify(sess), 'PX', this.cookie.maxAge)
+          .then(() => cb(null))
+          .catch(cb);
+      });
+    }
+
+    // Delegate destroy to both
+    async destroy(sid: string, cb: Function) {
+      await redisClient.del(`sess:${sid}`);
+      this.pg.destroy(sid, cb);
+    }
+  })()
+}));
+```
+
+This wrapper ensures **session continuity** even if Redis restarts, since Postgres is the golden source ([stackoverflow.com][6], [stackoverflow.com][7]).
+
+---
+
+## 4. Real-World Examples & Patterns
+
+* **Cache-Aside Pattern:** Widely used to layer Redis on top of SQL stores; see “First steps to caching PostgreSQL with Redis” ([dev.to][3]).
+* **Write-Through Caching:** Common in high-consistency systems; see AWS whitepaper on “Write-Through” with Redis ([docs.aws.amazon.com][8]).
+* **Session Stores in Production:** Many teams use `connect-pg-simple` for sessions and reserve Redis for **query caching**, not sessions ([dev.to][1]).
+
+---
+
+## 5. Takeaways
+
+* **Don’t rely on ephemeral Redis** for critical session persistence in Replit.
+* **Combine durable SQL session storage** (Postgres) with Redis as a **fast cache**.
+* **Implement read-through/write-through** to keep Redis warmed and fallback gracefully.
+* **This hybrid approach** avoids the “new session on each start” problem and leverages both stores’ strengths.
+
+[1]: https://dev.to/koshirok096/session-management-basics-with-redis-2o2e?utm_source=chatgpt.com "Session Management Basics with Redis - DEV Community"
+[2]: https://stackoverflow.com/questions/70719364/redis-read-through-implementation-tooling-example?utm_source=chatgpt.com "postgresql - Redis read-through implementation & tooling example ..."
+[3]: https://dev.to/heroku/first-steps-to-caching-postgresql-queries-with-redis-2m71?utm_source=chatgpt.com "First steps to caching PostgreSQL queries with Redis"
+[4]: https://stackoverflow.com/questions/51438264/express-creating-new-session-on-every-request-when-cookie-is-used?utm_source=chatgpt.com "Express creating new session on every request when cookie is used"
+[5]: https://redis.io/docs/latest/operate/oss_and_stack/stack-with-enterprise/gears-v1/jvm/recipes/write-behind/?utm_source=chatgpt.com "Write-behind, write-through, and read-through caching | Docs - Redis"
+[6]: https://stackoverflow.com/questions/74216527/redis-store-express-session?utm_source=chatgpt.com "node.js - Redis Store + Express Session - Stack Overflow"
+[7]: https://stackoverflow.com/questions/37912511/express-session-using-redis-store-couldnt-create-session?utm_source=chatgpt.com "Express session using redis store couldn't create session"
+[8]: https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html?utm_source=chatgpt.com "Caching patterns - Database Caching Strategies Using Redis"

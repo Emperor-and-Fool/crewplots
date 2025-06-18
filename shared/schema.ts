@@ -242,6 +242,13 @@ export const kbCategories = pgTable("kb_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Sessions table for durable session storage
+export const sessions = pgTable("session", {
+  sid: varchar("sid", { length: 128 }).primaryKey().notNull(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire", { mode: 'date' }).notNull(),
+});
+
 // Knowledge Base Articles
 export const kbArticles = pgTable("kb_articles", {
   id: serial("id").primaryKey(),
