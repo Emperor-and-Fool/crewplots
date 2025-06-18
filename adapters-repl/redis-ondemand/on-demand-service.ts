@@ -182,6 +182,7 @@ export class OnDemandRedisService {
         '--daemonize', 'no',
         '--save', '',
         '--dir', path.resolve('redis_data'),
+        '--logfile', path.resolve('logs/redis/redis_ondemand.log'),
         '--maxmemory', '32mb',
         '--maxmemory-policy', 'allkeys-lru'
       ], {
