@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);
   // Redis test routes disabled - using PostgreSQL sessions
-  app.use('/api/redis-monitor', redisMonitorRoutes);
+  // Redis monitor routes disabled - using PostgreSQL sessions
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
