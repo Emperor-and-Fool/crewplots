@@ -22,135 +22,56 @@ import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 
 
-// Protected route component that only checks if user is authenticated
+// Protected route component using AuthContext properly
 const ProtectedRoute = ({ component: Component, ...rest }: any) => {
   const { user, isLoading } = useAuth();
-  const [serverAuthState, setServerAuthState] = React.useState<{
-    loading: boolean;
-    authenticated: boolean;
-    user: any;
-  }>({
-    loading: true,
-    authenticated: false,
-    user: null
-  });
-
-  // Use AuthContext state instead of making duplicate API calls
-  React.useEffect(() => {
-    setServerAuthState({
-      loading: isLoading,
-      authenticated: !!user,
-      user: user
-    });
-  }, [isLoading, user]);
   
-  // Show loading indicator while checking server-side auth
-  if (serverAuthState.loading) {
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-        <p className="mt-4">Checking server authentication...</p>
+        <p className="mt-4">Loading...</p>
       </div>
     </div>;
   }
   
-  // DEVELOPMENT MODE: Use the server's authentication status rather than React state
-  // This bypasses any potential React state issues since we know the server has the correct state
-  if (serverAuthState.authenticated) {
-    console.log("Server says we're authenticated - showing protected content");
+  if (user) {
     return <Component {...rest} />;
   }
   
-  // If server says we're not authenticated, redirect to login
   return <Redirect to="/login" />;
 };
 
-// Role-based protected route that also checks user roles
+// Role-based protected route using AuthContext properly
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
   const { user, isLoading } = useAuth();
-  const [serverAuthState, setServerAuthState] = React.useState<{
-    loading: boolean;
-    authenticated: boolean;
-    user: any;
-  }>({
-    loading: true,
-    authenticated: false,
-    user: null
-  });
-
-  // Direct server-side authentication check that bypasses the React state issues
-  React.useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        console.log("Checking server-side authentication directly for role check");
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          cache: 'no-store' // Prevent caching
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Server auth check response (role):", data);
-          
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-        } else {
-          console.error("Server auth check failed with status:", response.status);
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error) {
-        console.error("Error checking server auth:", error);
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
   
-  // Show loading indicator while checking server-side auth
-  if (serverAuthState.loading) {
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-        <p className="mt-4">Checking server authentication...</p>
+        <p className="mt-4">Loading...</p>
       </div>
     </div>;
   }
   
-  // If not authenticated according to the server, redirect to login
-  if (!serverAuthState.authenticated || !serverAuthState.user) {
-    console.log("Server says we're not authenticated - redirecting to login");
+  if (!user) {
     return <Redirect to="/login" />;
   }
   
-  // Check role requirements against the server's user data
-  if (requiredRoles.length > 0 && !requiredRoles.includes(serverAuthState.user.role)) {
-    console.log("User does not have required role - redirecting to dashboard");
+  // Check role requirements
+  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
     return <Redirect to="/dashboard" />;
   }
   
   // If user is specifically an 'applicant', only allow access to the applicant portal
-  if (serverAuthState.user?.role === 'applicant' && 
+  if (user.role === 'applicant' && 
       requiredRoles.length > 0 && 
       requiredRoles.includes('applicant') && 
       Component !== ApplicantPortal) {
-    console.log("User is an applicant but trying to access a non-applicant page - redirecting to applicant portal");
     return <Redirect to="/applicant-portal" />;
   }
   
-  // User is authenticated and has the required role
-  console.log("Server says authenticated with correct role - showing protected content");
   return <Component {...rest} />;
 };
 
