@@ -2,6 +2,22 @@ import { Router } from 'express';
 import { mongoConnection } from '../db-mongo';
 import { ObjectId } from 'mongodb';
 
+// MongoDB retry wrapper function
+async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 3): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      console.log(`🔄 MongoDB operation failed (attempt ${attempt}/${maxRetries}):`, error.message);
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  throw new Error('Maximum retries exceeded');
+}
+
 const router = Router();
 
 // Interface for notes stored in MongoDB
@@ -135,7 +151,7 @@ router.post('/notes', async (req, res) => {
 router.put('/notes/:noteId', async (req, res) => {
   try {
     const { content } = req.body;
-    const documentId = req.params.documentId;
+    const noteId = req.params.noteId;
     
     console.log('PUT /documents/:documentId - Debug Info:');
     console.log('- documentId received:', documentId);
@@ -156,9 +172,9 @@ router.put('/notes/:noteId', async (req, res) => {
     }
 
     console.log('- ObjectId.isValid check:', ObjectId.isValid(documentId));
-    if (!ObjectId.isValid(documentId)) {
+    if (!ObjectId.isValid(noteId)) {
       console.log('❌ ObjectId validation failed');
-      return res.status(400).json({ error: 'Invalid document ID' });
+      return res.status(400).json({ error: 'Invalid note ID' });
     }
 
     const db = mongoConnection.getDatabase();
@@ -199,8 +215,8 @@ router.put('/notes/:noteId', async (req, res) => {
       return res.status(404).json({ error: 'Note not found' });
     }
 
-    // Return the updated document with frontend-expected format
-    const updatedDocument = await collection.findOne({ _id: new ObjectId(documentId) });
+    // Return the updated note with frontend-expected format
+    const updatedNote = await collection.findOne({ _id: new ObjectId(noteId) });
     
     if (!updatedDocument) {
       return res.status(404).json({ error: 'Document not found after update' });
