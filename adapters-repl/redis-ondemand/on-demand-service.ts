@@ -139,18 +139,9 @@ export class OnDemandRedisService {
     this.isStarting = true;
     
     try {
-      console.log('[OnDemand] Starting Redis server...');
+      console.log('[OnDemand] Starting Redis server with config file...');
       
-      this.redisProcess = spawn('redis-server', [
-        '--port', '6379',
-        '--bind', '127.0.0.1',
-        '--protected-mode', 'no',
-        '--daemonize', 'no',
-        '--save', '',
-        '--dir', path.resolve('redis_data'),
-        '--maxmemory', '32mb',
-        '--maxmemory-policy', 'allkeys-lru'
-      ], {
+      this.redisProcess = spawn('redis-server', ['./redis_data/redis-custom.conf'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
