@@ -55,7 +55,7 @@ router.get('/notes/:userId', async (req, res) => {
 
     const notes = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<NoteDocument>('notes_documents');
+      const collection = db.collection<NoteDocument>('notes');
       
       return await collection
         .find({ userId })
@@ -100,7 +100,7 @@ router.post('/notes', async (req, res) => {
     const htmlLength = content.length;
 
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<NoteDocument>('notes_documents');
+    const collection = db.collection<NoteDocument>('notes');
     
     // Use upsert to update existing note or create new one (one note per user)
     const updateData = {
@@ -178,7 +178,7 @@ router.put('/notes/:noteId', async (req, res) => {
     }
 
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<NoteDocument>('notes_documents');
+    const collection = db.collection<NoteDocument>('notes');
     
     // First, verify the note belongs to the authenticated user
     const existingNote = await collection.findOne({ 
@@ -253,7 +253,7 @@ router.delete('/notes/user/:userId', async (req, res) => {
 
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<NoteDocument>('notes_documents');
+      const collection = db.collection<NoteDocument>('notes');
       
       return await collection.deleteMany({ userId });
     });
@@ -281,7 +281,7 @@ router.delete('/notes/:noteId', async (req, res) => {
 
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<NoteDocument>('notes_documents');
+      const collection = db.collection<NoteDocument>('notes');
       
       // First check if the note belongs to the authenticated user
       const note = await collection.findOne({ _id: new ObjectId(noteId) });
@@ -321,7 +321,7 @@ router.delete('/notes/cleanup/all', async (req, res) => {
   try {
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<NoteDocument>('notes_documents');
+      const collection = db.collection<NoteDocument>('notes');
       
       return await collection.deleteMany({});
     });
