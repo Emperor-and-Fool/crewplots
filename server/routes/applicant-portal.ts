@@ -91,9 +91,23 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
       });
     }
     
-    // Get notes from hybrid system instead of deprecated notes field
+    // Get notes metadata from hybrid system instead of deprecated notes field
     const notes = await messageStorageService.getNoteRefsByUser(req.user.id);
-    const notesContent = notes.length > 0 ? notes[0].compiledContent : null;
+    const notesMetadata = notes.length > 0 ? {
+      exists: true,
+      documentId: notes[0].noteId,
+      wordCount: notes[0].wordCount,
+      characterCount: notes[0].characterCount,
+      lastUpdated: notes[0].updatedAt,
+      workflow: notes[0].workflow
+    } : {
+      exists: false,
+      documentId: null,
+      wordCount: 0,
+      characterCount: 0,
+      lastUpdated: null,
+      workflow: null
+    };
     
     // Check if resume file actually exists
     let validResumeUrl = null;
@@ -108,12 +122,12 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
 
     const profileData = {
       ...applicant,
-      notes: notesContent, // Show actual notes from hybrid system
+      notes: notesMetadata, // Show metadata only, not content
       resumeUrl: validResumeUrl // Only show if file exists
     };
     
     console.log('Successfully retrieved applicant profile:', 
-      { id: applicant.id, name: applicant.name, email: applicant.email, hasNotes: !!notesContent, hasResume: !!validResumeUrl });
+      { id: applicant.id, name: applicant.name, email: applicant.email, hasNotes: notesMetadata.exists, hasResume: !!validResumeUrl });
     
     // Send enhanced applicant data
     res.json(profileData);
