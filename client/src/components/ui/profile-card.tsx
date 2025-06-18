@@ -16,13 +16,11 @@ interface ApplicantProfile {
   id: number;
   name: string;
   email: string;
-  phone: string;
-  status: string;
+  phone?: string;
+  status?: string;
   resumeUrl: string | null;
-  notes: string | null;
-  extraMessage: string | null;
-  userId: number;
-  locationId: number | null;
+  notes?: any;
+  extraMessage?: string | null;
   createdAt: string;
 }
 
@@ -44,7 +42,9 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
   });
 
   // Get the applicant status badge color
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined) => {
+    if (!status) return 'bg-gray-200 text-gray-800';
+    
     switch (status) {
       case 'new':
         return 'bg-slate-200 text-slate-800';
@@ -102,16 +102,20 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
             <CardTitle className="text-xl">{profile.name}</CardTitle>
             <CardDescription>{profile.email}</CardDescription>
           </div>
-          <Badge className={getStatusBadge(profile.status)}>
-            {profile.status}
-          </Badge>
+          {profile.status && (
+            <Badge className={getStatusBadge(profile.status)}>
+              {profile.status}
+            </Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium text-gray-600">Phone</p>
-          <p>{profile.phone}</p>
-        </div>
+        {profile.phone && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">Phone</p>
+            <p>{profile.phone}</p>
+          </div>
+        )}
         
         {profile.resumeUrl && (
           <div>
@@ -130,6 +134,15 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
           <div>
             <p className="text-sm font-medium text-gray-600">Additional Message</p>
             <p className="text-sm">{profile.extraMessage}</p>
+          </div>
+        )}
+        
+        {profile.notes?.exists && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">Notes</p>
+            <p className="text-sm">
+              {profile.notes.wordCount} words • Last updated: {new Date(profile.notes.lastUpdated).toLocaleDateString()}
+            </p>
           </div>
         )}
         
