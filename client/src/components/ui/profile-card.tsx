@@ -182,7 +182,7 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         
         {profile.notes?.exists && (
           <div>
-            <p className="text-sm font-medium text-gray-600">Notes</p>
+            <p className="text-sm font-medium text-gray-600">Motivation</p>
             <p className="text-sm">
               {profile.notes.wordCount} words • Last updated: {new Date(profile.notes.lastUpdated).toLocaleDateString()}
             </p>
