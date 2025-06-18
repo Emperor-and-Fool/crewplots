@@ -31,42 +31,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Force logout and redirect - incident response function
-  const forceLogoutAndRedirect = async () => {
-    console.log('Force logout triggered - clearing all state');
-    
-    // Clear browser cookies manually
-    document.cookie.split(";").forEach(cookie => {
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-    });
-    
-    // Clear local storage
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Reset auth state
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsLoading(false);
-    
-    // Clear query cache
-    queryClient.clear();
-    
-    // Force redirect to login
-    window.location.replace('/login');
-  };
-
-  // Check if user is already logged in with 15-second timeout
+  // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.log('Auth check timeout - forcing logout');
-        forceLogoutAndRedirect();
-      }, 15000); // 15-second incident response timeout
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
       
       try {
         const response = await fetch('/api/auth/me', {
@@ -94,10 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error: any) {
         clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-          console.log('Auth check aborted due to timeout');
-          return; // forceLogoutAndRedirect already called
-        }
         setUser(null);
         setIsAuthenticated(false);
         queryClient.clear();
