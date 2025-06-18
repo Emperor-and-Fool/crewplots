@@ -215,7 +215,7 @@ export class MessageService {
     console.log(`✅ MongoDB document found, content length: ${document.content.length}`);
     return {
       ...postgresMessage,
-      documentId,
+      noteId: documentId,
       compiledContent: document.content,
       content: document.content, // Replace for frontend consumption
     };
@@ -261,7 +261,7 @@ export class MessageService {
     // Step 5: Return unified data structure
     return {
       ...postgresMessage,
-      documentId,
+      noteId: documentId,
       compiledContent: messageData.content,
       content: messageData.content, // Keep original content for frontend
     };
@@ -323,7 +323,7 @@ export class MessageService {
     
     return {
       ...updatedMessage!,
-      documentId,
+      noteId: documentId,
       compiledContent: updates.content,
       content: updates.content,
     };
