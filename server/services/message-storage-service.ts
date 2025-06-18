@@ -154,34 +154,42 @@ export class MessageService {
 
   // Update MongoDB document content
   private async updateContentDocument(documentId: string, newContent: string): Promise<void> {
-    const db = this.getDatabase();
-    if (!db) {
-      throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
-    }
-    
-    const collection = db.collection<MessageDocument>('documents');
-
-    // Recalculate metadata for updated content
-    const plainText = newContent.replace(/<[^>]*>/g, '');
-    const updatedMetadata = {
-      wordCount: plainText.trim().split(/\s+/).length,
-      characterCount: plainText.length,
-      htmlLength: newContent.length,
-    };
-
-    const result = await collection.updateOne(
-      { _id: new ObjectId(documentId) },
-      {
-        $set: {
-          content: newContent,
-          metadata: updatedMetadata,
-          updatedAt: new Date(),
-        }
+    try {
+      const db = this.getDatabase();
+      if (!db) {
+        throw new Error('MongoDB connection unavailable');
       }
-    );
-    
-    if (result.matchedCount === 0) {
-      throw new Error(`CRITICAL: MongoDB document ${documentId} not found for content update`);
+      
+      const collection = db.collection<MessageDocument>('documents');
+
+      // Recalculate metadata for updated content
+      const plainText = newContent.replace(/<[^>]*>/g, '');
+      const updatedMetadata = {
+        wordCount: plainText.trim().split(/\s+/).length,
+        characterCount: plainText.length,
+        htmlLength: newContent.length,
+      };
+
+      const result = await collection.updateOne(
+        { _id: new ObjectId(documentId) },
+        {
+          $set: {
+            content: newContent,
+            metadata: updatedMetadata,
+            updatedAt: new Date(),
+          }
+        }
+      );
+      
+      if (result.matchedCount === 0) {
+        throw new Error(`CRITICAL: MongoDB document ${documentId} not found for content update`);
+      }
+    } catch (error: any) {
+      // Check if this is a connection-related error and preserve it
+      if (error?.code === 'ECONNREFUSED' || error?.message?.includes('ECONNREFUSED')) {
+        throw error; // Pass through original connection error
+      }
+      throw error; // Pass through all other errors as-is
     }
   }
 
