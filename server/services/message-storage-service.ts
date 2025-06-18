@@ -81,8 +81,8 @@ export class MessageService {
       throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
-    console.log(`✅ MongoDB connection established, using collection: documents`);
-    const collection = db.collection<MessageDocument>('documents');
+    console.log(`✅ MongoDB connection established, using collection: notes`);
+    const collection = db.collection<MessageDocument>('notes');
 
     // Calculate content metadata
     const plainText = content.replace(/<[^>]*>/g, '');
@@ -123,7 +123,7 @@ export class MessageService {
       throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
-    const collection = db.collection<MessageDocument>('documents');
+    const collection = db.collection<MessageDocument>('notes');
 
     const result = await collection.updateOne(
       { _id: new ObjectId(documentId) },
@@ -147,7 +147,7 @@ export class MessageService {
       throw new Error('CRITICAL: MongoDB database connection failed - system requires MongoDB');
     }
     
-    const collection = db.collection<MessageDocument>('documents');
+    const collection = db.collection<MessageDocument>('notes');
     
     return await collection.findOne({ _id: new ObjectId(documentId) });
   }
@@ -160,7 +160,7 @@ export class MessageService {
         throw new Error('MongoDB connection unavailable');
       }
       
-      const collection = db.collection<MessageDocument>('documents');
+      const collection = db.collection<MessageDocument>('notes');
 
       // Recalculate metadata for updated content
       const plainText = newContent.replace(/<[^>]*>/g, '');
