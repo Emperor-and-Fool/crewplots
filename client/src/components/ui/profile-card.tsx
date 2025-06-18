@@ -56,8 +56,9 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 0,
-    retry: 3,
+    retry: 1, // Reduce retries to prevent hanging
     retryDelay: 1000,
+    timeout: 10000, // 10 second timeout to prevent hanging
   });
 
   // Get the applicant status badge color
