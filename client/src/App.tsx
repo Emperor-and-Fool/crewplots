@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import * as React from "react";
+// Test comment to trigger re-render
 import Footer from "@/components/ui/footer";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
