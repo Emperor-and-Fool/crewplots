@@ -4,13 +4,13 @@ import { ObjectId } from 'mongodb';
 
 const router = Router();
 
-// Interface for motivation documents stored in MongoDB
-interface MotivationDocument {
+// Interface for notes stored in MongoDB
+interface NoteDocument {
   _id?: ObjectId;
   userId: number;
   userPublicId: string;
   content: string;
-  documentType: 'motivation' | 'bio' | 'note';
+  noteType: 'motivation' | 'bio' | 'note';
   createdAt: Date;
   updatedAt: Date;
   metadata: {
@@ -20,8 +20,8 @@ interface MotivationDocument {
   };
 }
 
-// Get all motivation documents for a user
-router.get('/documents/:userId', async (req, res) => {
+// Get all notes for a user
+router.get('/notes/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
@@ -37,9 +37,9 @@ router.get('/documents/:userId', async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const documents = await withMongoDBRetry(async () => {
+    const notes = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<MotivationDocument>('motivation_documents');
+      const collection = db.collection<NoteDocument>('notes_documents');
       
       return await collection
         .find({ userId })
@@ -47,24 +47,24 @@ router.get('/documents/:userId', async (req, res) => {
         .toArray();
     });
     
-    // Transform MongoDB documents to frontend-expected format
-    const responseDocuments = documents.map(doc => ({
-      ...doc,
-      id: doc._id.toString(), // Convert ObjectId to string for frontend
+    // Transform MongoDB notes to frontend-expected format
+    const responseNotes = notes.map(note => ({
+      ...note,
+      id: note._id.toString(), // Convert ObjectId to string for frontend
       _id: undefined // Remove MongoDB-specific field
-    })).map(({ _id, ...doc }) => doc); // Clean removal of _id
+    })).map(({ _id, ...note }) => note); // Clean removal of _id
     
-    res.json(responseDocuments);
+    res.json(responseNotes);
   } catch (error) {
-    console.error('Error fetching documents:', error);
-    res.status(500).json({ error: 'Failed to fetch documents' });
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ error: 'Failed to fetch notes' });
   }
 });
 
-// Create or update motivation document (upsert for single document per user)
-router.post('/documents', async (req, res) => {
+// Create or update note (upsert for single note per user)
+router.post('/notes', async (req, res) => {
   try {
-    const { content, documentType = 'motivation' } = req.body;
+    const { content, noteType = 'motivation' } = req.body;
     
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -84,14 +84,14 @@ router.post('/documents', async (req, res) => {
     const htmlLength = content.length;
 
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<MotivationDocument>('motivation_documents');
+    const collection = db.collection<NoteDocument>('notes_documents');
     
-    // Use upsert to update existing document or create new one (one document per user)
+    // Use upsert to update existing note or create new one (one note per user)
     const updateData = {
       userId,
       userPublicId,
       content,
-      documentType,
+      noteType,
       updatedAt: new Date(),
       metadata: {
         wordCount,
@@ -101,7 +101,7 @@ router.post('/documents', async (req, res) => {
     };
 
     const result = await collection.updateOne(
-      { userId, documentType }, // Find by userId and documentType
+      { userId, noteType }, // Find by userId and noteType
       { 
         $set: updateData,
         $setOnInsert: { createdAt: new Date() } // Only set createdAt on insert
@@ -110,7 +110,7 @@ router.post('/documents', async (req, res) => {
     );
     
     // Return the updated/created document
-    const document = await collection.findOne({ userId, documentType });
+    const note = await collection.findOne({ userId, noteType });
     
     if (!document) {
       return res.status(500).json({ error: 'Failed to retrieve created document' });
@@ -132,7 +132,7 @@ router.post('/documents', async (req, res) => {
 });
 
 // Update an existing document
-router.put('/documents/:documentId', async (req, res) => {
+router.put('/notes/:noteId', async (req, res) => {
   try {
     const { content } = req.body;
     const documentId = req.params.documentId;
@@ -162,16 +162,16 @@ router.put('/documents/:documentId', async (req, res) => {
     }
 
     const db = mongoConnection.getDatabase();
-    const collection = db.collection<MotivationDocument>('motivation_documents');
+    const collection = db.collection<NoteDocument>('notes_documents');
     
-    // First, verify the document belongs to the authenticated user
-    const existingDoc = await collection.findOne({ 
-      _id: new ObjectId(documentId),
+    // First, verify the note belongs to the authenticated user
+    const existingNote = await collection.findOne({ 
+      _id: new ObjectId(noteId),
       userId: (req.user as any).id 
     });
     
-    if (!existingDoc) {
-      return res.status(404).json({ error: 'Document not found or unauthorized' });
+    if (!existingNote) {
+      return res.status(404).json({ error: 'Note not found or unauthorized' });
     }
 
     // Calculate updated metadata
@@ -191,12 +191,12 @@ router.put('/documents/:documentId', async (req, res) => {
     };
 
     const result = await collection.updateOne(
-      { _id: new ObjectId(documentId) },
+      { _id: new ObjectId(noteId) },
       { $set: updateData }
     );
 
     if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Document not found' });
+      return res.status(404).json({ error: 'Note not found' });
     }
 
     // Return the updated document with frontend-expected format
@@ -300,24 +300,24 @@ router.delete('/documents/:documentId', async (req, res) => {
 });
 
 
-// Quick cleanup endpoint - delete all motivation documents (development only)
-router.delete('/documents/cleanup/all', async (req, res) => {
+// Quick cleanup endpoint - delete all notes (development only)
+router.delete('/notes/cleanup/all', async (req, res) => {
   try {
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<MotivationDocument>('motivation_documents');
+      const collection = db.collection<NoteDocument>('notes_documents');
       
       return await collection.deleteMany({});
     });
     
-    console.log(`Cleanup: Deleted ${result.deletedCount} documents`);
+    console.log(`Cleanup: Deleted ${result.deletedCount} notes`);
     res.json({ 
-      message: `Cleanup completed: Deleted ${result.deletedCount} documents`, 
+      message: `Cleanup completed: Deleted ${result.deletedCount} notes`, 
       deletedCount: result.deletedCount 
     });
   } catch (error) {
     console.error('Error during cleanup:', error);
-    res.status(500).json({ error: 'Failed to cleanup documents' });
+    res.status(500).json({ error: 'Failed to cleanup notes' });
   }
 });
 
