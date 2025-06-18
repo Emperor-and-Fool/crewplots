@@ -47,12 +47,16 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         throw new Error(`Failed to fetch profile: ${response.statusText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('Profile data fetched:', data);
+      return data;
     },
     enabled: !!user && user.role === 'applicant',
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 0,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Get the applicant status badge color
@@ -74,6 +78,8 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         return 'bg-gray-200 text-gray-800';
     }
   };
+
+  console.log('ProfileCard render state:', { isLoading, error: error?.message, profileExists: !!profile });
 
   if (isLoading) {
     return <PortalProfileSkeleton />;
