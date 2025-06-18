@@ -25,7 +25,7 @@ import applicantPortalRoutes from './routes/applicant-portal';
 // Documents routes removed - functionality moved to template files
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
-import notesRoutes from './routes/notes';
+import notesRoutes from './routes/messages/notes';
 
 
 import redisMonitorRoutes from './routes/redis-monitor';
