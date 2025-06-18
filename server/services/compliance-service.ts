@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { mongoConnection } from '../db-mongo';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Readable } from 'stream';
 
 export interface DocumentMetadata {
