@@ -186,7 +186,7 @@ export interface IStorage {
   userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
+class MemStorage implements IStorage {
   private users: Map<number, User>;
   private locations: Map<number, Location>;
   private competencies: Map<number, Competency>;
