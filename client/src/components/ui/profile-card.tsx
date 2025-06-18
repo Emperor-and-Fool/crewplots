@@ -40,17 +40,37 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
     queryKey: ['/api/applicant-portal/my-profile'],
     queryFn: async () => {
       console.log('ProfileCard: Fetching profile data...');
-      const response = await fetch('/api/applicant-portal/my-profile', {
-        credentials: 'include'
-      });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch profile: ${response.statusText}`);
+      // Create AbortController for 15-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log('ProfileCard: Request timeout - triggering force logout');
+        window.location.replace('/login');
+      }, 15000); // 15-second incident response timeout
+      
+      try {
+        const response = await fetch('/api/applicant-portal/my-profile', {
+          credentials: 'include',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profile: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('ProfileCard: Profile data received:', data);
+        return data;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('Request timeout - logged out');
+        }
+        throw error;
       }
-      
-      const data = await response.json();
-      console.log('ProfileCard: Profile data received:', data);
-      return data;
     },
     enabled: true, // Always enabled - let the server handle auth validation
     refetchOnMount: true,
@@ -58,7 +78,6 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
     staleTime: 0,
     retry: 1, // Reduce retries to prevent hanging
     retryDelay: 1000,
-    timeout: 10000, // 10 second timeout to prevent hanging
   });
 
   // Get the applicant status badge color
