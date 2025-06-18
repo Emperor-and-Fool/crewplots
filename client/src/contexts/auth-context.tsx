@@ -34,39 +34,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
+      const startTime = Date.now();
+      console.log(`🔍 AUTH TIMING: Starting auth check at ${startTime}`);
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
       
       try {
+        console.log(`🔍 AUTH TIMING: Making fetch request at ${Date.now() - startTime}ms`);
         const response = await fetch('/api/auth/me', {
           credentials: "include",
           signal: controller.signal
         });
         
         clearTimeout(timeoutId);
+        console.log(`🔍 AUTH TIMING: Fetch completed at ${Date.now() - startTime}ms, status: ${response.status}`);
         
         if (response.ok) {
           const data = await response.json();
+          console.log(`🔍 AUTH TIMING: JSON parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
           
           if (data && data.authenticated && data.user) {
+            console.log(`🔍 AUTH TIMING: Setting user and authenticated=true at ${Date.now() - startTime}ms`);
             setUser(data.user);
             setIsAuthenticated(true);
           } else {
+            console.log(`🔍 AUTH TIMING: Setting user=null, authenticated=false at ${Date.now() - startTime}ms`);
             setUser(null);
             setIsAuthenticated(false);
             queryClient.clear();
           }
         } else {
+          console.log(`🔍 AUTH TIMING: Response not ok, clearing auth at ${Date.now() - startTime}ms`);
           setUser(null);
           setIsAuthenticated(false);
           queryClient.clear();
         }
       } catch (error: any) {
         clearTimeout(timeoutId);
+        console.log(`🔍 AUTH TIMING: Error occurred at ${Date.now() - startTime}ms:`, error.message);
         setUser(null);
         setIsAuthenticated(false);
         queryClient.clear();
       } finally {
+        console.log(`🔍 AUTH TIMING: Setting isLoading=false at ${Date.now() - startTime}ms`);
         setIsLoading(false);
       }
     };
