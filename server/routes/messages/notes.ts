@@ -94,7 +94,7 @@ router.post('/', requireAuth, async (req: any, res) => {
       priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
       isPrivate: z.boolean().default(false),
       workflow: z.string().optional(),
-      documentType: z.string().optional()
+      noteType: z.string().optional()
     });
     
     const validatedData = messageSchema.parse(req.body);
@@ -107,7 +107,7 @@ router.post('/', requireAuth, async (req: any, res) => {
       priority: validatedData.priority,
       isPrivate: validatedData.isPrivate,
       workflow: validatedData.workflow || 'general',
-      documentType: validatedData.documentType || 'note'
+      noteType: validatedData.noteType || 'note'
     };
     
     const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));

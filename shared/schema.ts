@@ -291,7 +291,7 @@ export const noteRefs = pgTable("note_refs", {
   receiverId: integer("receiver_id").references(() => users.id), // Optional recipient
   isPrivate: boolean("is_private").default(false).notNull(),
   attachmentUrl: text("attachment_url"), // Legacy field
-  documentReference: text("document_reference"), // MongoDB document ID for sensitive files
+  noteReference: text("note_reference"), // MongoDB note ID for sensitive files
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
   isRead: boolean("is_read").default(false).notNull(),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
@@ -301,8 +301,8 @@ export const noteRefs = pgTable("note_refs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   
   // New hybrid architecture fields
-  documentId: varchar("document_id", { length: 24 }), // MongoDB ObjectId reference
-  documentType: text("document_type").default("motivation"), // 'motivation', 'message', 'feedback', etc.
+  noteId: varchar("note_id", { length: 24 }), // MongoDB ObjectId reference
+  noteType: text("note_type").default("motivation"), // 'motivation', 'message', 'feedback', etc.
   title: text("title"), // Optional short description/subject
   status: text("status", { enum: ["draft", "published", "archived"] }).default("draft"),
   
@@ -321,11 +321,11 @@ export const noteRefs = pgTable("note_refs", {
   tags: jsonb("tags"), // JSON array for categorization
 });
 
-// Note Files - PostgreSQL fallback for MongoDB document storage
+// Note Files - PostgreSQL fallback for MongoDB note storage
 export const noteFiles = pgTable("note_files", {
   id: serial("id").primaryKey(),
   noteId: integer("note_id").references(() => noteRefs.id), // Back reference to PostgreSQL note
-  content: text("content").notNull(), // Rich document content (HTML, markdown, etc.)
+  content: text("content").notNull(), // Rich note content (HTML, markdown, etc.)
   contentType: text("content_type", { 
     enum: ["rich-text", "plain-text", "markdown"] 
   }).default("rich-text").notNull(),
@@ -383,7 +383,7 @@ export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: tru
 export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
-export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
+export const insertNoteAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
 // Login schema
 export const loginSchema = z.object({

@@ -246,64 +246,64 @@ router.delete('/notes/user/:userId', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Only allow users to delete their own documents
+    // Only allow users to delete their own notes
     if ((req.user as any).id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<MotivationDocument>('motivation_documents');
+      const collection = db.collection<NoteDocument>('notes_documents');
       
       return await collection.deleteMany({ userId });
     });
     
-    console.log(`Deleted ${result.deletedCount} documents for user ${userId}`);
-    res.json({ message: `Deleted ${result.deletedCount} documents`, deletedCount: result.deletedCount });
+    console.log(`Deleted ${result.deletedCount} notes for user ${userId}`);
+    res.json({ message: `Deleted ${result.deletedCount} notes`, deletedCount: result.deletedCount });
   } catch (error) {
-    console.error('Error deleting documents:', error);
-    res.status(500).json({ error: 'Failed to delete documents' });
+    console.error('Error deleting notes:', error);
+    res.status(500).json({ error: 'Failed to delete notes' });
   }
 });
 
-// Delete a specific document by ID
-router.delete('/documents/:documentId', async (req, res) => {
+// Delete a specific note by ID
+router.delete('/notes/:noteId', async (req, res) => {
   try {
-    const documentId = req.params.documentId;
+    const noteId = req.params.noteId;
     
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    if (!ObjectId.isValid(documentId)) {
-      return res.status(400).json({ error: 'Invalid document ID' });
+    if (!ObjectId.isValid(noteId)) {
+      return res.status(400).json({ error: 'Invalid note ID' });
     }
 
     const result = await withMongoDBRetry(async () => {
       const db = mongoConnection.getDatabase();
-      const collection = db.collection<MotivationDocument>('motivation_documents');
+      const collection = db.collection<NoteDocument>('notes_documents');
       
-      // First check if the document belongs to the authenticated user
-      const document = await collection.findOne({ _id: new ObjectId(documentId) });
-      if (!document) {
-        throw new Error('Document not found');
+      // First check if the note belongs to the authenticated user
+      const note = await collection.findOne({ _id: new ObjectId(noteId) });
+      if (!note) {
+        throw new Error('Note not found');
       }
       
-      if (document.userId !== (req.user as any).id) {
-        throw new Error('Unauthorized - document belongs to another user');
+      if (note.userId !== (req.user as any).id) {
+        throw new Error('Unauthorized - note belongs to another user');
       }
       
-      return await collection.deleteOne({ _id: new ObjectId(documentId) });
+      return await collection.deleteOne({ _id: new ObjectId(noteId) });
     });
     
     if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Document not found' });
+      return res.status(404).json({ error: 'Note not found' });
     }
     
-    console.log(`Deleted document ${documentId}`);
-    res.json({ message: 'Document deleted successfully' });
+    console.log(`Deleted note ${noteId}`);
+    res.json({ message: 'Note deleted successfully' });
   } catch (error) {
-    console.error('Error deleting document:', error);
+    console.error('Error deleting note:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (errorMessage.includes('Unauthorized')) {
       return res.status(403).json({ error: errorMessage });
@@ -311,7 +311,7 @@ router.delete('/documents/:documentId', async (req, res) => {
     if (errorMessage.includes('not found')) {
       return res.status(404).json({ error: errorMessage });
     }
-    res.status(500).json({ error: 'Failed to delete document' });
+    res.status(500).json({ error: 'Failed to delete note' });
   }
 });
 

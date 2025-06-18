@@ -184,7 +184,7 @@ router.post('/messages', isApplicant, async (req: any, res) => {
       priority: validatedData.priority,
       isPrivate: validatedData.isPrivate,
       workflow: 'application',
-      documentType: 'motivation'
+      noteType: 'motivation'
     };
     
     const newMessage = await messageStorageService.createNoteRef(noteRefData);
