@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { mongoConnection } from '../db-mongo';
-import { spawn } from 'child_process';
+import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 import { promisify } from 'util';
 
 const sleep = promisify(setTimeout);
@@ -9,23 +9,17 @@ const router = Router();
 
 // On-demand MongoDB service management
 async function startMongoDBOnDemand(): Promise<boolean> {
-  return new Promise((resolve) => {
-    console.log('🚀 Starting MongoDB on-demand service...');
-    
-    const mongoProcess = spawn('node', ['mongo-proxy-server.js'], {
-      detached: true,
-      stdio: 'inherit',
-      cwd: process.cwd()
-    });
-    
-    mongoProcess.unref();
-    
-    // Give MongoDB time to start
-    setTimeout(() => {
-      console.log('✅ MongoDB on-demand service started');
-      resolve(true);
-    }, 5000);
-  });
+  console.log('🚀 Starting MongoDB on-demand service...');
+  
+  const result = await onDemandMongoService.ensureReady();
+  
+  if (result) {
+    console.log('✅ MongoDB on-demand service started');
+  } else {
+    console.log('❌ MongoDB on-demand service failed to start');
+  }
+  
+  return result;
 }
 
 // Retry MongoDB operation with on-demand service
