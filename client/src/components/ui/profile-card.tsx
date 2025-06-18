@@ -71,6 +71,8 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         return 'bg-blue-100 text-blue-800';
       case 'interviewed':
         return 'bg-blue-500 text-white';
+      case 'short-listed':
+        return 'bg-green-500 text-white';
       case 'hired':
         return 'bg-green-500 text-white';
       case 'rejected':
