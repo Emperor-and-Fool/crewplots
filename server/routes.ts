@@ -29,6 +29,7 @@ import notesRoutes from './routes/notes';
 
 
 import redisMonitorRoutes from './routes/redis-monitor';
+import mongoMonitorRoutes from './routes/mongo-monitor';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -264,6 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api', dashboardRoutes);
   app.use('/api/redis-monitor', redisMonitorRoutes);
+  app.use('/api/mongo-monitor', mongoMonitorRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
