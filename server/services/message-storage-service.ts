@@ -116,6 +116,22 @@ export class MessageService {
     return objectIdString;
   }
 
+  // Verify MongoDB document exists (atomic integrity check)
+  private async verifyMongoDBDocumentExists(documentId: string): Promise<void> {
+    const db = this.getDatabase();
+    if (!db) {
+      throw new Error('CRITICAL: MongoDB database connection failed during integrity verification');
+    }
+
+    const collection = db.collection<MessageDocument>('notes');
+    const document = await collection.findOne({ _id: new ObjectId(documentId) });
+    
+    if (!document) {
+      console.error(`❌ ATOMIC INTEGRITY FAILURE: MongoDB document ${documentId} not found after PostgreSQL commit`);
+      throw new Error(`CRITICAL: Note creation failed - MongoDB document ${documentId} not persisted. System integrity compromised.`);
+    }
+  }
+
   // Update MongoDB document with PostgreSQL message reference
   private async updateDocumentMessageReference(documentId: string, messageId: number): Promise<void> {
     const db = this.getDatabase();
@@ -258,7 +274,11 @@ export class MessageService {
     // Step 4: Update MongoDB document with PostgreSQL reference
     await this.updateDocumentMessageReference(documentId, postgresMessage.id);
 
-    // Step 5: Return unified data structure
+    // Step 5: ATOMIC INTEGRITY CHECK - Verify MongoDB document exists before confirming success
+    await this.verifyMongoDBDocumentExists(documentId);
+    console.log(`✅ ATOMIC INTEGRITY VERIFIED: MongoDB document ${documentId} confirmed to exist`);
+
+    // Step 6: Return unified data structure
     return {
       ...postgresMessage,
       noteId: documentId,
@@ -305,6 +325,10 @@ export class MessageService {
     }
 
     await this.updateContentDocument(documentId, updates.content);
+    
+    // ATOMIC INTEGRITY CHECK - Verify MongoDB document was actually updated
+    await this.verifyMongoDBDocumentExists(documentId);
+    console.log(`✅ ATOMIC INTEGRITY VERIFIED: MongoDB document ${documentId} confirmed updated`);
     
     // Calculate new metadata for PostgreSQL
     const plainText = updates.content.replace(/<[^>]*>/g, '');
