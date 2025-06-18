@@ -30,7 +30,7 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   
   const { 
     data: profile, 
@@ -47,11 +47,9 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
         throw new Error(`Failed to fetch profile: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log('Profile data fetched:', data);
-      return data;
+      return response.json();
     },
-    enabled: !!user && user.role === 'applicant',
+    enabled: !authLoading && !!user && user.role === 'applicant',
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 0,
@@ -79,9 +77,9 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
     }
   };
 
-  console.log('ProfileCard render state:', { isLoading, error: error?.message, profileExists: !!profile });
 
-  if (isLoading) {
+
+  if (authLoading || isLoading) {
     return <PortalProfileSkeleton />;
   }
 
