@@ -128,35 +128,35 @@ router.post('/notes', async (req, res) => {
     // Return the updated/created document
     const note = await collection.findOne({ userId, noteType });
     
-    if (!document) {
-      return res.status(500).json({ error: 'Failed to retrieve created document' });
+    if (!note) {
+      return res.status(500).json({ error: 'Failed to retrieve created note' });
     }
     
-    // Transform MongoDB document to frontend-expected format
-    const responseDocument = {
-      ...document,
-      id: document._id.toString(), // Convert ObjectId to string for frontend
+    // Transform MongoDB note to frontend-expected format
+    const responseNote = {
+      ...note,
+      id: note._id?.toString(), // Convert ObjectId to string for frontend
       _id: undefined // Remove MongoDB-specific field
     };
-    delete responseDocument._id;
+    delete responseNote._id;
     
-    res.status(201).json(responseDocument);
+    res.status(201).json(responseNote);
   } catch (error) {
-    console.error('Error creating document:', error);
-    res.status(500).json({ error: 'Failed to create document' });
+    console.error('Error creating note:', error);
+    res.status(500).json({ error: 'Failed to create note' });
   }
 });
 
-// Update an existing document
+// Update an existing note
 router.put('/notes/:noteId', async (req, res) => {
   try {
     const { content } = req.body;
     const noteId = req.params.noteId;
     
-    console.log('PUT /documents/:documentId - Debug Info:');
-    console.log('- documentId received:', documentId);
-    console.log('- documentId type:', typeof documentId);
-    console.log('- documentId length:', documentId?.length);
+    console.log('PUT /notes/:noteId - Debug Info:');
+    console.log('- noteId received:', noteId);
+    console.log('- noteId type:', typeof noteId);
+    console.log('- noteId length:', noteId?.length);
     console.log('- content received:', content);
     console.log('- isAuthenticated:', req.isAuthenticated());
     console.log('- user:', req.user);
@@ -171,7 +171,7 @@ router.put('/notes/:noteId', async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    console.log('- ObjectId.isValid check:', ObjectId.isValid(documentId));
+    console.log('- ObjectId.isValid check:', ObjectId.isValid(noteId));
     if (!ObjectId.isValid(noteId)) {
       console.log('❌ ObjectId validation failed');
       return res.status(400).json({ error: 'Invalid note ID' });
@@ -218,27 +218,27 @@ router.put('/notes/:noteId', async (req, res) => {
     // Return the updated note with frontend-expected format
     const updatedNote = await collection.findOne({ _id: new ObjectId(noteId) });
     
-    if (!updatedDocument) {
-      return res.status(404).json({ error: 'Document not found after update' });
+    if (!updatedNote) {
+      return res.status(404).json({ error: 'Note not found after update' });
     }
     
-    // Transform MongoDB document to frontend-expected format
-    const responseDocument = {
-      ...updatedDocument,
-      id: updatedDocument._id.toString(), // Convert ObjectId to string for frontend
+    // Transform MongoDB note to frontend-expected format
+    const responseNote = {
+      ...updatedNote,
+      id: updatedNote._id?.toString(), // Convert ObjectId to string for frontend
       _id: undefined // Remove MongoDB-specific field
     };
-    delete responseDocument._id;
+    delete responseNote._id;
     
-    res.json(responseDocument);
+    res.json(responseNote);
   } catch (error) {
-    console.error('Error updating document:', error);
-    res.status(500).json({ error: 'Failed to update document' });
+    console.error('Error updating note:', error);
+    res.status(500).json({ error: 'Failed to update note' });
   }
 });
 
-// Delete all documents for a user (cleanup endpoint)
-router.delete('/documents/user/:userId', async (req, res) => {
+// Delete all notes for a user (cleanup endpoint)
+router.delete('/notes/user/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
