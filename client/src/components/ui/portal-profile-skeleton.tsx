@@ -5,7 +5,7 @@ import {
   CardHeader, 
 } from '@/components/ui/card';
 
-export function ProfileSkeleton() {
+export function PortalProfileSkeleton() {
   return (
     <Card>
       <CardHeader>

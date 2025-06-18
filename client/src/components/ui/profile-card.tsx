@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ProfileSkeleton } from './profile-skeleton';
+import { PortalProfileSkeleton } from './portal-profile-skeleton';
 
 interface ApplicantProfile {
   id: number;
@@ -62,7 +62,7 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
   };
 
   if (isLoading) {
-    return <ProfileSkeleton />;
+    return <PortalProfileSkeleton />;
   }
 
   if (error) {
