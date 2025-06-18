@@ -38,7 +38,21 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
     error 
   } = useQuery<ApplicantProfile>({
     queryKey: ['/api/applicant-portal/my-profile'],
+    queryFn: async () => {
+      const response = await fetch('/api/applicant-portal/my-profile', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
     enabled: !!user && user.role === 'applicant',
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
   // Get the applicant status badge color
