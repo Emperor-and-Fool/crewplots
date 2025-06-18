@@ -5,6 +5,7 @@ import Link from '@tiptap/extension-link'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { 
   Bold, 
   Italic, 
@@ -14,7 +15,8 @@ import {
   Undo,
   Redo,
   Type,
-  Palette
+  Palette,
+  Smile
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import React from 'react'
@@ -28,10 +30,27 @@ interface RichTextEditorProps {
   maxHeight?: string
 }
 
+// Common emoticons organized by category
+const EMOTICONS = {
+  'Smileys': ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐'],
+  'Feelings': ['😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓'],
+  'Gestures': ['👍', '👎', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👏', '🙌', '👐', '🤲', '🤝', '🙏'],
+  'Objects': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '⭐', '🌟', '💫', '⚡', '🔥', '💯']
+};
+
 const MenuBar = ({ editor }: { editor: any }) => {
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
+
   if (!editor) {
     return null
   }
+
+  const insertEmoji = (emoji: string) => {
+    if (editor) {
+      editor.chain().focus().insertContent(emoji).run();
+      setIsEmojiPickerOpen(false);
+    }
+  };
 
   const setLink = React.useCallback(() => {
     const previousUrl = editor.getAttributes('link').href
@@ -124,6 +143,42 @@ const MenuBar = ({ editor }: { editor: any }) => {
       </Button>
 
       <div className="w-px bg-border mx-1" />
+
+      {/* Emoji Picker */}
+      <Popover open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title="Add Emoji"
+          >
+            <Smile className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-3" align="start">
+          <div className="space-y-3">
+            {Object.entries(EMOTICONS).map(([category, emojis]) => (
+              <div key={category}>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">{category}</h4>
+                <div className="grid grid-cols-9 gap-1">
+                  {emojis.map((emoji) => (
+                    <Button
+                      key={emoji}
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-muted"
+                      onClick={() => insertEmoji(emoji)}
+                    >
+                      <span className="text-base">{emoji}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <input
         type="color"
