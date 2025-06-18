@@ -5,57 +5,80 @@ import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on
 
 import { z } from 'zod';
 
-// MongoDB retry wrapper with on-demand service integration
-async function withMongoDBRetry<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: any) {
-    console.log(`[MongoDB Retry] Operation failed, attempting to restart MongoDB service: ${error.message}`);
-    
-    try {
-      const serviceStarted = await onDemandMongoService.ensureReady();
-      if (serviceStarted) {
-        console.log('[MongoDB Retry] Service restarted successfully, retrying operation');
-        return await operation();
-      } else {
-        console.error('[MongoDB Retry] Failed to restart MongoDB service');
-        throw new Error(`MongoDB service unavailable: ${error.message}`);
-      }
-    } catch (retryError: any) {
-      console.error('[MongoDB Retry] Retry failed:', retryError.message);
-      throw new Error(`MongoDB operation failed after retry: ${retryError.message}`);
-    }
+// On-demand MongoDB service management
+async function startMongoDBOnDemand(): Promise<boolean> {
+  console.log('🚀 Starting MongoDB on-demand service...');
+  
+  const result = await onDemandMongoService.ensureReady();
+  
+  if (result) {
+    console.log('✅ MongoDB on-demand service started');
+  } else {
+    console.log('❌ MongoDB on-demand service failed to start');
   }
+  
+  return result;
 }
 
-// Authentication middleware
-function requireAuth(req: any, res: any, next: any) {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+// Sleep utility
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// MongoDB retry wrapper with on-demand service integration  
+async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if this is a MongoDB connection error
+      const isConnectionError = error?.message?.includes('ECONNREFUSED') || 
+                               error?.code === 'ECONNREFUSED' ||
+                               error?.cause?.code === 'ECONNREFUSED';
+      
+      if (isConnectionError && attempt < maxRetries) {
+        console.log(`🔄 MongoDB connection failed (attempt ${attempt + 1}/${maxRetries + 1}), starting on-demand service...`);
+        
+        await startMongoDBOnDemand();
+        
+        // Wait before retry
+        await sleep(3000);
+        console.log(`⏳ Retrying MongoDB operation...`);
+        continue;
+      }
+      
+      // If it's not a connection error or we've exhausted retries, throw the error
+      throw error;
+    }
   }
-  next();
+  
+  throw lastError;
 }
 
 const router = express.Router();
 
-// Create note schema
-const createNoteSchema = z.object({
-  content: z.string().min(1, 'Content is required'),
-  title: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  workflow: z.string().default('general'),
-});
+// Middleware to ensure user is authenticated
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};
 
-// Get notes for authenticated user
+// Get all notes for authenticated user
 router.get('/', requireAuth, async (req: any, res) => {
-  console.log('✅ NOTES ROUTE HIT: GET /api/messaging/notes for user', req.user.id);
-  
   try {
-    console.log('🔍 Using MessageService for hybrid retrieval');
-    const notes = await messageStorageService.getNotesForUser(req.user.id);
+    const userId = req.user.id;
+    console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
     
-    console.log(`Fetched ${notes.length} notes for user ${req.user.id}`);
-    res.json(notes);
+    // Use MessageService for proper hybrid retrieval with MongoDB retry
+    console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
+    const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(userId));
+    
+    console.log(`Fetched ${messages.length} notes for user ${userId}`);
+    res.json(messages);
   } catch (error) {
     console.error('Error fetching notes:', error);
     res.status(500).json({ error: 'Failed to fetch notes' });
@@ -65,20 +88,32 @@ router.get('/', requireAuth, async (req: any, res) => {
 // Create note for authenticated user
 router.post('/', requireAuth, async (req: any, res) => {
   try {
-    const validatedData = createNoteSchema.parse(req.body);
-    
-    console.log('🔄 Using MessageService for hybrid creation');
-    const newNote = await messageStorageService.createNoteRef({
-      userId: req.user.id,
-      content: validatedData.content,
-      messageType: 'rich-text',
-      workflow: validatedData.workflow,
-      title: validatedData.title,
-      tags: validatedData.tags,
+    const messageSchema = z.object({
+      content: z.string().max(10000),
+      messageType: z.enum(['text', 'rich-text', 'system', 'notification']).optional(),
+      priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+      isPrivate: z.boolean().default(false),
+      workflow: z.string().optional(),
+      documentType: z.string().optional()
     });
     
-    console.log(`Created note ${newNote.id} with hybrid storage for user ${req.user.id}`);
-    res.status(201).json(newNote);
+    const validatedData = messageSchema.parse(req.body);
+    const userId = req.user.id;
+    
+    const noteRefData = {
+      content: validatedData.content,
+      messageType: validatedData.messageType || 'rich-text',
+      userId: userId,
+      priority: validatedData.priority,
+      isPrivate: validatedData.isPrivate,
+      workflow: validatedData.workflow || 'general',
+      documentType: validatedData.documentType || 'note'
+    };
+    
+    const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));
+    
+    console.log(`Created note with hybrid storage for user ${userId}`);
+    res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid note data', details: error.errors });
@@ -151,11 +186,15 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
       return res.status(404).json({ error: 'Note not found or not authorized' });
     }
     
-    console.log('🔄 Using MessageService for hybrid deletion');
-    await messageStorageService.deleteNoteRef(messageId);
+    // Use MessageService to delete note (PostgreSQL + MongoDB) with retry
+    const deleted = await withMongoDBRetry(() => messageStorageService.deleteNoteRef(messageId));
     
-    console.log(`Deleted note ${messageId} for user ${userId}`);
-    res.status(204).send();
+    if (deleted) {
+      console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId}`);
+      res.json({ success: true, messageId });
+    } else {
+      res.status(500).json({ error: 'Failed to delete note' });
+    }
   } catch (error) {
     console.error('Error deleting note:', error);
     res.status(500).json({ error: 'Failed to delete note' });
