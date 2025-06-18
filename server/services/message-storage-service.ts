@@ -248,8 +248,8 @@ export class MessageService {
     const postgresMessage = await storage.createNoteRef({
       ...messageData,
       content: documentId, // ONLY MongoDB ObjectId - NEVER actual content
-      documentId: documentId, // New hybrid architecture field
-      documentType: messageData.workflow || 'motivation',
+      noteId: documentId, // New hybrid architecture field
+      noteType: messageData.workflow || 'motivation',
       wordCount: metadata.wordCount,
       characterCount: metadata.characterCount,
       htmlLength: metadata.htmlLength,
