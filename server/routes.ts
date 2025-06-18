@@ -5,12 +5,11 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 
-import { RedisStore } from "connect-redis";
-import { createClient } from "redis";
+import connectPgSimple from "connect-pg-simple";
 import { pool } from "./database/db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
-  insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
+  insertStaffSchema, insertStaffCompetencySchema,
   insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
   insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
@@ -30,9 +29,7 @@ import mongodbDirectRoutes from '../DevOpUtils/test-routes/mongodb-direct';
 import notesRoutes from './routes/notes';
 
 import cacheTestRoutes from '../DevOpUtils/test-routes/cache-test';
-import redisTestRoutes from '../DevOpUtils/test-routes/redis-test';
-import redisMonitorRoutes from '../DevOpUtils/test-routes/redis-monitor';
-import { onDemandRedis } from '../adapters-repl/redis-ondemand/on-demand-service';
+// Redis routes temporarily disabled - using PostgreSQL sessions
 
 // Setup multer for file uploads
 const upload = multer({
@@ -44,117 +41,19 @@ const upload = multer({
 
 
 
-// Create Redis client for session store using official redis package
-async function createRedisClient() {
-  // Get Redis connection details from on-demand service
-  const redisPort = 6379;
-  const redisHost = '127.0.0.1';
-  
-  const client = createClient({
-    socket: {
-      host: redisHost,
-      port: redisPort,
-      connectTimeout: 10000,
-      reconnectStrategy: (retries) => {
-        // Exponential backoff with max delay
-        const delay = Math.min(retries * 50, 2000);
-        console.log(`Redis reconnect attempt ${retries} in ${delay}ms`);
-        return delay;
-      }
-    }
-  });
-
-  client.on('error', (err) => {
-    console.log('Redis client error:', err.message);
-    // Don't throw here, let the retry logic handle it
-  });
-
-  client.on('connect', () => {
-    console.log('✅ Redis client connected successfully');
-  });
-
-  client.on('reconnecting', () => {
-    console.log('🔄 Redis client reconnecting...');
-  });
-
-  client.on('ready', () => {
-    console.log('✅ Redis client ready');
-  });
-
-  // Connection with retry logic for on-demand service
-  let connected = false;
-  let retries = 0;
-  const maxRetries = 10;
-  
-  while (!connected && retries < maxRetries) {
-    try {
-      // Start on-demand Redis if needed
-      await onDemandRedis.withConnection(async () => {
-        // This ensures Redis server is running
-        return true;
-      }, { connectionId: 'session-startup', keepAlive: 1000 });
-      
-      // Small delay to ensure server is ready
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      await client.connect();
-      connected = true;
-      console.log('✅ Redis session client connected');
-    } catch (error) {
-      retries++;
-      console.log(`Redis connection attempt ${retries}/${maxRetries} failed:`, error.message);
-      
-      if (retries < maxRetries) {
-        const delay = Math.min(retries * 1000, 5000);
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  if (!connected) {
-    throw new Error('Failed to connect to Redis after maximum retries');
-  }
-  
-  return client;
-}
-
-let redisClient: any = null;
-
-// Suppress Redis connection error spam by overriding global error handler
-process.on('uncaughtException', (error) => {
-  if (error.message && error.message.includes('connect ECONNREFUSED 127.0.0.1:6379')) {
-    // Silently ignore Redis connection errors from the unused redis client
-    return;
-  }
-  console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason) => {
-  if (reason && typeof reason === 'object' && 'message' in reason && 
-      typeof reason.message === 'string' && reason.message.includes('connect ECONNREFUSED 127.0.0.1:6379')) {
-    // Silently ignore Redis connection errors from the unused redis client
-    return;
-  }
-  console.error('Unhandled Rejection:', reason);
-});
+// PostgreSQL session store setup
+const PgSession = connectPgSimple(session);
 
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize Redis client for sessions
-  try {
-    redisClient = await createRedisClient();
-    console.log('✅ Redis session store initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize Redis session store:', error);
-    throw error;
-  }
+  // Initialize PostgreSQL session store
+  console.log('✅ PostgreSQL session store initialized');
 
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
-  // Configure session middleware
+  // Configure session middleware with PostgreSQL store
   app.use(
     session({
       cookie: { 
@@ -164,10 +63,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new RedisStore({
-        client: redisClient,
-        prefix: 'sess:',
-        ttl: 86400 // 24 hours
+      store: new PgSession({
+        pool: pool,
+        tableName: 'session'
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: false, // Don't save session if unmodified
@@ -371,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);
-  app.use('/api/redis-test', redisTestRoutes);
+  // Redis test routes disabled - using PostgreSQL sessions
   app.use('/api/redis-monitor', redisMonitorRoutes);
 
   // QR Code Route - returns the URL for registration
