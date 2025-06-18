@@ -1,5 +1,5 @@
 import { eq, and, desc, or, isNull } from 'drizzle-orm';
-import { db } from '../database/db';
+import { db } from '../db';
 import { noteRefs, users } from '@shared/schema';
 import type { InsertNoteRef, Message, User } from '@shared/schema';
 

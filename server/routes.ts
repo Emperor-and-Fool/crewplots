@@ -1,15 +1,14 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./database/storage";
+import { storage } from "./storage";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "./database/db";
+import { pool } from "./db";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
-  insertStaffSchema, insertStaffCompetencySchema,
+  insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
   insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
   insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
@@ -25,11 +24,12 @@ import applicantPortalRoutes from './routes/applicant-portal';
 import messagesRoutes from './routes/messages/index';
 // Documents routes removed - functionality moved to template files
 import dashboardRoutes from './routes/dashboard';
-import mongodbDirectRoutes from '../DevOpUtils/test-routes/mongodb-direct';
+import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/notes';
 
-import cacheTestRoutes from '../DevOpUtils/test-routes/cache-test';
-// Redis routes temporarily disabled - using PostgreSQL sessions
+import cacheTestRoutes from './routes/cache-test';
+import redisTestRoutes from './routes/redis-test';
+import redisMonitorRoutes from './routes/redis-monitor';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -39,21 +39,15 @@ const upload = multer({
   },
 });
 
-
-
-// PostgreSQL session store setup
-const PgSession = connectPgSimple(session);
-
-
+// Setup PostgreSQL session store
+const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize PostgreSQL session store
-  console.log('✅ PostgreSQL session store initialized');
-
+  // Setup session middleware
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
-  // Configure session middleware with PostgreSQL store
+  // Configure session middleware
   app.use(
     session({
       cookie: { 
@@ -63,15 +57,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new PgSession({
+      store: new PgStore({
         pool: pool,
-        tableName: 'session'
+        tableName: 'sessions',
+        createTableIfMissing: true,
+        ttl: 86400000 // 24 hours
       }),
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
-      resave: false, // Don't save session if unmodified
-      saveUninitialized: false, // Don't create session until something stored
+      resave: true, // Force session save on each request to ensure cross-frame compatibility
+      saveUninitialized: true, // Create session for tracking before user logs in
       name: 'crewplots.sid', // Custom name to avoid conflicts
-      rolling: false // Don't reset cookie on every request
+      rolling: true, // Force cookies to be set on every response
     })
   );
 
@@ -264,13 +260,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messagesRoutes);
   // Documents routes disabled - functionality moved to template files
   // app.use('/api/documents', documentsRoutes);
-  app.use('/api/mongodb', mongodbDirectRoutes);
+  app.use('/api/mongodb', mongodbMessagesRoutes);
   app.use('/api/messaging/notes', notesRoutes);
 
   app.use('/api', cacheTestRoutes);
   app.use('/api', dashboardRoutes);
-  // Redis test routes disabled - using PostgreSQL sessions
-  // Redis monitor routes disabled - using PostgreSQL sessions
+  app.use('/api/redis-test', redisTestRoutes);
+  app.use('/api/redis-monitor', redisMonitorRoutes);
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {

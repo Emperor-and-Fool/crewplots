@@ -2,31 +2,6 @@ import { spawn, ChildProcess } from 'child_process';
 import Redis from 'ioredis';
 import path from 'path';
 
-/*
- * CRITICAL ARCHITECTURE RULE - NO FALLBACK FOR REDIS SESSIONS
- * 
- * This service implements a strict Redis-only session architecture:
- * - Redis: stores ALL session data, authentication state, and caching
- * - NO PostgreSQL fallback for sessions under any circumstances
- * 
- * FALLBACK PROHIBITION:
- * Creating any PostgreSQL fallback mechanism for sessions is STRICTLY FORBIDDEN
- * as it represents complete corruption of the system's architectural intent.
- * 
- * The system MUST fail explicitly when Redis is unavailable rather than
- * silently storing sessions in PostgreSQL, which would:
- * 1. Corrupt session integrity
- * 2. Create inconsistent authentication patterns
- * 3. Violate the pure Redis architecture principles
- * 4. Make session management unreliable and unpredictable
- * 
- * REQUIRED BEHAVIOR:
- * - Redis unavailable = System fails with clear error message
- * - Session store = Redis ONLY, never PostgreSQL
- * - No session data ever stored in PostgreSQL under any circumstances
- * - Authentication depends entirely on Redis session availability
- */
-
 interface ServiceConnection<T> {
   client: T;
   cleanup: () => Promise<void>;
@@ -123,19 +98,10 @@ export class OnDemandRedisService {
       host: '127.0.0.1',
       port: 6379,
       enableReadyCheck: false,
-      maxRetriesPerRequest: 1,
+      maxRetriesPerRequest: 3,
       connectTimeout: 5000,
       lazyConnect: true,
       enableAutoPipelining: true
-    });
-
-    // Suppress connection error spam
-    client.on('error', (error) => {
-      if (error.message.includes('connect ECONNREFUSED')) {
-        // Silently handle connection refused errors during startup
-        return;
-      }
-      console.error('Redis client error:', error);
     });
 
     await client.connect();
@@ -182,7 +148,6 @@ export class OnDemandRedisService {
         '--daemonize', 'no',
         '--save', '',
         '--dir', path.resolve('redis_data'),
-        '--logfile', path.resolve('logs/redis/redis_ondemand.log'),
         '--maxmemory', '32mb',
         '--maxmemory-policy', 'allkeys-lru'
       ], {

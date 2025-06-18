@@ -1,6 +1,6 @@
 import express from 'express';
-import { storage } from '../database/storage';
-import { messageService } from '../services/message-storage-service';
+import { storage } from '../storage';
+import { messageStorageService } from '../services/message-storage-service';
 
 
 import multer from 'multer';
@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
-import { db } from '../database/db';
+import { db } from '../db';
 import { noteRefs as noteRefsTable } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
@@ -151,7 +151,7 @@ router.get('/messages', isApplicant, async (req: any, res) => {
     
     // Use MessageService for proper hybrid retrieval
     console.log('🔍 Using MessageService for hybrid retrieval');
-    const messages = await messageService.getNoteRefsByUser(userId);
+    const messages = await messageStorageService.getNoteRefsByUser(userId);
     
     console.log(`Fetched ${messages.length} messages for applicant user ${userId}`);
     res.json(messages);
@@ -187,7 +187,7 @@ router.post('/messages', isApplicant, async (req: any, res) => {
       documentType: 'motivation'
     };
     
-    const newMessage = await messageService.createNoteRef(noteRefData);
+    const newMessage = await messageStorageService.createNoteRef(noteRefData);
     
     console.log(`Created message with hybrid storage for applicant user ${userId}`);
     res.status(201).json(newMessage);
@@ -228,7 +228,7 @@ router.put('/messages/:id', isApplicant, async (req: any, res) => {
     
     // Use MessageService for proper hybrid ID handling
     console.log('🔄 Using MessageService for hybrid update');
-    const updatedMessage = await messageService.updateNoteRef(messageId, { content });
+    const updatedMessage = await messageStorageService.updateNoteRef(messageId, { content });
     
     console.log(`Updated message ${messageId} with hybrid storage for applicant user ${userId}`);
     res.json(updatedMessage);
@@ -255,7 +255,7 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
     }
     
     // Use MessageService to delete message (PostgreSQL + MongoDB)
-    const deleted = await messageService.deleteNoteRef(messageId);
+    const deleted = await messageStorageService.deleteNoteRef(messageId);
     
     if (deleted) {
       console.log(`Deleted message ${messageId} with MongoDB cleanup for applicant user ${userId}`);

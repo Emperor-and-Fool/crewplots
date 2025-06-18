@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { storage } from '../database/storage';
+import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';

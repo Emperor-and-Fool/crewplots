@@ -53,7 +53,7 @@ export class OnDemandMongoService {
         '--port', '27017',
         '--bind_ip', '0.0.0.0',
         '--noauth',
-        '--logpath', './logs/mongo/mongodb_ondemand.log',
+        '--logpath', 'mongodb_ondemand.log',
         '--quiet'
       ];
 

@@ -242,13 +242,6 @@ export const kbCategories = pgTable("kb_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Sessions table for PostgreSQL session storage
-export const sessions = pgTable("session", {
-  sid: varchar("sid", { length: 128 }).primaryKey().notNull(),
-  sess: json("sess").notNull(),
-  expire: timestamp("expire", { mode: 'date' }).notNull(),
-});
-
 // Knowledge Base Articles
 export const kbArticles = pgTable("kb_articles", {
   id: serial("id").primaryKey(),
@@ -356,7 +349,14 @@ export const redisCache = pgTable("redis_cache", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-
+// Virtual Redis Sessions - PostgreSQL fallback for session storage
+export const redisSessions = pgTable("redis_sessions", {
+  id: text("id").primaryKey(), // Session ID
+  sessionData: jsonb("session_data").notNull(), // Session content
+  expiresAt: timestamp("expires_at").notNull(), // Session expiry
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, public_id: true, createdAt: true });
@@ -381,7 +381,7 @@ export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: t
 export const insertNoteRefSchema = createInsertSchema(noteRefs).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
-
+export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
 export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
@@ -464,4 +464,17 @@ export type Message = typeof noteRefs.$inferSelect;
 export type NoteRef = typeof noteRefs.$inferSelect;
 export type NoteFile = typeof noteFiles.$inferSelect;
 
-
+// Session storage for database sessions
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => {
+    return {
+      expireIdx: index("sessions_expire_idx").on(table.expire),
+    };
+  }
+);

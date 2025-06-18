@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storage } from "../database/storage";
+import { storage } from "../storage";
 
 const router = Router();
 
