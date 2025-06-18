@@ -358,6 +358,36 @@ router.delete('/documents/:documentId', async (req, res) => {
   }
 });
 
+// Ping MongoDB to check if it's alive
+router.get('/ping', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const result = await withMongoDBRetry(async () => {
+      const db = mongoConnection.getDatabase();
+      await db.admin().ping();
+      return 'PONG';
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    res.json({
+      success: true,
+      ping: result,
+      responseTime: `${responseTime}ms`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    res.status(500).json({
+      success: false,
+      responseTime: `${responseTime}ms`,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Quick cleanup endpoint - delete all motivation documents (development only)
 router.delete('/documents/cleanup/all', async (req, res) => {
   try {
