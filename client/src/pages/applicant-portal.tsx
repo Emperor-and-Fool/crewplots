@@ -2,7 +2,6 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { useProfile } from '@/contexts/profile-context';
 
 import { 
   Card, 
@@ -15,10 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/components/ui/messaging-system';
+import { ProfileCard } from '@/components/ui/profile-card';
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading, error: profileError, refetchProfile } = useProfile();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isAuthenticated = !!user;
@@ -35,40 +34,14 @@ function ApplicantPortal() {
     }
   }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
 
-  const isProfileError = !profile && !profileLoading && profileError;
-
-  // Handle profile API errors only
-  if (isProfileError) {
-    const errorMessage = profileError?.message || 'Unknown error';
-
+  // Show loading state only for auth
+  if (authLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
         <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-          <div className="flex items-center">
-            <div className="text-red-700">
-              <p className="font-bold">Error loading data</p>
-              <p>There was a problem fetching your information: {errorMessage}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state for profile loading only
-  if (profileLoading) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <h1 className="text-2xl font-bold mb-4">Applicant Portal</h1>
-        <p>Loading application data...</p>
+        <p>Loading...</p>
         <div className="mt-4 h-4 w-1/3 bg-gray-200 rounded overflow-hidden">
           <div className="h-full bg-primary animate-pulse"></div>
-        </div>
-        {/* Debug info */}
-        <div className="mt-8 text-xs text-gray-500">
-          <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-          <p>Profile Loading: {profileLoading ? 'Yes' : 'No'}</p>
         </div>
       </div>
     );
@@ -108,67 +81,18 @@ function ApplicantPortal() {
         </div>
       </div>
 
-      <Card className="mb-8">
-        <CardHeader className="pb-2">
-          <CardTitle>Your Application</CardTitle>
-          <CardDescription>Details of your job application</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {profile ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="text-lg">{profile.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Email</p>
-                  <p className="text-lg">{profile.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="text-lg">{profile.phoneNumber || 'Not provided'}</p>
-                </div>
+      {/* Profile Section - Component Isolated */}
+      <ProfileCard userId={user?.id || 0} className="mb-8" />
 
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="text-lg">
-                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(profile.status)}`}>
-                      {profile.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Application Date</p>
-                  <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
-                </div>
-              </div>
-
-              {profile.extraMessage && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-500 mb-2">Additional Message</p>
-                  <p className="text-gray-700">{profile.extraMessage}</p>
-                </div>
-              )}
-
-            </div>
-          ) : (
-            <div className="py-4">
-              <p className="text-gray-500">Loading application details...</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Messaging system - only show when profile data is loaded */}
-      {profile && (
+      {/* Messaging system - Always show when authenticated */}
+      {user && (
         <Card className="mb-8">
           <CardHeader className="pb-2">
             <CardTitle>Your Documents & Motivation here</CardTitle>
           </CardHeader>
           <CardContent>
             <MessagingSystem
-              userId={profile.id}
+              userId={user.id}
               mode="note"
               title="Why you want to work with our Crew:"
               placeholder="Type your note about your application..."
@@ -184,25 +108,6 @@ function ApplicantPortal() {
                 });
               }}
             />
-          </CardContent>
-        </Card>
-      )}
-
-
-
-      {process.env.NODE_ENV !== 'production' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Debug Information</CardTitle>
-            <CardDescription>Profile debugging data (only visible in development)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <h3 className="text-lg font-medium mb-2">Profile Data</h3>
-              <pre className="bg-gray-100 p-3 rounded overflow-auto text-xs">
-                {JSON.stringify(profile, null, 2)}
-              </pre>
-            </div>
           </CardContent>
         </Card>
       )}

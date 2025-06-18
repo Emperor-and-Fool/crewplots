@@ -1,8 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
 import { messageStorageService } from '../services/message-storage-service';
-
-
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -11,8 +9,61 @@ import { fromZodError } from 'zod-validation-error';
 import { db } from '../db';
 import { noteRefs as noteRefsTable } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 const router = express.Router();
+const execAsync = promisify(exec);
+
+// Helper function to sleep
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Start MongoDB on-demand service
+async function startMongoDBOnDemand(): Promise<void> {
+  try {
+    console.log('🚀 Starting MongoDB on-demand service...');
+    await execAsync('bash mongo-proxy-server.js > /dev/null 2>&1 &');
+    console.log('✅ MongoDB on-demand service started');
+  } catch (error) {
+    console.log('⚠️ MongoDB on-demand service start failed:', error);
+  }
+}
+
+// MongoDB retry wrapper with explicit failure
+async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if this is a MongoDB connection error
+      const isConnectionError = error?.message?.includes('ECONNREFUSED') || 
+                               error?.code === 'ECONNREFUSED' ||
+                               error?.cause?.code === 'ECONNREFUSED';
+      
+      if (isConnectionError && attempt < maxRetries) {
+        console.log(`🔄 MongoDB connection failed (attempt ${attempt + 1}/${maxRetries + 1}), starting on-demand service...`);
+        
+        await startMongoDBOnDemand();
+        
+        // Wait before retry
+        await sleep(3000);
+        console.log(`⏳ Retrying MongoDB operation...`);
+        continue;
+      }
+      
+      // If it's not a connection error or we've exhausted retries, throw the error
+      throw error;
+    }
+  }
+  
+  throw lastError;
+}
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), 'uploads', 'documents');
@@ -91,8 +142,10 @@ router.get('/my-profile', isApplicant, async (req: any, res) => {
       });
     }
     
-    // Get notes metadata from hybrid system instead of deprecated notes field
-    const notes = await messageStorageService.getNoteRefsByUser(req.user.id);
+    // Get notes metadata from hybrid system with MongoDB retry
+    const notes = await withMongoDBRetry(() => 
+      messageStorageService.getNoteRefsByUser(req.user.id)
+    );
     const notesMetadata = notes.length > 0 ? {
       exists: true,
       documentId: notes[0].noteId,
