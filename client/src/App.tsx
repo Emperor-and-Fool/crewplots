@@ -1,20 +1,19 @@
-import { Switch, Route, Router, Redirect } from "wouter";
-import { Toaster } from "@/components/ui/toaster";
+import React from "react";
+import { Router, Route, Switch, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/use-auth";
-import * as React from "react";
-// Test comment to trigger re-render
-import Footer from "@/components/ui/footer";
-import Dashboard from "@/pages/dashboard";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import Dashboard from "@/pages/dashboard";
+import ApplicantPortal from "@/pages/applicant-portal";
 import Locations from "@/pages/locations";
 import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
-import ApplicantPortal from "@/pages/applicant-portal";
-import CashManagement from "@/pages/cash-management";
 import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
@@ -45,61 +44,21 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 };
 
 function App() {
-  const { isLoading, user } = useAuth();
-  const [serverAuthState, setServerAuthState] = React.useState<{
-    loading: boolean;
-    authenticated: boolean;
-    user: any;
-  }>({
-    loading: true,
-    authenticated: false,
-    user: null
-  });
-
-  React.useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-          
-          if (data.authenticated && 
-              data.user?.role === 'applicant' && 
-              window.location.pathname !== '/applicant-portal' &&
-              window.location.pathname !== '/login' &&
-              window.location.pathname !== '/register' &&
-              window.location.pathname !== '/registration-success') {
-            window.location.href = '/applicant-portal';
-          }
-        } else {
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error) {
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
+  const { isLoading, user, isAuthenticated } = useAuth();
   
-  if (serverAuthState.loading) {
+  // Handle role-based redirects after authentication is complete
+  React.useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.role === 'applicant') {
+      if (window.location.pathname !== '/applicant-portal' &&
+          window.location.pathname !== '/login' &&
+          window.location.pathname !== '/register' &&
+          window.location.pathname !== '/registration-success') {
+        window.location.href = '/applicant-portal';
+      }
+    }
+  }, [isLoading, isAuthenticated, user]);
+  
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
@@ -116,16 +75,16 @@ function App() {
             <Switch>
               {/* PUBLIC ROUTES */}
               <Route path="/login">
-                {serverAuthState.authenticated ? 
-                  (serverAuthState.user?.role === 'applicant' ? 
+                {isAuthenticated ? 
+                  (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
                   <Login />}
               </Route>
               
               <Route path="/register">
-                {serverAuthState.authenticated ? 
-                  (serverAuthState.user?.role === 'applicant' ? 
+                {isAuthenticated ? 
+                  (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
                   <Register />}
@@ -137,121 +96,124 @@ function App() {
               
               {/* PROTECTED ROUTES */}
               <Route path="/dashboard">
-                {serverAuthState.authenticated ? 
-                  (serverAuthState.user?.role === 'applicant' ? 
+                {isAuthenticated ? 
+                  (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Dashboard />) : 
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/locations">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={Locations} 
-                    requiredRoles={["manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/staff-management">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={StaffManagement} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/scheduling">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={Scheduling} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/view-calendar">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={ViewCalendar} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/applicants">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={Applicants} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/cash-management">
-                {serverAuthState.authenticated ? 
-                  <RoleProtectedRoute 
-                    component={CashManagement} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
-              <Route path="/knowledge-base">
-                {serverAuthState.authenticated ? 
-                  <KnowledgeBase /> : 
-                  <Redirect to="/login" />
-                }
-              </Route>
-              
               <Route path="/applicant-portal">
-                {serverAuthState.authenticated ? 
+                {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={ApplicantPortal} 
                     requiredRoles={["applicant"]} 
                   /> : 
-                  <Redirect to="/login" />
-                }
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/locations">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={Locations} 
+                    requiredRoles={["manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/staff-management">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={StaffManagement} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/scheduling">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={Scheduling} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/view-calendar">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={ViewCalendar} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/applicants">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={Applicants} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/knowledge-base">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={KnowledgeBase} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
               </Route>
               
               <Route path="/reports">
-                {serverAuthState.authenticated ? 
+                {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={Reports} 
                     requiredRoles={["manager", "floor_manager"]} 
                   /> : 
-                  <Redirect to="/login" />
-                }
+                  <Redirect to="/login" />}
               </Route>
               
-              {/* Default route */}
+              {/* DEFAULT ROUTE */}
               <Route path="/">
-                {serverAuthState.authenticated ? 
-                  (serverAuthState.user?.role === 'applicant' ? 
+                {isAuthenticated ? 
+                  (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
                   <Redirect to="/login" />}
               </Route>
               
-              {/* Not found */}
-              <Route component={NotFound} />
+              {/* CATCH ALL */}
+              <Route>
+                <NotFound />
+              </Route>
             </Switch>
           </Router>
         </div>
-        {window.location.pathname !== '/login' && window.location.pathname !== '/register' && (
-          <Footer />
-        )}
+        <Toaster />
       </div>
-      <Toaster />
     </TooltipProvider>
   );
 }
 
-export default App;
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+export default function Root() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
