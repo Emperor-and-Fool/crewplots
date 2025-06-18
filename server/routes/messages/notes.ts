@@ -5,27 +5,56 @@ import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on
 
 import { z } from 'zod';
 
-// MongoDB retry wrapper with on-demand service integration
-async function withMongoDBRetry<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: any) {
-    console.log(`[MongoDB Retry] Operation failed, attempting to restart MongoDB service: ${error.message}`);
-    
+// On-demand MongoDB service management
+async function startMongoDBOnDemand(): Promise<boolean> {
+  console.log('🚀 Starting MongoDB on-demand service...');
+  
+  const result = await onDemandMongoService.ensureReady();
+  
+  if (result) {
+    console.log('✅ MongoDB on-demand service started');
+  } else {
+    console.log('❌ MongoDB on-demand service failed to start');
+  }
+  
+  return result;
+}
+
+// Sleep utility
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// MongoDB retry wrapper with on-demand service integration  
+async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const serviceStarted = await onDemandMongoService.ensureReady();
-      if (serviceStarted) {
-        console.log('[MongoDB Retry] Service restarted successfully, retrying operation');
-        return await operation();
-      } else {
-        console.error('[MongoDB Retry] Failed to restart MongoDB service');
-        throw new Error(`MongoDB service unavailable: ${error.message}`);
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if this is a MongoDB connection error
+      const isConnectionError = error?.message?.includes('ECONNREFUSED') || 
+                               error?.code === 'ECONNREFUSED' ||
+                               error?.cause?.code === 'ECONNREFUSED';
+      
+      if (isConnectionError && attempt < maxRetries) {
+        console.log(`🔄 MongoDB connection failed (attempt ${attempt + 1}/${maxRetries + 1}), starting on-demand service...`);
+        
+        await startMongoDBOnDemand();
+        
+        // Wait before retry
+        await sleep(3000);
+        console.log(`⏳ Retrying MongoDB operation...`);
+        continue;
       }
-    } catch (retryError: any) {
-      console.error('[MongoDB Retry] Retry failed:', retryError.message);
-      throw new Error(`MongoDB operation failed after retry: ${retryError.message}`);
+      
+      // If it's not a connection error or we've exhausted retries, throw the error
+      throw error;
     }
   }
+  
+  throw lastError;
 }
 
 const router = express.Router();
