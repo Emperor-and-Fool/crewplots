@@ -125,7 +125,13 @@ router.put('/:id', requireAuth, async (req: any, res) => {
     }
     
     console.log('🔄 Using MessageService for hybrid update with MongoDB retry');
-    const updatedMessage = await withMongoDBRetry(() => messageStorageService.updateNoteRef(messageId, { content }));
+    
+    let updatedMessage;
+    try {
+      updatedMessage = await withMongoDBRetry(() => messageStorageService.updateNoteRef(messageId, { content }));
+    } catch (mongoError) {
+      throw mongoError;
+    }
     
     console.log(`Updated note ${messageId} with hybrid storage for user ${userId}`);
     res.json(updatedMessage);
