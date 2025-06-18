@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect, ReactNode, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useState, useEffect, ReactNode } from "react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Register } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -31,59 +31,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Check if user is already logged in
+  // Single auth check on mount - no React Query to prevent session conflicts
   useEffect(() => {
     const checkAuth = async () => {
       const startTime = Date.now();
-      console.log(`🔍 AUTH TIMING: Starting auth check at ${startTime}`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      console.log(`🔍 AUTH TIMING: Single auth check starting at ${startTime}`);
       
       try {
-        console.log(`🔍 AUTH TIMING: Making fetch request at ${Date.now() - startTime}ms`);
         const response = await fetch('/api/auth/me', {
-          credentials: "include",
-          signal: controller.signal
+          credentials: "include"
         });
         
-        clearTimeout(timeoutId);
-        console.log(`🔍 AUTH TIMING: Fetch completed at ${Date.now() - startTime}ms, status: ${response.status}`);
+        console.log(`🔍 AUTH TIMING: Single auth completed at ${Date.now() - startTime}ms, status: ${response.status}`);
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`🔍 AUTH TIMING: JSON parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
+          console.log(`🔍 AUTH TIMING: Single auth parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
           
-          if (data && data.authenticated && data.user) {
-            console.log(`🔍 AUTH TIMING: Setting user and authenticated=true at ${Date.now() - startTime}ms`);
+          if (data?.authenticated) {
             setUser(data.user);
             setIsAuthenticated(true);
           } else {
-            console.log(`🔍 AUTH TIMING: Setting user=null, authenticated=false at ${Date.now() - startTime}ms`);
             setUser(null);
             setIsAuthenticated(false);
-            queryClient.clear();
           }
         } else {
-          console.log(`🔍 AUTH TIMING: Response not ok, clearing auth at ${Date.now() - startTime}ms`);
           setUser(null);
           setIsAuthenticated(false);
-          queryClient.clear();
         }
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        console.log(`🔍 AUTH TIMING: Error occurred at ${Date.now() - startTime}ms:`, error.message);
+      } catch (error) {
+        console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
         setUser(null);
         setIsAuthenticated(false);
-        queryClient.clear();
       } finally {
-        console.log(`🔍 AUTH TIMING: Setting isLoading=false at ${Date.now() - startTime}ms`);
+        console.log(`🔍 AUTH TIMING: Single auth setting isLoading=false at ${Date.now() - startTime}ms`);
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [queryClient]);
+  }, []); // Empty deps - mount only
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {

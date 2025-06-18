@@ -23,51 +23,8 @@ import RegistrationSuccess from "@/pages/registration-success";
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
   const { user, isLoading } = useAuth();
-  const [serverAuthState, setServerAuthState] = React.useState<{
-    loading: boolean;
-    authenticated: boolean;
-    user: any;
-  }>({
-    loading: true,
-    authenticated: false,
-    user: null
-  });
-
-  React.useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setServerAuthState({
-            loading: false,
-            authenticated: data.authenticated,
-            user: data.user || null
-          });
-        } else {
-          setServerAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
-        }
-      } catch (error) {
-        setServerAuthState({
-          loading: false,
-          authenticated: false,
-          user: null
-        });
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
   
-  if (serverAuthState.loading) {
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
@@ -76,11 +33,11 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
     </div>;
   }
   
-  if (!serverAuthState.authenticated || !serverAuthState.user) {
+  if (!user) {
     return <Redirect to="/login" />;
   }
   
-  if (requiredRoles.length > 0 && !requiredRoles.includes(serverAuthState.user.role)) {
+  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
     return <Redirect to="/dashboard" />;
   }
   

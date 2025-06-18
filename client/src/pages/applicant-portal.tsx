@@ -20,21 +20,8 @@ function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const isAuthenticated = !!user;
-  const isApplicant = user?.role === 'applicant';
 
-  React.useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !isApplicant)) {
-      toast({
-        title: "Access Denied",
-        description: "You must be logged in as an applicant to view this page.",
-        variant: "destructive"
-      });
-      navigate('/login');
-    }
-  }, [authLoading, isAuthenticated, isApplicant, navigate, toast]);
-
-  // Show loading state only for auth
+  // Apply the recommended pattern: guard conditions without effects
   if (authLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -45,6 +32,17 @@ function ApplicantPortal() {
         </div>
       </div>
     );
+  }
+
+  // Redirect logic without useEffect to prevent infinite loops
+  if (!user || user.role !== 'applicant') {
+    toast({
+      title: "Access Denied", 
+      description: "You must be logged in as an applicant to view this page.",
+      variant: "destructive"
+    });
+    navigate('/login');
+    return null;
   }
 
   // Get the applicant status badge color
