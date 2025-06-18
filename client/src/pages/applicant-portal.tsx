@@ -127,7 +127,7 @@ function ApplicantPortal() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="text-lg">{profile.phone}</p>
+                  <p className="text-lg">{profile.phoneNumber || 'Not provided'}</p>
                 </div>
 
                 <div>
