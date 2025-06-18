@@ -30,7 +30,7 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   
   const { 
     data: profile, 
@@ -49,7 +49,7 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
       
       return response.json();
     },
-    enabled: !authLoading && !!user && user.role === 'applicant',
+    enabled: true, // Always enabled - let the server handle auth validation
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 0,
@@ -79,7 +79,7 @@ export function ProfileCard({ userId, className = "" }: ProfileCardProps) {
 
 
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return <PortalProfileSkeleton />;
   }
 
