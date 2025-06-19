@@ -100,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (data && data.user) {
             setUser(data.user);
-            setIsAuthenticated(true);
             
             // Show success toast
             toast({
@@ -176,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.ok) {
         setUser(null);
-        setIsAuthenticated(false);
         
         // Clear all query caches
         queryClient.clear();
