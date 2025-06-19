@@ -16,6 +16,12 @@ export class OnDemandRedisService {
   private isStarting = false;
   private connectionPool: Redis | null = null;
   private readonly MAX_CONNECTIONS = 3; // Limit connections to prevent overwhelming Redis binary
+  
+  // Connection monitoring
+  private connectionAttempts = 0;
+  private successfulConnections = 0;
+  private failedConnections = 0;
+  private connectionHistory: Array<{timestamp: number, connectionId: string, status: 'attempt' | 'success' | 'failed', activeCount: number}> = [];
 
   static getInstance(): OnDemandRedisService {
     if (!OnDemandRedisService.instance) {
@@ -54,13 +60,22 @@ export class OnDemandRedisService {
       }
     }
 
+    // Log connection attempt
+    this.connectionAttempts++;
+    this.logConnectionEvent(connectionId, 'attempt');
+    console.log(`[OnDemand] Connection attempt #${this.connectionAttempts} for "${connectionId}" (${this.activeConnections.size}/${this.MAX_CONNECTIONS} active)`);
+
     // Enforce connection limit to prevent overwhelming Redis binary
     if (this.activeConnections.size >= this.MAX_CONNECTIONS) {
+      this.failedConnections++;
+      this.logConnectionEvent(connectionId, 'failed');
       throw new Error(`Redis connection limit reached (${this.MAX_CONNECTIONS}). Custom Redis binary cannot handle more connections.`);
     }
 
     // Start Redis and create connection
     const connection = await this.createConnection(connectionId);
+    this.successfulConnections++;
+    this.logConnectionEvent(connectionId, 'success');
     
     try {
       const result = await operation(connection.client);
