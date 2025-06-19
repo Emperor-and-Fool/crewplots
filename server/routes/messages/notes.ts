@@ -96,7 +96,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     await hybridCacheService.set(cacheKey, messages, { 
       ttl: 300,
       category: 'user-notes',
-      connectionId: `notes-${userId}` 
+      connectionId: `notes-${userId}`,
+      sessionId: sessionId
     });
     
     console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);

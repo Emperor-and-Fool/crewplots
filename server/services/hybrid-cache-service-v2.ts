@@ -134,8 +134,12 @@ export class HybridCacheService {
       ttl = 3600, 
       category = 'general', 
       connectionId = 'cache-write',
-      skipInDocker = false 
+      skipInDocker = false,
+      sessionId
     } = options;
+
+    // Create session-aware cache key
+    const cacheKey = sessionId ? `session:${sessionId.substring(0, 8)}:${key}` : key;
 
     const expiresAt = ttl > 0 ? new Date(Date.now() + ttl * 1000) : null;
     const serializedValue = JSON.stringify(value);
@@ -148,7 +152,7 @@ export class HybridCacheService {
       await db
         .insert(hybridCache)
         .values({
-          key,
+          key: cacheKey,
           value: value as any,
           category,
           size,
@@ -165,7 +169,7 @@ export class HybridCacheService {
           },
         });
 
-      console.log(`[HybridCache] PostgreSQL set: ${key} (Category: ${category}, Size: ${size}B)`);
+      console.log(`[HybridCache] PostgreSQL set: ${cacheKey} (Category: ${category}, Size: ${size}B)`);
       pgSuccess = true;
 
       // Write-through to Redis cache if PostgreSQL write succeeded
@@ -174,11 +178,11 @@ export class HybridCacheService {
           await this.redisService.withConnection(
             async (client: Redis) => {
               if (ttl > 0) {
-                await client.setex(key, ttl, serializedValue);
-                console.log(`[HybridCache] Redis write-through: ${key} (TTL: ${ttl}s)`);
+                await client.setex(cacheKey, ttl, serializedValue);
+                console.log(`[HybridCache] Redis write-through: ${cacheKey} (TTL: ${ttl}s)`);
               } else {
-                await client.set(key, serializedValue);
-                console.log(`[HybridCache] Redis write-through: ${key} (no TTL)`);
+                await client.set(cacheKey, serializedValue);
+                console.log(`[HybridCache] Redis write-through: ${cacheKey} (no TTL)`);
               }
             },
             { connectionId, keepAlive: 30000, skipInDocker }
@@ -198,7 +202,10 @@ export class HybridCacheService {
    * Delete key from both Redis and PostgreSQL
    */
   async delete(key: string, options: CacheOptions = {}): Promise<boolean> {
-    const { connectionId = 'cache-delete', skipInDocker = false } = options;
+    const { connectionId = 'cache-delete', skipInDocker = false, sessionId } = options;
+
+    // Create session-aware cache key
+    const cacheKey = sessionId ? `session:${sessionId.substring(0, 8)}:${key}` : key;
 
     let redisSuccess = false;
     let pgSuccess = false;
@@ -207,26 +214,26 @@ export class HybridCacheService {
     try {
       await onDemandRedis.withConnection(
         async (redis) => {
-          const result = await redis.del(key);
+          const result = await redis.del(cacheKey);
           redisSuccess = result > 0;
-          console.log(`[HybridCache] Redis delete: ${key} (${redisSuccess ? 'success' : 'not found'})`);
+          console.log(`[HybridCache] Redis delete: ${cacheKey} (${redisSuccess ? 'success' : 'not found'})`);
         },
         { connectionId, keepAlive: 5000, skipInDocker }
       );
     } catch (error) {
-      console.log(`[HybridCache] Redis delete failed for key: ${key}`);
+      console.log(`[HybridCache] Redis delete failed for key: ${cacheKey}`);
     }
 
     // PostgreSQL deletion
     try {
       const result = await db
         .delete(hybridCache)
-        .where(eq(hybridCache.key, key));
+        .where(eq(hybridCache.key, cacheKey));
 
       pgSuccess = (result.rowCount || 0) > 0;
-      console.log(`[HybridCache] PostgreSQL delete: ${key} (${pgSuccess ? 'success' : 'not found'})`);
+      console.log(`[HybridCache] PostgreSQL delete: ${cacheKey} (${pgSuccess ? 'success' : 'not found'})`);
     } catch (error) {
-      console.error(`[HybridCache] PostgreSQL delete failed for key: ${key}`, error);
+      console.error(`[HybridCache] PostgreSQL delete failed for key: ${cacheKey}`, error);
     }
 
     return pgSuccess;
