@@ -78,7 +78,7 @@ For production applications, use the on-demand service adapter (`../adapters-rep
 - Integration with application session management
 
 ```typescript
-import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-service';
+import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 const redisService = OnDemandRedisService.getInstance();
 const result = await redisService.withConnection(async (client) => {

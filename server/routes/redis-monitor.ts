@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-service';
+import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 
 const router = Router();
 

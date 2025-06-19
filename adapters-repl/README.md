@@ -33,7 +33,7 @@ const isReady = await mongoService.ensureReady();
 ```
 
 ### Redis On-Demand Service
-**Location**: `redis-ondemand/on-demand-service.ts`
+**Location**: `redis-ondemand/on-demand-redis.ts`
 
 **What it does**:
 - Launches custom Redis server (`repl-redis/production-redis`)

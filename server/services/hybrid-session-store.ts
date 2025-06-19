@@ -1,7 +1,7 @@
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { pool } from '../db';
-import { OnDemandRedisService } from '../../adapters-repl/redis-ondemand/on-demand-service';
+import { OnDemandRedisService } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 
 const PgStore = connectPgSimple(session);
 

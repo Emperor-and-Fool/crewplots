@@ -5,7 +5,7 @@ This application implements a sophisticated on-demand service architecture that 
 
 ## Architecture Components
 
-### 1. On-Demand Redis Service (`server/services/on-demand-service.ts`)
+### 1. On-Demand Redis Service (`adapters-repl/redis-ondemand/on-demand-redis.ts`)
 - **Purpose**: Provides Redis caching and session management
 - **Activation**: 2-3 second startup time when first accessed
 - **Features**: 

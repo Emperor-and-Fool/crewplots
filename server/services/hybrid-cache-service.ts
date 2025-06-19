@@ -1,4 +1,4 @@
-import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-service';
+import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 import { db } from '../db';
 import { hybridCache } from '@shared/schema';
 import { eq, lt, and } from 'drizzle-orm';
