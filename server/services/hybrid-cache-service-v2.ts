@@ -1,5 +1,6 @@
 import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 import { OnDemandRedisService } from '../../adapters-repl/redis-ondemand/on-demand-redis';
+import { OnDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 import { db } from '../db';
 import { hybridCache } from '@shared/schema';
 import { eq, lt } from 'drizzle-orm';
@@ -59,6 +60,20 @@ export class HybridCacheService {
         // Check if expired
         if (pgResult.expiresAt && pgResult.expiresAt < new Date()) {
           console.log(`[HybridCache] PostgreSQL entry expired for key: ${key}, cleaning up`);
+          
+          // Trigger MongoDB on-demand service for MongoDB-backed data
+          if (key.includes('notes') || key.includes('messages')) {
+            console.log(`[HybridCache] Proactively starting MongoDB for expired key: ${key}`);
+            try {
+              const mongoService = OnDemandMongoService.getInstance();
+              mongoService.ensureReady().catch(err => 
+                console.log(`[HybridCache] MongoDB startup initiated for: ${key}`, err?.message)
+              );
+            } catch (error) {
+              console.log(`[HybridCache] Could not trigger MongoDB startup for: ${key}`);
+            }
+          }
+          
           await this.delete(key);
           return null;
         }
@@ -86,6 +101,20 @@ export class HybridCacheService {
       }
 
       console.log(`[HybridCache] Complete miss for key: ${key}`);
+      
+      // Trigger MongoDB on-demand service for MongoDB-backed data on complete miss
+      if (key.includes('notes') || key.includes('messages')) {
+        console.log(`[HybridCache] Proactively starting MongoDB for cache miss: ${key}`);
+        try {
+          const mongoService = OnDemandMongoService.getInstance();
+          mongoService.ensureReady().catch(err => 
+            console.log(`[HybridCache] MongoDB startup initiated for miss: ${key}`, err?.message)
+          );
+        } catch (error) {
+          console.log(`[HybridCache] Could not trigger MongoDB startup for miss: ${key}`);
+        }
+      }
+      
       return null;
     } catch (error) {
       console.error(`[HybridCache] PostgreSQL error for key: ${key}`, error);
