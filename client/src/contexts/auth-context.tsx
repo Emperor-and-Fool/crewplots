@@ -27,9 +27,11 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Compute isAuthenticated from user state
+  const isAuthenticated = Boolean(user);
 
   // Single auth check on mount - no React Query to prevent session conflicts
   useEffect(() => {
@@ -98,20 +100,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log("Login successful, user data:", data.user);
-          setUser(data.user);
-          setIsAuthenticated(true);
+          console.log("Login successful, result:", data);
           
-          // Show success toast
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${data.user?.name || username}!`,
-          });
-          
-          // Invalidate all queries to ensure fresh data
-          queryClient.invalidateQueries();
-          setIsLoading(false);
-          return true;
+          if (data && data.user) {
+            setUser(data.user);
+            setIsAuthenticated(true);
+            
+            // Show success toast
+            toast({
+              title: "Login successful",
+              description: `Welcome back, ${data.user?.name || username}!`,
+            });
+            
+            // Invalidate all queries to ensure fresh data
+            queryClient.invalidateQueries();
+            setIsLoading(false);
+            return true;
+          } else {
+            console.error("Login response missing user data:", data);
+            toast({
+              title: "Login failed",
+              description: "Authentication successful but user data unavailable",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return false;
+          }
         } else {
           console.error("Login failed with status:", response.status);
           try {
