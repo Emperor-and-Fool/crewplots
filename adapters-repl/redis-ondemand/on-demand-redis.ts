@@ -5,6 +5,8 @@ import path from 'path';
 interface ServiceConnection<T> {
   client: T;
   cleanup: () => Promise<void>;
+  lastUsed: number;
+  isInUse: boolean;
 }
 
 export class OnDemandRedisService {
@@ -12,6 +14,7 @@ export class OnDemandRedisService {
   private activeConnections = new Map<string, ServiceConnection<Redis>>();
   private redisProcess: ChildProcess | null = null;
   private isStarting = false;
+  private connectionPool: Redis | null = null;
 
   static getInstance(): OnDemandRedisService {
     if (!OnDemandRedisService.instance) {
@@ -28,7 +31,7 @@ export class OnDemandRedisService {
       skipInDocker?: boolean; // skip Redis activation if running in Docker
     } = {}
   ): Promise<T> {
-    const { connectionId = 'default', keepAlive = 30000, skipInDocker = true } = options;
+    const { connectionId = 'default', keepAlive = 300000, skipInDocker = true } = options; // 5 minutes default
 
     // Skip Redis activation in Docker environments (docker-compose handles it)
     if (skipInDocker && process.env.DOCKER_ENV) {
@@ -38,7 +41,16 @@ export class OnDemandRedisService {
     // Check for existing connection
     const existingConnection = this.activeConnections.get(connectionId);
     if (existingConnection) {
-      return await operation(existingConnection.client);
+      existingConnection.lastUsed = Date.now();
+      existingConnection.isInUse = true;
+      try {
+        const result = await operation(existingConnection.client);
+        existingConnection.isInUse = false;
+        return result;
+      } catch (error) {
+        existingConnection.isInUse = false;
+        throw error;
+      }
     }
 
     // Start Redis and create connection
@@ -80,7 +92,7 @@ export class OnDemandRedisService {
       // Keep connection alive for potential follow-up operations
       setTimeout(async () => {
         await this.cleanupConnection(connectionId);
-      }, 60000); // 1 minute for batch operations
+      }, 600000); // 10 minutes for batch operations
       
       return results;
     } catch (error) {
@@ -108,6 +120,8 @@ export class OnDemandRedisService {
 
     const connection: ServiceConnection<Redis> = {
       client,
+      lastUsed: Date.now(),
+      isInUse: false,
       cleanup: async () => {
         try {
           await client.disconnect();
@@ -180,6 +194,35 @@ export class OnDemandRedisService {
     } finally {
       this.isStarting = false;
     }
+  }
+
+  private async smartCleanup(connectionId: string): Promise<void> {
+    const connection = this.activeConnections.get(connectionId);
+    if (!connection) return;
+
+    // Don't cleanup if connection is currently in use
+    if (connection.isInUse) {
+      console.log(`[OnDemand] Delaying cleanup for active connection "${connectionId}"`);
+      // Reschedule cleanup in 30 seconds
+      setTimeout(async () => {
+        await this.smartCleanup(connectionId);
+      }, 30000);
+      return;
+    }
+
+    // Don't cleanup if connection was used recently (within 60 seconds)
+    const timeSinceLastUse = Date.now() - connection.lastUsed;
+    if (timeSinceLastUse < 60000) {
+      console.log(`[OnDemand] Delaying cleanup for recently used connection "${connectionId}"`);
+      // Reschedule cleanup for remaining time + buffer
+      setTimeout(async () => {
+        await this.smartCleanup(connectionId);
+      }, 60000 - timeSinceLastUse + 10000);
+      return;
+    }
+
+    // Safe to cleanup
+    await this.cleanupConnection(connectionId);
   }
 
   private async cleanupConnection(connectionId: string): Promise<void> {
