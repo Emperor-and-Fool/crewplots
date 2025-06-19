@@ -15,6 +15,7 @@ export class OnDemandRedisService {
   private redisProcess: ChildProcess | null = null;
   private isStarting = false;
   private connectionPool: Redis | null = null;
+  private readonly MAX_CONNECTIONS = 3; // Limit connections to prevent overwhelming Redis binary
 
   static getInstance(): OnDemandRedisService {
     if (!OnDemandRedisService.instance) {
