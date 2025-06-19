@@ -1,7 +1,9 @@
 import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-redis';
+import { OnDemandRedisService } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 import { db } from '../db';
 import { hybridCache } from '@shared/schema';
 import { eq, lt } from 'drizzle-orm';
+import type { Redis } from 'ioredis';
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
@@ -11,20 +13,37 @@ export interface CacheOptions {
 }
 
 export class HybridCacheService {
+  private redisService: OnDemandRedisService;
+
   constructor() {
+    this.redisService = onDemandRedis;
     console.log('[HybridCache] Service initialized with on-demand Redis adapter');
   }
 
   /**
-   * Get value from cache - PostgreSQL only (Redis disabled)
+   * Get value from cache - Redis primary, PostgreSQL fallback
    */
   async get<T = any>(key: string, options: CacheOptions = {}): Promise<T | null> {
     const { connectionId = 'cache-read', skipInDocker = false } = options;
 
-    // Skip Redis entirely to prevent connection spam
-    console.log(`[HybridCache] Using PostgreSQL cache for key: ${key} (Redis disabled)`);
-
-    // PostgreSQL fallback
+    // Try Redis first for application caching
+    try {
+      const result = await this.redisService.withConnection(
+        async (client) => {
+          const value = await client.get(key);
+          if (value) {
+            console.log(`[HybridCache] Redis cache hit for key: ${key}`);
+            return JSON.parse(value);
+          }
+          return null;
+        },
+        { connectionId, keepAlive: 30000, skipInDocker }
+      );
+      
+      if (result !== null) return result;
+    } catch (error) {
+      console.log(`[HybridCache] Redis unavailable for key: ${key}, falling back to PostgreSQL`);
+    }
 
     // PostgreSQL fallback
     try {
@@ -75,7 +94,7 @@ export class HybridCacheService {
   }
 
   /**
-   * Set value in cache - PostgreSQL only (Redis disabled)
+   * Set value in cache - PostgreSQL primary, Redis write-through
    */
   async set<T = any>(key: string, value: T, options: CacheOptions = {}): Promise<boolean> {
     const { 
@@ -90,11 +109,6 @@ export class HybridCacheService {
     const size = Buffer.byteLength(serializedValue, 'utf8');
 
     let pgSuccess = false;
-
-    // Skip Redis entirely to prevent connection spam
-    console.log(`[HybridCache] Setting cache in PostgreSQL only: ${key} (Redis disabled)`);
-
-    // Always write to PostgreSQL (source of truth)
 
     // Always write to PostgreSQL (source of truth)
     try {
@@ -120,6 +134,26 @@ export class HybridCacheService {
 
       console.log(`[HybridCache] PostgreSQL set: ${key} (Category: ${category}, Size: ${size}B)`);
       pgSuccess = true;
+
+      // Write-through to Redis cache if PostgreSQL write succeeded
+      if (pgSuccess) {
+        try {
+          await this.redisService.withConnection(
+            async (client: any) => {
+              if (ttl > 0) {
+                await client.setex(key, ttl, serializedValue);
+                console.log(`[HybridCache] Redis write-through: ${key} (TTL: ${ttl}s)`);
+              } else {
+                await client.set(key, serializedValue);
+                console.log(`[HybridCache] Redis write-through: ${key} (no TTL)`);
+              }
+            },
+            { connectionId, keepAlive: 30000, skipInDocker }
+          );
+        } catch (error) {
+          console.log(`[HybridCache] Redis write-through failed for key: ${key}, continuing with PostgreSQL only`);
+        }
+      }
     } catch (error) {
       console.error(`[HybridCache] PostgreSQL set failed for key: ${key}`, error);
     }

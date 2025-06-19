@@ -33,7 +33,8 @@ export class HybridSessionStore extends session.Store {
   }
 
   private async checkRedisAvailability(): Promise<boolean> {
-    // Disable Redis to prevent connection spam (custom server confirmed working)
+    // Option A: Sessions use PostgreSQL only - no Redis dependency for sessions
+    // Redis is reserved for application-level caching only
     return false;
   }
 
