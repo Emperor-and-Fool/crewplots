@@ -92,7 +92,7 @@ function ApplicantPortal() {
             <MessagingSystem
               userId={user.id}
               mode="note"
-              title="Why you want to work with our Crew:"
+              title="Why you want to be part of our crew"
               placeholder="Type your note about your application..."
               showPriority={false}
               showPrivateToggle={false}
