@@ -110,6 +110,11 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     if (cachedNotes) {
       console.log(`🚀 Redis cache hit for user ${userId} notes, type: ${typeof cachedNotes}, length: ${Array.isArray(cachedNotes) ? cachedNotes.length : 'N/A'}`);
+      
+      // Add cache status headers for frontend debugging
+      res.setHeader('X-Cache-Status', 'redis-hit');
+      res.setHeader('X-Debug-Message', 'Notes loaded from Redis cache - no fallback needed');
+      
       return res.json(cachedNotes);
     }
     
@@ -151,6 +156,11 @@ router.get('/', requireAuth, async (req: any, res) => {
     }
     
     console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);
+    
+    // Add fallback status headers for frontend debugging
+    res.setHeader('X-Cache-Status', 'postgres-fallback');
+    res.setHeader('X-Debug-Message', 'Redis failed - fell back to PostgreSQL cache');
+    
     res.json(messages);
   } catch (error) {
     console.error('Error fetching notes:', error);

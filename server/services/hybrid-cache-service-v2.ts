@@ -47,8 +47,9 @@ export class HybridCacheService {
       );
       
       if (result !== null) return result;
-    } catch (error) {
-      console.log(`[HybridCache] Redis unavailable for key: ${cacheKey}, falling back to PostgreSQL`);
+    } catch (error: any) {
+      console.error(`🚨 REDIS FAILURE: Redis cache failed for key: ${cacheKey} - ${error.message}`);
+      console.log(`💾 FALLBACK ACTIVE: Falling back to PostgreSQL cache for key: ${cacheKey}`);
     }
 
     // PostgreSQL fallback
@@ -188,8 +189,9 @@ export class HybridCacheService {
             },
             { connectionId, keepAlive: 30000, skipInDocker }
           );
-        } catch (error) {
-          console.log(`[HybridCache] Redis write-through failed for key: ${key}, continuing with PostgreSQL only`);
+        } catch (error: any) {
+          console.error(`🚨 REDIS FAILURE: Redis write-through failed for key: ${key} - ${error.message}`);
+          console.log(`💾 FALLBACK ACTIVE: Continuing with PostgreSQL-only caching for key: ${key}`);
         }
       }
     } catch (error) {
