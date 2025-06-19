@@ -11,6 +11,7 @@ export interface CacheOptions {
   category?: string;
   connectionId?: string;
   skipInDocker?: boolean;
+  sessionId?: string; // Session-aware caching
 }
 
 export class HybridCacheService {
@@ -25,15 +26,18 @@ export class HybridCacheService {
    * Get value from cache - Redis primary, PostgreSQL fallback
    */
   async get<T = any>(key: string, options: CacheOptions = {}): Promise<T | null> {
-    const { connectionId = 'cache-read', skipInDocker = false } = options;
+    const { connectionId = 'cache-read', skipInDocker = false, sessionId } = options;
+    
+    // Create session-aware cache key
+    const cacheKey = sessionId ? `session:${sessionId.substring(0, 8)}:${key}` : key;
 
     // Try Redis first for application caching
     try {
       const result = await this.redisService.withConnection(
         async (client: Redis) => {
-          const value = await client.get(key);
+          const value = await client.get(cacheKey);
           if (value) {
-            console.log(`[HybridCache] Redis cache hit for key: ${key}`);
+            console.log(`[HybridCache] Redis cache hit for key: ${cacheKey}`);
             return JSON.parse(value);
           }
           return null;
@@ -43,7 +47,7 @@ export class HybridCacheService {
       
       if (result !== null) return result;
     } catch (error) {
-      console.log(`[HybridCache] Redis unavailable for key: ${key}, falling back to PostgreSQL`);
+      console.log(`[HybridCache] Redis unavailable for key: ${cacheKey}, falling back to PostgreSQL`);
     }
 
     // PostgreSQL fallback
@@ -51,15 +55,15 @@ export class HybridCacheService {
       const [pgResult] = await db
         .select()
         .from(hybridCache)
-        .where(eq(hybridCache.key, key))
+        .where(eq(hybridCache.key, cacheKey))
         .limit(1);
 
       if (pgResult) {
-        console.log(`[HybridCache] PostgreSQL hit for key: ${key}`);
+        console.log(`[HybridCache] PostgreSQL hit for key: ${cacheKey}`);
         
         // Check if expired
         if (pgResult.expiresAt && pgResult.expiresAt < new Date()) {
-          console.log(`[HybridCache] PostgreSQL entry expired for key: ${key}, cleaning up`);
+          console.log(`[HybridCache] PostgreSQL entry expired for key: ${cacheKey}, cleaning up`);
           
           // Trigger MongoDB on-demand service for MongoDB-backed data
           if (key.includes('notes') || key.includes('messages')) {
@@ -74,7 +78,7 @@ export class HybridCacheService {
             }
           }
           
-          await this.delete(key);
+          await this.delete(key, options);
           return null;
         }
 
@@ -87,14 +91,14 @@ export class HybridCacheService {
                 3600; // 1 hour default
               
               if (ttl > 0) {
-                await redis.setex(key, ttl, JSON.stringify(pgResult.value));
-                console.log(`[HybridCache] Restored to Redis: ${key} (TTL: ${ttl}s)`);
+                await redis.setex(cacheKey, ttl, JSON.stringify(pgResult.value));
+                console.log(`[HybridCache] Restored to Redis: ${cacheKey} (TTL: ${ttl}s)`);
               }
             },
             { connectionId: 'cache-restore', keepAlive: 5000, skipInDocker }
           );
         } catch (error) {
-          console.log(`[HybridCache] Could not restore to Redis: ${key}`);
+          console.log(`[HybridCache] Could not restore to Redis: ${cacheKey}`);
         }
 
         return pgResult.value as T;

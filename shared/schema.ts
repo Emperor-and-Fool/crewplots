@@ -473,8 +473,6 @@ export type NoteFile = typeof noteFiles.$inferSelect;
 export type HybridCache = typeof hybridCache.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 
-
-
 // Hybrid cache storage - PostgreSQL fallback for Redis cache
 export const hybridCache = pgTable(
   "hybrid_cache",

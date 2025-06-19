@@ -74,11 +74,13 @@ router.get('/', requireAuth, async (req: any, res) => {
     const userId = req.user.id;
     console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
     
-    // Try Redis cache first
+    // Try Redis cache first with session awareness
     const cacheKey = `user:${userId}:notes`;
+    const sessionId = req.sessionID;
     const cachedNotes = await hybridCacheService.get(cacheKey, { 
       category: 'user-notes',
-      connectionId: `notes-${userId}` 
+      connectionId: `notes-${userId}`,
+      sessionId: sessionId
     });
     
     if (cachedNotes) {
