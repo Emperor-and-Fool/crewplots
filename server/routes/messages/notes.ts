@@ -81,14 +81,31 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     let cachedNotes = null;
     try {
-      cachedNotes = await hybridCacheService.get(cacheKey, { 
+      console.log(`[NOTES] Starting Redis cache lookup with 15-second timeout...`);
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Redis cache operation timeout after 15 seconds'));
+        }, 15000);
+      });
+      
+      // Race cache operation against timeout
+      const cachePromise = hybridCacheService.get(cacheKey, { 
         category: 'user-notes',
         connectionId: `notes-${userId}`,
         sessionId: sessionId
       });
+      
+      cachedNotes = await Promise.race([cachePromise, timeoutPromise]);
       console.log(`[NOTES] Cache service call completed, result: ${cachedNotes ? 'HIT' : 'MISS'}`);
-    } catch (error) {
-      console.error(`[NOTES] Cache service error:`, error);
+    } catch (error: any) {
+      if (error.message && error.message.includes('timeout')) {
+        console.error(`[NOTES] 🚨 REDIS TIMEOUT: Cache operation failed after 15 seconds - ${error.message}`);
+        console.log(`[NOTES] Falling back to direct database access due to Redis timeout`);
+      } else {
+        console.error(`[NOTES] Cache service error:`, error);
+      }
     }
     
     if (cachedNotes) {
@@ -105,15 +122,32 @@ router.get('/', requireAuth, async (req: any, res) => {
     // Cache the results for 1 hour - notes don't change frequently
     console.log(`[NOTES] Attempting to cache ${messages.length} notes with key: ${cacheKey}`);
     try {
-      const cacheSuccess = await hybridCacheService.set(cacheKey, messages, { 
+      console.log(`[NOTES] Starting Redis cache SET with 10-second timeout...`);
+      
+      // Create timeout promise for SET operation
+      const setTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Redis cache SET timeout after 10 seconds'));
+        }, 10000);
+      });
+      
+      // Race SET operation against timeout
+      const setCachePromise = hybridCacheService.set(cacheKey, messages, { 
         ttl: 3600,
         category: 'user-notes',
         connectionId: `notes-${userId}`,
         sessionId: sessionId
       });
+      
+      const cacheSuccess = await Promise.race([setCachePromise, setTimeoutPromise]);
       console.log(`[NOTES] Cache SET result: ${cacheSuccess ? 'SUCCESS' : 'FAILED'}`);
-    } catch (cacheError) {
-      console.error(`[NOTES] Cache SET error:`, cacheError);
+    } catch (cacheError: any) {
+      if (cacheError.message && cacheError.message.includes('timeout')) {
+        console.error(`[NOTES] 🚨 REDIS SET TIMEOUT: Cache SET operation failed after 10 seconds - ${cacheError.message}`);
+        console.log(`[NOTES] Notes fetched successfully but Redis caching failed due to timeout`);
+      } else {
+        console.error(`[NOTES] Cache SET error:`, cacheError);
+      }
     }
     
     console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);
@@ -151,14 +185,14 @@ router.post('/', requireAuth, async (req: any, res) => {
     
     const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));
     
-    // Invalidate user's notes cache globally (all sessions)
+    // Invalidate user's notes cache
     const cacheKey = `user:${userId}:notes`;
-    await hybridCacheService.deleteGlobal(cacheKey, { 
+    await hybridCacheService.delete(cacheKey, { 
       category: 'user-notes',
       connectionId: `notes-${userId}` 
     });
     
-    console.log(`Created note with hybrid storage for user ${userId} and invalidated cache globally`);
+    console.log(`Created note with hybrid storage for user ${userId} and invalidated cache`);
     res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -208,14 +242,14 @@ router.put('/:id', requireAuth, async (req: any, res) => {
       throw mongoError;
     }
     
-    // Invalidate user's notes cache globally (all sessions)
+    // Invalidate user's notes cache
     const cacheKey = `user:${userId}:notes`;
-    await hybridCacheService.deleteGlobal(cacheKey, { 
+    await hybridCacheService.delete(cacheKey, { 
       category: 'user-notes',
       connectionId: `notes-${userId}` 
     });
     
-    console.log(`Updated note ${messageId} with hybrid storage for user ${userId} and invalidated cache globally`);
+    console.log(`Updated note ${messageId} with hybrid storage for user ${userId} and invalidated cache`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error updating note:', error);
@@ -243,14 +277,14 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
     const deleted = await withMongoDBRetry(() => messageStorageService.deleteNoteRef(messageId));
     
     if (deleted) {
-      // Invalidate user's notes cache globally (all sessions)
+      // Invalidate user's notes cache
       const cacheKey = `user:${userId}:notes`;
-      await hybridCacheService.deleteGlobal(cacheKey, { 
+      await hybridCacheService.delete(cacheKey, { 
         category: 'user-notes',
         connectionId: `notes-${userId}` 
       });
       
-      console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId} and invalidated cache globally`);
+      console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId} and invalidated cache`);
       res.json({ success: true, messageId });
     } else {
       res.status(500).json({ error: 'Failed to delete note' });
