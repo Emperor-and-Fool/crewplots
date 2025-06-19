@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { hybridCacheService } from '../services/hybrid-cache-service';
+import { hybridCacheService } from '../services/hybrid-cache-service-v2';
 
 const router = Router();
 
@@ -82,7 +82,7 @@ router.post('/test-redis-failure', async (req, res) => {
     });
     
     // Try to retrieve (should work from PostgreSQL)
-    const retrieved = await hybridCacheService.get(testKey, { forceRefresh: true });
+    const retrieved = await hybridCacheService.get(testKey);
     
     res.json({
       success: true,
