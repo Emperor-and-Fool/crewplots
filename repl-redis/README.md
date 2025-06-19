@@ -59,7 +59,7 @@ No existing solutions could maintain persistent Redis functionality in Replit's 
 
 ## Usage
 
-### Starting the Server
+### Direct Server Launch
 ```bash
 ./repl-redis/production-redis
 ```
@@ -69,6 +69,22 @@ The server automatically:
 - Handles SIGTERM for graceful shutdown
 - Supports up to 100 concurrent connections
 - Manages automatic key expiration
+
+### On-Demand Service Integration
+For production applications, use the on-demand service adapter (`../adapters-repl/redis-ondemand/`) which provides:
+- Automatic server lifecycle management
+- Connection pooling with configurable keepalive
+- Resource conservation through smart activation
+- Integration with application session management
+
+```typescript
+import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-service';
+
+const redisService = OnDemandRedisService.getInstance();
+const result = await redisService.withConnection(async (client) => {
+  return await client.setex('session:123', 3600, 'user_data');
+});
+```
 
 ### Integration with Node.js
 ```javascript
