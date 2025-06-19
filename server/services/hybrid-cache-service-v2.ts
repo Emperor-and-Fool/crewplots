@@ -29,7 +29,7 @@ export class HybridCacheService {
     // Try Redis first for application caching
     try {
       const result = await this.redisService.withConnection(
-        async (client) => {
+        async (client: Redis) => {
           const value = await client.get(key);
           if (value) {
             console.log(`[HybridCache] Redis cache hit for key: ${key}`);
@@ -139,7 +139,7 @@ export class HybridCacheService {
       if (pgSuccess) {
         try {
           await this.redisService.withConnection(
-            async (client: any) => {
+            async (client: Redis) => {
               if (ttl > 0) {
                 await client.setex(key, ttl, serializedValue);
                 console.log(`[HybridCache] Redis write-through: ${key} (TTL: ${ttl}s)`);
