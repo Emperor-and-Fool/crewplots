@@ -349,6 +349,13 @@ export const redisCache = pgTable("redis_cache", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Express Session Store - PostgreSQL backend for session storage
+export const sessions = pgTable("session", {
+  sid: varchar("sid", { length: 255 }).primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire", { mode: 'date' }).notNull(),
+});
+
 // Virtual Redis Sessions - PostgreSQL fallback for session storage
 export const redisSessions = pgTable("redis_sessions", {
   id: text("id").primaryKey(), // Session ID
@@ -466,20 +473,7 @@ export type NoteFile = typeof noteFiles.$inferSelect;
 export type HybridCache = typeof hybridCache.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 
-// Session storage for database sessions
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: json("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => {
-    return {
-      expireIdx: index("sessions_expire_idx").on(table.expire),
-    };
-  }
-);
+
 
 // Hybrid cache storage - PostgreSQL fallback for Redis cache
 export const hybridCache = pgTable(
