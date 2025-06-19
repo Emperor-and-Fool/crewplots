@@ -102,11 +102,11 @@ router.get('/', requireAuth, async (req: any, res) => {
     console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
     const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(userId));
     
-    // Cache the results for 5 minutes
+    // Cache the results for 1 hour - notes don't change frequently
     console.log(`[NOTES] Attempting to cache ${messages.length} notes with key: ${cacheKey}`);
     try {
       const cacheSuccess = await hybridCacheService.set(cacheKey, messages, { 
-        ttl: 300,
+        ttl: 3600,
         category: 'user-notes',
         connectionId: `notes-${userId}`,
         sessionId: sessionId
