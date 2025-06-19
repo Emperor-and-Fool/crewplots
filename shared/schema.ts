@@ -463,6 +463,8 @@ export type NoteAttachment = typeof documentAttachments.$inferSelect;
 export type Message = typeof noteRefs.$inferSelect;
 export type NoteRef = typeof noteRefs.$inferSelect;
 export type NoteFile = typeof noteFiles.$inferSelect;
+export type HybridCache = typeof hybridCache.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
 
 // Session storage for database sessions
 export const sessions = pgTable(
@@ -475,6 +477,27 @@ export const sessions = pgTable(
   (table) => {
     return {
       expireIdx: index("sessions_expire_idx").on(table.expire),
+    };
+  }
+);
+
+// Hybrid cache storage - PostgreSQL fallback for Redis cache
+export const hybridCache = pgTable(
+  "hybrid_cache",
+  {
+    key: varchar("key", { length: 255 }).primaryKey(),
+    value: jsonb("value").notNull(),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    category: varchar("category", { length: 50 }).default("general").notNull(),
+    size: integer("size").default(0).notNull(), // JSON size in bytes
+  },
+  (table) => {
+    return {
+      expiresAtIdx: index("hybrid_cache_expires_idx").on(table.expiresAt),
+      categoryIdx: index("hybrid_cache_category_idx").on(table.category),
+      createdAtIdx: index("hybrid_cache_created_idx").on(table.createdAt),
     };
   }
 );
