@@ -2,6 +2,7 @@ import express from 'express';
 import { storage } from '../../storage';
 import { messageStorageService } from '../../services/message-storage-service';
 import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
+import { hybridCacheService } from '../../services/hybrid-cache-service-v2';
 
 import { z } from 'zod';
 
@@ -73,11 +74,30 @@ router.get('/', requireAuth, async (req: any, res) => {
     const userId = req.user.id;
     console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
     
-    // Use MessageService for proper hybrid retrieval with MongoDB retry
+    // Try Redis cache first
+    const cacheKey = `user:${userId}:notes`;
+    const cachedNotes = await hybridCacheService.get(cacheKey, { 
+      category: 'user-notes',
+      connectionId: `notes-${userId}` 
+    });
+    
+    if (cachedNotes) {
+      console.log(`🚀 Redis cache hit for user ${userId} notes`);
+      return res.json(cachedNotes);
+    }
+    
+    // Cache miss - fetch from database
     console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
     const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(userId));
     
-    console.log(`Fetched ${messages.length} notes for user ${userId}`);
+    // Cache the results for 5 minutes
+    await hybridCacheService.set(cacheKey, messages, { 
+      ttl: 300,
+      category: 'user-notes',
+      connectionId: `notes-${userId}` 
+    });
+    
+    console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);
     res.json(messages);
   } catch (error) {
     console.error('Error fetching notes:', error);
@@ -112,7 +132,14 @@ router.post('/', requireAuth, async (req: any, res) => {
     
     const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));
     
-    console.log(`Created note with hybrid storage for user ${userId}`);
+    // Invalidate user's notes cache
+    const cacheKey = `user:${userId}:notes`;
+    await hybridCacheService.delete(cacheKey, { 
+      category: 'user-notes',
+      connectionId: `notes-${userId}` 
+    });
+    
+    console.log(`Created note with hybrid storage for user ${userId} and invalidated cache`);
     res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -162,7 +189,14 @@ router.put('/:id', requireAuth, async (req: any, res) => {
       throw mongoError;
     }
     
-    console.log(`Updated note ${messageId} with hybrid storage for user ${userId}`);
+    // Invalidate user's notes cache
+    const cacheKey = `user:${userId}:notes`;
+    await hybridCacheService.delete(cacheKey, { 
+      category: 'user-notes',
+      connectionId: `notes-${userId}` 
+    });
+    
+    console.log(`Updated note ${messageId} with hybrid storage for user ${userId} and invalidated cache`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error updating note:', error);
