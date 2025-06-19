@@ -30,6 +30,31 @@ export class OnDemandRedisService {
     return OnDemandRedisService.instance;
   }
 
+  private logConnectionEvent(connectionId: string, status: 'attempt' | 'success' | 'failed') {
+    this.connectionHistory.push({
+      timestamp: Date.now(),
+      connectionId,
+      status,
+      activeCount: this.activeConnections.size
+    });
+    
+    // Keep only last 50 events
+    if (this.connectionHistory.length > 50) {
+      this.connectionHistory = this.connectionHistory.slice(-50);
+    }
+  }
+
+  getConnectionStats() {
+    return {
+      attempts: this.connectionAttempts,
+      successful: this.successfulConnections,
+      failed: this.failedConnections,
+      currentActive: this.activeConnections.size,
+      maxAllowed: this.MAX_CONNECTIONS,
+      recentHistory: this.connectionHistory.slice(-10)
+    };
+  }
+
   async withConnection<T>(
     operation: (client: Redis) => Promise<T>,
     options: { 

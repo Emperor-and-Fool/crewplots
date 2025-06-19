@@ -27,6 +27,7 @@ import applicantPortalRoutes from './routes/applicant-portal';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
+import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 
 import redisMonitorRoutes from './routes/redis-monitor';
@@ -235,6 +236,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching locations:", error);
       res.status(500).json({ error: "Failed to fetch locations" });
+    }
+  });
+
+  // Redis connection monitoring endpoint
+  app.get("/api/debug/redis-connections", (req, res) => {
+    try {
+      const redisService = OnDemandRedisService.getInstance();
+      const stats = redisService.getConnectionStats();
+      res.json({
+        timestamp: new Date().toISOString(),
+        connectionStats: stats,
+        status: 'Redis connection monitoring active'
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to get Redis connection stats',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
