@@ -132,7 +132,7 @@ export class HybridSessionStore extends session.Store {
         }
         return null;
       },
-      { connectionId: `session-get-${sid.substring(0, 8)}`, keepAlive: 30000, skipInDocker: false }
+      { connectionId: 'session-pool-get', keepAlive: 30000, skipInDocker: false }
     )
     .then(result => callback(null, result))
     .catch(err => callback(err));
@@ -147,7 +147,7 @@ export class HybridSessionStore extends session.Store {
         const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400; // 24h default
         await redis.setex(`sess:${sid}`, ttl, JSON.stringify(session));
       },
-      { connectionId: `session-set-${sid.substring(0, 8)}`, keepAlive: 30000, skipInDocker: false }
+      { connectionId: 'session-pool-set', keepAlive: 30000, skipInDocker: false }
     );
   }
 
@@ -159,7 +159,7 @@ export class HybridSessionStore extends session.Store {
       async (redis: Redis) => {
         await redis.del(`sess:${sid}`);
       },
-      { connectionId: `session-del-${sid.substring(0, 8)}`, keepAlive: 5000, skipInDocker: false }
+      { connectionId: 'session-pool-del', keepAlive: 5000, skipInDocker: false }
     );
   }
 
@@ -172,7 +172,7 @@ export class HybridSessionStore extends session.Store {
         const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400;
         await redis.expire(`sess:${sid}`, ttl);
       },
-      { connectionId: `session-touch-${sid.substring(0, 8)}`, keepAlive: 5000, skipInDocker: false }
+      { connectionId: 'session-pool-touch', keepAlive: 5000, skipInDocker: false }
     );
   }
 }
