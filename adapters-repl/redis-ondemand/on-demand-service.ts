@@ -30,9 +30,6 @@ export class OnDemandRedisService {
   ): Promise<T> {
     const { connectionId = 'default', keepAlive = 30000, skipInDocker = true } = options;
 
-    // Temporarily disable Redis to prevent overwhelming errors
-    throw new Error('Redis service temporarily disabled - using PostgreSQL fallback');
-
     // Skip Redis activation in Docker environments (docker-compose handles it)
     if (skipInDocker && process.env.DOCKER_ENV) {
       throw new Error('Redis service skipped - running in Docker environment');
