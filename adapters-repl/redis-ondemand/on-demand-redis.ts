@@ -229,16 +229,22 @@ export class OnDemandRedisService {
     const connection = this.activeConnections.get(connectionId);
     if (!connection) return;
 
+    // Don't cleanup session-related connections during testing phase
+    if (connectionId.includes('session-') || connectionId.includes('notes-') || connectionId.includes('cache-')) {
+      console.log(`[OnDemand] Skipping cleanup for critical connection "${connectionId}"`);
+      return;
+    }
+
     await connection.cleanup();
     this.activeConnections.delete(connectionId);
     console.log(`[OnDemand] Redis connection "${connectionId}" cleaned up`);
 
-    // If no active connections, stop Redis server
-    if (this.activeConnections.size === 0 && this.redisProcess) {
-      console.log('[OnDemand] Stopping Redis server (no active connections)');
-      this.redisProcess.kill('SIGTERM');
-      this.redisProcess = null;
-    }
+    // Never stop Redis server during active testing
+    // if (this.activeConnections.size === 0 && this.redisProcess) {
+    //   console.log('[OnDemand] Stopping Redis server (no active connections)');
+    //   this.redisProcess.kill('SIGTERM');
+    //   this.redisProcess = null;
+    // }
   }
 
   async shutdown(): Promise<void> {
