@@ -167,6 +167,18 @@ export function MessagingSystem({
       
       const data = await response.json();
       console.log(`${isNoteMode ? 'Notes' : 'Messages'} fetched via hybrid architecture:`, data);
+      
+      // Check for Redis fallback notifications in headers
+      const cacheStatus = response.headers.get('X-Cache-Status');
+      const debugMessage = response.headers.get('X-Debug-Message');
+      
+      if (cacheStatus === 'postgres-fallback') {
+        console.warn('🚨 REDIS FAILED: Redis cache unavailable, fell back to PostgreSQL');
+        console.log('💾 FALLBACK ACTIVE:', debugMessage);
+      } else if (cacheStatus === 'redis-hit') {
+        console.log('⚡ REDIS SUCCESS:', debugMessage);
+      }
+      
       return data;
     },
     enabled: !!userId,
