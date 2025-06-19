@@ -241,6 +241,59 @@ export class HybridCacheService {
   }
 
   /**
+   * Delete all session-specific cache entries for a given base key
+   * This ensures cache invalidation across all browser sessions
+   */
+  async deleteGlobal(baseKey: string, options: CacheOptions = {}): Promise<boolean> {
+    const { connectionId = 'cache-global-delete', skipInDocker = false } = options;
+    
+    let redisSuccess = false;
+    let pgSuccess = false;
+
+    // Delete all PostgreSQL entries matching session-specific patterns
+    try {
+      const result = await db
+        .delete(hybridCache)
+        .where(eq(hybridCache.key, baseKey)); // Non-session key
+      
+      // Also delete session-specific entries with LIKE pattern
+      const sessionResult = await db.execute(
+        `DELETE FROM hybrid_cache WHERE key LIKE 'session:%:${baseKey}'`
+      );
+      
+      pgSuccess = (result.rowCount || 0) > 0 || (sessionResult.rowCount || 0) > 0;
+      console.log(`[HybridCache] Global PostgreSQL delete for base key: ${baseKey} (${pgSuccess ? 'success' : 'not found'})`);
+    } catch (error) {
+      console.error(`[HybridCache] Global PostgreSQL delete failed for base key: ${baseKey}`, error);
+    }
+
+    // Delete from Redis using pattern matching
+    try {
+      await onDemandRedis.withConnection(
+        async (redis) => {
+          // Delete non-session key
+          await redis.del(baseKey);
+          
+          // Get all keys matching the session pattern
+          const sessionKeys = await redis.keys(`session:*:${baseKey}`);
+          if (sessionKeys.length > 0) {
+            await redis.del(...sessionKeys);
+            redisSuccess = true;
+            console.log(`[HybridCache] Global Redis delete: removed ${sessionKeys.length} session-specific entries for ${baseKey}`);
+          } else {
+            console.log(`[HybridCache] Global Redis delete: no session entries found for ${baseKey}`);
+          }
+        },
+        { connectionId, keepAlive: 5000, skipInDocker }
+      );
+    } catch (error) {
+      console.log(`[HybridCache] Global Redis delete failed for base key: ${baseKey}`);
+    }
+
+    return pgSuccess;
+  }
+
+  /**
    * Test connections to both Redis and PostgreSQL
    */
   async testConnections(): Promise<{
