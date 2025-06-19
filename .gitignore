@@ -40,8 +40,10 @@ logs/
 .temp/
 
 # Database files (keep structure, exclude data)
-mongodb_data/
-redis_data/
+mongodb_data/*
+redis_data/*
+!mongodb_data/.gitkeep
+!redis_data/.gitkeep
 *.db
 *.sqlite
 *.sqlite3
