@@ -54,6 +54,11 @@ export class OnDemandRedisService {
       }
     }
 
+    // Enforce connection limit to prevent overwhelming Redis binary
+    if (this.activeConnections.size >= this.MAX_CONNECTIONS) {
+      throw new Error(`Redis connection limit reached (${this.MAX_CONNECTIONS}). Custom Redis binary cannot handle more connections.`);
+    }
+
     // Start Redis and create connection
     const connection = await this.createConnection(connectionId);
     
