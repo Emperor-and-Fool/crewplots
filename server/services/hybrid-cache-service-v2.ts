@@ -16,30 +16,15 @@ export class HybridCacheService {
   }
 
   /**
-   * Get value from cache - Redis first, PostgreSQL fallback
+   * Get value from cache - PostgreSQL only (Redis disabled)
    */
   async get<T = any>(key: string, options: CacheOptions = {}): Promise<T | null> {
     const { connectionId = 'cache-read', skipInDocker = false } = options;
 
-    try {
-      // Try Redis first with on-demand service
-      const redisValue = await onDemandRedis.withConnection(
-        async (redis) => {
-          const value = await redis.get(key);
-          return value ? JSON.parse(value) : null;
-        },
-        { connectionId, keepAlive: 10000, skipInDocker }
-      );
+    // Skip Redis entirely to prevent connection spam
+    console.log(`[HybridCache] Using PostgreSQL cache for key: ${key} (Redis disabled)`);
 
-      if (redisValue !== null) {
-        console.log(`[HybridCache] Redis hit for key: ${key}`);
-        return redisValue;
-      }
-
-      console.log(`[HybridCache] Redis miss for key: ${key}, checking PostgreSQL`);
-    } catch (error) {
-      console.log(`[HybridCache] Redis unavailable for key: ${key}, using PostgreSQL only`);
-    }
+    // PostgreSQL fallback
 
     // PostgreSQL fallback
     try {
@@ -90,7 +75,7 @@ export class HybridCacheService {
   }
 
   /**
-   * Set value in cache - Both Redis and PostgreSQL
+   * Set value in cache - PostgreSQL only (Redis disabled)
    */
   async set<T = any>(key: string, value: T, options: CacheOptions = {}): Promise<boolean> {
     const { 
@@ -104,26 +89,12 @@ export class HybridCacheService {
     const serializedValue = JSON.stringify(value);
     const size = Buffer.byteLength(serializedValue, 'utf8');
 
-    let redisSuccess = false;
     let pgSuccess = false;
 
-    // Try Redis first
-    try {
-      await onDemandRedis.withConnection(
-        async (redis) => {
-          if (ttl > 0) {
-            await redis.setex(key, ttl, serializedValue);
-          } else {
-            await redis.set(key, serializedValue);
-          }
-          console.log(`[HybridCache] Redis set: ${key} (TTL: ${ttl}s, Size: ${size}B)`);
-          redisSuccess = true;
-        },
-        { connectionId, keepAlive: 10000, skipInDocker }
-      );
-    } catch (error) {
-      console.log(`[HybridCache] Redis set failed for key: ${key}`, error instanceof Error ? error.message : error);
-    }
+    // Skip Redis entirely to prevent connection spam
+    console.log(`[HybridCache] Setting cache in PostgreSQL only: ${key} (Redis disabled)`);
+
+    // Always write to PostgreSQL (source of truth)
 
     // Always write to PostgreSQL (source of truth)
     try {
