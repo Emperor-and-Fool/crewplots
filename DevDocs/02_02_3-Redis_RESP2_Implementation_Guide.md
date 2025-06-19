@@ -185,7 +185,7 @@ export class RedisCache {
 ### Service Management
 **Startup Script (start-redis-service.js):**
 ```javascript
-const redisProcess = spawn('./production-redis', [], {
+const redisProcess = spawn('./repl-redis/production-redis', [], {
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false
 });
@@ -221,7 +221,8 @@ Comprehensive validation covering:
 
 ### File Structure
 ```
-├── production-redis.c          # Core Redis server
+├── repl-redis/
+│   └── production-redis         # Core Redis server executable
 ├── start-redis-service.js      # Service manager
 ├── server/services/
 │   └── redis-cache.ts          # Integration layer
@@ -232,7 +233,7 @@ Comprehensive validation covering:
 ### Compilation and Startup
 ```bash
 # Compile Redis server
-gcc -o production-redis production-redis.c -std=c99
+gcc -o repl-redis/production-redis production-redis.c -std=c99
 
 # Start service
 node start-redis-service.js &
