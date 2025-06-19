@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test script to verify Docker environment detection
-import { onDemandRedis } from './server/services/on-demand-service.js';
+import { onDemandRedis } from '../adapters-repl/redis-ondemand/on-demand-redis.js';
 
 async function testDockerDetection() {
   console.log('🐳 Testing Docker Environment Detection');
