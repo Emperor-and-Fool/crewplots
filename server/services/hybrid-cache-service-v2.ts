@@ -60,7 +60,7 @@ export class HybridCacheService {
         .limit(1);
 
       if (pgResult) {
-        console.log(`[HybridCache] PostgreSQL hit for key: ${cacheKey}`);
+        console.log(`[HybridCache] PostgreSQL hit for key: ${cacheKey}, value type: ${typeof pgResult.value}, expires: ${pgResult.expiresAt}`);
         
         // Check if expired
         if (pgResult.expiresAt && pgResult.expiresAt < new Date()) {

@@ -92,7 +92,7 @@ router.get('/', requireAuth, async (req: any, res) => {
     }
     
     if (cachedNotes) {
-      console.log(`🚀 Redis cache hit for user ${userId} notes`);
+      console.log(`🚀 Redis cache hit for user ${userId} notes, type: ${typeof cachedNotes}, length: ${Array.isArray(cachedNotes) ? cachedNotes.length : 'N/A'}`);
       return res.json(cachedNotes);
     }
     
