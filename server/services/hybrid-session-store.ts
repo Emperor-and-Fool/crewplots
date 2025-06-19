@@ -32,29 +32,41 @@ export class HybridSessionStore extends session.Store {
   async get(sid: string, callback: (err?: any, session?: any) => void): Promise<void> {
     try {
       // Try Redis cache first if available
-      if (this.redisReady && this.redisClient) {
-        try {
-          const cached = await this.redisClient.get(`sess:${sid}`);
-          if (cached) {
-            const session = JSON.parse(cached);
-            console.log(`🚀 HybridSessionStore: Cache HIT for session ${sid}`);
-            return callback(null, session);
-          }
-        } catch (redisErr) {
-          console.log('⚠️ HybridSessionStore: Redis read error, falling back to PostgreSQL');
+      try {
+        const result = await this.redisService.withConnection(
+          async (client) => {
+            const cached = await client.get(`sess:${sid}`);
+            if (cached) {
+              console.log(`🚀 HybridSessionStore: Cache HIT for session ${sid}`);
+              return JSON.parse(cached);
+            }
+            return null;
+          },
+          { connectionId: 'session-store', keepAlive: 60000 }
+        );
+        
+        if (result) {
+          return callback(null, result);
         }
+      } catch (redisErr) {
+        console.log('⚠️ HybridSessionStore: Redis unavailable, using PostgreSQL');
       }
 
       // Fallback to PostgreSQL
       this.pgStore.get(sid, async (err: any, session: any) => {
         if (err) return callback(err);
         
-        // If session found and Redis available, cache it
-        if (session && this.redisReady && this.redisClient) {
+        // If session found, try to cache it in Redis
+        if (session) {
           try {
-            const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400;
-            await this.redisClient.setex(`sess:${sid}`, ttl, JSON.stringify(session));
-            console.log(`📝 HybridSessionStore: Cached session ${sid} in Redis`);
+            await this.redisService.withConnection(
+              async (client) => {
+                const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400;
+                await client.setex(`sess:${sid}`, ttl, JSON.stringify(session));
+                console.log(`📝 HybridSessionStore: Cached session ${sid} in Redis`);
+              },
+              { connectionId: 'session-store', keepAlive: 60000 }
+            );
           } catch (cacheErr) {
             console.log('⚠️ HybridSessionStore: Failed to cache session in Redis');
           }
@@ -77,16 +89,17 @@ export class HybridSessionStore extends session.Store {
         if (err) return callback(err);
 
         // Cache in Redis if available
-        if (this.redisReady && this.redisClient) {
-          try {
-            const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400;
-            await this.redisClient.setex(`sess:${sid}`, ttl, JSON.stringify(session));
-            console.log(`💾 HybridSessionStore: Session ${sid} saved to PostgreSQL and cached in Redis`);
-          } catch (cacheErr) {
-            console.log('⚠️ HybridSessionStore: Failed to cache session in Redis, PostgreSQL save successful');
-          }
-        } else {
-          console.log(`💾 HybridSessionStore: Session ${sid} saved to PostgreSQL (Redis unavailable)`);
+        try {
+          await this.redisService.withConnection(
+            async (client) => {
+              const ttl = session.cookie?.maxAge ? Math.floor(session.cookie.maxAge / 1000) : 86400;
+              await client.setex(`sess:${sid}`, ttl, JSON.stringify(session));
+              console.log(`💾 HybridSessionStore: Session ${sid} saved to PostgreSQL and cached in Redis`);
+            },
+            { connectionId: 'session-store', keepAlive: 60000 }
+          );
+        } catch (cacheErr) {
+          console.log('⚠️ HybridSessionStore: Failed to cache session in Redis, PostgreSQL save successful');
         }
 
         callback();
@@ -102,13 +115,16 @@ export class HybridSessionStore extends session.Store {
   async destroy(sid: string, callback: (err?: any) => void): Promise<void> {
     try {
       // Remove from Redis cache if available
-      if (this.redisReady && this.redisClient) {
-        try {
-          await this.redisClient.del(`sess:${sid}`);
-          console.log(`🗑️ HybridSessionStore: Removed session ${sid} from Redis cache`);
-        } catch (redisErr) {
-          console.log('⚠️ HybridSessionStore: Failed to remove session from Redis cache');
-        }
+      try {
+        await this.redisService.withConnection(
+          async (client) => {
+            await client.del(`sess:${sid}`);
+            console.log(`🗑️ HybridSessionStore: Removed session ${sid} from Redis cache`);
+          },
+          { connectionId: 'session-store', keepAlive: 60000 }
+        );
+      } catch (redisErr) {
+        console.log('⚠️ HybridSessionStore: Failed to remove session from Redis cache');
       }
 
       // Remove from PostgreSQL
@@ -130,9 +146,15 @@ export class HybridSessionStore extends session.Store {
       return new Promise((resolve, reject) => {
         this.pgStore.length((err: any, count: number) => {
           if (err) return reject(err);
-          resolve({
-            pgSessions: count,
-            redisReady: this.redisReady,
+          
+          // Test Redis availability
+          this.redisService.withConnection(
+            async () => true,
+            { connectionId: 'session-store-test', keepAlive: 5000 }
+          ).then(() => {
+            resolve({ pgSessions: count, redisReady: true });
+          }).catch(() => {
+            resolve({ pgSessions: count, redisReady: false });
           });
         });
       });
@@ -163,16 +185,19 @@ export class HybridSessionStore extends session.Store {
   async clear(callback: (err?: any) => void): Promise<void> {
     try {
       // Clear Redis cache if available
-      if (this.redisReady && this.redisClient) {
-        try {
-          const keys = await this.redisClient.keys('sess:*');
-          if (keys.length > 0) {
-            await this.redisClient.del(...keys);
-            console.log(`🗑️ HybridSessionStore: Cleared ${keys.length} sessions from Redis cache`);
-          }
-        } catch (redisErr) {
-          console.log('⚠️ HybridSessionStore: Failed to clear Redis cache');
-        }
+      try {
+        await this.redisService.withConnection(
+          async (client) => {
+            const keys = await client.keys('sess:*');
+            if (keys.length > 0) {
+              await client.del(...keys);
+              console.log(`🗑️ HybridSessionStore: Cleared ${keys.length} sessions from Redis cache`);
+            }
+          },
+          { connectionId: 'session-store', keepAlive: 60000 }
+        );
+      } catch (redisErr) {
+        console.log('⚠️ HybridSessionStore: Failed to clear Redis cache');
       }
 
       // Clear PostgreSQL

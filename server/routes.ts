@@ -32,6 +32,7 @@ import notesRoutes from './routes/messages/notes';
 import redisMonitorRoutes from './routes/redis-monitor';
 import mongoMonitorRoutes from './routes/mongo-monitor';
 import hybridCacheMonitorRoutes from './routes/hybrid-cache-monitor-simple';
+import sessionMonitorRoutes from './routes/session-monitor';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -59,12 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new PgStore({
-        pool: pool,
-        tableName: 'sessions',
-        createTableIfMissing: true,
-        ttl: 86400000 // 24 hours
-      }),
+      store: hybridSessionStore,
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
