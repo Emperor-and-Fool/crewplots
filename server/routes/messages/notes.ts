@@ -103,12 +103,18 @@ router.get('/', requireAuth, async (req: any, res) => {
     const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(userId));
     
     // Cache the results for 5 minutes
-    await hybridCacheService.set(cacheKey, messages, { 
-      ttl: 300,
-      category: 'user-notes',
-      connectionId: `notes-${userId}`,
-      sessionId: sessionId
-    });
+    console.log(`[NOTES] Attempting to cache ${messages.length} notes with key: ${cacheKey}`);
+    try {
+      const cacheSuccess = await hybridCacheService.set(cacheKey, messages, { 
+        ttl: 300,
+        category: 'user-notes',
+        connectionId: `notes-${userId}`,
+        sessionId: sessionId
+      });
+      console.log(`[NOTES] Cache SET result: ${cacheSuccess ? 'SUCCESS' : 'FAILED'}`);
+    } catch (cacheError) {
+      console.error(`[NOTES] Cache SET error:`, cacheError);
+    }
     
     console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);
     res.json(messages);
