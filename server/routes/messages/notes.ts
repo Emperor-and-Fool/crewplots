@@ -79,11 +79,17 @@ router.get('/', requireAuth, async (req: any, res) => {
     const sessionId = req.sessionID;
     console.log(`[NOTES] Attempting cache lookup for key: ${cacheKey}, session: ${sessionId.substring(0, 8)}`);
     
-    const cachedNotes = await hybridCacheService.get(cacheKey, { 
-      category: 'user-notes',
-      connectionId: `notes-${userId}`,
-      sessionId: sessionId
-    });
+    let cachedNotes = null;
+    try {
+      cachedNotes = await hybridCacheService.get(cacheKey, { 
+        category: 'user-notes',
+        connectionId: `notes-${userId}`,
+        sessionId: sessionId
+      });
+      console.log(`[NOTES] Cache service call completed, result: ${cachedNotes ? 'HIT' : 'MISS'}`);
+    } catch (error) {
+      console.error(`[NOTES] Cache service error:`, error);
+    }
     
     if (cachedNotes) {
       console.log(`🚀 Redis cache hit for user ${userId} notes`);
