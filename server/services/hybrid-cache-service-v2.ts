@@ -30,6 +30,7 @@ export class HybridCacheService {
     
     // Create session-aware cache key
     const cacheKey = sessionId ? `session:${sessionId.substring(0, 8)}:${key}` : key;
+    console.log(`[HybridCache] GET called for key: ${key}, session-aware key: ${cacheKey}`);
 
     // Try Redis first for application caching
     try {

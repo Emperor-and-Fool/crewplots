@@ -77,6 +77,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     // Try Redis cache first with session awareness
     const cacheKey = `user:${userId}:notes`;
     const sessionId = req.sessionID;
+    console.log(`[NOTES] Attempting cache lookup for key: ${cacheKey}, session: ${sessionId.substring(0, 8)}`);
+    
     const cachedNotes = await hybridCacheService.get(cacheKey, { 
       category: 'user-notes',
       connectionId: `notes-${userId}`,
@@ -87,6 +89,8 @@ router.get('/', requireAuth, async (req: any, res) => {
       console.log(`🚀 Redis cache hit for user ${userId} notes`);
       return res.json(cachedNotes);
     }
+    
+    console.log(`[NOTES] Cache miss for key: ${cacheKey}`);
     
     // Cache miss - fetch from database
     console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
