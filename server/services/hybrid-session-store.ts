@@ -143,22 +143,27 @@ export class HybridSessionStore extends session.Store {
    */
   async getStatus(): Promise<{ pgSessions: number; redisReady: boolean; cacheHits?: number }> {
     try {
-      return new Promise((resolve, reject) => {
-        this.pgStore.length((err: any, count: number) => {
+      // Get session count from PostgreSQL
+      const sessionCount = await new Promise<number>((resolve, reject) => {
+        // Use the all() method to get sessions and count them
+        this.pgStore.all((err: any, sessions: any[]) => {
           if (err) return reject(err);
-          
-          // Test Redis availability
-          this.redisService.withConnection(
-            async () => true,
-            { connectionId: 'session-store-test', keepAlive: 5000 }
-          ).then(() => {
-            resolve({ pgSessions: count, redisReady: true });
-          }).catch(() => {
-            resolve({ pgSessions: count, redisReady: false });
-          });
+          resolve(sessions ? sessions.length : 0);
         });
       });
+
+      // Test Redis availability
+      try {
+        await this.redisService.withConnection(
+          async () => true,
+          { connectionId: 'session-store-test', keepAlive: 5000 }
+        );
+        return { pgSessions: sessionCount, redisReady: true };
+      } catch {
+        return { pgSessions: sessionCount, redisReady: false };
+      }
     } catch (error) {
+      console.error('Session store status error:', error);
       return { pgSessions: 0, redisReady: false };
     }
   }

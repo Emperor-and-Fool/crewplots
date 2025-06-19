@@ -129,7 +129,7 @@ router.get('/test', async (req, res) => {
         writeTime: `${writeTime}ms`,
         readTime: `${readTime}ms`,
         totalTime: `${writeTime + readTime}ms`,
-        dataIntegrity: retrievedSession?.testData === testSession.testData ? 'passed' : 'failed'
+        dataIntegrity: (retrievedSession as any)?.testData === testSession.testData ? 'passed' : 'failed'
       },
       store: 'hybrid-redis-postgresql',
       timestamp: new Date().toISOString()
