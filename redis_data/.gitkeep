@@ -1,3 +1,0 @@
-# Keep this directory structure for Redis data files  
-# Redis Version: 7.2.x (Stable)
-# Data files are excluded via .gitignore but directory structure is preserved
