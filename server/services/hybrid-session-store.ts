@@ -33,36 +33,8 @@ export class HybridSessionStore extends session.Store {
   }
 
   private async checkRedisAvailability(): Promise<boolean> {
-    const now = Date.now();
-    
-    // Skip check if recently performed
-    if (now - this.lastRedisCheck < this.REDIS_CHECK_INTERVAL && this.lastRedisCheck > 0) {
-      return this.redisAvailable;
-    }
-    
-    this.lastRedisCheck = now;
-    
-    try {
-      await this.redisService.withConnection(
-        async (client) => {
-          await client.ping();
-          return true;
-        },
-        { connectionId: 'availability-check', keepAlive: 1000 }
-      );
-      
-      if (!this.redisAvailable) {
-        console.log('✅ HybridSessionStore: Redis is now available');
-      }
-      this.redisAvailable = true;
-      return true;
-    } catch (error) {
-      if (this.redisAvailable) {
-        console.log('⚠️ HybridSessionStore: Redis unavailable, switching to PostgreSQL-only mode');
-      }
-      this.redisAvailable = false;
-      return false;
-    }
+    // Temporarily disable Redis availability checks to restore working state
+    return false;
   }
 
   /**
