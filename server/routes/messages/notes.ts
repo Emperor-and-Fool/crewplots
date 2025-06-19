@@ -151,14 +151,14 @@ router.post('/', requireAuth, async (req: any, res) => {
     
     const newMessage = await withMongoDBRetry(() => messageStorageService.createNoteRef(noteRefData));
     
-    // Invalidate user's notes cache
+    // Invalidate user's notes cache globally (all sessions)
     const cacheKey = `user:${userId}:notes`;
-    await hybridCacheService.delete(cacheKey, { 
+    await hybridCacheService.deleteGlobal(cacheKey, { 
       category: 'user-notes',
       connectionId: `notes-${userId}` 
     });
     
-    console.log(`Created note with hybrid storage for user ${userId} and invalidated cache`);
+    console.log(`Created note with hybrid storage for user ${userId} and invalidated cache globally`);
     res.status(201).json(newMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -208,14 +208,14 @@ router.put('/:id', requireAuth, async (req: any, res) => {
       throw mongoError;
     }
     
-    // Invalidate user's notes cache
+    // Invalidate user's notes cache globally (all sessions)
     const cacheKey = `user:${userId}:notes`;
-    await hybridCacheService.delete(cacheKey, { 
+    await hybridCacheService.deleteGlobal(cacheKey, { 
       category: 'user-notes',
       connectionId: `notes-${userId}` 
     });
     
-    console.log(`Updated note ${messageId} with hybrid storage for user ${userId} and invalidated cache`);
+    console.log(`Updated note ${messageId} with hybrid storage for user ${userId} and invalidated cache globally`);
     res.json(updatedMessage);
   } catch (error) {
     console.error('Error updating note:', error);
@@ -243,7 +243,14 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
     const deleted = await withMongoDBRetry(() => messageStorageService.deleteNoteRef(messageId));
     
     if (deleted) {
-      console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId}`);
+      // Invalidate user's notes cache globally (all sessions)
+      const cacheKey = `user:${userId}:notes`;
+      await hybridCacheService.deleteGlobal(cacheKey, { 
+        category: 'user-notes',
+        connectionId: `notes-${userId}` 
+      });
+      
+      console.log(`Deleted note ${messageId} with MongoDB cleanup for user ${userId} and invalidated cache globally`);
       res.json({ success: true, messageId });
     } else {
       res.status(500).json({ error: 'Failed to delete note' });

@@ -159,6 +159,9 @@ export function MessagingSystem({
       });
       
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication required');
+        }
         throw new Error(`Failed to fetch ${isNoteMode ? 'notes' : 'messages'}: ${response.statusText}`);
       }
       
@@ -437,12 +440,26 @@ export function MessagingSystem({
 
   // Handle loading and error states
   if (error) {
+    const isAuthError = error.message.includes('Authentication required') || error.message.includes('401') || error.message.includes('403');
     return (
       <Card className={className}>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center text-red-600 dark:text-red-400">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            Failed to load {isNoteMode ? 'notes' : 'messages'}
+          <div className="flex flex-col items-center justify-center text-center space-y-2">
+            <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+            {isAuthError ? (
+              <>
+                <div className="text-red-600 dark:text-red-400 font-medium">
+                  Please log in to view your {isNoteMode ? 'notes' : 'messages'}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Your session may have expired
+                </div>
+              </>
+            ) : (
+              <div className="text-red-600 dark:text-red-400">
+                Failed to load {isNoteMode ? 'notes' : 'messages'}: {error.message}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
