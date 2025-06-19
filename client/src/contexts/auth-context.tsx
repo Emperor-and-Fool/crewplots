@@ -52,19 +52,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (data?.authenticated) {
             setUser(data.user);
-            setIsAuthenticated(true);
           } else {
             setUser(null);
-            setIsAuthenticated(false);
           }
         } else {
           setUser(null);
-          setIsAuthenticated(false);
         }
       } catch (error) {
         console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
         setUser(null);
-        setIsAuthenticated(false);
       } finally {
         console.log(`🔍 AUTH TIMING: Single auth setting isLoading=false at ${Date.now() - startTime}ms`);
         setIsLoading(false);
