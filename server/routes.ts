@@ -30,6 +30,7 @@ import notesRoutes from './routes/messages/notes';
 
 import redisMonitorRoutes from './routes/redis-monitor';
 import mongoMonitorRoutes from './routes/mongo-monitor';
+import hybridCacheMonitorRoutes from './routes/hybrid-cache-monitor';
 
 // Setup multer for file uploads
 const upload = multer({

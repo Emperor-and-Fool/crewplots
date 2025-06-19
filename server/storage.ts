@@ -1,11 +1,11 @@
 import {
   users, locations, competencies, staff, staffCompetencies, userDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs,
+  kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
   type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
   type Shift, type CashCount, type KbCategory, type KbArticle, type NoteRef,
-  type UploadedFile, type DocumentAttachment,
+  type UploadedFile, type DocumentAttachment, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
   type InsertStaffCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
@@ -184,6 +184,13 @@ export interface IStorage {
   updateNoteRef(id: number, noteRef: Partial<InsertNoteRef>): Promise<NoteRef | undefined>;
   deleteNoteRef(id: number): Promise<boolean>;
   userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
+
+  // Hybrid Cache Operations
+  getCache(key: string): Promise<any | null>;
+  setCache(key: string, value: any, expiresAt?: Date, category?: string): Promise<void>;
+  deleteCache(key: string): Promise<boolean>;
+  deleteCacheByCategory(category: string): Promise<number>;
+  cleanExpiredCache(): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
