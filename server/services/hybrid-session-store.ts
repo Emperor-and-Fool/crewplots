@@ -33,8 +33,8 @@ export class HybridSessionStore extends session.Store {
   }
 
   private async checkRedisAvailability(): Promise<boolean> {
-    // Temporarily enable Redis to test custom server startup
-    return true;
+    // Disable Redis to prevent connection spam (custom server confirmed working)
+    return false;
   }
 
   /**
