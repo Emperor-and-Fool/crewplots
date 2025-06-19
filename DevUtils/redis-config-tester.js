@@ -5,8 +5,8 @@
  * Tests what configuration options the custom Redis binary accepts
  */
 
-const { spawn } = require('child_process');
-const Redis = require('ioredis');
+import { spawn } from 'child_process';
+import Redis from 'ioredis';
 
 // Test configurations to try
 const testConfigs = [
@@ -132,8 +132,6 @@ async function runTests() {
   console.log('\n✅ Testing Complete');
 }
 
-if (require.main === module) {
-  runTests().catch(console.error);
-}
+runTests().catch(console.error);
 
-module.exports = { testRedisConfig, testRedisConnection };
+export { testRedisConfig, testRedisConnection };

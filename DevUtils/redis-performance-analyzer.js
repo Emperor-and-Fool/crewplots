@@ -5,7 +5,8 @@
  * Measures actual Redis performance with different connection patterns
  */
 
-const Redis = require('ioredis');
+import Redis from 'ioredis';
+import { writeFileSync } from 'fs';
 
 class RedisPerformanceAnalyzer {
   constructor() {
@@ -296,8 +297,7 @@ async function runAnalysis() {
     const report = await analyzer.generateReport();
     
     // Save detailed results
-    const fs = require('fs');
-    fs.writeFileSync(
+    writeFileSync(
       './DevUtils/redis-performance-results.json', 
       JSON.stringify(report, null, 2)
     );
@@ -309,8 +309,6 @@ async function runAnalysis() {
   }
 }
 
-if (require.main === module) {
-  runAnalysis();
-}
+runAnalysis();
 
-module.exports = { RedisPerformanceAnalyzer };
+export { RedisPerformanceAnalyzer };

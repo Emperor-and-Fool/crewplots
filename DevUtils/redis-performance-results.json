@@ -1,0 +1,75 @@
+{
+  "connection": [
+    {
+      "name": "Fresh Connection",
+      "duration": 9.704719,
+      "success": true,
+      "result": "PONG"
+    },
+    {
+      "name": "Reused Connection",
+      "duration": 1.158089,
+      "success": true,
+      "result": "PONG"
+    },
+    {
+      "name": "Reused SET",
+      "duration": 0.49243,
+      "success": true,
+      "result": "OK"
+    },
+    {
+      "name": "Reused GET",
+      "duration": 0.51554,
+      "success": true,
+      "result": "value"
+    }
+  ],
+  "cache": [
+    {
+      "name": "SET 865B payload",
+      "duration": 0.9951,
+      "success": true,
+      "result": "OK"
+    },
+    {
+      "name": "GET 865B payload",
+      "duration": 0.59606,
+      "success": true,
+      "result": "{\"id\":43,\"content\":\"<p>Test note content</p>\",\"userId\":2,\"metadata\":{\"wordCount\":26,\"characterCount\":139}}"
+    },
+    {
+      "name": "SETEX with TTL",
+      "duration": 0.68356,
+      "success": true,
+      "result": "OK"
+    },
+    {
+      "name": "DEL operation",
+      "duration": 0.6255,
+      "success": true,
+      "result": 1
+    }
+  ],
+  "pooling": [
+    {
+      "name": "Connection Pool",
+      "duration": 5.05928,
+      "success": true,
+      "concurrent_ops": 2.375889
+    }
+  ],
+  "memory": [
+    {
+      "name": "Memory Capacity",
+      "maxKeys": 15000,
+      "getAtCapacity": 0.34293,
+      "success": true
+    }
+  ],
+  "summary": {
+    "avgConnectionTime": 9.704719,
+    "avgCacheTime": 0.725055,
+    "maxKeys": 15000
+  }
+}
