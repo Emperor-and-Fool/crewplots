@@ -37,13 +37,12 @@ export class ProfileFetcherService {
     const cacheKey = `${this.cacheKeyPrefix}:${userId}:profile`;
     
     try {
-      // Try Redis cache first (DISABLED FOR FALLBACK TESTING)
-      console.log(`[ProfileFetcher] Redis DISABLED - Testing fallback behavior for user ${userId}`);
+      // Try Redis cache first
+      console.log(`[ProfileFetcher] Checking Redis cache for user ${userId}`);
       const cachedProfile = await hybridCacheService.get<ProfileData>(cacheKey, {
         category: 'user-profile',
         connectionId: `profile-${userId}`,
-        ttl: this.cacheTTL,
-        skipInDocker: true  // FORCE DISABLE REDIS FOR TESTING
+        ttl: this.cacheTTL
       });
 
       if (cachedProfile) {
