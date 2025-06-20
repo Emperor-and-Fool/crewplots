@@ -16,16 +16,28 @@ export class OnDemandRedisService {
   private isStarting = false;
   private connectionPool: Redis | null = null;
   private readonly MAX_CONNECTIONS = 32; // Increased limit for normal application usage
+  private readonly PREWARMED_CONNECTIONS = 4; // Number of connections to keep warm
+  private prewarmedConnections: string[] = ['prewarmed-1', 'prewarmed-2', 'prewarmed-3', 'prewarmed-4'];
+  private isPrewarming = false;
   
   // Connection monitoring
   private connectionAttempts = 0;
   private successfulConnections = 0;
   private failedConnections = 0;
   private connectionHistory: Array<{timestamp: number, connectionId: string, status: 'attempt' | 'success' | 'failed', activeCount: number}> = [];
+  private healthCheckInterval: NodeJS.Timeout | null = null;
 
   static getInstance(): OnDemandRedisService {
     if (!OnDemandRedisService.instance) {
       OnDemandRedisService.instance = new OnDemandRedisService();
+      // Initialize prewarming after first Redis operation
+      setTimeout(async () => {
+        try {
+          await OnDemandRedisService.instance.prewarmConnections();
+        } catch (error) {
+          console.log('[OnDemand] Initial prewarming failed:', error);
+        }
+      }, 2000); // Wait 2 seconds after service creation
     }
     return OnDemandRedisService.instance;
   }
@@ -63,7 +75,7 @@ export class OnDemandRedisService {
       skipInDocker?: boolean; // skip Redis activation if running in Docker
     } = {}
   ): Promise<T> {
-    const { connectionId = 'default', keepAlive = 300000, skipInDocker = true } = options; // 5 minutes default
+    const { connectionId = 'default', keepAlive = 540000, skipInDocker = true } = options; // 9 minutes default
 
     // Skip Redis activation in Docker environments (docker-compose handles it)
     if (skipInDocker && process.env.DOCKER_ENV) {
@@ -138,7 +150,7 @@ export class OnDemandRedisService {
       // Keep connection alive for potential follow-up operations
       setTimeout(async () => {
         await this.cleanupConnection(connectionId);
-      }, 600000); // 10 minutes for batch operations
+      }, 540000); // 9 minutes for batch operations
       
       return results;
     } catch (error) {
@@ -275,6 +287,12 @@ export class OnDemandRedisService {
     const connection = this.activeConnections.get(connectionId);
     if (!connection) return;
 
+    // Don't cleanup prewarmed connections
+    if (this.prewarmedConnections.includes(connectionId)) {
+      console.log(`[OnDemand] Skipping cleanup for prewarmed connection "${connectionId}"`);
+      return;
+    }
+
     // Don't cleanup session-related connections during testing phase
     if (connectionId.includes('session-') || connectionId.includes('notes-') || connectionId.includes('cache-')) {
       console.log(`[OnDemand] Skipping cleanup for critical connection "${connectionId}"`);
@@ -293,8 +311,90 @@ export class OnDemandRedisService {
     // }
   }
 
+  /**
+   * Pre-warm Redis connections for immediate availability
+   */
+  async prewarmConnections(): Promise<void> {
+    if (this.isPrewarming) return;
+    this.isPrewarming = true;
+
+    console.log(`[OnDemand] Pre-warming ${this.PREWARMED_CONNECTIONS} Redis connections...`);
+    
+    try {
+      await this.ensureRedisServer();
+      
+      const prewarmPromises = this.prewarmedConnections.map(async (connectionId) => {
+        try {
+          const connection = await this.createConnection(connectionId);
+          // Test connection with simple ping
+          await connection.client.ping();
+          console.log(`[OnDemand] Pre-warmed connection: ${connectionId}`);
+        } catch (error) {
+          console.log(`[OnDemand] Failed to pre-warm connection ${connectionId}:`, error);
+        }
+      });
+      
+      await Promise.all(prewarmPromises);
+      console.log(`[OnDemand] Pre-warming complete. Active connections: ${this.activeConnections.size}`);
+      
+      // Start health monitoring
+      this.startHealthMonitoring();
+      
+    } catch (error) {
+      console.error('[OnDemand] Pre-warming failed:', error);
+    } finally {
+      this.isPrewarming = false;
+    }
+  }
+
+  /**
+   * Start health monitoring for connections
+   */
+  private startHealthMonitoring(): void {
+    if (this.healthCheckInterval) return;
+    
+    this.healthCheckInterval = setInterval(async () => {
+      await this.performHealthCheck();
+    }, 60000); // Check every minute
+    
+    console.log('[OnDemand] Health monitoring started');
+  }
+
+  /**
+   * Perform health check on all connections
+   */
+  private async performHealthCheck(): Promise<void> {
+    const healthPromises = Array.from(this.activeConnections.entries()).map(async ([connectionId, connection]) => {
+      try {
+        if (!connection.isInUse) {
+          await connection.client.ping();
+          connection.lastUsed = Date.now(); // Update last used time
+        }
+      } catch (error) {
+        console.log(`[OnDemand] Health check failed for ${connectionId}, removing connection`);
+        await this.cleanupConnection(connectionId);
+      }
+    });
+    
+    await Promise.allSettled(healthPromises);
+  }
+
+  /**
+   * Stop health monitoring
+   */
+  private stopHealthMonitoring(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+      console.log('[OnDemand] Health monitoring stopped');
+    }
+  }
+
   async shutdown(): Promise<void> {
     console.log('[OnDemand] Shutting down Redis service...');
+    
+    // Stop health monitoring
+    this.stopHealthMonitoring();
     
     // Cleanup all connections
     const cleanupPromises = Array.from(this.activeConnections.keys()).map(

@@ -12,11 +12,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create an optimized connection pool with aggressive settings for better performance
+// Create an optimized connection pool with increased capacity for better performance
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 3, // Reduce pool size to minimize overhead
-  idleTimeoutMillis: 10000, // Close idle clients faster
+  max: 12, // Increased pool size for concurrent users
+  idleTimeoutMillis: 30000, // Keep connections idle longer
   connectionTimeoutMillis: 5000, // Faster timeout for quicker error detection
   maxUses: 500, // Keep connections longer to reduce setup overhead
 });
