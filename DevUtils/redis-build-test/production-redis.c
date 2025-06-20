@@ -265,8 +265,12 @@ void handle_client_data(Client *client) {
         return;
     }
     
+    printf("DEBUG: Received %d bytes, current buffer: %d\n", bytes_received, client->input_len);
+    
     // Safety check to prevent buffer overflow - leave room for processing
     if (client->input_len + bytes_received >= BUFFER_SIZE - 1) {
+        printf("DEBUG: Buffer would overflow, current: %d, incoming: %d, max: %d\n", 
+               client->input_len, bytes_received, BUFFER_SIZE);
         // Buffer would overflow, try to process existing data first
         if (client->input_len > 0) {
             // Process what we have and try again
@@ -280,13 +284,19 @@ void handle_client_data(Client *client) {
     memcpy(client->input_buffer + client->input_len, temp_buffer, bytes_received);
     client->input_len += bytes_received;
     
+    printf("DEBUG: Total buffer length now: %d\n", client->input_len);
+    
     // Process commands
     while (client->input_len > 0) {
+        printf("DEBUG: Attempting to parse command, buffer length: %d\n", client->input_len);
         char *args[MAX_ARGS];
         int consumed = 0;
         int argc = parse_resp_command(client->input_buffer, client->input_len, args, MAX_ARGS, &consumed);
         
+        printf("DEBUG: Parse result - argc: %d, consumed: %d\n", argc, consumed);
+        
         if (argc > 0) {
+            printf("DEBUG: Processing command with %d args\n", argc);
             process_command(client, args, argc);
             
             // Free allocated arguments
@@ -298,12 +308,16 @@ void handle_client_data(Client *client) {
             if (consumed > 0 && consumed <= client->input_len) {
                 memmove(client->input_buffer, client->input_buffer + consumed, client->input_len - consumed);
                 client->input_len -= consumed;
+                printf("DEBUG: Removed %d bytes from buffer, remaining: %d\n", consumed, client->input_len);
             } else {
+                printf("DEBUG: Invalid consumed value, breaking\n");
                 break;
             }
         } else if (argc == 0) {
+            printf("DEBUG: Need more data, breaking\n");
             break; // Need more data
         } else {
+            printf("DEBUG: Parse error, clearing buffer\n");
             // Parse error, clear buffer and disconnect client
             client->input_len = 0;
             break;
