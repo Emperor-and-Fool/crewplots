@@ -331,10 +331,10 @@ export class OnDemandRedisService {
     }
 
     // Don't cleanup session-related connections during testing phase
-    if (connectionId.includes('session-') || connectionId.includes('notes-') || connectionId.includes('cache-')) {
-      console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Skipping cleanup for critical connection "${connectionId}"`);
-      return;
-    }
+    // if (connectionId.includes('session-') || connectionId.includes('notes-') || connectionId.includes('cache-')) {
+    //   console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Skipping cleanup for critical connection "${connectionId}"`);
+    //   return;
+    // }
 
     await connection.cleanup();
     this.activeConnections.delete(connectionId);
