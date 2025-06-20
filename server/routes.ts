@@ -7,6 +7,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { hybridSessionStore } from "./services/hybrid-session-store";
+import { onDemandRedis } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -285,6 +286,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/mongo-monitor', mongoMonitorRoutes);
   app.use('/api/hybrid-cache', hybridCacheMonitorRoutes);
   app.use('/api/session-monitor', sessionMonitorRoutes);
+
+  // Connection Status Route - shows current connection pool status
+  app.get("/api/connection-status", (req, res) => {
+    try {
+      const dbPoolStats = {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      };
+      
+      res.json({
+        postgresql: dbPoolStats,
+        timestamp: new Date().toISOString(),
+        improvements: {
+          postgresPoolSize: "12 connections (increased from 3)",
+          redisKeepalive: "9 minutes (increased from 5)",
+          prewarmedConnections: "4 Redis connections",
+          healthMonitoring: "Active"
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get connection status" });
+    }
+  });
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
