@@ -88,9 +88,9 @@ export class ProfileFetcherService {
       notesMetadata = notes.length > 0 ? {
         exists: true,
         documentId: notes[0].noteId,
-        wordCount: notes[0].wordCount,
-        characterCount: notes[0].characterCount,
-        lastUpdated: notes[0].updatedAt,
+        wordCount: notes[0].wordCount || 0,
+        characterCount: notes[0].characterCount || 0,
+        lastUpdated: notes[0].updatedAt?.toISOString() || null,
         workflow: notes[0].workflow
       } : {
         exists: false,
