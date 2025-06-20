@@ -1,7 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { redisSupervisor } from "./redis-supervisor";
+
+import { mongoConnection } from "./db-mongo";
+// Keepalive service removed - using on-demand Redis service instead
+import { cacheService } from "./services/cache-service";
+
 
 const app = express();
 
@@ -60,8 +64,17 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Redis supervisor temporarily disabled - investigating jemalloc compatibility issue
-  console.log('Redis supervisor disabled until jemalloc memory issue is resolved');
+  // Initialize MongoDB connection (non-blocking)
+  mongoConnection.connect().catch((error) => {
+    console.log('MongoDB connection failed, document storage features disabled');
+  });
+
+  // Initialize on-demand cache service (no persistent processes)
+  console.log('✅ On-demand cache service initialized - Redis will start when needed');
+  console.log('Cache status:', cacheService.getStatus());
+
+  // Using on-demand Redis service instead of persistent keepalive
+  console.log('Redis supervisor disabled - using on-demand Redis service');
   // const redisStarted = await redisSupervisor.start();
 
   // ALWAYS serve the app on port 5000
@@ -74,5 +87,18 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+  });
+
+  // Graceful shutdown handling
+  process.on('SIGTERM', async () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    await cacheService.shutdown();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    await cacheService.shutdown();
+    process.exit(0);
   });
 })();

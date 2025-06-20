@@ -1,5 +1,5 @@
-# Use Node.js 20 Alpine as base image
-FROM node:20-alpine
+# Use Node.js 18 Alpine as base image
+FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
@@ -8,19 +8,19 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Create uploads directory
+RUN mkdir -p uploads
+
+# Set environment for Docker deployment
+ENV DOCKER_ENV=true
 
 # Expose port
-EXPOSE 3000
-
-# Set environment to production
-ENV NODE_ENV=production
+EXPOSE 5000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

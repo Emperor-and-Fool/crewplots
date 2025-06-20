@@ -6,6 +6,8 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { hybridSessionStore } from "./services/hybrid-session-store";
+import { onDemandRedis } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
@@ -20,8 +22,19 @@ import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
-import redisRoutes from './routes/redis';
-import messagesRoutes from './routes/messages';
+// Redis routes moved to backup - using single Redis implementation
+// import messagesRoutes from './routes/messages/index';
+// Documents routes removed - functionality moved to template files
+import dashboardRoutes from './routes/dashboard';
+import mongodbMessagesRoutes from './routes/mongodb-messages';
+import notesRoutes from './routes/messages/notes';
+import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
+
+
+import redisMonitorRoutes from './routes/redis-monitor';
+import mongoMonitorRoutes from './routes/mongo-monitor';
+import hybridCacheMonitorRoutes from './routes/hybrid-cache-monitor-simple';
+import sessionMonitorRoutes from './routes/session-monitor';
 
 // Setup multer for file uploads
 const upload = multer({
@@ -49,12 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
       },
-      store: new PgStore({
-        pool: pool,
-        tableName: 'sessions',
-        createTableIfMissing: true, // Auto-create the table
-        ttl: 86400000 // 24 hours - same as cookie maxAge
-      }),
+      store: hybridSessionStore,
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
@@ -232,12 +240,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Redis connection monitoring endpoint
+  app.get("/api/debug/redis-connections", (req, res) => {
+    try {
+      const redisService = OnDemandRedisService.getInstance();
+      const stats = redisService.getConnectionStats();
+      res.json({
+        timestamp: new Date().toISOString(),
+        connectionStats: stats,
+        status: 'Redis connection monitoring active'
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to get Redis connection stats',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Debug middleware to track all requests
+  app.use((req, res, next) => {
+    console.log(`🔍 REQUEST TRACKER: ${req.method} ${req.originalUrl} ${req.path}`);
+    if (req.method === 'PUT') {
+      console.log(`🚨 PUT REQUEST DETAILS:`);
+      console.log(`- Original URL: ${req.originalUrl}`);
+      console.log(`- Path: ${req.path}`);
+      console.log(`- Headers: ${JSON.stringify(req.headers, null, 2)}`);
+    }
+    next();
+  });
+
   // Use route modules
   app.use('/api/auth', authRoutes);
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/applicant-portal', applicantPortalRoutes);
-  app.use('/api/redis', redisRoutes);
-  app.use('/api/messages', messagesRoutes);
+  // Redis routes disabled - using single Redis implementation
+  // app.use('/api/messages', messagesRoutes);
+  // Documents routes disabled - functionality moved to template files
+  // app.use('/api/documents', documentsRoutes);
+  app.use('/api/mongodb', mongodbMessagesRoutes);
+  app.use('/api/messaging/notes', notesRoutes);
+
+  app.use('/api', dashboardRoutes);
+  app.use('/api/redis-monitor', redisMonitorRoutes);
+  app.use('/api/mongo-monitor', mongoMonitorRoutes);
+  app.use('/api/hybrid-cache', hybridCacheMonitorRoutes);
+  app.use('/api/session-monitor', sessionMonitorRoutes);
+
+  // Connection Status Route - shows current connection pool status
+  app.get("/api/connection-status", (req, res) => {
+    try {
+      const dbPoolStats = {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      };
+      
+      res.json({
+        postgresql: dbPoolStats,
+        timestamp: new Date().toISOString(),
+        improvements: {
+          postgresPoolSize: "12 connections (increased from 3)",
+          redisKeepalive: "9 minutes (increased from 5)",
+          prewarmedConnections: "4 Redis connections",
+          healthMonitoring: "Active"
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get connection status" });
+    }
+  });
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {

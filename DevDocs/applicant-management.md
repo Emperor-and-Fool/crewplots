@@ -257,6 +257,15 @@ if (error) {
 - Auto-save functionality
 - Real-time message composition
 
+#### Workflow Tagging
+All messages created through the applicant portal are automatically tagged with the `application` workflow. This ensures:
+- Proper data categorization in the dual-database architecture
+- Role-based access control for applicant communications
+- Workflow-specific storage and retrieval strategies
+- Clear separation between applicant notes and staff communications
+
+The system handles workflow assignment automatically without requiring manual selection, maintaining clean data organization across PostgreSQL metadata and MongoDB document storage.
+
 ### Document Management
 - PDF/DOC resume upload and viewing
 - Document status indicators

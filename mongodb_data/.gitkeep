@@ -1,0 +1,3 @@
+# Keep this directory structure for MongoDB data files
+# MongoDB Version: 7.0.x (Community Edition)
+# Data files are excluded via .gitignore but directory structure is preserved

@@ -26,23 +26,41 @@ interface ProfileContextType {
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
-export function ProfileProvider({ children }: { children: React.ReactNode }) {
+export function ProfileScraperInit({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<ApplicantProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch profile data from API
+  // Fetch complete profile data following DevDocs philosophy
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/applicant-portal/my-profile');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch profile: ${response.status}`);
+      // First check authentication status
+      const authResponse = await fetch('/api/auth/me');
+      if (!authResponse.ok) {
+        throw new Error(`Authentication check failed: ${authResponse.status}`);
       }
-      const profileData = await response.json();
-      setProfile(profileData);
-      sessionStorage.setItem('applicant-profile', JSON.stringify(profileData));
+      const authData = await authResponse.json();
+      
+      if (!authData.authenticated || !authData.user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // For applicants, fetch complete profile from applicant portal
+      if (authData.user.role === 'applicant') {
+        const profileResponse = await fetch('/api/applicant-portal/my-profile');
+        if (!profileResponse.ok) {
+          throw new Error(`Failed to fetch applicant profile: ${profileResponse.status}`);
+        }
+        const profileData = await profileResponse.json();
+        setProfile(profileData);
+        sessionStorage.setItem('applicant-profile', JSON.stringify(profileData));
+      } else {
+        // For non-applicants, use the auth data as profile
+        setProfile(authData.user);
+        sessionStorage.setItem('applicant-profile', JSON.stringify(authData.user));
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       console.error('Profile fetch error:', err);
@@ -53,7 +71,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Always fetch fresh profile data to ensure status is up-to-date
   useEffect(() => {
-    console.log('ProfileProvider: Fetching fresh profile from server');
     fetchProfile();
   }, [fetchProfile]);
 
@@ -88,7 +105,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 export function useProfile() {
   const context = useContext(ProfileContext);
   if (context === undefined) {
-    throw new Error('useProfile must be used within a ProfileProvider');
+    throw new Error('useProfile must be used within a ProfileScraperInit');
   }
   return context;
 }

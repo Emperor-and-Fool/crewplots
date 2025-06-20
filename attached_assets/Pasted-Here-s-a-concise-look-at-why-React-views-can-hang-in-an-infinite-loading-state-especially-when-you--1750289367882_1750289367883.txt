@@ -1,0 +1,174 @@
+Here’s a concise look at why React views can hang in an infinite loading state (especially when you’re showing two card‐based data sections) and proven fixes borrowed from common community patterns.
+
+---
+
+## Summary
+
+Infinite loading most often stems from **uncontrolled effect loops** or **query/state sync issues**. For card views that fetch profile and message data separately, it’s easy to trigger repeated renders if you update state inside a `useEffect` or fire queries without proper guards. The solution is to **lock down your effect dependency arrays**, **memoize callbacks**, and—if you’re using React Query—**use its built-in lifecycle hooks** (`enabled`, `onSuccess`, `select`) instead of manual effects ([stackoverflow.com][1], [stackoverflow.com][2]).
+
+---
+
+## Common Causes of Infinite Loading
+
+### 1. Uncontrolled useEffect Loops
+
+If you call `setState` inside a `useEffect` that lists that state as a dependency (or omits dependencies entirely), you get:
+
+```jsx
+useEffect(() => {
+  fetchData().then(data => setProfile(data));
+}); // no deps → runs every render → setState → render → effect → …
+```
+
+([stackoverflow.com][1])
+
+### 2. React Query + Effect Sync
+
+Mixing `useQuery` data with `useEffect` can loop when you do:
+
+```jsx
+const { data } = useQuery(...);
+useEffect(() => {
+  if (data) setLocalState(data);
+}, [data]); 
+```
+
+`data` reference changes trigger the effect, which sets state, which renders, which may refetch, and so on ([stackoverflow.com][2]).
+
+### 3. Non-Memoized Functions/Objects
+
+Passing freshly created arrays or inline functions into dependency arrays causes them to change identity every render:
+
+```jsx
+useEffect(() => { /* … */ }, [items.map(x => x.id)]); 
+```
+
+Here `items.map` returns a new array each time, so the effect never settles ([dhiwise.com][3]).
+
+---
+
+## Best Practices to Prevent Infinite Loading
+
+### 1. Lock Down Dependency Arrays
+
+* **Empty array** for mount-only effects:
+
+  ```jsx
+  useEffect(() => { fetchProfile(); }, []);
+  ```
+
+  ([stackoverflow.com][4])
+
+* **Exact deps** only for values that truly change:
+
+  ```jsx
+  useEffect(() => {  
+    fetchMessages(profile.id);  
+  }, [profile.id]);  
+  ```
+
+  ([dmitripavlutin.com][5])
+
+### 2. Use React Query’s Lifecycle Hooks
+
+* **Avoid manual effects** for data fetches; instead:
+
+  ```jsx
+  const { data, isLoading, refetch } = useQuery(
+    ['profile', id],
+    () => api.getProfile(id),
+    { enabled: !!id }
+  );
+  ```
+
+  Use `enabled` to prevent runs until `id` is available ([github.com][6]).
+
+* **Cache updates** in `onSuccess` rather than `useEffect`:
+
+  ```jsx
+  const query = useQuery(..., {
+    onSuccess: data => setLocalState(data),
+  });
+  ```
+
+  ([blog.logrocket.com][7])
+
+### 3. Memoize Callbacks & Values
+
+* Wrap functions in `useCallback` and derived values in `useMemo` to keep dependency identities stable ([markaicode.com][8]).
+
+### 4. Conditional Rendering & Loading Guards
+
+* Only render cards when data is ready:
+
+  ```jsx
+  if (isProfileLoading || isMessageLoading) return <LoadingSpinner />;
+  return <>…cards…</>;
+  ```
+
+  ([stackoverflow.com][9])
+
+### 5. Clean Up Effects
+
+* Return a cleanup function if you set timers or subscriptions to avoid dangling updates:
+
+  ```jsx
+  useEffect(() => {
+    const id = setInterval(pollData, 5000);
+    return () => clearInterval(id);
+  }, []);
+  ```
+
+  ([stackoverflow.com][10])
+
+---
+
+## Example Fixed Pattern
+
+```jsx
+function ApplicantView({ id }) {
+  // Fetch profile and message via React Query
+  const {
+    data: profile,
+    isLoading: loadingProfile
+  } = useQuery(['profile', id], () => api.getProfile(id), {
+    enabled: !!id,       // wait for id
+    staleTime: 60000     // avoid refetch storms
+  });
+
+  const {
+    data: message,
+    isLoading: loadingMessage
+  } = useQuery(['message', id], () => api.getMessage(id), {
+    enabled: !!id
+  });
+
+  if (loadingProfile || loadingMessage) {
+    return <Spinner />;   // guard UI until both are ready
+  }
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <ProfileCard data={profile} />
+      <MessageCard data={message} />
+    </div>
+  );
+}
+```
+
+* **No `useEffect`** for data fetch or state sync
+* **Separate queries** with `enabled` guards
+* **Loading UI** until both queries complete
+
+This pattern eliminates timing loops and infinite loading by keeping data fetching declarative and side‐effect free.
+
+[1]: https://stackoverflow.com/questions/53243203/react-hook-useeffect-runs-continuously-forever-infinite-loop?utm_source=chatgpt.com "React hook useEffect runs continuously forever/infinite loop"
+[2]: https://stackoverflow.com/questions/75772449/react-query-with-useeffect-resulting-in-infinite-loop?utm_source=chatgpt.com "react-query with useEffect resulting in infinite loop"
+[3]: https://www.dhiwise.com/blog/design-converter/preventing-react-useeffect-infinite-loop-simple-fixes?utm_source=chatgpt.com "React UseEffect Infinite Loop: Common Causes and Solutions"
+[4]: https://stackoverflow.com/questions/70246816/react-issue-with-infinite-loop-in-useeffect?utm_source=chatgpt.com "React- Issue with infinite loop in useEffect - Stack Overflow"
+[5]: https://dmitripavlutin.com/react-useeffect-infinite-loop/?utm_source=chatgpt.com "How to Solve the Infinite Loop of React.useEffect() - Dmitri Pavlutin Blog"
+[6]: https://github.com/TanStack/query/discussions/3769?utm_source=chatgpt.com "react query select causing useEffect infinite loop - GitHub"
+[7]: https://blog.logrocket.com/solve-react-useeffect-hook-infinite-loop-patterns/?utm_source=chatgpt.com "How to solve the React useEffect Hook’s infinite loop patterns"
+[8]: https://markaicode.com/avoid-infinite-loops-with-useeffect-in-reactjs/?utm_source=chatgpt.com "Avoid Infinite Loops with useEffect in ReactJS"
+[9]: https://stackoverflow.com/questions/75719131/useeffect-infinite-loop-when-i-use-array?utm_source=chatgpt.com "useEffect infinite loop when I use array - Stack Overflow"
+[10]: https://stackoverflow.com/questions/79281018/why-is-this-useeffect-causing-infinite-rerenders?utm_source=chatgpt.com "Why is this useEffect causing infinite rerenders?"

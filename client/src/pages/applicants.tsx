@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -24,16 +25,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/components/applicants/applicant-form";
-import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip } from "lucide-react";
+
+import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip, StickyNote } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
-import { Applicant, Location, Staff } from "@shared/schema";
+import { User, Location, Staff, Message } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 
 export default function Applicants() {
   const [showForm, setShowForm] = useState(false);
-  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+  const [selectedApplicant, setSelectedApplicant] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hireDialogOpen, setHireDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
@@ -53,18 +55,62 @@ export default function Applicants() {
   // This ensures we have exactly ONE authentication system throughout the app.
 
   // Fetch applicants
-  const { data: applicants, isLoading } = useQuery({
+  const { data: applicants, isLoading } = useQuery<User[]>({
     queryKey: ['/api/applicants'],
   });
 
   // Fetch locations
-  const { data: locations } = useQuery({
+  const { data: locations } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
   });
 
+  // Component to display message count for an applicant
+  const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
+    const { data: countData, isLoading, error } = useQuery<{count: number}>({
+      queryKey: ['/api/messages/notes', applicantId, 'application', 'count'],
+      queryFn: async () => {
+        const response = await fetch(`/api/messages/notes/${applicantId}/application/count`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch note count');
+        }
+        return response.json();
+      },
+    });
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center gap-1">
+          <MessageSquare className="w-3 h-3 text-gray-400" />
+          <span className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></span>
+        </div>
+      );
+    }
+
+    if (error) {
+      console.error('MessageIndicator error:', error);
+    }
+
+    const messageCount = countData?.count || 0;
+
+    return (
+      <div className="flex items-center gap-1">
+        <MessageSquare className={`w-3 h-3 ${messageCount > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+        {messageCount > 0 ? (
+          <Badge variant="secondary" className="text-xs px-1 py-0 h-4 min-w-4 flex items-center justify-center">
+            {messageCount}
+          </Badge>
+        ) : (
+          <span className="w-2 h-2 bg-gray-300 rounded-full" title="No messages"></span>
+        )}
+      </div>
+    );
+  };
+
   // Filter applicants by location
-  const filteredApplicants = applicants?.filter(applicant => 
-    !selectedLocation || selectedLocation === "all" || applicant.locationId === parseInt(selectedLocation)
+  const filteredApplicants = applicants?.filter((applicant: User) => 
+    !selectedLocation || applicant.locationId === selectedLocation
   );
 
   // Delete mutation
@@ -132,13 +178,13 @@ export default function Applicants() {
   });
 
   // Handle delete applicant
-  const handleDelete = (applicant: Applicant) => {
+  const handleDelete = (applicant: User) => {
     setSelectedApplicant(applicant);
     setDeleteDialogOpen(true);
   };
 
   // Handle hire applicant
-  const handleHire = (applicant: Applicant) => {
+  const handleHire = (applicant: User) => {
     setSelectedApplicant(applicant);
     setHireDialogOpen(true);
   };
@@ -214,10 +260,6 @@ export default function Applicants() {
                 </div>
                 <ApplicantForm 
                   applicant={selectedApplicant || undefined} 
-                  onSuccess={() => {
-                    setShowForm(false);
-                    setSelectedApplicant(null);
-                  }}
                   isEditing={!!selectedApplicant} 
                 />
               </div>
@@ -289,17 +331,8 @@ export default function Applicants() {
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
-                                    {applicant.extraMessage ? (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-green-600" />
-                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has message"></span>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-gray-400" />
-                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No message"></span>
-                                      </div>
-                                    )}
+                                    <MessageIndicator applicantId={applicant.id} />
+
                                     {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
                                         <Paperclip className="w-3 h-3 text-green-600" />
@@ -314,8 +347,8 @@ export default function Applicants() {
                                   </div>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -348,17 +381,7 @@ export default function Applicants() {
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
-                                    {applicant.extraMessage ? (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="h-4 w-4 text-blue-500" />
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <MessageSquare className="h-4 w-4 text-gray-300" />
-                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                                      </div>
-                                    )}
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
                                         <Paperclip className="h-4 w-4 text-green-500" />
@@ -384,8 +407,8 @@ export default function Applicants() {
                                   )}
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -423,19 +446,20 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
-                                  <div className="flex gap-1">
-                                    {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-blue-500" />
-                                    )}
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-green-500" />
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-green-500" />
+                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has document"></span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
                                 <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200 mb-2">Review Later</Badge>
                                 <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-600 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-500 mb-3">{location.name}</p>
@@ -473,19 +497,20 @@ export default function Applicants() {
                               <div key={applicant.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 opacity-60">
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-500">{applicant.name}</h4>
-                                  <div className="flex gap-1">
-                                    {applicant.extraMessage && (
-                                      <MessageSquare className="h-4 w-4 text-gray-400" />
-                                    )}
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
                                     {applicant.resumeUrl && (
-                                      <Paperclip className="h-4 w-4 text-gray-400" />
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="Has document"></span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
                                 <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 mb-2">Rejected</Badge>
                                 <p className="text-sm text-gray-500 mb-2">{applicant.email}</p>
-                                {applicant.phone && (
-                                  <p className="text-sm text-gray-500 mb-2">{applicant.phone}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-500 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
                                   <p className="text-xs text-gray-400 mb-3">{location.name}</p>
@@ -553,7 +578,7 @@ export default function Applicants() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Select onValueChange={(value) => setSelectedLocation(parseInt(value))}>
+            <Select onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>

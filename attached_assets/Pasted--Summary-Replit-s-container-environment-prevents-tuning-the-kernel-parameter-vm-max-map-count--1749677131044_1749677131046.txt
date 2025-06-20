@@ -1,0 +1,88 @@
+## Summary
+
+Replit’s container environment prevents tuning the kernel parameter `vm.max_map_count`, so MongoDB’s default WiredTiger engine will always warn or fail under those limits ([mongodb.com][1], [stackoverflow.com][2]). There is **no Community-Edition in-memory engine** to bypass mapping limits (the old `ephemeralForTest` engine is EOL as of MongoDB 7.0 ([mongodb.com][3], [github.com][4]), and the supported `inMemory` engine requires MongoDB Enterprise ([mongodb.com][5])). The **only viable “light” configuration** in Community Edition is to **limit WiredTiger’s internal cache** so its mapping footprint stays beneath the host’s cap, for example by setting `storage.wiredTiger.engineConfig.cacheSizeGB` (or `--wiredTigerCacheSizeGB`) to a small value (e.g. 0.1 GB), relying on the OS filesystem cache for the rest ([mongodb.com][6], [stackoverflow.com][7]). Journaling cannot be disabled in WiredTiger after MongoDB 4.0 in replica sets (and is always on in MongoDB 6.1+) ([mongodb.com][8]).
+
+---
+
+## 1. Why No “Light” Engine in Community Edition
+
+* **`ephemeralForTest` is removed** in MongoDB 7.0; unstable in 5.x and gone in 7.0 ([mongodb.com][3], [github.com][4]).
+* **`inMemory` engine exists** only in MongoDB Enterprise (not Community) ([mongodb.com][5]).
+* **No alternative** storage engine in the Community Edition that avoids memory-map requirements.
+
+---
+
+## 2. Tuning WiredTiger Cache to Reduce Mapping Footprint
+
+* **Default behavior:** WiredTiger uses \~50% of available RAM for its internal cache; OS uses the rest for filesystem cache ([mongodb.com][6], [source.wiredtiger.com][9]).
+* **Container warning:** If the cache approaches container memory, memory map limits are hit ([dev4devs.com][10]).
+* **Solution:** Set a smaller cache explicitly:
+
+  ```yaml
+  storage:
+    wiredTiger:
+      engineConfig:
+        cacheSizeGB: 0.1
+  ```
+
+  or start `mongod` with
+
+  ```
+  --wiredTigerCacheSizeGB 0.1
+  ```
+
+  This limits WiredTiger’s mapped regions and keeps `vm.max_map_count` usage low ([stackoverflow.com][7]).
+
+---
+
+## 3. Journaling Remains Enabled
+
+* **Cannot disable journaling** on replica-set members using WiredTiger (MongoDB 4.0+) ([mongodb.com][8]).
+* **Always on** in MongoDB 6.1+, so `--nojournal` is no longer available ([mongodb.com][11]).
+
+---
+
+## 4. Demo-Ready NoSQL in Replit
+
+1. **Redis via Upstash** (serverless, no mapping issues) ([stackoverflow.com][2])
+2. **Replit’s built-in KV store** with `import { db } from "replit"` (embedded, no host kernel limits)
+3. **MongoDB with tuned cache** for a quick demo:
+
+   ```bash
+   mongod --storageEngine wiredTiger --wiredTigerCacheSizeGB 0.1 --dbpath /data/db
+   ```
+
+   Then connect from your app to `mongodb://localhost:27017` and verify with:
+
+   ```js
+   db.serverStatus().wiredTiger.cache
+   ```
+4. **Enterprise path:** Use a MongoDB Atlas free tier or an Enterprise container with `inMemory` engine.
+
+---
+
+### Citations
+
+1. MongoDB “vm.max\_map\_count is too low” due to dynamic IPs/host limits ([mongodb.com][1])
+2. Docker container `vm.max_map_count` warning persistence even when set ([stackoverflow.com][2])
+3. Atlas DNS workaround brief fix (Feb 2023)
+4. VMware/Podman warns, suggests host sysctl change ([github.com][12])
+5. EphemeralForTest EOL and instability in MongoDB 5 & removal in 7.0 ([mongodb.com][3], [github.com][4])
+6. In-Memory engine only in MongoDB Enterprise ([mongodb.com][5])
+7. WiredTiger cacheSizeGB tuning docs ([mongodb.com][6], [stackoverflow.com][7])
+8. WiredTiger cache eviction and mapping footprint issues ([dev4devs.com][10])
+9. Journaling always enabled / cannot disable in replica sets (4.0+) ([mongodb.com][8])
+10. Journaling option removal in MongoDB 6.1 ([mongodb.com][11])
+
+[1]: https://www.mongodb.com/community/forums/t/vm-max-map-count-is-too-low/260420?utm_source=chatgpt.com "Vm.max_map_count is too low - Ops and Admin - MongoDB"
+[2]: https://stackoverflow.com/questions/78473427/mongodb-docker-vm-max-map-count-is-too-low-even-if-set-to-524288?utm_source=chatgpt.com "mongodb docker vm.max_map_count is too low even if set to 524288"
+[3]: https://www.mongodb.com/community/forums/t/unknown-storage-engine-ephemeralfortest-since-7-0-0-release/242141?utm_source=chatgpt.com "Unknown storage engine: ephemeralForTest since 7.0.0 release - MongoDB"
+[4]: https://github.com/typegoose/mongodb-memory-server/issues/742?utm_source=chatgpt.com "The `ephemeralForTest` storage engine is reaching its end of life ..."
+[5]: https://www.mongodb.com/docs/manual/core/inmemory/?utm_source=chatgpt.com "In-Memory Storage Engine for Self-Managed Deployments - MongoDB"
+[6]: https://www.mongodb.com/docs/manual/core/wiredtiger/?utm_source=chatgpt.com "WiredTiger Storage Engine - Database Manual - MongoDB Docs"
+[7]: https://stackoverflow.com/questions/37587350/mongodb-wiredtiger-storage-engine-cachesizegb-configure-option?utm_source=chatgpt.com "MongoDB WiredTiger Storage Engine cacheSizeGB configure option"
+[8]: https://www.mongodb.com/docs/v5.0/tutorial/manage-journaling/?utm_source=chatgpt.com "Configure Journaling for Self-Managed Deployments - MongoDB"
+[9]: https://source.wiredtiger.com/mongodb-6.0/tune_cache.html?utm_source=chatgpt.com "WiredTiger: Cache and eviction tuning - MongoDB"
+[10]: https://dev4devs.com/2018/08/03/mongodb-wiredtiger-and-memory-usage-in-containers/?utm_source=chatgpt.com "[MongoDB] – WiredTiger and Memory usage in containers"
+[11]: https://www.mongodb.com/docs/manual/core/journaling/?utm_source=chatgpt.com "Journaling - Database Manual - MongoDB Docs"
+[12]: https://github.com/containers/podman/discussions/22863?utm_source=chatgpt.com "MongoDB warns that vm.max_map_count is too low #22863"

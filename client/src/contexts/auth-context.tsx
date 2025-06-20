@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect, ReactNode, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Register } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -27,52 +27,48 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Compute isAuthenticated from user state
+  const isAuthenticated = Boolean(user);
 
-  // Check if user is already logged in
+  // Single auth check on mount - no React Query to prevent session conflicts
   useEffect(() => {
     const checkAuth = async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const startTime = Date.now();
+      console.log(`🔍 AUTH TIMING: Single auth check starting at ${startTime}`);
       
       try {
         const response = await fetch('/api/auth/me', {
-          credentials: "include",
-          signal: controller.signal
+          credentials: "include"
         });
         
-        clearTimeout(timeoutId);
+        console.log(`🔍 AUTH TIMING: Single auth completed at ${Date.now() - startTime}ms, status: ${response.status}`);
         
         if (response.ok) {
           const data = await response.json();
+          console.log(`🔍 AUTH TIMING: Single auth parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
           
-          if (data && data.authenticated && data.user) {
+          if (data?.authenticated) {
             setUser(data.user);
-            setIsAuthenticated(true);
           } else {
             setUser(null);
-            setIsAuthenticated(false);
-            queryClient.clear();
           }
         } else {
           setUser(null);
-          setIsAuthenticated(false);
-          queryClient.clear();
         }
-      } catch (error: any) {
-        clearTimeout(timeoutId);
+      } catch (error) {
+        console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
         setUser(null);
-        setIsAuthenticated(false);
-        queryClient.clear();
       } finally {
+        console.log(`🔍 AUTH TIMING: Single auth setting isLoading=false at ${Date.now() - startTime}ms`);
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [queryClient]);
+  }, []); // Empty deps - mount only
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -100,20 +96,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log("Login successful, user data:", data.user);
-          setUser(data.user);
-          setIsAuthenticated(true);
+          console.log("Login successful, result:", data);
           
-          // Show success toast
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${data.user?.name || username}!`,
-          });
-          
-          // Invalidate all queries to ensure fresh data
-          queryClient.invalidateQueries();
-          setIsLoading(false);
-          return true;
+          if (data && data.user) {
+            setUser(data.user);
+            
+            // Show success toast
+            toast({
+              title: "Login successful",
+              description: `Welcome back, ${data.user?.name || username}!`,
+            });
+            
+            // Invalidate all queries to ensure fresh data
+            queryClient.invalidateQueries();
+            setIsLoading(false);
+            return true;
+          } else {
+            console.error("Login response missing user data:", data);
+            toast({
+              title: "Login failed",
+              description: "Authentication successful but user data unavailable",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return false;
+          }
         } else {
           console.error("Login failed with status:", response.status);
           try {
@@ -168,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.ok) {
         setUser(null);
-        setIsAuthenticated(false);
         
         // Clear all query caches
         queryClient.clear();
@@ -329,4 +335,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Export useAuth hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

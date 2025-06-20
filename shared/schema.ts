@@ -16,6 +16,16 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Utility function to generate secure public IDs
+export function generatePublicId(length: number = 12): string {
+  const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return result;
+}
+
 // Locations (different bars/restaurants)
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
@@ -58,6 +68,7 @@ export const rolePermissions = pgTable("role_permissions", {
 // Users & Auth
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  public_id: text("public_id").unique(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
@@ -69,7 +80,10 @@ export const users = pgTable("users", {
   // locationId kept for backward compatibility
   locationId: integer("location_id").references(() => locations.id),
   phoneNumber: text("phone_number"),        // Combined phone number in format +xx xxxxxxx
-  uniqueCode: text("unique_code").unique(), // Unique reference code for the user
+  // Applicant-specific fields (for users with role="applicant")
+  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new"),
+  resumeUrl: text("resume_url"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -140,29 +154,16 @@ export const staffCompetencies = pgTable("staff_competencies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Applicants (people who applied for a job)
-export const applicants = pgTable("applicants", {
+
+
+
+
+// User Documents
+export const userNotes = pgTable("user_notes", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new").notNull(),
-  resumeUrl: text("resume_url"),
-  notes: text("notes"),
-  extraMessage: text("extra_message"),
-  userId: integer("user_id").references(() => users.id),
-  locationId: integer("location_id").references(() => locations.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-
-
-// Applicant Documents
-export const applicantDocuments = pgTable("applicant_documents", {
-  id: serial("id").primaryKey(),
-  applicantId: integer("applicant_id").references(() => applicants.id, { onDelete: 'cascade' }).notNull(),
-  documentName: text("document_name").notNull(),
-  documentUrl: text("document_url").notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  noteName: text("note_name").notNull(),
+  noteUrl: text("note_url").notNull(),
   fileType: text("file_type"),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   verifiedAt: timestamp("verified_at"),
@@ -254,20 +255,7 @@ export const kbArticles = pgTable("kb_articles", {
   updatedAt: timestamp("updated_at"),
 });
 
-// Messages table for the messaging system
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  applicantId: integer("applicant_id").references(() => applicants.id),
-  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal"),
-  messageType: text("message_type").default("text"),
-  isPrivate: boolean("is_private").default(false),
-  isRead: boolean("is_read").default(false),
-  attachmentUrl: text("attachment_url"),
-  metadata: json("metadata"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+
 
 // Uploaded Files
 export const uploadedFiles = pgTable("uploaded_files", {
@@ -292,26 +280,93 @@ export const documentAttachments = pgTable("document_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Messages System - Reusable and Extensible
-export const messages = pgTable("messages", {
+// Note References - Main note metadata and references
+export const noteRefs = pgTable("note_refs", {
   id: serial("id").primaryKey(),
-  content: text("content").notNull(),
+  content: text("content").notNull(), // Stores MongoDB ObjectId OR actual content (fallback mode)
   messageType: text("message_type", { 
     enum: ["text", "rich-text", "system", "notification"] 
   }).default("text").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  applicantId: integer("applicant_id").references(() => applicants.id), // Optional - for applicant-specific messages
+  receiverId: integer("receiver_id").references(() => users.id), // Optional recipient
   isPrivate: boolean("is_private").default(false).notNull(),
-  attachmentUrl: text("attachment_url"), // For future file attachments
+  attachmentUrl: text("attachment_url"), // Legacy field
+  noteReference: text("note_reference"), // MongoDB note ID for sensitive files
   metadata: jsonb("metadata"), // Extensible field for emoji, formatting, etc.
   isRead: boolean("is_read").default(false).notNull(),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
+  workflow: text("workflow"),
+  visibleToRoles: text("visible_to_roles").array(), // Array of roles that can view this note
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  
+  // New hybrid architecture fields
+  noteId: varchar("note_id", { length: 24 }), // MongoDB ObjectId reference
+  noteType: text("note_type").default("motivation"), // 'motivation', 'message', 'feedback', etc.
+  title: text("title"), // Optional short description/subject
+  status: text("status", { enum: ["draft", "published", "archived"] }).default("draft"),
+  
+  // Content Analytics
+  wordCount: integer("word_count").default(0),
+  characterCount: integer("character_count").default(0),
+  htmlLength: integer("html_length").default(0),
+  
+  // Access Control
+  visibility: text("visibility", { enum: ["private", "admins", "public"] }).default("private"),
+  isEditable: boolean("is_editable").default(true),
+  lastEditedAt: timestamp("last_edited_at"),
+  
+  // System Tracking
+  version: integer("version").default(1),
+  tags: jsonb("tags"), // JSON array for categorization
+});
+
+// Note Files - PostgreSQL fallback for MongoDB note storage
+export const noteFiles = pgTable("note_files", {
+  id: serial("id").primaryKey(),
+  noteId: integer("note_id").references(() => noteRefs.id), // Back reference to PostgreSQL note
+  content: text("content").notNull(), // Rich note content (HTML, markdown, etc.)
+  contentType: text("content_type", { 
+    enum: ["rich-text", "plain-text", "markdown"] 
+  }).default("rich-text").notNull(),
+  workflow: text("workflow", { 
+    enum: ["application", "crew", "location", "scheduling", "knowledge", "statistics"] 
+  }),
+  wordCount: integer("word_count").default(0),
+  characterCount: integer("character_count").default(0),
+  htmlLength: integer("html_length").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Virtual Redis Cache - PostgreSQL fallback for Redis caching
+export const redisCache = pgTable("redis_cache", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value").notNull(), // Store any JSON data
+  expiresAt: timestamp("expires_at"), // TTL equivalent
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Express Session Store - PostgreSQL backend for session storage
+export const sessions = pgTable("session", {
+  sid: varchar("sid", { length: 255 }).primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire", { mode: 'date' }).notNull(),
+});
+
+// Virtual Redis Sessions - PostgreSQL fallback for session storage
+export const redisSessions = pgTable("redis_sessions", {
+  id: text("id").primaryKey(), // Session ID
+  sessionData: jsonb("session_data").notNull(), // Session content
+  expiresAt: timestamp("expires_at").notNull(), // Session expiry
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Insert Schemas
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, public_id: true, createdAt: true });
 export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
 export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
@@ -322,8 +377,7 @@ export const insertPositionCompetencySchema = createInsertSchema(positionCompete
 export const insertCompetencySchema = createInsertSchema(competencies).omit({ id: true, createdAt: true });
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
 export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
-export const insertApplicantSchema = createInsertSchema(applicants).omit({ id: true, createdAt: true });
-export const insertApplicantDocumentSchema = createInsertSchema(applicantDocuments).omit({ id: true, uploadedAt: true, verifiedAt: true });
+export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
@@ -331,10 +385,12 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, cre
 export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: true, createdAt: true });
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+export const insertNoteRefSchema = createInsertSchema(noteRefs).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
-export const insertDocumentAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNoteAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -361,7 +417,7 @@ export const registerSchema = z.object({
 });
 
 // Types for drizzle tables
-export type ApplicantDocument = typeof applicantDocuments.$inferSelect;
+export type UserNote = typeof userNotes.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
@@ -374,8 +430,7 @@ export type InsertPositionCompetency = z.infer<typeof insertPositionCompetencySc
 export type InsertCompetency = z.infer<typeof insertCompetencySchema>;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type InsertStaffCompetency = z.infer<typeof insertStaffCompetencySchema>;
-export type InsertApplicant = z.infer<typeof insertApplicantSchema>;
-export type InsertApplicantDocument = z.infer<typeof insertApplicantDocumentSchema>;
+export type InsertUserNote = z.infer<typeof insertUserNoteSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;
@@ -383,11 +438,11 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertCashCount = z.infer<typeof insertCashCountSchema>;
 export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertMessage = z.infer<typeof insertNoteRefSchema>;
+export type InsertNoteRef = z.infer<typeof insertNoteRefSchema>;
+export type InsertNoteFile = z.infer<typeof insertNoteFileSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
-export type InsertDocumentAttachment = z.infer<typeof insertDocumentAttachmentSchema>;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
+export type InsertNoteAttachment = z.infer<typeof insertNoteAttachmentSchema>;
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
@@ -402,7 +457,7 @@ export type PositionCompetency = typeof positionCompetencies.$inferSelect;
 export type Competency = typeof competencies.$inferSelect;
 export type Staff = typeof staff.$inferSelect;
 export type StaffCompetency = typeof staffCompetencies.$inferSelect;
-export type Applicant = typeof applicants.$inferSelect;
+
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 export type WeeklySchedule = typeof weeklySchedules.$inferSelect;
@@ -410,21 +465,33 @@ export type Shift = typeof shifts.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
-export type Message = typeof messages.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
-export type DocumentAttachment = typeof documentAttachments.$inferSelect;
+export type NoteAttachment = typeof documentAttachments.$inferSelect;
+export type Message = typeof noteRefs.$inferSelect;
+export type NoteRef = typeof noteRefs.$inferSelect;
+export type NoteFile = typeof noteFiles.$inferSelect;
+export type HybridCache = typeof hybridCache.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
 
-// Session storage for database sessions
-export const sessions = pgTable(
-  "sessions",
+// Hybrid cache storage - PostgreSQL fallback for Redis cache
+export const hybridCache = pgTable(
+  "hybrid_cache",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: json("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    key: varchar("key", { length: 255 }).primaryKey(),
+    value: jsonb("value").notNull(),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    category: varchar("category", { length: 50 }).default("general").notNull(),
+    size: integer("size").default(0).notNull(), // JSON size in bytes
   },
   (table) => {
     return {
-      expireIdx: index("sessions_expire_idx").on(table.expire),
+      expiresAtIdx: index("hybrid_cache_expires_idx").on(table.expiresAt),
+      categoryIdx: index("hybrid_cache_category_idx").on(table.category),
+      createdAtIdx: index("hybrid_cache_created_idx").on(table.createdAt),
     };
   }
 );
+
+
