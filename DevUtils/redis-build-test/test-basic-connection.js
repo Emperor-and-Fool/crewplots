@@ -1,4 +1,4 @@
-import net from 'net';
+const net = require('net');
 
 function testBasicConnection() {
     return new Promise((resolve, reject) => {
