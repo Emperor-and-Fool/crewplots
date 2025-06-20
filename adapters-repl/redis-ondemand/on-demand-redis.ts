@@ -19,6 +19,7 @@ export class OnDemandRedisService {
   private readonly PREWARMED_CONNECTIONS = 4; // Number of connections to keep warm
   private prewarmedConnections: string[] = ['prewarmed-1', 'prewarmed-2', 'prewarmed-3', 'prewarmed-4'];
   private isPrewarming = false;
+  private autoRestartEnabled = true; // Flag to control automatic Redis restart
   
   // Connection monitoring
   private connectionAttempts = 0;
@@ -230,6 +231,11 @@ export class OnDemandRedisService {
   private async ensureRedisServer(): Promise<void> {
     if (this.redisProcess && !this.redisProcess.killed) {
       return; // Already running
+    }
+
+    // Check if auto-restart is disabled
+    if (!this.autoRestartEnabled) {
+      throw new Error('Redis server is not running and auto-restart is disabled');
     }
 
     if (this.isStarting) {
@@ -446,15 +452,33 @@ export class OnDemandRedisService {
     }
   }
 
+  /**
+   * Disable automatic Redis restart for fallback testing
+   */
+  disableAutoRestart(): void {
+    this.autoRestartEnabled = false;
+    console.log('[OnDemand] Auto-restart disabled - Redis will not restart if stopped');
+  }
+
+  /**
+   * Enable automatic Redis restart (default behavior)
+   */
+  enableAutoRestart(): void {
+    this.autoRestartEnabled = true;
+    console.log('[OnDemand] Auto-restart enabled - Redis will restart automatically');
+  }
+
   getStatus(): { 
     activeConnections: number; 
     serverRunning: boolean; 
     dockerMode: boolean;
+    autoRestartEnabled: boolean;
   } {
     return {
       activeConnections: this.activeConnections.size,
       serverRunning: this.redisProcess !== null && !this.redisProcess.killed,
-      dockerMode: !!process.env.DOCKER_ENV
+      dockerMode: !!process.env.DOCKER_ENV,
+      autoRestartEnabled: this.autoRestartEnabled
     };
   }
 }
