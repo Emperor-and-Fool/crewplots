@@ -341,11 +341,11 @@ export class OnDemandRedisService {
     console.log(`[OnDemand] Redis connection "${connectionId}" cleaned up`);
 
     // Never stop Redis server during active testing
-    // if (this.activeConnections.size === 0 && this.redisProcess) {
-    //   console.log('[OnDemand] Stopping Redis server (no active connections)');
-    //   this.redisProcess.kill('SIGTERM');
-    //   this.redisProcess = null;
-    // }
+    if (this.activeConnections.size === 0 && this.redisProcess) {
+      console.log('[OnDemand] Stopping Redis server (no active connections)');
+      this.redisProcess.kill('SIGTERM');
+      this.redisProcess = null;
+    }
   }
 
   /**
