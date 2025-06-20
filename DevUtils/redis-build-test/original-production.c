@@ -12,58 +12,30 @@
 #include <time.h>
 #include <ctype.h>
 
-// Configurable values - can be overridden by environment variables
-static int MAX_CLIENTS = 100;
-static int BUFFER_SIZE = 8192;
-static int MAX_ARGS = 32;
-static int MAX_KEY_SIZE = 512;
-static int MAX_VALUE_SIZE = 2048;
-
-void load_config() {
-    char *env_val;
-    
-    if ((env_val = getenv("REDIS_BUFFER_SIZE"))) {
-        int val = atoi(env_val);
-        if (val >= 1024 && val <= 65536) BUFFER_SIZE = val;
-    }
-    
-    if ((env_val = getenv("REDIS_MAX_VALUE_SIZE"))) {
-        int val = atoi(env_val);
-        if (val >= 256 && val <= 16384) MAX_VALUE_SIZE = val;
-    }
-    
-    if ((env_val = getenv("REDIS_MAX_KEY_SIZE"))) {
-        int val = atoi(env_val);
-        if (val >= 64 && val <= 2048) MAX_KEY_SIZE = val;
-    }
-    
-    if ((env_val = getenv("REDIS_MAX_CLIENTS"))) {
-        int val = atoi(env_val);
-        if (val >= 1 && val <= 1000) MAX_CLIENTS = val;
-    }
-    
-    printf("Redis Config: BUFFER_SIZE=%d, MAX_VALUE_SIZE=%d, MAX_KEY_SIZE=%d, MAX_CLIENTS=%d\n", 
-           BUFFER_SIZE, MAX_VALUE_SIZE, MAX_KEY_SIZE, MAX_CLIENTS);
-}
+#define MAX_CLIENTS 100
+#define BUFFER_SIZE 8192
+#define MAX_ARGS 32
+#define MAX_KEY_SIZE 512
+#define MAX_VALUE_SIZE 2048
 
 typedef struct {
-    char key[512];
-    char value[2048];
+    char key[MAX_KEY_SIZE];
+    char value[MAX_VALUE_SIZE];
     time_t ttl;
 } KeyValue;
 
 typedef struct {
     int fd;
-    char input_buffer[8192];
+    char input_buffer[BUFFER_SIZE];
     int input_len;
-    char output_buffer[8192];
+    char output_buffer[BUFFER_SIZE];
     int output_len;
     int output_sent;
 } Client;
 
 static KeyValue store[10000];
 static int store_count = 0;
-static Client clients[100];
+static Client clients[MAX_CLIENTS];
 static int client_count = 0;
 static int server_fd;
 static volatile int running = 1;
@@ -185,7 +157,7 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
         if (pos + arg_len + 2 > buffer_len) return -1; // Incomplete data
         
         // Store argument (create null-terminated copy)
-        static char arg_storage[32][512];
+        static char arg_storage[MAX_ARGS][512];
         if (arg_len >= 512) return -1;
         memcpy(arg_storage[i], buffer + pos, arg_len);
         arg_storage[i][arg_len] = '\0';
@@ -334,9 +306,7 @@ void handle_client_data(Client *client) {
 int main() {
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-    signal(SIGPIPE, SIG_IGN);
-    
-    load_config(); // Ignore broken pipe signals
+    signal(SIGPIPE, SIG_IGN); // Ignore broken pipe signals
     
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
