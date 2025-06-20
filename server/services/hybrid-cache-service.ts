@@ -115,12 +115,16 @@ export class HybridCacheService {
           },
         });
 
-      console.log(`[HybridCache] PostgreSQL write successful for key: ${key}`);
+      console.log(`[HybridCache] PostgreSQL write successful for key: ${key} (${size}B)`);
 
-      // Update Redis cache (async, non-blocking)
-      this.updateRedisCache(key, value, ttl, connectionId, skipInDocker).catch(err =>
-        console.log(`[HybridCache] Redis update failed for key: ${key}`, err.message)
-      );
+      // Update Redis cache only for small payloads (async, non-blocking)
+      if (size <= 500) {
+        this.updateRedisCache(key, value, ttl, connectionId, skipInDocker).catch(err =>
+          console.log(`[HybridCache] Redis update failed for key: ${key}`, err.message)
+        );
+      } else {
+        console.log(`[HybridCache] ⚠️ PAYLOAD SIZE LIMIT: Skipping Redis cache for ${key} (${size}B exceeds 500B limit), PostgreSQL-only caching active`);
+      }
 
     } catch (error) {
       console.error(`[HybridCache] PostgreSQL write failed for key: ${key}`, error);
