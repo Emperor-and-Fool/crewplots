@@ -81,13 +81,13 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     let cachedNotes = null;
     try {
-      console.log(`[NOTES] Starting Redis cache lookup with 15-second timeout...`);
+      console.log(`[NOTES] Starting Redis cache lookup with 9-second timeout...`);
       
       // Create timeout promise
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Redis cache operation timeout after 15 seconds'));
-        }, 15000);
+          reject(new Error('Redis cache operation timeout after 9 seconds'));
+        }, 9000);
       });
       
       // Race cache operation against timeout
@@ -101,12 +101,12 @@ router.get('/', requireAuth, async (req: any, res) => {
       console.log(`[NOTES] Cache service call completed, result: ${cachedNotes ? 'HIT' : 'MISS'}`);
     } catch (error: any) {
       if (error.message && error.message.includes('timeout')) {
-        console.error(`[NOTES] 🚨 REDIS TIMEOUT: Cache operation failed after 15 seconds - ${error.message}`);
+        console.error(`[NOTES] 🚨 REDIS TIMEOUT: Cache operation failed after 9 seconds - ${error.message}`);
         console.log(`[NOTES] Falling back to direct database access due to Redis timeout`);
         
         // Set Redis failure flag for later header setting
         res.locals.redisFailure = true;
-        res.locals.failureReason = 'Redis cache timeout after 15 seconds';
+        res.locals.failureReason = 'Redis cache timeout after 9 seconds';
       } else {
         console.error(`[NOTES] Cache service error:`, error);
         res.locals.redisFailure = true;
