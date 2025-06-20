@@ -1,0 +1,73 @@
+Based on my search, here are all the files and code snippets that use "document" terminology for motivational notes processing:
+
+Backend Files:
+server/routes/mongodb-messages.ts (Main MongoDB document handler)
+interface MotivationDocument {
+  _id?: ObjectId;
+  userId: number;
+  userPublicId: string;
+  content: string;
+  documentType: 'motivation' | 'bio' | 'note';
+  createdAt: Date;
+  updatedAt: Date;
+  metadata: {
+    wordCount: number;
+    characterCount: number;
+    htmlLength: number;
+  };
+}
+// Collection name
+const collection = db.collection<MotivationDocument>('motivation_documents');
+// Routes
+router.get('/documents/:userId', ...)
+router.post('/documents', ...)
+router.put('/documents/:documentId', ...)
+router.delete('/documents/cleanup/all', ...)
+server/routes/messages/notes.ts (Notes endpoint)
+documentType: z.string().optional()
+documentType: validatedData.documentType || 'note'
+server/routes/applicant-portal.ts (Applicant documents)
+documentType: 'motivation'
+const documentId = parseInt(req.params.id);
+const document = await storage.getApplicantDocument(documentId);
+const success = await storage.deleteApplicantDocument(documentId);
+Database Schema (shared/schema.ts):
+export const userDocuments = pgTable("user_documents", {
+  documentName: text("document_name").notNull(),
+  documentUrl: text("document_url").notNull(),
+});
+export const documentAttachments = pgTable("document_attachments", {
+  documentReference: text("document_reference"), // MongoDB document ID
+});
+// Messages table
+documentId: varchar("document_id", { length: 24 }), // MongoDB ObjectId reference
+documentType: text("document_type").default("motivation"), // 'motivation', 'message', 'feedback'
+content: text("content").notNull(), // Rich document content
+Frontend Files:
+backup/mongodb-messaging-system-backup.tsx (Backup component)
+interface MotivationDocument {
+  _id: string;
+  userId: number;
+  content: string;
+  documentType: 'motivation' | 'bio' | 'note';
+  // ... metadata
+}
+// UI elements
+<Edit2 className="h-5 w-5 mr-2" />
+write motivation
+{documents.map((document) => (
+  <Badge variant="secondary">{document.documentType}</Badge>
+))}
+Current System Architecture:
+MongoDB Collection: motivation_documents
+Document Types: 'motivation' | 'bio' | 'note'
+Interface Name: MotivationDocument
+API Endpoints: /documents/*
+Database Fields: documentId, documentType, documentReference
+Files That Need "Document" → "Notes" Conversion:
+server/routes/mongodb-messages.ts - Interface, collection, routes
+server/routes/messages/notes.ts - Field references
+server/routes/applicant-portal.ts - Document operations
+shared/schema.ts - Database schema fields
+backup/mongodb-messaging-system-backup.tsx - Frontend interface
+The terminology is inconsistent throughout - some places use "document", others use "motivation", and the current active system uses "notes". All of these should be unified to use "notes" terminology.

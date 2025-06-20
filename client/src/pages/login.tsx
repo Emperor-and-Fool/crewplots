@@ -67,84 +67,27 @@ export default function Login() {
     }
   };
   
-  // Form submission handler using URLSearchParams for reliable form data submission
+  // Form submission handler using auth context
   const onSubmit = async (data: Login) => {
     setIsLoading(true);
     console.log("Login form submitted with username:", data.username);
     
     try {
-      console.log("Attempting login with URLSearchParams...");
+      // Use the auth context login function
+      const success = await login(data.username, data.password);
       
-      // Use URLSearchParams instead of FormData
-      const urlencoded = new URLSearchParams();
-      urlencoded.append('username', data.username);
-      urlencoded.append('password', data.password);
-      
-      // Manual fetch implementation with proper content type
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: urlencoded.toString(),
-        credentials: 'include', // Important for cookies
-      });
-      
-      console.log("Login response status:", response.status);
-      
-      if (response.ok) {
-        // Parse the response
-        const result = await response.json();
-        console.log("Login successful, result:", result);
-        
-        // Show success message
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${result.user?.name || data.username}!`,
-        });
-        
-        // Navigate to dashboard using a simpler approach that doesn't cause race conditions
-        try {
-          // Show a message to the user before redirecting
-          toast({
-            title: "Redirecting...",
-            description: "Taking you to the dashboard",
-          });
-          
-          // Use setTimeout to allow the toast to display
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 500);
-        } catch (e) {
-          console.error("Redirect error:", e);
-        }
-      } else {
-        console.log("Login failed with status:", response.status);
-        
-        try {
-          const errorData = await response.json();
-          console.error("Error details:", errorData);
-          
-          // Show error toast
-          toast({
-            title: "Login failed",
-            description: errorData.message || "Invalid username or password",
-            variant: "destructive",
-          });
-        } catch (e) {
-          console.error("No error details available");
-          toast({
-            title: "Login failed",
-            description: "An unexpected error occurred",
-            variant: "destructive",
-          });
-        }
+      if (success) {
+        // Navigation will be handled by the auth context or routing logic
+        // Give a moment for state to update then navigate
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
       }
     } catch (error) {
-      console.error("Login fetch error:", error);
+      console.error("Login error:", error);
       toast({
-        title: "Login error",
-        description: "Could not connect to the server. Please try again.",
+        title: "Login error", 
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {

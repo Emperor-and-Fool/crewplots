@@ -1,0 +1,87 @@
+Here’s a concise set of tips you can feed into your agent (or implement yourself) to ensure the most recent file content is shown immediately after saving. Each tip tackles a common pitfall and points to a proven solution.
+
+Summary of Key Findings
+After a mutation, React Query won’t automatically refresh your view unless you tell it to. You can either invalidate the query so it refetches (invalidateQueries 
+stackoverflow.com
+), update the cache directly with the mutation response (setQueryData 
+tanstack.com
+), or use optimistic updates for instant feedback 
+tanstack.com
+. Avoid stale closures by referencing dynamic values inside your query function 
+github.com
+, and always manage mutation status to disable UI during saves 
+timsanteford.com
+.
+
+Prompt Tips for Coding the Save Process
+Invalidate and Refetch After Success
+Use onSuccess in your mutation to call queryClient.invalidateQueries(['message', { id }]), forcing React Query to refetch the latest file content 
+stackoverflow.com
+stackoverflow.com
+.
+
+Directly Update the Cache
+If your save endpoint returns the updated file content, call queryClient.setQueryData(['message', { id }], data) in onSuccess to avoid an extra network call 
+tanstack.com
+.
+
+Leverage Optimistic Updates
+Use onMutate to immediately set the new message in the cache before the server responds, rolling back on error, for the fastest UX 
+tanstack.com
+.
+
+Refetch Programmatically
+Expose the refetch function from useQuery and call it after your mutation:
+
+tsx
+Copy
+const { data, refetch } = useQuery(['message', id], fetchMessage);
+mutation.mutate(newText, { onSuccess: () => refetch() });
+This guarantees the UI shows the very latest data 
+stackoverflow.com
+.
+
+Configure Cache Behavior
+Set staleTime: 0 and refetchOnWindowFocus: true (or false if you prefer manual control) in your query options to avoid stale reads 
+stackoverflow.com
+.
+
+Avoid Stale Closures
+Don’t close over stale state in your queryFn. Instead, pull dynamic values inside the function body to ensure you always read the current variables 
+github.com
+.
+
+Use Unique Query Keys
+Include identifiers (e.g., file path or profile ID) in your query key array so React Query can distinguish and update each file’s data independently 
+stackoverflow.com
+.
+
+Handle Mutation Status
+Disable the save button while mutation.isLoading (or mutation.isPending) is true to prevent overlapping saves and make state predictable 
+timsanteford.com
+.
+
+Test with Devtools
+Install React Query Devtools to watch cache updates and see exactly when queries are invalidated or updated 
+dev.to
+.
+
+Centralize Save Logic
+Wrap your save process in a custom hook (useSaveMessage) that implements the above strategies, ensuring consistency and reusability across different message fields 
+tanstack.com
+.
+
+Use these tips to craft your agent prompt or implement directly in your React code.
+By combining cache invalidation, direct cache updates, and optimistic updates—while avoiding stale closures—you’ll ensure the UI always reflects the most recent file content immediately after saving.
+
+
+
+
+
+
+
+
+
+
+Sources
+

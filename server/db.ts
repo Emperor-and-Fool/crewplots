@@ -12,11 +12,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create an optimized connection pool with aggressive settings for better performance
+// Create an optimized connection pool with increased capacity for better performance
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 3, // Reduce pool size to minimize overhead
-  idleTimeoutMillis: 10000, // Close idle clients faster
+  max: 12, // Increased pool size for concurrent users
+  idleTimeoutMillis: 30000, // Keep connections idle longer
   connectionTimeoutMillis: 5000, // Faster timeout for quicker error detection
   maxUses: 500, // Keep connections longer to reduce setup overhead
 });
@@ -48,13 +48,13 @@ export const db = drizzle(pool, { schema });
 
 // Initial connection check (don't block server startup)
 checkDatabaseConnection()
-  .then(isConnected => {
-    if (isConnected) {
+  .then((connected) => {
+    if (connected) {
       console.log('✅ Database connection established successfully');
     } else {
-      console.error('❌ Failed to connect to database');
+      console.warn('⚠️ Database connection check failed at startup');
     }
   })
-  .catch(err => {
-    console.error('❌ Error checking database connection:', err);
+  .catch((error) => {
+    console.error('❌ Database startup check failed:', error);
   });

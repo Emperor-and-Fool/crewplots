@@ -1,16 +1,17 @@
 import {
-  users, locations, competencies, staff, staffCompetencies, applicants, applicantDocuments,
+  users, locations, competencies, staff, staffCompetencies, userDocuments,
   scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, documentAttachments,
+  kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
   type User, type Location, type Competency, type Staff, type StaffCompetency,
-  type Applicant, type ApplicantDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type CashCount, type KbCategory, type KbArticle, 
-  type UploadedFile, type DocumentAttachment,
+  type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
+  type Shift, type CashCount, type KbCategory, type KbArticle, type NoteRef,
+  type UploadedFile, type DocumentAttachment, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertStaff,
-  type InsertStaffCompetency, type InsertApplicant, type InsertApplicantDocument, type InsertScheduleTemplate,
+  type InsertStaffCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
-  type InsertCashCount, type InsertKbCategory, type InsertKbArticle,
-  type InsertUploadedFile, type InsertDocumentAttachment
+  type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertNoteRef,
+  type InsertUploadedFile, type InsertDocumentAttachment,
+  generatePublicId
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
@@ -81,14 +82,14 @@ export interface IStorage {
   updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined>;
   deleteStaffCompetency(id: number): Promise<boolean>;
 
-  // Applicants
-  getApplicant(id: number): Promise<Applicant | undefined>;
-  getApplicants(): Promise<Applicant[]>;
-  getApplicantsByLocation(locationId: number): Promise<Applicant[]>;
-  getApplicantsByStatus(status: string): Promise<Applicant[]>;
-  getApplicantByUserId(userId: number): Promise<Applicant | undefined>;
-  createApplicant(applicant: InsertApplicant): Promise<Applicant>;
-  updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined>;
+  // Applicants (now using User type with role filtering)
+  getApplicant(id: number): Promise<User | undefined>;
+  getApplicants(): Promise<User[]>;
+  getApplicantsByLocation(locationId: number): Promise<User[]>;
+  getApplicantsByStatus(status: string): Promise<User[]>;
+  getApplicantByUserId(userId: number): Promise<User | undefined>;
+  createApplicant(applicant: InsertUser): Promise<User>;
+  updateApplicant(id: number, applicant: Partial<InsertUser>): Promise<User | undefined>;
   deleteApplicant(id: number): Promise<boolean>;
   createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any>;
   getApplicantDocuments(applicantId: number): Promise<any[]>;
@@ -173,6 +174,23 @@ export interface IStorage {
   deleteDocumentAttachment(id: number): Promise<boolean>;
   deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean>;
   deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean>;
+
+  // Note References
+  getNoteRef(id: number): Promise<NoteRef | undefined>;
+  getNoteRefs(): Promise<NoteRef[]>;
+  getNoteRefsByUser(userId: number): Promise<NoteRef[]>;
+  getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]>;
+  createNoteRef(noteRef: InsertNoteRef): Promise<NoteRef>;
+  updateNoteRef(id: number, noteRef: Partial<InsertNoteRef>): Promise<NoteRef | undefined>;
+  deleteNoteRef(id: number): Promise<boolean>;
+  userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean>;
+
+  // Hybrid Cache Operations
+  getCache(key: string): Promise<any | null>;
+  setCache(key: string, value: any, expiresAt?: Date, category?: string): Promise<void>;
+  deleteCache(key: string): Promise<boolean>;
+  deleteCacheByCategory(category: string): Promise<number>;
+  cleanExpiredCache(): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -191,7 +209,7 @@ export class MemStorage implements IStorage {
   private kbArticles: Map<number, KbArticle>;
   private uploadedFiles: Map<number, UploadedFile>;
   private documentAttachments: Map<number, DocumentAttachment>;
-  private _applicantDocuments: Map<number, any>;
+  private _userDocuments: Map<number, any>;
 
   private currentUserId: number;
   private currentLocationId: number;
@@ -225,7 +243,7 @@ export class MemStorage implements IStorage {
     this.kbArticles = new Map();
     this.uploadedFiles = new Map();
     this.documentAttachments = new Map();
-    this._applicantDocuments = new Map();
+    this._userDocuments = new Map();
 
     this.currentUserId = 1;
     this.currentLocationId = 1;
@@ -270,7 +288,14 @@ export class MemStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const newUser: User = {
       id: this.currentUserId++,
+      public_id: generatePublicId(12),
       createdAt: new Date(),
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      locationId: user.locationId ?? null,
+      phoneNumber: user.phoneNumber ?? null,
+      resumeUrl: user.resumeUrl ?? null,
+      notes: user.notes ?? null,
       ...user
     };
     this.users.set(newUser.id, newUser);
@@ -475,36 +500,37 @@ export class MemStorage implements IStorage {
     return this.staffCompetencies.delete(id);
   }
 
-  // Applicants
-  async getApplicant(id: number): Promise<Applicant | undefined> {
-    return this.applicants.get(id);
+  // Applicants (using unified users table approach)
+  async getApplicant(id: number): Promise<User | undefined> {
+    return this.users.find(user => user.id === id && user.role === 'applicant');
   }
 
-  async getApplicants(): Promise<Applicant[]> {
-    return Array.from(this.applicants.values());
+  async getApplicants(): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant');
   }
 
-  async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(applicant => applicant.locationId === locationId);
+  async getApplicantsByLocation(locationId: number): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant' && user.locationId === locationId);
   }
 
-  async getApplicantsByStatus(status: string): Promise<Applicant[]> {
-    return Array.from(this.applicants.values()).filter(applicant => applicant.status === status);
+  async getApplicantsByStatus(status: string): Promise<User[]> {
+    return this.users.filter(user => user.role === 'applicant' && user.status === status);
   }
 
-  async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
-    const newApplicant: Applicant = {
-      id: this.currentApplicantId++,
+  async createApplicant(applicant: InsertUser): Promise<User> {
+    const newApplicant: User = {
+      id: this.currentUserId++,
       createdAt: new Date(),
+      role: 'applicant',
       ...applicant
     };
-    this.applicants.set(newApplicant.id, newApplicant);
+    this.users.push(newApplicant);
     return newApplicant;
   }
 
-  async updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined> {
-    const existingApplicant = this.applicants.get(id);
-    if (!existingApplicant) {
+  async updateApplicant(id: number, applicant: Partial<InsertUser>): Promise<User | undefined> {
+    const existingApplicantIndex = this.users.findIndex(user => user.id === id && user.role === 'applicant');
+    if (existingApplicantIndex === -1) {
       return undefined;
     }
 
@@ -992,12 +1018,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select({
+      id: users.id,
+      public_id: users.public_id,
+      username: users.username,
+      password: users.password,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      name: users.name,
+      role: users.role,
+      locationId: users.locationId,
+      phoneNumber: users.phoneNumber,
+      status: users.status,
+      resumeUrl: users.resumeUrl,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.username, username));
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db.select({
+      id: users.id,
+      public_id: users.public_id,
+      username: users.username,
+      password: users.password,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      name: users.name,
+      role: users.role,
+      locationId: users.locationId,
+      phoneNumber: users.phoneNumber,
+      status: users.status,
+      resumeUrl: users.resumeUrl,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.email, email));
     return user;
   }
 
@@ -1169,22 +1225,12 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Applicants
-  async getApplicant(id: number): Promise<Applicant | undefined> {
+  // Applicants (now using unified users table)
+  async getApplicant(id: number): Promise<User | undefined> {
     try {
-      // Select specific columns to avoid extraMessage issues
-      const [applicant] = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.id, id));
+      const [applicant] = await db.select()
+        .from(users)
+        .where(and(eq(users.id, id), eq(users.role, 'applicant')));
       
       return applicant;
     } catch (error) {
@@ -1193,23 +1239,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicants(): Promise<Applicant[]> {
+  async getApplicants(): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants);
+      // Get all users with applicant role from the unified users table
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'));
       
       return result;
     } catch (error) {
@@ -1218,23 +1253,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicantsByLocation(locationId: number): Promise<Applicant[]> {
+  async getApplicantsByLocation(locationId: number): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.locationId, locationId));
+      // Get users with applicant role filtered by location from unified users table
+      const result = await db.select()
+        .from(users)
+        .where(and(eq(users.role, 'applicant'), eq(users.locationId, locationId)));
       
       return result;
     } catch (error) {
@@ -1243,23 +1267,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplicantsByStatus(status: string): Promise<Applicant[]> {
+  async getApplicantsByStatus(status: string): Promise<User[]> {
     try {
-      // Include extraMessage field to match the expected Applicant type
-      const result = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants).where(eq(applicants.status, status));
+      // Get users with applicant role filtered by status from unified users table
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'))
+        .where(eq(users.status, status));
       
       return result;
     } catch (error) {
@@ -1287,7 +1301,7 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async getApplicantByUserId(userId: number): Promise<Applicant | undefined> {
+  async getApplicantByUserId(userId: number): Promise<User | undefined> {
     try {
       console.log("Looking for applicant with userId:", userId);
       
@@ -1299,11 +1313,11 @@ export class DatabaseStorage implements IStorage {
         return cached;
       }
       
-      // Optimized query: select all columns directly, add limit for performance
+      // Query users table for applicant role
       const [applicant] = await db
         .select()
-        .from(applicants)
-        .where(eq(applicants.userId, userId))
+        .from(users)
+        .where(and(eq(users.id, userId), eq(users.role, 'applicant')))
         .limit(1);
       
       console.log("Found applicant:", applicant || "None found");
@@ -1765,6 +1779,64 @@ export class DatabaseStorage implements IStorage {
   async deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean> {
     await db.delete(documentAttachments).where(eq(documentAttachments.fileId, fileId));
     return true;
+  }
+
+  // Message operations
+  async getNoteRef(id: number): Promise<NoteRef | undefined> {
+    const [message] = await db.select().from(noteRefs).where(eq(noteRefs.id, id));
+    return message || undefined;
+  }
+
+  async getNoteRefs(): Promise<NoteRef[]> {
+    return await db.select().from(noteRefs).orderBy(noteRefs.createdAt);
+  }
+
+  async getNoteRefsByUser(userId: number): Promise<NoteRef[]> {
+    console.log(`Storage: Getting notes for user ${userId}`);
+    const results = await db.select().from(noteRefs).where(eq(noteRefs.userId, userId)).orderBy(noteRefs.createdAt);
+    console.log(`Storage: Found ${results.length} notes for user ${userId}`);
+    return results;
+  }
+
+  async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
+    return await db.select().from(noteRefs).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
+  }
+
+  async createNoteRef(message: InsertNoteRef): Promise<NoteRef> {
+    const [createdMessage] = await db.insert(noteRefs).values(message).returning();
+    return createdMessage;
+  }
+
+  async updateNoteRef(id: number, message: Partial<InsertNoteRef>): Promise<NoteRef | undefined> {
+    const [updatedMessage] = await db.update(noteRefs)
+      .set(message)
+      .where(eq(noteRefs.id, id))
+      .returning();
+    return updatedMessage || undefined;
+  }
+
+  async deleteNoteRef(id: number): Promise<boolean> {
+    await db.delete(noteRefs).where(eq(noteRefs.id, id));
+    return true;
+  }
+
+  async userHasAccessToApplicant(userId: number, applicantId: number): Promise<boolean> {
+    // Check if user is admin/manager or if they are the applicant
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    // Admins and managers have access to all applicants
+    if (user.role === 'administrator' || user.role === 'manager') {
+      return true;
+    }
+    
+    // Check if user is the applicant themselves
+    const applicant = await this.getApplicant(applicantId);
+    if (applicant && applicant.userId === userId) {
+      return true;
+    }
+    
+    return false;
   }
 }
 
