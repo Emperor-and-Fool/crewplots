@@ -2,7 +2,7 @@ import express from 'express';
 import { storage } from '../../storage';
 import { messageStorageService } from '../../services/message-storage-service';
 import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
-import { hybridCacheService } from '../../services/hybrid-cache-service';
+import { hybridCacheService } from '../../services/hybrid-cache-service-v2';
 
 import { z } from 'zod';
 
