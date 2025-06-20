@@ -12,10 +12,12 @@
 #include <time.h>
 #include <ctype.h>
 
+// Fixed constants for array sizes
+#define MAX_ARGS 32
+
 // Configurable values - can be overridden by environment variables
 static int MAX_CLIENTS = 100;
 static int BUFFER_SIZE = 8192;
-static int MAX_ARGS = 32;
 static int MAX_KEY_SIZE = 512;
 static int MAX_VALUE_SIZE = 2048;
 
@@ -185,7 +187,7 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
         if (pos + arg_len + 2 > buffer_len) return -1; // Incomplete data
         
         // Store argument (create null-terminated copy)
-        static char arg_storage[32][512];
+        static char arg_storage[MAX_ARGS][512];
         if (arg_len >= 512) return -1;
         memcpy(arg_storage[i], buffer + pos, arg_len);
         arg_storage[i][arg_len] = '\0';
