@@ -103,8 +103,14 @@ router.get('/', requireAuth, async (req: any, res) => {
       if (error.message && error.message.includes('timeout')) {
         console.error(`[NOTES] 🚨 REDIS TIMEOUT: Cache operation failed after 15 seconds - ${error.message}`);
         console.log(`[NOTES] Falling back to direct database access due to Redis timeout`);
+        
+        // Set Redis failure flag for later header setting
+        res.locals.redisFailure = true;
+        res.locals.failureReason = 'Redis cache timeout after 15 seconds';
       } else {
         console.error(`[NOTES] Cache service error:`, error);
+        res.locals.redisFailure = true;
+        res.locals.failureReason = 'Redis cache service error';
       }
     }
     
@@ -157,9 +163,14 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     console.log(`Fetched ${messages.length} notes for user ${userId} and cached`);
     
-    // Add fallback status headers for frontend debugging
-    res.setHeader('X-Cache-Status', 'postgres-fallback');
-    res.setHeader('X-Debug-Message', 'Redis failed - fell back to PostgreSQL cache');
+    // Add appropriate cache status headers based on Redis success/failure
+    if (res.locals.redisFailure) {
+      res.setHeader('X-Cache-Status', 'postgres-fallback');
+      res.setHeader('X-Debug-Message', `Redis failed - fell back to PostgreSQL cache: ${res.locals.failureReason}`);
+    } else {
+      res.setHeader('X-Cache-Status', 'database-fetch');
+      res.setHeader('X-Debug-Message', 'Fresh data fetched from database and cached successfully');
+    }
     
     res.json(messages);
   } catch (error) {

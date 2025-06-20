@@ -175,6 +175,13 @@ export function MessagingSystem({
       if (cacheStatus === 'postgres-fallback') {
         console.warn('🚨 REDIS FAILED: Redis cache unavailable, fell back to PostgreSQL');
         console.log('💾 FALLBACK ACTIVE:', debugMessage);
+        
+        // Show toast notification to user
+        toast({
+          title: "Redis Cache failing",
+          description: "Fall back to default",
+          variant: "destructive"
+        });
       } else if (cacheStatus === 'redis-hit') {
         console.log('⚡ REDIS SUCCESS:', debugMessage);
       }
