@@ -265,10 +265,16 @@ void handle_client_data(Client *client) {
         return;
     }
     
-    // Safety check to prevent buffer overflow
-    if (client->input_len + bytes_received >= BUFFER_SIZE) {
-        // Buffer would overflow, disconnect client
-        return;
+    // Safety check to prevent buffer overflow - leave room for processing
+    if (client->input_len + bytes_received >= BUFFER_SIZE - 1) {
+        // Buffer would overflow, try to process existing data first
+        if (client->input_len > 0) {
+            // Process what we have and try again
+            return;
+        } else {
+            // No existing data but incoming is too large, disconnect
+            return;
+        }
     }
     
     memcpy(client->input_buffer + client->input_len, temp_buffer, bytes_received);

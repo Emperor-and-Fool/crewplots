@@ -1,4 +1,4 @@
-const net = require('net');
+import net from 'net';
 
 function testRedisConnection() {
     console.log('Testing Redis connection to 127.0.0.1:6379...');
