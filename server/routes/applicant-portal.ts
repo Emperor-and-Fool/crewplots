@@ -1,6 +1,7 @@
 import express from 'express';
 import { storage } from '../storage';
 import { messageStorageService } from '../services/message-storage-service';
+import { profileFetcherService } from '../services/profile-fetcher-service';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -127,65 +128,26 @@ const isApplicant = async (req: any, res: any, next: any) => {
 // Get applicant data for the logged-in user
 router.get('/my-profile', isApplicant, async (req: any, res) => {
   try {
-    console.log('Fetching applicant profile for user ID:', req.user.id);
+    console.log('[ProfileFetcher] Route hit for user ID:', req.user.id);
     
-    // Add a 500ms delay to ensure database connection is ready (helps with race conditions)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Use ProfileFetcher service with Redis-first caching
+    const profileData = await profileFetcherService.getProfileData(req.user.id);
     
-    const applicant = await storage.getUser(req.user.id);
-    
-    if (!applicant || applicant.role !== 'applicant') {
-      console.log('No applicant profile found for user ID:', req.user.id);
+    if (!profileData) {
+      console.log('[ProfileFetcher] No applicant profile found for user ID:', req.user.id);
       return res.status(404).json({ 
         error: 'Applicant profile not found',
         message: 'Your user account exists but no applicant profile is linked to it.'
       });
     }
     
-    // Get notes metadata from hybrid system with MongoDB retry
-    const notes = await withMongoDBRetry(() => 
-      messageStorageService.getNoteRefsByUser(req.user.id)
-    );
-    const notesMetadata = notes.length > 0 ? {
-      exists: true,
-      documentId: notes[0].noteId,
-      wordCount: notes[0].wordCount,
-      characterCount: notes[0].characterCount,
-      lastUpdated: notes[0].updatedAt,
-      workflow: notes[0].workflow
-    } : {
-      exists: false,
-      documentId: null,
-      wordCount: 0,
-      characterCount: 0,
-      lastUpdated: null,
-      workflow: null
-    };
+    console.log('[ProfileFetcher] Successfully retrieved profile:', 
+      { id: profileData.id, name: profileData.name, email: profileData.email, hasNotes: profileData.notes.exists, hasResume: !!profileData.resumeUrl });
     
-    // Check if resume file actually exists
-    let validResumeUrl = null;
-    if (applicant.resumeUrl) {
-      const resumePath = path.join(process.cwd(), applicant.resumeUrl);
-      if (fs.existsSync(resumePath)) {
-        validResumeUrl = applicant.resumeUrl;
-      } else {
-        console.warn(`Resume file not found: ${resumePath}`);
-      }
-    }
-
-    const profileData = {
-      ...applicant,
-      notes: notesMetadata, // Show metadata only, not content
-      resumeUrl: validResumeUrl // Only show if file exists
-    };
-    
-    console.log('Successfully retrieved applicant profile:', 
-      { id: applicant.id, name: applicant.name, email: applicant.email, hasNotes: notesMetadata.exists, hasResume: !!validResumeUrl });
-    
-    // Send enhanced applicant data
+    // Send profile data
     res.json(profileData);
   } catch (error) {
-    console.error('Error fetching applicant profile:', error);
+    console.error('[ProfileFetcher] Error in route handler:', error);
     
     // More detailed error response
     res.status(500).json({ 
