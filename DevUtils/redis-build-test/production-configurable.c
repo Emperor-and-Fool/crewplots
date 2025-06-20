@@ -197,7 +197,7 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
         if (pos + arg_len + 2 > buffer_len) return -1; // Incomplete data
         
         // Store argument (create null-terminated copy)
-        static char arg_storage[32][512];  // Use fixed sizes initially
+        static char arg_storage[32][512];
         if (arg_len >= 512) return -1;
         memcpy(arg_storage[i], buffer + pos, arg_len);
         arg_storage[i][arg_len] = '\0';
