@@ -34,21 +34,39 @@ export class HybridCacheService {
 
     // Try Redis first for application caching
     try {
+      console.log(`[HybridCache] 🔍 REDIS GET DEBUG: Starting Redis GET for key: ${cacheKey}`);
+      const redisStart = Date.now();
+      
       const result = await this.redisService.withConnection(
         async (client: Redis) => {
+          console.log(`[HybridCache] 🔍 REDIS GET DEBUG: Inside withConnection for key: ${cacheKey}`);
+          const getStart = Date.now();
           const value = await client.get(cacheKey);
+          const getTime = Date.now() - getStart;
+          
+          console.log(`[HybridCache] 🔍 REDIS GET DEBUG: GET operation completed in ${getTime}ms for key: ${cacheKey}`);
+          
           if (value) {
-            console.log(`[HybridCache] Redis cache hit for key: ${cacheKey}`);
-            return JSON.parse(value);
+            console.log(`[HybridCache] Redis cache hit for key: ${cacheKey} (value length: ${value.length})`);
+            const parseStart = Date.now();
+            const parsed = JSON.parse(value);
+            const parseTime = Date.now() - parseStart;
+            console.log(`[HybridCache] 🔍 REDIS GET DEBUG: JSON parse completed in ${parseTime}ms`);
+            return parsed;
           }
+          console.log(`[HybridCache] 🔍 REDIS GET DEBUG: No value found for key: ${cacheKey}`);
           return null;
         },
         { connectionId, keepAlive: 30000, skipInDocker }
       );
       
+      const redisTotalTime = Date.now() - redisStart;
+      console.log(`[HybridCache] 🔍 REDIS GET DEBUG: Total Redis operation time: ${redisTotalTime}ms for key: ${cacheKey}`);
+      
       if (result !== null) return result;
     } catch (error: any) {
-      console.error(`🚨 REDIS FAILURE: Redis cache failed for key: ${cacheKey} - ${error.message}`);
+      const redisErrorTime = Date.now() - Date.now();
+      console.error(`🚨 REDIS FAILURE: Redis cache failed for key: ${cacheKey} after ${redisErrorTime}ms - ${error.message}`);
       console.log(`💾 FALLBACK ACTIVE: Falling back to PostgreSQL cache for key: ${cacheKey}`);
     }
 
@@ -177,18 +195,29 @@ export class HybridCacheService {
       // Write-through to Redis cache if PostgreSQL write succeeded
       if (pgSuccess) {
         try {
+          console.log(`[HybridCache] 🔍 REDIS SET DEBUG: Starting Redis SET for key: ${cacheKey}`);
+          const setStart = Date.now();
+          
           await this.redisService.withConnection(
             async (client: Redis) => {
+              console.log(`[HybridCache] 🔍 REDIS SET DEBUG: Inside withConnection for key: ${cacheKey}`);
+              const opStart = Date.now();
+              
               if (ttl > 0) {
                 await client.setex(cacheKey, ttl, serializedValue);
-                console.log(`[HybridCache] Redis write-through: ${cacheKey} (TTL: ${ttl}s)`);
+                const opTime = Date.now() - opStart;
+                console.log(`[HybridCache] 🔍 REDIS SET DEBUG: SETEX completed in ${opTime}ms for key: ${cacheKey} (TTL: ${ttl}s)`);
               } else {
                 await client.set(cacheKey, serializedValue);
-                console.log(`[HybridCache] Redis write-through: ${cacheKey} (no TTL)`);
+                const opTime = Date.now() - opStart;
+                console.log(`[HybridCache] 🔍 REDIS SET DEBUG: SET completed in ${opTime}ms for key: ${cacheKey} (no TTL)`);
               }
             },
             { connectionId, keepAlive: 30000, skipInDocker }
           );
+          
+          const setTotalTime = Date.now() - setStart;
+          console.log(`[HybridCache] 🔍 REDIS SET DEBUG: Total Redis SET operation time: ${setTotalTime}ms for key: ${cacheKey}`);
         } catch (error: any) {
           console.error(`🚨 REDIS FAILURE: Redis write-through failed for key: ${key} - ${error.message}`);
           console.log(`💾 FALLBACK ACTIVE: Continuing with PostgreSQL-only caching for key: ${key}`);

@@ -85,13 +85,29 @@ export class OnDemandRedisService {
     // Check for existing connection
     const existingConnection = this.activeConnections.get(connectionId);
     if (existingConnection) {
+      console.log(`[OnDemand] 🔄 REUSE DEBUG: Attempting to reuse connection "${connectionId}"`);
+      console.log(`[OnDemand] 🔄 REUSE DEBUG: Connection age: ${Date.now() - existingConnection.lastUsed}ms, inUse: ${existingConnection.isInUse}`);
+      
       existingConnection.lastUsed = Date.now();
       existingConnection.isInUse = true;
+      
       try {
+        // Test connection health before reuse
+        console.log(`[OnDemand] 🔄 REUSE DEBUG: Testing connection health for "${connectionId}"`);
+        const healthStart = Date.now();
+        await existingConnection.client.ping();
+        const healthTime = Date.now() - healthStart;
+        console.log(`[OnDemand] 🔄 REUSE DEBUG: Health check passed for "${connectionId}" in ${healthTime}ms`);
+        
+        const opStart = Date.now();
         const result = await operation(existingConnection.client);
+        const opTime = Date.now() - opStart;
+        console.log(`[OnDemand] 🔄 REUSE DEBUG: Operation completed for "${connectionId}" in ${opTime}ms`);
+        
         existingConnection.isInUse = false;
         return result;
       } catch (error) {
+        console.log(`[OnDemand] 🚨 REUSE ERROR: Connection "${connectionId}" failed - ${error.message}`);
         existingConnection.isInUse = false;
         throw error;
       }
@@ -115,15 +131,31 @@ export class OnDemandRedisService {
     this.logConnectionEvent(connectionId, 'success');
     
     try {
+      console.log(`[OnDemand] 🆕 NEW CONNECTION: Starting operation for "${connectionId}"`);
+      const opStart = Date.now();
       const result = await operation(connection.client);
+      const opTime = Date.now() - opStart;
+      console.log(`[OnDemand] 🆕 NEW CONNECTION: Operation completed for "${connectionId}" in ${opTime}ms`);
       
-      // Schedule cleanup after keepAlive period
-      setTimeout(async () => {
-        await this.cleanupConnection(connectionId);
-      }, keepAlive);
+      // Schedule cleanup after keepAlive period - but respect critical connections
+      const isCritical = this.prewarmedConnections.includes(connectionId) || 
+                        connectionId.includes('session-') || 
+                        connectionId.includes('notes-') || 
+                        connectionId.includes('cache-');
+      
+      if (isCritical) {
+        console.log(`[OnDemand] 🛡️ CRITICAL CONNECTION: Skipping cleanup scheduling for "${connectionId}"`);
+      } else {
+        console.log(`[OnDemand] ⏰ CLEANUP SCHEDULED: Connection "${connectionId}" cleanup in ${keepAlive}ms`);
+        setTimeout(async () => {
+          console.log(`[OnDemand] ⏰ CLEANUP TRIGGERED: Attempting cleanup for "${connectionId}"`);
+          await this.smartCleanup(connectionId);
+        }, keepAlive);
+      }
       
       return result;
     } catch (error) {
+      console.log(`[OnDemand] 🚨 NEW CONNECTION ERROR: Operation failed for "${connectionId}" - ${error.message}`);
       // Immediate cleanup on error
       await this.cleanupConnection(connectionId);
       throw error;
@@ -285,17 +317,22 @@ export class OnDemandRedisService {
 
   private async cleanupConnection(connectionId: string): Promise<void> {
     const connection = this.activeConnections.get(connectionId);
-    if (!connection) return;
+    if (!connection) {
+      console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Connection "${connectionId}" not found in active connections`);
+      return;
+    }
+
+    console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Attempting cleanup for "${connectionId}" (inUse: ${connection.isInUse}, age: ${Date.now() - connection.lastUsed}ms)`);
 
     // Don't cleanup prewarmed connections
     if (this.prewarmedConnections.includes(connectionId)) {
-      console.log(`[OnDemand] Skipping cleanup for prewarmed connection "${connectionId}"`);
+      console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Skipping cleanup for prewarmed connection "${connectionId}"`);
       return;
     }
 
     // Don't cleanup session-related connections during testing phase
     if (connectionId.includes('session-') || connectionId.includes('notes-') || connectionId.includes('cache-')) {
-      console.log(`[OnDemand] Skipping cleanup for critical connection "${connectionId}"`);
+      console.log(`[OnDemand] 🧹 CLEANUP DEBUG: Skipping cleanup for critical connection "${connectionId}"`);
       return;
     }
 
