@@ -7,7 +7,7 @@ import { StatsCard } from "@/components/ui/stats-card";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
 import { ApplicantsSummary } from "@/components/dashboard/applicants-summary";
-
+import { ApplicantCard } from "@/components/ui/applicant-card";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { 
@@ -228,7 +228,24 @@ export default function Dashboard() {
               </div>
             )}
 
-
+            {/* Recent Applicants Section */}
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Applicants</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {profileData?.filter(user => user.role === 'applicant').slice(0, 4).map((applicant) => (
+                  <ApplicantCard
+                    key={applicant.id}
+                    applicant={applicant}
+                    onClick={(id) => navigate(`/applicant/${id}`)}
+                  />
+                ))}
+                {(!profileData?.filter(user => user.role === 'applicant').length) && (
+                  <div className="col-span-full text-center py-8 text-gray-500">
+                    No applicants found
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Staff Overview and Applicants */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
