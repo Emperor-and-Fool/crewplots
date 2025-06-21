@@ -48,6 +48,7 @@ interface MessagingSystemProps {
   
   // UI customization
   title?: string;
+  readOnlyMode?: boolean; // New prop for read-only mode
   placeholder?: string;
   showPriority?: boolean;
   showPrivateToggle?: boolean;
@@ -105,6 +106,7 @@ export function MessagingSystem({
   receiverId,
   mode = 'messages', // Default to messages mode
   title = 'Messages',
+  readOnlyMode = false,
   placeholder = 'Type your message here...',
   showPriority = true,
   showPrivateToggle = true,
