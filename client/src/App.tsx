@@ -158,7 +158,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={Applicants} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "crew_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -167,7 +167,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={ApplicantDetail} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "crew_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
