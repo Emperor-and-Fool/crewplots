@@ -107,7 +107,7 @@ export default function Applicants() {
           <div className="relative">
             <MessageSquare className="w-3 h-3 text-gray-400" />
             {hasMotivationalText && (
-              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
             )}
           </div>
 
@@ -126,7 +126,7 @@ export default function Applicants() {
         <div className="relative">
           <MessageSquare className={`w-3 h-3 ${messageCount > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
           {hasMotivationalText && (
-            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm" title="Has motivational text"></div>
+            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-white shadow-sm" title="Has motivational text"></div>
           )}
         </div>
         {messageCount > 0 && (
