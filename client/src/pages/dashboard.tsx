@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/ui/stats-card";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
 import { ApplicantsSummary } from "@/components/dashboard/applicants-summary";
+import { ApplicantCard } from "@/components/ui/applicant-card";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { 
@@ -79,15 +80,42 @@ export default function Dashboard() {
   const { data: staffStats } = useQuery({
     queryKey: ['/api/staff/location', selectedLocation],
     enabled: !!selectedLocation,
+    queryFn: async () => {
+      const response = await fetch(`/api/staff/location/${selectedLocation}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch staff');
+      }
+      return response.json();
+    }
   });
 
   const { data: shiftsStats } = useQuery({
     queryKey: ['/api/shifts'],
     enabled: !!selectedLocation,
+    queryFn: async () => {
+      const response = await fetch('/api/shifts', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    }
   });
 
   const { data: applicantsStats } = useQuery({
     queryKey: ['/api/applicants'],
+    queryFn: async () => {
+      const response = await fetch('/api/applicants', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch applicants');
+      }
+      return response.json();
+    }
   });
 
   // Count data
