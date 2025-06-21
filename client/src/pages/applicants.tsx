@@ -107,7 +107,7 @@ export default function Applicants() {
           <MessageSquare className="w-3 h-3 text-gray-400" />
           <span className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></span>
           {hasMotivationalText && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
           )}
         </div>
       );
@@ -130,7 +130,7 @@ export default function Applicants() {
           <span className="w-2 h-2 bg-gray-300 rounded-full" title="No messages"></span>
         )}
         {hasMotivationalText && (
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" title="Has motivational text"></div>
+          <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm" title="Has motivational text"></div>
         )}
       </div>
     );
