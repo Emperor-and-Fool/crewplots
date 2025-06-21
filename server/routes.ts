@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log("Fetching user with ID:", userId);
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       console.log("Database result:", user ? "Found" : "Not found");
       
       if (!user) {
@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = req.body;
       console.log(`Updating applicant ${applicantId} with data:`, updateData);
       
-      const user = await storage.getUserById(applicantId);
+      const user = await storage.getUser(applicantId);
       if (!user || user.role !== 'applicant') {
         return res.status(404).json({ error: "Applicant not found" });
       }
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // For managers and crew members, get basic user data and cache it using the same pattern
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
