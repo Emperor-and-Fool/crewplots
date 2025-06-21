@@ -1102,33 +1102,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLocations(): Promise<Location[]> {
-    const cacheKey = 'locations:all';
-    
     try {
-      // Try Redis cache first
-      try {
-        const connection = await this.redisService.getConnection('storage-read');
-        const cached = await connection.get(cacheKey);
-        if (cached) {
-          await this.redisService.releaseConnection('storage-read');
-          return JSON.parse(cached);
-        }
-        await this.redisService.releaseConnection('storage-read');
-      } catch (redisError) {
-        console.log('Redis cache miss for locations, proceeding to database');
-      }
-      
       const result = await db.select().from(locations);
-      
-      // Cache the result for 10 minutes (locations change infrequently)
-      try {
-        const connection = await this.redisService.getConnection('storage-write');
-        await connection.setex(cacheKey, 600, JSON.stringify(result));
-        await this.redisService.releaseConnection('storage-write');
-      } catch (redisError) {
-        console.log('Failed to cache locations result');
-      }
-      
       return result;
     } catch (error) {
       console.error("Error in getLocations:", error);
@@ -1278,35 +1253,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicants(): Promise<User[]> {
-    const cacheKey = 'applicants:all';
-    
     try {
-      // Try Redis cache first
-      try {
-        const connection = await this.redisService.getConnection('storage-read');
-        const cached = await connection.get(cacheKey);
-        if (cached) {
-          await this.redisService.releaseConnection('storage-read');
-          return JSON.parse(cached);
-        }
-        await this.redisService.releaseConnection('storage-read');
-      } catch (redisError) {
-        console.log('Redis cache miss for applicants, proceeding to database');
-      }
-      
       // Get all users with applicant role from the unified users table
       const result = await db.select()
         .from(users)
         .where(eq(users.role, 'applicant'));
-      
-      // Cache the result for 5 minutes
-      try {
-        const connection = await this.redisService.getConnection('storage-write');
-        await connection.setex(cacheKey, 300, JSON.stringify(result));
-        await this.redisService.releaseConnection('storage-write');
-      } catch (redisError) {
-        console.log('Failed to cache applicants result');
-      }
       
       return result;
     } catch (error) {
@@ -1630,33 +1581,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getShifts(): Promise<Shift[]> {
-    const cacheKey = 'shifts:all';
-    
     try {
-      // Try Redis cache first
-      try {
-        const connection = await this.redisService.getConnection('storage-read');
-        const cached = await connection.get(cacheKey);
-        if (cached) {
-          await this.redisService.releaseConnection('storage-read');
-          return JSON.parse(cached);
-        }
-        await this.redisService.releaseConnection('storage-read');
-      } catch (redisError) {
-        console.log('Redis cache miss for shifts, proceeding to database');
-      }
-      
       const result = await db.select().from(shifts);
-      
-      // Cache the result for 2 minutes (shifts change frequently)
-      try {
-        const connection = await this.redisService.getConnection('storage-write');
-        await connection.setex(cacheKey, 120, JSON.stringify(result));
-        await this.redisService.releaseConnection('storage-write');
-      } catch (redisError) {
-        console.log('Failed to cache shifts result');
-      }
-      
       return result;
     } catch (error) {
       console.error("Error in getShifts:", error);
