@@ -15,6 +15,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
+import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
+import { onDemandMongoService } from "../adapters-repl/mongodb-ondemand/on-demand-mongodb";
 
 // Simple in-memory cache for frequently accessed data
 const queryCache = new Map();
@@ -1011,6 +1013,11 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private redisService: OnDemandRedisService;
+  
+  constructor() {
+    this.redisService = OnDemandRedisService.getInstance();
+  }
   // Users
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -1095,7 +1102,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLocations(): Promise<Location[]> {
-    return await db.select().from(locations);
+    const cacheKey = 'locations:all';
+    
+    try {
+      // Try Redis cache first
+      try {
+        const connection = await this.redisService.getConnection('storage-read');
+        const cached = await connection.get(cacheKey);
+        if (cached) {
+          await this.redisService.releaseConnection('storage-read');
+          return JSON.parse(cached);
+        }
+        await this.redisService.releaseConnection('storage-read');
+      } catch (redisError) {
+        console.log('Redis cache miss for locations, proceeding to database');
+      }
+      
+      const result = await db.select().from(locations);
+      
+      // Cache the result for 10 minutes (locations change infrequently)
+      try {
+        const connection = await this.redisService.getConnection('storage-write');
+        await connection.setex(cacheKey, 600, JSON.stringify(result));
+        await this.redisService.releaseConnection('storage-write');
+      } catch (redisError) {
+        console.log('Failed to cache locations result');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getLocations:", error);
+      return [];
+    }
   }
 
   async createLocation(location: InsertLocation): Promise<Location> {
@@ -1240,11 +1278,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicants(): Promise<User[]> {
+    const cacheKey = 'applicants:all';
+    
     try {
+      // Try Redis cache first
+      try {
+        const connection = await this.redisService.getConnection('storage-read');
+        const cached = await connection.get(cacheKey);
+        if (cached) {
+          await this.redisService.releaseConnection('storage-read');
+          return JSON.parse(cached);
+        }
+        await this.redisService.releaseConnection('storage-read');
+      } catch (redisError) {
+        console.log('Redis cache miss for applicants, proceeding to database');
+      }
+      
       // Get all users with applicant role from the unified users table
       const result = await db.select()
         .from(users)
         .where(eq(users.role, 'applicant'));
+      
+      // Cache the result for 5 minutes
+      try {
+        const connection = await this.redisService.getConnection('storage-write');
+        await connection.setex(cacheKey, 300, JSON.stringify(result));
+        await this.redisService.releaseConnection('storage-write');
+      } catch (redisError) {
+        console.log('Failed to cache applicants result');
+      }
       
       return result;
     } catch (error) {
@@ -1287,13 +1349,28 @@ export class DatabaseStorage implements IStorage {
     return createdApplicant;
   }
 
-  async updateApplicant(id: number, applicant: Partial<InsertApplicant>): Promise<Applicant | undefined> {
-    const [updatedApplicant] = await db
-      .update(applicants)
-      .set(applicant)
-      .where(eq(applicants.id, id))
-      .returning();
-    return updatedApplicant;
+  async updateApplicant(id: number, applicantData: Partial<InsertUser>): Promise<User | undefined> {
+    try {
+      const [updatedApplicant] = await db
+        .update(users)
+        .set(applicantData)
+        .where(and(eq(users.id, id), eq(users.role, 'applicant')))
+        .returning();
+      
+      // Invalidate applicants cache after update
+      try {
+        const connection = await this.redisService.getConnection('storage-write');
+        await connection.del('applicants:all');
+        await this.redisService.releaseConnection('storage-write');
+      } catch (redisError) {
+        console.log('Failed to invalidate applicants cache');
+      }
+      
+      return updatedApplicant;
+    } catch (error) {
+      console.error("Error in updateApplicant:", error);
+      return undefined;
+    }
   }
 
   async deleteApplicant(id: number): Promise<boolean> {
@@ -1554,7 +1631,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getShifts(): Promise<Shift[]> {
-    return await db.select().from(shifts);
+    const cacheKey = 'shifts:all';
+    
+    try {
+      // Try Redis cache first
+      try {
+        const connection = await this.redisService.getConnection('storage-read');
+        const cached = await connection.get(cacheKey);
+        if (cached) {
+          await this.redisService.releaseConnection('storage-read');
+          return JSON.parse(cached);
+        }
+        await this.redisService.releaseConnection('storage-read');
+      } catch (redisError) {
+        console.log('Redis cache miss for shifts, proceeding to database');
+      }
+      
+      const result = await db.select().from(shifts);
+      
+      // Cache the result for 2 minutes (shifts change frequently)
+      try {
+        const connection = await this.redisService.getConnection('storage-write');
+        await connection.setex(cacheKey, 120, JSON.stringify(result));
+        await this.redisService.releaseConnection('storage-write');
+      } catch (redisError) {
+        console.log('Failed to cache shifts result');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getShifts:", error);
+      return [];
+    }
   }
 
   async getShiftsBySchedule(scheduleId: number): Promise<Shift[]> {
