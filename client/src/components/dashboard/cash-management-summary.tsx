@@ -26,6 +26,15 @@ export function CashManagementSummary({ locationId }: CashManagementSummaryProps
   // Fetch cash counts for today
   const { data: cashCounts, isLoading } = useQuery<CashCount[]>({
     queryKey: ['/api/cash-counts/location', locationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/cash-counts/location/${locationId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch cash counts');
+      }
+      return response.json();
+    },
     enabled: !!locationId,
   });
 

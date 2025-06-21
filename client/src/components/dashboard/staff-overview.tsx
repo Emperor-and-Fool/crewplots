@@ -26,18 +26,45 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
   // Fetch staff members for the location
   const { data: staffMembers, isLoading: isLoadingStaff } = useQuery<Staff[]>({
     queryKey: ['/api/staff/location', locationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/staff/location/${locationId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch staff members');
+      }
+      return response.json();
+    },
     enabled: !!locationId,
   });
 
   // Fetch users to get names
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      const response = await fetch('/api/users', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return response.json();
+    },
     enabled: !!staffMembers,
   });
 
   // Fetch competencies
   const { data: competencies } = useQuery<Competency[]>({
     queryKey: ['/api/competencies/location', locationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/competencies/location/${locationId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch competencies');
+      }
+      return response.json();
+    },
     enabled: !!locationId,
   });
 
