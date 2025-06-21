@@ -64,7 +64,13 @@ export function ApplicantCard({ applicant, onClick, className = "" }: ApplicantC
           {applicant.phoneNumber && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="w-3 h-3" />
-              <span>{applicant.phoneNumber}</span>
+              <a 
+                href={`tel:${applicant.phoneNumber}`}
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {applicant.phoneNumber}
+              </a>
             </div>
           )}
           
