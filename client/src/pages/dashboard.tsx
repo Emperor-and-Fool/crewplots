@@ -105,14 +105,14 @@ export default function Dashboard() {
     }
   });
 
-  const { data: applicantsStats } = useQuery({
-    queryKey: ['/api/applicants'],
+  const { data: profileData } = useQuery({
+    queryKey: ['/api/profile-data'],
     queryFn: async () => {
-      const response = await fetch('/api/applicants', {
+      const response = await fetch('/api/profile-data', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch applicants');
+        throw new Error('Failed to fetch profile data');
       }
       return response.json();
     }
@@ -128,8 +128,8 @@ export default function Dashboard() {
     const hours = endHour - startHour;
     return total + hours;
   }, 0) || 0;
-  // Calculate applicant stats from the fetched data (cherry-pick applicants only)
-  const applicantUsers = applicantsStats?.filter(user => user.role === 'applicant') || [];
+  // Calculate applicant stats from profile data (cherry-pick applicants only)
+  const applicantUsers = profileData?.filter(user => user.role === 'applicant') || [];
   const newApplicants = applicantUsers?.filter(applicant => applicant.status === 'new').length || 0;
   const shortListedApplicants = applicantUsers?.filter(applicant => applicant.status === 'short-listed').length || 0;
   const totalApplicants = applicantUsers?.length || 0;
@@ -243,14 +243,14 @@ export default function Dashboard() {
             <div className="mb-8">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Applicants</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {applicantsStats?.filter(user => user.role === 'applicant').slice(0, 4).map((applicant) => (
+                {profileData?.filter(user => user.role === 'applicant').slice(0, 4).map((applicant) => (
                   <ApplicantCard
                     key={applicant.id}
                     applicant={applicant}
                     onClick={(id) => navigate(`/applicant/${id}`)}
                   />
                 ))}
-                {(!applicantsStats?.filter(user => user.role === 'applicant').length) && (
+                {(!profileData?.filter(user => user.role === 'applicant').length) && (
                   <div className="col-span-full text-center py-8 text-gray-500">
                     No applicants found
                   </div>

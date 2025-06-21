@@ -218,15 +218,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all users (unified data endpoint)
+  // Get all profile data (unified data endpoint)
+  app.get("/api/profile-data", async (req, res) => {
+    try {
+      const allUsers = await storage.getApplicants();
+      console.log(`[PROFILE DATA] Returning ${allUsers.length} user profiles for frontend cherry-picking`);
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      res.status(500).json({ error: "Failed to fetch profile data" });
+    }
+  });
+
+  // Legacy endpoint for backward compatibility
   app.get("/api/applicants", async (req, res) => {
     try {
       const allUsers = await storage.getApplicants();
-      console.log(`[UNIFIED API] Returning ${allUsers.length} users for frontend cherry-picking`);
-      res.json(allUsers);
+      const applicants = allUsers.filter(user => user.role === 'applicant');
+      console.log(`[LEGACY API] Returning ${applicants.length} applicants (filtered from ${allUsers.length} total users)`);
+      res.json(applicants);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
+      console.error("Error fetching applicants:", error);
+      res.status(500).json({ error: "Failed to fetch applicants" });
     }
   });
 
