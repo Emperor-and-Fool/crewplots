@@ -29,12 +29,19 @@ export function generatePublicId(length: number = 12): string {
 // Locations (different bars/restaurants)
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
+  public_id: text("public_id").unique(),
   name: text("name").notNull(),
   address: text("address"),
   contactPerson: text("contact_person"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
+  logoUrl: text("logo_url"), // File path for uploaded logo
+  welcomeContent: text("welcome_content"), // MongoDB ObjectId for rich content
+  status: text("status").default("active"), // active, inactive, archived
+  timezone: text("timezone").default("Europe/Amsterdam"),
+  settings: jsonb("settings"), // Location-specific settings
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   ownerId: integer("owner_id"), // Set after user creation to avoid circular reference
 });
 
@@ -367,7 +374,12 @@ export const redisSessions = pgTable("redis_sessions", {
 
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, public_id: true, createdAt: true });
-export const insertLocationSchema = createInsertSchema(locations).omit({ id: true, createdAt: true });
+export const insertLocationSchema = createInsertSchema(locations).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true, 
+  public_id: true 
+});
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
 export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
 export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({ createdAt: true });
@@ -493,5 +505,7 @@ export const hybridCache = pgTable(
     };
   }
 );
+
+
 
 
