@@ -48,18 +48,45 @@ export function WeeklySchedule({ locationId, weekStartDate = new Date() }: Weekl
   // Fetch the weekly schedule
   const { data: weeklySchedule } = useQuery({
     queryKey: ['/api/weekly-schedules/location', locationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/weekly-schedules/location/${locationId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch weekly schedule');
+      }
+      return response.json();
+    },
     enabled: !!locationId,
   });
 
   // Fetch schedule templates
   const { data: templates } = useQuery({
     queryKey: ['/api/schedule-templates/location', locationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/schedule-templates/location/${locationId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch schedule templates');
+      }
+      return response.json();
+    },
     enabled: !!locationId,
   });
 
   // Fetch shifts for the weekly schedule
   const { data: shifts } = useQuery<Shift[]>({
     queryKey: ['/api/shifts/schedule', weeklySchedule?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/shifts/schedule/${weeklySchedule?.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    },
     enabled: !!weeklySchedule?.id,
   });
 

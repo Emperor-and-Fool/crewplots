@@ -46,6 +46,15 @@ export default function Locations() {
   // Fetch locations
   const { data: locations, isLoading } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
   });
 
   // Delete mutation

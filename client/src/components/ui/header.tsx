@@ -41,6 +41,15 @@ export function Header({ className, onLocationChange }: HeaderProps) {
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
     queryKey: ["/api/locations"],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
     enabled: user?.role === "manager" || user?.role === "floor_manager"
   });
 

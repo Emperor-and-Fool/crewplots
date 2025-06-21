@@ -45,6 +45,15 @@ export default function Reports() {
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
   });
 
   // Calculate date ranges
