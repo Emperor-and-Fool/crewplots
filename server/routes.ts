@@ -243,10 +243,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all locations
+  // Get all locations with default query function support
   app.get("/api/locations", async (req, res) => {
     try {
       const locations = await storage.getLocations();
+      console.log(`[LOCATIONS API] Returning ${locations.length} locations`);
       res.json(locations);
     } catch (error) {
       console.error("Error fetching locations:", error);
