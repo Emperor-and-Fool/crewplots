@@ -26,10 +26,26 @@ function ApplicantDetail() {
   // Fetch applicant data using profile-data endpoint
   const { data: profileData, isLoading } = useQuery({
     queryKey: ['/api/profile-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/profile-data', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+      return response.json();
+    },
     enabled: !!applicantId,
   });
 
-  const applicant = profileData?.find((user: any) => user.id === applicantId && user.role === 'applicant');
+  const applicant = profileData?.find((user: any) => user.id === applicantId);
+  
+  console.log('Applicant lookup debug:', { 
+    applicantId, 
+    profileDataLength: profileData?.length, 
+    foundApplicant: !!applicant,
+    allUserIds: profileData?.map(u => ({ id: u.id, role: u.role }))
+  });
 
   // Get the status badge color
   const getStatusBadge = (status: string) => {
