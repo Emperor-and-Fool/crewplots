@@ -77,7 +77,7 @@ function ApplicantDetail() {
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
       const response = await fetch(`/api/applicants/${applicantId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
