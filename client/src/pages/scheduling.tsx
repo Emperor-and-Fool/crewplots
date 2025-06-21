@@ -29,6 +29,15 @@ export default function Scheduling() {
   // Fetch shift if editing
   const { data: shift } = useQuery({
     queryKey: ['/api/shifts', selectedShiftId],
+    queryFn: async () => {
+      const response = await fetch(`/api/shifts/${selectedShiftId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch shift');
+      }
+      return response.json();
+    },
     enabled: !!selectedShiftId && isEditingShift,
   });
 
