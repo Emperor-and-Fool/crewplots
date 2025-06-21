@@ -608,21 +608,28 @@ export function MessagingSystem({
                 </div>
               </div>
             ) : (
-              // Show button when no messages exist
-              <div className="flex flex-col items-center justify-center py-8">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full max-w-sm"
-                  onClick={() => {
-                    setEditingMessageId(-1);
-                    setEditContent('');
-                  }}
-                >
-                  <Edit2 className="h-5 w-5 mr-2" />
-                  {isNoteMode ? 'Write your motivation' : 'Start writing'}
-                </Button>
-              </div>
+              // Show button when no messages exist and not in read-only mode
+              !readOnlyMode ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full max-w-sm"
+                    onClick={() => {
+                      setEditingMessageId(-1);
+                      setEditContent('');
+                    }}
+                  >
+                    <Edit2 className="h-5 w-5 mr-2" />
+                    {isNoteMode ? 'Write your motivation' : 'Start writing'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <MessageCircle className="h-8 w-8 mb-2" />
+                  <p>No {isNoteMode ? 'notes' : 'messages'} available</p>
+                </div>
+              )
             )
           ) : hasCreatedMessage && filteredMessages.length === 0 && (isAutoSaving || autoSaveDraftMutation.isPending) ? (
             // Show loading state only when actively saving and no messages loaded yet
@@ -661,8 +668,8 @@ export function MessagingSystem({
                         {format(new Date(message.createdAt), 'MMM d, h:mm a')}
                       </span>
 
-                      {/* Edit and Delete buttons - only show for user's own messages */}
-                      {message.userId === userId && (
+                      {/* Edit and Delete buttons - only show for user's own messages and when not in read-only mode */}
+                      {message.userId === userId && !readOnlyMode && (
                         <div className="flex items-center gap-1 ml-2">
                           <Button
                             variant="ghost"
