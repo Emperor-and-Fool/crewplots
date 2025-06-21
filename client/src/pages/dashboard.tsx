@@ -6,7 +6,7 @@ import { Header } from "@/components/ui/header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
-import { ApplicantsSummary } from "@/components/dashboard/applicants-summary";
+
 import { ApplicantCard } from "@/components/ui/applicant-card";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
 import { PlusCircle, Trash2 } from "lucide-react";
@@ -265,10 +265,8 @@ export default function Dashboard() {
                 )}
               </div>
               
-              {/* Applicants Summary and Cash Management */}
+              {/* Cash Management */}
               <div className="lg:col-span-1 space-y-6">
-                <ApplicantsSummary locationId={selectedLocation || undefined} />
-                
                 {selectedLocation > 0 && (
                   <CashManagementSummary locationId={selectedLocation} />
                 )}
