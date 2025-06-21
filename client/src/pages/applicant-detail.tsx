@@ -40,8 +40,10 @@ function ApplicantDetail() {
         return 'bg-blue-100 text-blue-800';
       case 'interviewed':
         return 'bg-blue-500 text-white';
-      case 'hired':
+      case 'short-listed':
         return 'bg-green-500 text-white';
+      case 'hired':
+        return 'bg-purple-500 text-white';
       case 'rejected':
         return 'bg-red-500 text-white';
       default:
@@ -95,12 +97,59 @@ function ApplicantDetail() {
           </div>
         </div>
         <Badge className={getStatusBadge(applicant.status || 'new')}>
-          {applicant.status || 'new'}
+          {applicant.status === 'short-listed' ? 'Short-listed' : (applicant.status || 'new')}
         </Badge>
       </div>
 
-      {/* Profile Card - matching applicant-portal structure */}
-      <ProfileCard userId={applicant.id} className="mb-8" />
+      {/* Profile Section - Read-only */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+          <CardDescription>Applicant details and contact information</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-medium text-gray-700">Name</h3>
+              <p className="text-gray-900">{applicant.name}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-700">Username</h3>
+              <p className="text-gray-900">{applicant.username}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-700">Email</h3>
+              <a 
+                href={`mailto:${applicant.email}`}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {applicant.email}
+              </a>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-700">Phone</h3>
+              {applicant.phone ? (
+                <a 
+                  href={`tel:${applicant.phone}`}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {applicant.phone}
+                </a>
+              ) : (
+                <p className="text-gray-500">Not provided</p>
+              )}
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-700">Date of Birth</h3>
+              <p className="text-gray-900">{applicant.dateOfBirth || 'Not provided'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-700">Address</h3>
+              <p className="text-gray-900">{applicant.address || 'Not provided'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Messaging system - Read-only mode */}
       <Card className="mb-8">
