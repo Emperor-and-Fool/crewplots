@@ -240,6 +240,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get staff by location - needed for dashboard
+  app.get("/api/staff/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId) || locationId === 0) {
+        return res.json([]); // Return empty array for invalid/zero location
+      }
+      
+      const staff = await storage.getUsersByLocation(locationId);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching staff by location:", error);
+      res.status(500).json({ error: "Failed to fetch staff" });
+    }
+  });
+
+  // Get all shifts - needed for dashboard
+  app.get("/api/shifts", async (req, res) => {
+    try {
+      const shifts = await storage.getShifts();
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ error: "Failed to fetch shifts" });
+    }
+  });
+
+  // Get applicants by status - needed for dashboard
+  app.get("/api/applicants/status/:status", async (req, res) => {
+    try {
+      const status = req.params.status;
+      const applicants = await storage.getApplicantsByStatus(status);
+      res.json(applicants);
+    } catch (error) {
+      console.error("Error fetching applicants by status:", error);
+      res.status(500).json({ error: "Failed to fetch applicants by status" });
+    }
+  });
+
   // Redis connection monitoring endpoint
   app.get("/api/debug/redis-connections", (req, res) => {
     try {

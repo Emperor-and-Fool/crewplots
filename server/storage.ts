@@ -1334,8 +1334,7 @@ export class DatabaseStorage implements IStorage {
       // Get users with applicant role filtered by status from unified users table
       const result = await db.select()
         .from(users)
-        .where(eq(users.role, 'applicant'))
-        .where(eq(users.status, status));
+        .where(and(eq(users.role, 'applicant'), eq(users.status, status)));
       
       return result;
     } catch (error) {
