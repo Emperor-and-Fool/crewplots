@@ -122,6 +122,11 @@ export default function Dashboard() {
   const newApplicants = applicantUsers?.filter(applicant => applicant.status === 'new').length || 0;
   const shortListedApplicants = applicantUsers?.filter(applicant => applicant.status === 'short-listed').length || 0;
   const totalApplicants = applicantUsers?.length || 0;
+  
+  // Debug logging
+  console.log('Profile data loaded:', profileData?.length || 0, 'total users');
+  console.log('Applicant users found:', applicantUsers.length);
+  console.log('Total applicants:', totalApplicants, 'New:', newApplicants, 'Short-listed:', shortListedApplicants);
 
   // Handle location change from header
   const handleLocationChange = (locationId: number) => {
