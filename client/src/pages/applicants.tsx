@@ -504,11 +504,11 @@ export default function Applicants() {
                       </div>
                     </div>
 
-                    {/* Hired */}
+                    {/* Recently Hired */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Hired</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Recently Hired</h3>
                       <div className="space-y-3">
-                        {filteredApplicants?.filter(app => app.status === 'hired').map((applicant) => {
+                        {filteredApplicants?.filter(app => app.status === 'hired').slice(0, 10).map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
@@ -537,7 +537,12 @@ export default function Applicants() {
                         })}
                         {filteredApplicants?.filter(app => app.status === 'hired').length === 0 && (
                           <div className="text-center py-8 text-gray-500">
-                            <p>No hired applicants</p>
+                            <p>No recent hires</p>
+                          </div>
+                        )}
+                        {filteredApplicants?.filter(app => app.status === 'hired').length > 10 && (
+                          <div className="text-center py-2 text-gray-400 text-sm">
+                            <p>Showing 10 most recent hires</p>
                           </div>
                         )}
                       </div>
