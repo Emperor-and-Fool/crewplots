@@ -97,9 +97,21 @@ export default function Applicants() {
       },
     });
 
-    // Find the applicant to check for motivational text
-    const applicant = applicants?.find(a => a.id === applicantId);
-    const hasMotivationalText = applicant?.notes && applicant.notes.trim().length > 0;
+    // Check for motivational text in MongoDB messaging system
+    const { data: motivationalNotes } = useQuery<any[]>({
+      queryKey: ['/api/messaging/notes/applicant', applicantId],
+      queryFn: async () => {
+        const response = await fetch(`/api/messaging/notes/applicant/${applicantId}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch motivational notes');
+        }
+        return response.json();
+      },
+    });
+
+    const hasMotivationalText = motivationalNotes && motivationalNotes.length > 0;
 
     if (isLoading) {
       return (
