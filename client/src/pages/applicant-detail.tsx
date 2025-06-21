@@ -99,60 +99,13 @@ function ApplicantDetail() {
         </Badge>
       </div>
 
-      {/* Profile Section - Read-only */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Applicant details and contact information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium text-gray-700">Name</h3>
-              <p className="text-gray-900">{applicant.name}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-700">Username</h3>
-              <p className="text-gray-900">{applicant.username}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-700">Email</h3>
-              <a 
-                href={`mailto:${applicant.email}`}
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
-                {applicant.email}
-              </a>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-700">Phone</h3>
-              {applicant.phone ? (
-                <a 
-                  href={`tel:${applicant.phone}`}
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  {applicant.phone}
-                </a>
-              ) : (
-                <p className="text-gray-500">Not provided</p>
-              )}
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-700">Date of Birth</h3>
-              <p className="text-gray-900">{applicant.dateOfBirth || 'Not provided'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-700">Address</h3>
-              <p className="text-gray-900">{applicant.address || 'Not provided'}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Profile Card - matching applicant-portal structure */}
+      <ProfileCard userId={applicant.id} className="mb-8" />
 
       {/* Messaging system - Read-only mode */}
       <Card className="mb-8">
         <CardHeader className="pb-2">
-          <CardTitle>Application Documents & Motivation</CardTitle>
+          <CardTitle>Their Documents & Motivation</CardTitle>
           <CardDescription>Read-only view of applicant's notes and documents</CardDescription>
         </CardHeader>
         <CardContent>
