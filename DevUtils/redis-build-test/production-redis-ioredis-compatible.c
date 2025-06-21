@@ -490,7 +490,7 @@ int main() {
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    addr.sin_port = htons(6380);
+    addr.sin_port = htons(6379);
     
     if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         perror("bind");
@@ -502,7 +502,7 @@ int main() {
         return 1;
     }
     
-    printf("Redis-compatible server listening on 127.0.0.1:6380\n");
+    printf("Redis-compatible server listening on 127.0.0.1:6379\n");
     
     while (running) {
         fd_set readfds, writefds;
