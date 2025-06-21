@@ -221,8 +221,9 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, deletedMessageId) => {
-      // Directly update cache by removing the deleted message
-      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
+      // Update cache using the correct query key
+      const currentQueryKey = [getNotesEndpoint(), userId];
+      queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
         return old.filter(msg => msg.id !== deletedMessageId);
       });
       
@@ -260,8 +261,9 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, { messageId, content }) => {
-      // Directly update cache with the new content
-      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
+      // Update cache using the correct query key
+      const currentQueryKey = [getNotesEndpoint(), userId];
+      queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
         return old.map(msg => 
           msg.id === messageId 
             ? { ...msg, content, updatedAt: new Date() }

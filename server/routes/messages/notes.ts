@@ -381,8 +381,8 @@ router.get('/applicant/:applicantId', requireAuth, async (req: any, res) => {
     
     console.log(`[APPLICANT NOTES] Cache miss for key: ${cacheKey}`);
     
-    // Cache miss - fetch from database
-    console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry for applicant');
+    // Cache miss - fetch from database using same pattern as regular notes endpoint
+    console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry');
     const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(applicantId));
     
     // Cache the results
