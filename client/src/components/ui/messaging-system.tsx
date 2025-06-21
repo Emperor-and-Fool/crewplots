@@ -151,11 +151,21 @@ export function MessagingSystem({
     },
   });
 
+  // Determine the correct API endpoint based on readOnlyMode and user context
+  const getNotesEndpoint = () => {
+    if (readOnlyMode && isNoteMode && userId) {
+      // When in read-only mode (viewing applicant notes), use the applicant-specific endpoint
+      return `/api/messaging/notes/applicant/${userId}`;
+    }
+    // Normal mode - user viewing their own notes or messages
+    return isNoteMode ? '/api/messaging/notes' : '/api/messaging/messages';
+  };
+
   // Fetch data via proper hybrid architecture - PostgreSQL first, then MongoDB content
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: isNoteMode ? ['/api/messaging/notes', userId] : ['/api/messaging/messages', userId],
+    queryKey: [getNotesEndpoint(), userId],
     queryFn: async () => {
-      const endpoint = isNoteMode ? '/api/messaging/notes' : '/api/messaging/messages';
+      const endpoint = getNotesEndpoint();
       const response = await fetch(endpoint, {
         credentials: 'include'
       });

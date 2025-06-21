@@ -316,4 +316,118 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
   }
 });
 
+// Get notes for a specific applicant (for managers/hiring team)
+router.get('/applicant/:applicantId', requireAuth, async (req: any, res) => {
+  try {
+    const applicantId = parseInt(req.params.applicantId);
+    const currentUserId = req.user.id;
+    const currentUserRole = req.user.role;
+    
+    if (isNaN(applicantId)) {
+      return res.status(400).json({ error: 'Invalid applicant ID' });
+    }
+    
+    // Check if current user has permission to view applicant notes
+    const canViewApplicantNotes = ['manager', 'floor_manager', 'administrator'].includes(currentUserRole);
+    
+    if (!canViewApplicantNotes) {
+      return res.status(403).json({ error: 'Not authorized to view applicant notes' });
+    }
+    
+    console.log(`✅ APPLICANT NOTES ROUTE HIT: GET /api/messaging/notes/applicant/${applicantId} by ${currentUserRole} user ${currentUserId}`);
+    
+    // Try Redis cache first
+    const cacheKey = `user:${applicantId}:notes`;
+    const sessionId = req.sessionID;
+    console.log(`[APPLICANT NOTES] Attempting cache lookup for key: ${cacheKey}, session: ${sessionId.substring(0, 8)}`);
+    
+    let cachedNotes = null;
+    try {
+      console.log(`[APPLICANT NOTES] Starting Redis cache lookup with 9-second timeout...`);
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Redis cache operation timeout after 9 seconds'));
+        }, 9000);
+      });
+      
+      const cachePromise = hybridCacheService.get(cacheKey, { 
+        category: 'user-notes',
+        connectionId: `notes-${applicantId}`,
+        sessionId: sessionId
+      });
+      
+      cachedNotes = await Promise.race([cachePromise, timeoutPromise]);
+      console.log(`[APPLICANT NOTES] Cache service call completed, result: ${cachedNotes ? 'HIT' : 'MISS'}`);
+    } catch (error: any) {
+      if (error.message && error.message.includes('timeout')) {
+        console.error(`[APPLICANT NOTES] 🚨 REDIS TIMEOUT: Cache operation failed after 9 seconds - ${error.message}`);
+        console.log(`[APPLICANT NOTES] Falling back to direct database access due to Redis timeout`);
+        res.locals.redisFailure = true;
+        res.locals.failureReason = 'Redis cache timeout after 9 seconds';
+      } else {
+        console.error(`[APPLICANT NOTES] Cache service error:`, error);
+        res.locals.redisFailure = true;
+        res.locals.failureReason = 'Redis cache service error';
+      }
+    }
+    
+    if (cachedNotes) {
+      console.log(`🚀 Redis cache hit for applicant ${applicantId} notes, type: ${typeof cachedNotes}, length: ${Array.isArray(cachedNotes) ? cachedNotes.length : 'N/A'}`);
+      res.setHeader('X-Cache-Status', 'redis-hit');
+      res.setHeader('X-Debug-Message', 'Applicant notes loaded from Redis cache');
+      return res.json(cachedNotes);
+    }
+    
+    console.log(`[APPLICANT NOTES] Cache miss for key: ${cacheKey}`);
+    
+    // Cache miss - fetch from database
+    console.log('🔍 Using MessageService for hybrid retrieval with MongoDB retry for applicant');
+    const messages = await withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(applicantId));
+    
+    // Cache the results
+    console.log(`[APPLICANT NOTES] Attempting to cache ${messages.length} notes with key: ${cacheKey}`);
+    try {
+      console.log(`[APPLICANT NOTES] Starting Redis cache SET with 10-second timeout...`);
+      
+      const setTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Redis cache SET timeout after 10 seconds'));
+        }, 10000);
+      });
+      
+      const setCachePromise = hybridCacheService.set(cacheKey, messages, { 
+        ttl: 3600,
+        category: 'user-notes',
+        connectionId: `notes-${applicantId}`,
+        sessionId: sessionId
+      });
+      
+      const cacheSuccess = await Promise.race([setCachePromise, setTimeoutPromise]);
+      console.log(`[APPLICANT NOTES] Cache SET result: ${cacheSuccess ? 'SUCCESS' : 'FAILED'}`);
+    } catch (cacheError: any) {
+      if (cacheError.message && cacheError.message.includes('timeout')) {
+        console.error(`[APPLICANT NOTES] 🚨 REDIS SET TIMEOUT: Cache SET operation failed after 10 seconds - ${cacheError.message}`);
+      } else {
+        console.error(`[APPLICANT NOTES] Cache SET error:`, cacheError);
+      }
+    }
+    
+    console.log(`Fetched ${messages.length} notes for applicant ${applicantId} and cached`);
+    
+    if (res.locals.redisFailure) {
+      res.setHeader('X-Cache-Status', 'postgres-fallback');
+      res.setHeader('X-Debug-Message', `Redis failed - fell back to PostgreSQL cache: ${res.locals.failureReason}`);
+    } else {
+      res.setHeader('X-Cache-Status', 'database-fetch');
+      res.setHeader('X-Debug-Message', 'Fresh applicant notes fetched from database and cached successfully');
+    }
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching applicant notes:', error);
+    res.status(500).json({ error: 'Failed to fetch applicant notes' });
+  }
+});
+
 export default router;
