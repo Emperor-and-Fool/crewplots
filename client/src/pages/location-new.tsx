@@ -106,7 +106,7 @@ function NewLocationPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Create New Location</h1>
-          <p className="text-gray-600">Add a new restaurant or bar location</p>
+          <p className="text-gray-600">Add a new hotel location or property</p>
         </div>
       </div>
 
@@ -168,7 +168,7 @@ function NewLocationPage() {
                   <FormItem>
                     <FormLabel>Location Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Downtown Bistro" {...field} />
+          <Input placeholder="e.g., Grand Hotel Amsterdam" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

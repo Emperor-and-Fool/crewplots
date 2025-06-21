@@ -123,7 +123,16 @@ function App() {
               <Route path="/locations">
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
-                    component={Locations} 
+                    component={LocationsPage} 
+                    requiredRoles={["manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/locations/new">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={LocationNewPage} 
                     requiredRoles={["manager"]} 
                   /> : 
                   <Redirect to="/login" />}

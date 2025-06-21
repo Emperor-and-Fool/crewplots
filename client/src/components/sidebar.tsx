@@ -9,7 +9,8 @@ import {
   DollarSign, 
   FileBarChart, 
   Settings,
-  CheckCircle2
+  CheckCircle2,
+  Building2
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -25,6 +26,7 @@ export function Sidebar() {
 
   const navItems = [
     { path: "/", icon: BarChart3, label: "Dashboard" },
+    { path: "/locations", icon: Building2, label: "Locations" },
     { path: "/rooms", icon: Bed, label: "Rooms" },
     { path: "/reservations", icon: CalendarCheck, label: "Reservations" },
     { path: "/guests", icon: Users, label: "Guests" },

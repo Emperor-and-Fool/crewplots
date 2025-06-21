@@ -331,6 +331,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new location
+  app.post("/api/locations", async (req, res) => {
+    try {
+      const locationData = req.body;
+      console.log("[LOCATIONS API] Creating location:", locationData);
+      
+      const newLocation = await storage.createLocation(locationData);
+      res.status(201).json(newLocation);
+    } catch (error) {
+      console.error("Error creating location:", error);
+      res.status(500).json({ error: "Failed to create location" });
+    }
+  });
+
+  // Get specific location
+  app.get("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const location = await storage.getLocation(locationId);
+      if (!location) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      
+      res.json(location);
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      res.status(500).json({ error: "Failed to fetch location" });
+    }
+  });
+
+  // Update location
+  app.patch("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const updates = req.body;
+      console.log(`[LOCATIONS API] Updating location ${locationId} with:`, updates);
+      
+      const updatedLocation = await storage.updateLocation(locationId, updates);
+      if (!updatedLocation) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      
+      res.json(updatedLocation);
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  // Delete location
+  app.delete("/api/locations/:id", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const success = await storage.deleteLocation(locationId);
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Location not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      res.status(500).json({ error: "Failed to delete location" });
+    }
+  });
+
   // Legacy staff endpoint removed - now using unified profile data
 
   // Get all shifts - needed for dashboard
