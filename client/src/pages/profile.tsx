@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, MapPin, Calendar, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, Mail, Phone, MapPin, Calendar, Users, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { useLocation } from 'wouter';
 
 interface UserProfile {
   id: number;
@@ -19,6 +21,7 @@ interface UserProfile {
 }
 
 export default function Profile() {
+  const [, navigate] = useLocation();
   const { data: profile, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['/api/profile'],
     queryFn: async () => {
@@ -125,6 +128,18 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
+        {/* Back to Dashboard Button */}
+        <div className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
