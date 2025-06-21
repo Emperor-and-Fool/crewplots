@@ -87,7 +87,7 @@ export default function Dashboard() {
   });
 
   const { data: applicantsStats } = useQuery({
-    queryKey: ['/api/applicants/status/new'],
+    queryKey: ['/api/applicants'],
   });
 
   // Count data
@@ -100,7 +100,10 @@ export default function Dashboard() {
     const hours = endHour - startHour;
     return total + hours;
   }, 0) || 0;
-  const newApplicants = applicantsStats?.length || 0;
+  // Calculate applicant stats from the fetched data
+  const newApplicants = applicantsStats?.filter(applicant => applicant.status === 'new').length || 0;
+  const shortListedApplicants = applicantsStats?.filter(applicant => applicant.status === 'short-listed').length || 0;
+  const totalApplicants = applicantsStats?.length || 0;
 
   // Handle location change from header
   const handleLocationChange = (locationId: number) => {
