@@ -76,6 +76,8 @@ function ApplicantDetail() {
   // Status update mutation
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
+      console.log(`Updating applicant ${applicantId} status to: ${newStatus}`);
+      
       const response = await fetch(`/api/applicants/${applicantId}`, {
         method: 'PATCH',
         headers: {
@@ -85,13 +87,21 @@ function ApplicantDetail() {
         body: JSON.stringify({ status: newStatus }),
       });
 
+      console.log(`Response status: ${response.status}, ok: ${response.ok}`);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Update failed: ${response.status} ${response.statusText} - ${errorText}`);
         throw new Error(`Failed to update status: ${response.statusText}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log('Update successful, result:', result);
+      return result;
     },
     onSuccess: (data, newStatus) => {
+      console.log('Mutation success handler called with:', { data, newStatus });
+      
       // Update the local cache
       queryClient.setQueryData(['/api/profile-data'], (old: any[]) => {
         if (!old) return old;
@@ -108,9 +118,10 @@ function ApplicantDetail() {
       });
     },
     onError: (error: any) => {
+      console.error('Mutation error handler called with:', error);
       toast({
         title: 'Failed to update status',
-        description: error.message,
+        description: error.message || 'Unknown error occurred',
         variant: 'destructive',
       });
     },
