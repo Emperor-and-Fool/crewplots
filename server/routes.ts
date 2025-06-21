@@ -170,32 +170,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register API endpoints FIRST before other routes to prevent conflicts
   
-  // Get individual applicant by ID
+  // Get individual user by ID
+  app.get("/api/users/:id", async (req, res) => {
+    console.log("Individual user endpoint hit with ID:", req.params.id);
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        console.log("Invalid user ID:", req.params.id);
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      console.log("Fetching user with ID:", userId);
+      const user = await storage.getUserById(userId);
+      console.log("Database result:", user ? "Found" : "Not found");
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  // Legacy: Get individual applicant by ID  
   app.get("/api/applicants/:id", async (req, res) => {
-    console.log("Individual applicant endpoint hit with ID:", req.params.id);
+    console.log("Legacy applicant endpoint hit with ID:", req.params.id);
     try {
       const applicantId = parseInt(req.params.id);
       if (isNaN(applicantId)) {
-        console.log("Invalid applicant ID:", req.params.id);
         return res.status(400).json({ error: "Invalid applicant ID" });
       }
       
-      console.log("Fetching applicant with ID:", applicantId);
-      const applicant = await storage.getApplicant(applicantId);
-      console.log("Database result:", applicant ? "Found" : "Not found");
+      const user = await storage.getUserById(applicantId);
       
-      if (!applicant) {
+      if (!user || user.role !== 'applicant') {
         return res.status(404).json({ error: "Applicant not found" });
       }
       
-      res.json(applicant);
+      res.json(user);
     } catch (error) {
       console.error("Error fetching applicant:", error);
       res.status(500).json({ error: "Failed to fetch applicant" });
     }
   });
 
-  // Update individual applicant
+  // Update individual user
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const updateData = req.body;
+      console.log(`Updating user ${userId} with data:`, updateData);
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (updatedUser) {
+        res.json(updatedUser);
+      } else {
+        res.status(404).json({ error: "User not found" });
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Legacy: Update individual applicant
   app.patch("/api/applicants/:id", async (req, res) => {
     try {
       const applicantId = parseInt(req.params.id);
@@ -206,9 +251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = req.body;
       console.log(`Updating applicant ${applicantId} with data:`, updateData);
       
-      const updatedApplicant = await storage.updateApplicant(applicantId, updateData);
-      if (updatedApplicant) {
-        res.json(updatedApplicant);
+      const user = await storage.getUserById(applicantId);
+      if (!user || user.role !== 'applicant') {
+        return res.status(404).json({ error: "Applicant not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(applicantId, updateData);
+      if (updatedUser) {
+        res.json(updatedUser);
       } else {
         res.status(404).json({ error: "Applicant not found" });
       }
@@ -219,21 +269,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all profile data (unified data endpoint)
-  app.get("/api/profile-data", async (req, res) => {
+  app.get("/api/users", async (req, res) => {
     try {
-      const allUsers = await storage.getApplicants();
-      console.log(`[PROFILE DATA] Returning ${allUsers.length} user profiles for frontend cherry-picking`);
+      const allUsers = await storage.getUsers();
+      console.log(`[USERS API] Returning ${allUsers.length} user profiles`);
       res.json(allUsers);
     } catch (error) {
-      console.error("Error fetching profile data:", error);
-      res.status(500).json({ error: "Failed to fetch profile data" });
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Get users by role - unified endpoint
+  app.get("/api/users/role/:role", async (req, res) => {
+    try {
+      const role = req.params.role;
+      const allUsers = await storage.getUsers();
+      const filteredUsers = allUsers.filter(user => user.role === role);
+      console.log(`[USERS API] Returning ${filteredUsers.length} users with role '${role}' (filtered from ${allUsers.length} total users)`);
+      res.json(filteredUsers);
+    } catch (error) {
+      console.error("Error fetching users by role:", error);
+      res.status(500).json({ error: "Failed to fetch users by role" });
     }
   });
 
   // Legacy endpoint for backward compatibility
   app.get("/api/applicants", async (req, res) => {
     try {
-      const allUsers = await storage.getApplicants();
+      const allUsers = await storage.getUsers();
       const applicants = allUsers.filter(user => user.role === 'applicant');
       console.log(`[LEGACY API] Returning ${applicants.length} applicants (filtered from ${allUsers.length} total users)`);
       res.json(applicants);
