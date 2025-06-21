@@ -15,6 +15,7 @@ import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
+import ApplicantDetail from "@/pages/applicant-detail";
 import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
@@ -153,6 +154,15 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={Applicants} 
+                    requiredRoles={["manager", "floor_manager"]} 
+                  /> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/applicant/:id">
+                {isAuthenticated ? 
+                  <RoleProtectedRoute 
+                    component={ApplicantDetail} 
                     requiredRoles={["manager", "floor_manager"]} 
                   /> : 
                   <Redirect to="/login" />}
