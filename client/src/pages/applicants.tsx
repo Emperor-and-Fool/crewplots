@@ -97,7 +97,7 @@ export default function Applicants() {
       },
     });
 
-    // Check for motivational text in MongoDB messaging system
+    // Check for motivational text in messaging system
     const { data: motivationalNotes } = useQuery<any[]>({
       queryKey: ['/api/messaging/notes/applicant', applicantId],
       queryFn: async () => {
