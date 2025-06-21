@@ -23,15 +23,15 @@ function ApplicantDetail() {
   const applicantId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
 
-  // Fetch user data using users endpoint
+  // Fetch applicant data using profile-data endpoint
   const { data: profileData, isLoading } = useQuery({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/profile-data'],
     queryFn: async () => {
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/profile-data', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error('Failed to fetch profile data');
       }
       return response.json();
     },
@@ -142,6 +142,7 @@ function ApplicantDetail() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       
       toast({

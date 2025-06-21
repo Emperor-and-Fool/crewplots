@@ -269,6 +269,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all profile data (unified data endpoint)
+  app.get("/api/profile-data", async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      console.log(`[PROFILE DATA] Returning ${allUsers.length} user profiles for frontend cherry-picking`);
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      res.status(500).json({ error: "Failed to fetch profile data" });
+    }
+  });
+
+  // Get all users (unified data endpoint)
   app.get("/api/users", async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
