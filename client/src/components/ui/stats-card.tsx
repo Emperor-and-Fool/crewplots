@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 interface StatsCardProps {
   title: string;
   value: string | number;
+  subtitle?: string;
   icon: React.ReactNode;
   link?: {
     text: string;
@@ -15,6 +16,7 @@ interface StatsCardProps {
 export function StatsCard({
   title,
   value,
+  subtitle,
   icon,
   link,
   onClick,
@@ -36,6 +38,11 @@ export function StatsCard({
                 <div className="text-lg font-medium text-gray-900">
                   {value}
                 </div>
+                {subtitle && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {subtitle}
+                  </div>
+                )}
               </dd>
             </dl>
           </div>

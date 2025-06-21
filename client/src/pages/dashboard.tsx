@@ -194,8 +194,9 @@ export default function Dashboard() {
               />
               
               <StatsCard
-                title="New Applicants"
-                value={newApplicants}
+                title="Total Applicants"
+                value={totalApplicants}
+                subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
                 icon={<UserPlus className="h-6 w-6" />}
                 link={{ text: "Review applicants", href: "/applicants" }}
                 onClick={() => navigate("/applicants")}
