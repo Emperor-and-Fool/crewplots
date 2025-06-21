@@ -1,50 +1,16 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { Sidebar } from "@/components/ui/sidebar";
-import { MobileNavbar } from "@/components/ui/mobile-navbar";
-import { Header } from "@/components/ui/header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { LocationForm } from "@/components/locations/location-form";
-import { PlusCircle, Pencil, Trash2, MapPin, Phone, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Location } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useLocation } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Phone, Mail, Plus, Settings, Building2 } from 'lucide-react';
+import type { Location } from '@shared/schema';
 
-export default function Locations() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [, setLocation] = useLocation();
-  const navigate = (to: string) => setLocation(to);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
+function LocationsPage() {
+  const [, navigate] = useLocation();
 
-  // Check if user has manager role
-  const isManager = user?.role === "manager";
-
-  // Fetch locations
-  const { data: locations, isLoading } = useQuery<Location[]>({
+  const { data: locations, isLoading } = useQuery({
     queryKey: ['/api/locations'],
     queryFn: async () => {
       const response = await fetch('/api/locations', {
@@ -53,216 +19,153 @@ export default function Locations() {
       if (!response.ok) {
         throw new Error('Failed to fetch locations');
       }
-      return response.json();
+      return response.json() as Location[];
     },
   });
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/locations/${id}`, undefined);
-    },
-    onSuccess: async () => {
-      // Invalidate locations query
-      await queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
-      
-      toast({
-        title: "Location Deleted",
-        description: "The location has been deleted successfully",
-      });
-      
-      setDeleteDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Error deleting location:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete location. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle edit location
-  const handleEdit = (location: Location) => {
-    setSelectedLocation(location);
-    setShowForm(true);
-  };
-
-  // Handle delete location
-  const handleDelete = (location: Location) => {
-    setSelectedLocation(location);
-    setDeleteDialogOpen(true);
-  };
-
-  // Confirm delete
-  const confirmDelete = () => {
-    if (selectedLocation) {
-      deleteMutation.mutate(selectedLocation.id);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'archived':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
     }
   };
 
-  // If not a manager, redirect to dashboard
-  if (!isLoading && !isManager) {
-    navigate("/dashboard");
-    return null;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Locations</h1>
+            <p className="text-gray-600">Manage your restaurant and bar locations</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for larger screens */}
-      <Sidebar />
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile navigation */}
-        <MobileNavbar />
-        
-        {/* Top header with search and user */}
-        <Header />
-        
-        {/* Main scrollable area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {showForm ? (
-              // Show location form
-              <div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowForm(false);
-                    setSelectedLocation(null);
-                  }}
-                  className="mb-4"
-                >
-                  Back to Locations
-                </Button>
-                <LocationForm 
-                  location={selectedLocation || undefined} 
-                  isEditing={!!selectedLocation} 
-                />
-              </div>
-            ) : (
-              // Show locations list
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Locations</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Manage all your bar and restaurant locations
-                    </p>
-                  </div>
-                  <Button onClick={() => setShowForm(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Location
-                  </Button>
-                </div>
+    <div className="container mx-auto py-10 px-4">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Locations</h1>
+          <p className="text-gray-600">Manage your restaurant and bar locations</p>
+        </div>
+        <Button onClick={() => navigate('/locations/new')} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add New Location
+        </Button>
+      </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>All Locations</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="flex justify-center py-4">
-                        <p>Loading locations...</p>
-                      </div>
-                    ) : locations && locations.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Address</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {locations.map((location) => (
-                            <TableRow key={location.id}>
-                              <TableCell className="font-medium">{location.name}</TableCell>
-                              <TableCell>
-                                <div className="flex items-start">
-                                  <MapPin className="h-4 w-4 mr-1 mt-1 flex-shrink-0 text-gray-400" />
-                                  <span>{location.address || 'No address provided'}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="space-y-1">
-                                  <div className="flex items-center">
-                                    <Mail className="h-4 w-4 mr-1 text-gray-400" />
-                                    <span className="text-sm">{location.contactEmail || 'N/A'}</span>
-                                  </div>
-                                  <div className="flex items-center">
-                                    <Phone className="h-4 w-4 mr-1 text-gray-400" />
-                                    <span className="text-sm">{location.contactPhone || 'N/A'}</span>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEdit(location)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Edit</span>
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-red-500 hover:text-red-600"
-                                    onClick={() => handleDelete(location)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">Delete</span>
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+      {locations && locations.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {locations.map((location) => (
+            <Card key={location.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {location.logoUrl ? (
+                      <img 
+                        src={location.logoUrl} 
+                        alt={`${location.name} logo`}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
                     ) : (
-                      <div className="text-center py-6">
-                        <p className="text-gray-500">No locations found</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={() => setShowForm(true)}
-                        >
-                          Add your first location
-                        </Button>
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-white" />
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
+                    <div>
+                      <CardTitle className="text-lg">{location.name}</CardTitle>
+                      <CardDescription>{location.timezone}</CardDescription>
+                    </div>
+                  </div>
+                  <Badge className={getStatusBadge(location.status || 'active')}>
+                    {location.status || 'active'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {location.address && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{location.address}</span>
+                  </div>
+                )}
+                
+                {location.contactEmail && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Mail className="h-4 w-4 flex-shrink-0" />
+                    <span>{location.contactEmail}</span>
+                  </div>
+                )}
+                
+                {location.contactPhone && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Phone className="h-4 w-4 flex-shrink-0" />
+                    <span>{location.contactPhone}</span>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate(`/locations/${location.id}`)}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate(`/location/${location.public_id || location.id}/dashboard`)}
+                  >
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">No locations</h3>
+          <p className="mt-1 text-sm text-gray-500">Get started by creating your first location.</p>
+          <div className="mt-6">
+            <Button onClick={() => navigate('/locations/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Location
+            </Button>
           </div>
-        </main>
-      </div>
-      
-      {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Location</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{selectedLocation?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }
+
+export default LocationsPage;

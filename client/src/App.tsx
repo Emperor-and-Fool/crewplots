@@ -11,6 +11,8 @@ import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
 import Locations from "@/pages/locations";
+import LocationsPage from "@/pages/locations";
+import LocationNewPage from "@/pages/location-new";
 import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";

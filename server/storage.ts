@@ -1112,17 +1112,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLocation(location: InsertLocation): Promise<Location> {
-    const [createdLocation] = await db.insert(locations).values(location).returning();
+    const locationData = {
+      ...location,
+      public_id: generatePublicId(12),
+      updatedAt: new Date()
+    };
+    const [createdLocation] = await db.insert(locations).values(locationData).returning();
     return createdLocation;
   }
 
   async updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined> {
+    const updateData = {
+      ...location,
+      updatedAt: new Date()
+    };
     const [updatedLocation] = await db
       .update(locations)
-      .set(location)
+      .set(updateData)
       .where(eq(locations.id, id))
       .returning();
     return updatedLocation;
+  }
+
+  async getLocationByPublicId(publicId: string): Promise<Location | undefined> {
+    const [location] = await db.select().from(locations).where(eq(locations.public_id, publicId));
+    return location;
   }
 
   async deleteLocation(id: number): Promise<boolean> {
