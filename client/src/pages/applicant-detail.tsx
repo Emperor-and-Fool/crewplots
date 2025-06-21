@@ -120,6 +120,53 @@ function ApplicantDetail() {
     updateStatusMutation.mutate(newStatus);
   };
 
+  // Promotion mutation - changes role from applicant to crew_member
+  const promotionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/users/${applicantId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          role: 'crew_member',
+          status: 'hired'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to promote user: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      toast({
+        title: "Success",
+        description: `${applicant?.name} has been promoted to crew member with full dashboard access`,
+      });
+      
+      // Navigate back to see updated user list
+      navigate('/dashboard');
+    },
+    onError: (error) => {
+      console.error('Error promoting applicant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to promote applicant. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const promoteToCrewMember = () => {
+    promotionMutation.mutate();
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -270,12 +317,12 @@ function ApplicantDetail() {
               Reject
             </Button>
             <Button 
-              onClick={() => updateApplicantStatus('hired')}
+              onClick={() => promoteToCrewMember()}
               variant={applicant.status === 'hired' ? 'default' : 'outline'}
               className={applicant.status === 'hired' ? 'bg-purple-600 hover:bg-purple-700' : 'border-purple-600 text-purple-600 hover:bg-purple-50'}
               disabled={updateStatusMutation.isPending}
             >
-              Hire
+              Promote to Crew
             </Button>
           </div>
           {updateStatusMutation.isPending && (

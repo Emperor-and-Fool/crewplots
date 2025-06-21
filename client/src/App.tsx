@@ -102,7 +102,10 @@ function App() {
                 {isAuthenticated ? 
                   (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
-                    <Dashboard />) : 
+                    <RoleProtectedRoute 
+                      component={Dashboard} 
+                      requiredRoles={["manager", "crew_member", "crew_manager"]} 
+                    />) : 
                   <Redirect to="/login" />}
               </Route>
               

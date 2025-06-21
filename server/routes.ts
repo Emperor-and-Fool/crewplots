@@ -332,11 +332,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get applicants by status - needed for dashboard
+  // Get users by status - needed for dashboard
+  app.get("/api/users/status/:status", async (req, res) => {
+    try {
+      const status = req.params.status;
+      const users = await storage.getUsers();
+      const filteredUsers = users.filter(user => user.status === status);
+      res.json(filteredUsers);
+    } catch (error) {
+      console.error("Error fetching users by status:", error);
+      res.status(500).json({ error: "Failed to fetch users by status" });
+    }
+  });
+
+  // Legacy: Get applicants by status - needed for dashboard
   app.get("/api/applicants/status/:status", async (req, res) => {
     try {
       const status = req.params.status;
-      const applicants = await storage.getApplicantsByStatus(status);
+      const users = await storage.getUsers();
+      const applicants = users.filter(user => user.role === 'applicant' && user.status === status);
       res.json(applicants);
     } catch (error) {
       console.error("Error fetching applicants by status:", error);
