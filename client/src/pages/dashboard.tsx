@@ -77,19 +77,7 @@ export default function Dashboard() {
   };
 
   // Fetch statistics data
-  const { data: staffStats } = useQuery({
-    queryKey: ['/api/staff/location', selectedLocation],
-    enabled: !!selectedLocation,
-    queryFn: async () => {
-      const response = await fetch(`/api/staff/location/${selectedLocation}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch staff');
-      }
-      return response.json();
-    }
-  });
+  // Staff data now comes from unified profile data
 
   const { data: shiftsStats } = useQuery({
     queryKey: ['/api/shifts'],
@@ -118,8 +106,9 @@ export default function Dashboard() {
     }
   });
 
-  // Count data
-  const totalStaff = staffStats?.length || 0;
+  // Cherry-pick staff data from unified profile data
+  const staffUsers = profileData?.filter(user => user.role === 'staff') || [];
+  const totalStaff = staffUsers.length;
   const shiftsThisWeek = shiftsStats?.length || 0;
   const hoursScheduled = shiftsStats?.reduce((total, shift) => {
     // Calculate hours between start and end time (simplified)

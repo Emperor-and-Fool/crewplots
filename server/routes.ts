@@ -254,21 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get staff by location - needed for dashboard
-  app.get("/api/staff/location/:locationId", async (req, res) => {
-    try {
-      const locationId = parseInt(req.params.locationId);
-      if (isNaN(locationId) || locationId === 0) {
-        return res.json([]); // Return empty array for invalid/zero location
-      }
-      
-      const staff = await storage.getUsersByLocation(locationId);
-      res.json(staff);
-    } catch (error) {
-      console.error("Error fetching staff by location:", error);
-      res.status(500).json({ error: "Failed to fetch staff" });
-    }
-  });
+  // Legacy staff endpoint removed - now using unified profile data
 
   // Get all shifts - needed for dashboard
   app.get("/api/shifts", async (req, res) => {
