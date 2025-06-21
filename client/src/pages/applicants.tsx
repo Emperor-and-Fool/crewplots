@@ -57,11 +57,29 @@ export default function Applicants() {
   // Fetch applicants
   const { data: applicants, isLoading } = useQuery<User[]>({
     queryKey: ['/api/applicants'],
+    queryFn: async () => {
+      const response = await fetch('/api/applicants', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch applicants');
+      }
+      return response.json();
+    },
   });
 
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
   });
 
   // Component to display message count for an applicant
@@ -369,7 +387,7 @@ export default function Applicants() {
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900">Short-listed</h3>
                       <div className="space-y-3">
-                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed' || app.status === 'short-listed').map((applicant) => {
+                        {filteredApplicants?.filter(app => app.status === 'short-listed').map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
@@ -427,7 +445,7 @@ export default function Applicants() {
                               </div>
                             );
                         })}
-                        {filteredApplicants?.filter(app => app.status === 'contacted' || app.status === 'interviewed').length === 0 && (
+                        {filteredApplicants?.filter(app => app.status === 'short-listed').length === 0 && (
                           <div className="text-center py-8 text-gray-500">
                             <p>No short-listed applicants</p>
                           </div>
@@ -435,11 +453,11 @@ export default function Applicants() {
                       </div>
                     </div>
 
-                    {/* Look Again */}
+                    {/* Re-evaluate */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Look Again</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Re-evaluate</h3>
                       <div className="space-y-3">
-                        {filteredApplicants?.filter(app => app.status === 'hired').map((applicant) => {
+                        {filteredApplicants?.filter(app => app.status === 'contacted').map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
@@ -478,63 +496,81 @@ export default function Applicants() {
                               </div>
                             );
                         })}
-                        {filteredApplicants?.filter(app => app.status === 'hired').length === 0 && (
+                        {filteredApplicants?.filter(app => app.status === 'contacted').length === 0 && (
                           <div className="text-center py-8 text-gray-500">
-                            <p>No applicants to review later</p>
+                            <p>No applicants to re-evaluate</p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Rejected */}
+                    {/* Hired */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-500">Rejected</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Hired</h3>
                       <div className="space-y-3">
-                        {filteredApplicants?.filter(app => app.status === 'rejected').map((applicant) => {
+                        {filteredApplicants?.filter(app => app.status === 'hired').map((applicant) => {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
-                              <div key={applicant.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 opacity-60">
+                              <div 
+                                key={applicant.id} 
+                                className="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all duration-200"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
                                 <div className="flex justify-between items-start mb-3">
-                                  <h4 className="font-medium text-gray-500">{applicant.name}</h4>
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
                                     <MessageIndicator applicantId={applicant.id} />
-                                    {applicant.resumeUrl && (
-                                      <div className="flex items-center gap-1">
-                                        <Paperclip className="h-4 w-4 text-gray-400" />
-                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="Has document"></span>
-                                      </div>
-                                    )}
+                                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Hired</Badge>
                                   </div>
                                 </div>
-                                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 mb-2">Rejected</Badge>
-                                <p className="text-sm text-gray-500 mb-2">{applicant.email}</p>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
                                 {applicant.phoneNumber && (
-                                  <p className="text-sm text-gray-500 mb-2">{applicant.phoneNumber}</p>
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
                                 {location && (
-                                  <p className="text-xs text-gray-400 mb-3">{location.name}</p>
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
                                 )}
                                 <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
-                                <div className="flex gap-2 mt-3">
-                                  <Button size="sm" variant="outline" disabled className="opacity-50">
-                                    <UserX className="h-3 w-3 mr-1" />
-                                    Rejected
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Delete
-                                  </Button>
-                                </div>
                               </div>
                             );
                         })}
-                        {filteredApplicants?.filter(app => app.status === 'rejected').length === 0 && (
+                        {filteredApplicants?.filter(app => app.status === 'hired').length === 0 && (
                           <div className="text-center py-8 text-gray-500">
-                            <p>No rejected applicants</p>
+                            <p>No hired applicants</p>
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Rejected Section - Full width */}
+                {!isLoading && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-gray-500 mb-4">Rejected</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {filteredApplicants?.filter(app => app.status === 'rejected').map((applicant) => {
+                          const location = locations?.find(l => l.id === applicant.locationId);
+                          
+                          return (
+                            <div key={applicant.id} className="bg-gray-50 p-3 rounded-lg shadow-sm border border-gray-200 opacity-60">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-500 text-sm">{applicant.name}</h4>
+                                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 text-xs">Rejected</Badge>
+                              </div>
+                              <p className="text-xs text-gray-500 mb-1">{applicant.email}</p>
+                              {location && (
+                                <p className="text-xs text-gray-400">{location.name}</p>
+                              )}
+                            </div>
+                          );
+                      })}
+                      {filteredApplicants?.filter(app => app.status === 'rejected').length === 0 && (
+                        <div className="col-span-full text-center py-8 text-gray-500">
+                          <p>No rejected applicants</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
