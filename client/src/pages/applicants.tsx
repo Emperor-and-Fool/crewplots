@@ -97,11 +97,18 @@ export default function Applicants() {
       },
     });
 
+    // Find the applicant to check for motivational text
+    const applicant = applicants?.find(a => a.id === applicantId);
+    const hasMotivationalText = applicant?.notes && applicant.notes.trim().length > 0;
+
     if (isLoading) {
       return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 relative">
           <MessageSquare className="w-3 h-3 text-gray-400" />
           <span className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></span>
+          {hasMotivationalText && (
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+          )}
         </div>
       );
     }
@@ -113,7 +120,7 @@ export default function Applicants() {
     const messageCount = countData?.count || 0;
 
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 relative">
         <MessageSquare className={`w-3 h-3 ${messageCount > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
         {messageCount > 0 ? (
           <Badge variant="secondary" className="text-xs px-1 py-0 h-4 min-w-4 flex items-center justify-center">
@@ -121,6 +128,9 @@ export default function Applicants() {
           </Badge>
         ) : (
           <span className="w-2 h-2 bg-gray-300 rounded-full" title="No messages"></span>
+        )}
+        {hasMotivationalText && (
+          <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" title="Has motivational text"></div>
         )}
       </div>
     );
