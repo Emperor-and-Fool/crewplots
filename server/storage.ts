@@ -1254,11 +1254,12 @@ export class DatabaseStorage implements IStorage {
 
   async getApplicants(): Promise<User[]> {
     try {
-      // Get all users with applicant role from the unified users table
+      // Return ALL users from the unified users table
+      // Frontend will cherry-pick data based on role/status as needed
       const result = await db.select()
-        .from(users)
-        .where(eq(users.role, 'applicant'));
+        .from(users);
       
+      console.log(`[UNIFIED DATA] Fetched ${result.length} total users for frontend cherry-picking`);
       return result;
     } catch (error) {
       console.error("Error in getApplicants:", error);

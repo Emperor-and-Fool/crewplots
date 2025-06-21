@@ -218,14 +218,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all applicants
+  // Get all users (unified data endpoint)
   app.get("/api/applicants", async (req, res) => {
     try {
-      const applicants = await storage.getApplicants();
-      res.json(applicants);
+      const allUsers = await storage.getApplicants();
+      console.log(`[UNIFIED API] Returning ${allUsers.length} users for frontend cherry-picking`);
+      res.json(allUsers);
     } catch (error) {
-      console.error("Error fetching applicants:", error);
-      res.status(500).json({ error: "Failed to fetch applicants" });
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 
