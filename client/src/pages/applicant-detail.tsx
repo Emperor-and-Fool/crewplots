@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
 import { 
@@ -67,8 +67,57 @@ function ApplicantDetail() {
     }
   };
 
+  const queryClient = useQueryClient();
+
   const goBack = () => {
     navigate('/dashboard');
+  };
+
+  // Status update mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const response = await fetch(`/api/applicants/${applicantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update status: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, newStatus) => {
+      // Update the local cache
+      queryClient.setQueryData(['/api/profile-data'], (old: any[]) => {
+        if (!old) return old;
+        return old.map(user => 
+          user.id === applicantId 
+            ? { ...user, status: newStatus }
+            : user
+        );
+      });
+
+      toast({
+        title: 'Status updated',
+        description: `Applicant status changed to ${newStatus}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to update status',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateApplicantStatus = (newStatus: string) => {
+    updateStatusMutation.mutate(newStatus);
   };
 
   if (isLoading) {
@@ -185,6 +234,53 @@ function ApplicantDetail() {
             workflow="application"
             readOnlyMode={true}
           />
+        </CardContent>
+      </Card>
+
+      {/* Status Update Actions */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Update Application Status</CardTitle>
+          <CardDescription>Change the status of this applicant's application</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={() => updateApplicantStatus('short-listed')}
+              variant={applicant.status === 'short-listed' ? 'default' : 'outline'}
+              className={applicant.status === 'short-listed' ? 'bg-green-600 hover:bg-green-700' : 'border-green-600 text-green-600 hover:bg-green-50'}
+              disabled={updateStatusMutation.isPending}
+            >
+              Short-list
+            </Button>
+            <Button 
+              onClick={() => updateApplicantStatus('contacted')}
+              variant={applicant.status === 'contacted' ? 'default' : 'outline'}
+              className={applicant.status === 'contacted' ? 'bg-blue-600 hover:bg-blue-700' : 'border-blue-600 text-blue-600 hover:bg-blue-50'}
+              disabled={updateStatusMutation.isPending}
+            >
+              Re-evaluate
+            </Button>
+            <Button 
+              onClick={() => updateApplicantStatus('rejected')}
+              variant={applicant.status === 'rejected' ? 'default' : 'outline'}
+              className={applicant.status === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'border-red-600 text-red-600 hover:bg-red-50'}
+              disabled={updateStatusMutation.isPending}
+            >
+              Reject
+            </Button>
+            <Button 
+              onClick={() => updateApplicantStatus('hired')}
+              variant={applicant.status === 'hired' ? 'default' : 'outline'}
+              className={applicant.status === 'hired' ? 'bg-purple-600 hover:bg-purple-700' : 'border-purple-600 text-purple-600 hover:bg-purple-50'}
+              disabled={updateStatusMutation.isPending}
+            >
+              Hire
+            </Button>
+          </div>
+          {updateStatusMutation.isPending && (
+            <p className="text-sm text-gray-500 mt-2">Updating status...</p>
+          )}
         </CardContent>
       </Card>
     </div>
