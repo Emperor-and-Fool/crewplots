@@ -45,6 +45,18 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
       ? ['/api/applicants/location', locationId] 
       : ['/api/applicants'],
     enabled: true,
+    queryFn: async () => {
+      const url = locationId 
+        ? `/api/applicants/location/${locationId}` 
+        : '/api/applicants';
+      const response = await fetch(url, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch applicants');
+      }
+      return response.json();
+    }
   });
 
   // Get only the most recent applicants up to the limit
