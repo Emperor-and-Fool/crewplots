@@ -40,7 +40,12 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white shadow-lg fixed left-0 top-0 h-full z-30 border-r border-gray-200">
+    <>
+      {/* Mobile overlay */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" />
+      
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-lg fixed left-0 top-0 h-full z-30 border-r border-gray-200 lg:relative lg:z-auto transform lg:transform-none transition-transform duration-300 ease-in-out">
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -117,6 +122,7 @@ export function Sidebar() {
           </p>
         </div>
       </nav>
-    </aside>
+      </aside>
+    </>
   );
 }
