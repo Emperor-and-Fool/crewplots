@@ -127,11 +127,11 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
         // Special case for admin development login
-        if (identifier === 'manager' && password === 'wachtwoord123') {
+        if (identifier === 'admin' && password === 'adminpass123') {
             console.log('Admin login detected using development credentials');
             
-            // Look up the manager user first
-            const adminUser = await storage.getUserByUsername('manager');
+            // Look up the admin user first
+            const adminUser = await storage.getUserByUsername('admin');
             if (!adminUser) {
                 console.log('Admin user not found, cannot proceed with admin login');
                 return res.status(401).json({ message: 'Invalid credentials' });

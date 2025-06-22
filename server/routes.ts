@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // For testing with admin account (hash comparison bypassed)
-        if (username === 'manager' && password === 'wachtwoord123') {
+        if (username === 'admin' && password === 'adminpass123') {
           return done(null, user);
         }
         
