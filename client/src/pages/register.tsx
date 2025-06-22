@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, QrCode, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, QrCode, CheckCircle, XCircle, MapPin } from "lucide-react";
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +41,8 @@ export default function Register() {
   const navigate = (to: string) => setLocation(to);
   const { register } = useAuth();
   const { toast } = useToast();
+  const [isLookingUpAddress, setIsLookingUpAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   
   // Check if coming from QR code
   const isFromQRCode = location.includes("source=qrcode");
@@ -56,6 +58,7 @@ export default function Register() {
       password: "",
       confirmPassword: "",
       phoneNumber: "", // Combined phone number field in format +xx xxxxxxx
+      address: "",
     },
   });
 
@@ -71,6 +74,50 @@ export default function Register() {
   }, [isFromQRCode, toast]);
 
   // Form submission handler
+  const lookupAddress = async (address: string) => {
+    if (!address.trim()) return;
+    
+    setIsLookingUpAddress(true);
+    try {
+      const response = await fetch('/api/locations/lookup-address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ address }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Address lookup result:', result);
+        
+        if (result.address && result.address !== address) {
+          setAddressSuggestions([result.address]);
+          toast({
+            title: "Address found",
+            description: `Found: ${result.city || ''} ${result.postalCode || ''}`.trim(),
+          });
+        }
+        
+        // Auto-fill postal code or city if found
+        if (result.postalCode && result.city) {
+          const updatedAddress = `${address}, ${result.city} ${result.postalCode}`;
+          form.setValue('address', updatedAddress);
+        }
+      }
+    } catch (error) {
+      console.error('Address lookup failed:', error);
+      toast({
+        title: "Address lookup failed",
+        description: "Could not validate the address. Please check manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLookingUpAddress(false);
+    }
+  };
+
   const onSubmit = async (data: Register) => {
     setIsLoading(true);
     
@@ -258,6 +305,63 @@ export default function Register() {
                     Required for WhatsApp communication with your team
                   </p>
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <Input 
+                            placeholder="Your full address including city" 
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => lookupAddress(field.value)}
+                            disabled={!field.value || isLookingUpAddress}
+                            className="w-full"
+                          >
+                            {isLookingUpAddress ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Looking up address...
+                              </>
+                            ) : (
+                              <>
+                                <MapPin className="h-4 w-4 mr-2" />
+                                Lookup Postal Code & Validate
+                              </>
+                            )}
+                          </Button>
+                          {addressSuggestions.length > 0 && (
+                            <div className="p-3 bg-blue-50 rounded-md">
+                              <p className="text-sm font-medium text-blue-800 mb-2">Suggestions:</p>
+                              {addressSuggestions.map((suggestion, index) => (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  className="text-sm text-blue-600 hover:text-blue-800 underline block"
+                                  onClick={() => {
+                                    form.setValue('address', suggestion);
+                                    setAddressSuggestions([]);
+                                  }}
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"

@@ -423,6 +423,7 @@ export const registerSchema = z.object({
     .min(1, "Please confirm your password"),
   phoneNumber: z.string().min(1, "Phone number is required")
     .regex(/^\+\d{1,4}\s\d{5,12}$/, "Phone number must be in format +xx xxxxxxx"),
+  address: z.string().min(1, "Address is required"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
