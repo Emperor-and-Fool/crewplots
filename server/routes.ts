@@ -544,6 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messaging/notes', notesRoutes);
 
   app.use('/api', dashboardRoutes);
+  app.use('/api/email', emailRoutes);
   app.use('/api/redis-monitor', redisMonitorRoutes);
   app.use('/api/mongo-monitor', mongoMonitorRoutes);
   app.use('/api/hybrid-cache', hybridCacheMonitorRoutes);

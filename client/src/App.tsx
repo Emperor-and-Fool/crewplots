@@ -22,6 +22,8 @@ import ApplicantDetail from "@/pages/applicant-detail";
 import Profile from "@/pages/profile";
 import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
+import Settings from "@/pages/settings";
+import EmailSettings from "@/pages/email-settings";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 
