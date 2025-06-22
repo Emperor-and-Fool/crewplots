@@ -266,9 +266,9 @@ export class MemStorage implements IStorage {
     // Add default admin user
     this.createUser({
       username: "manager",
-      password: "$2a$10$GQKjpzhl2PjwoZx8ZLOCruR0FiAzUOKYCC4JRkYdOjPALMrXbJgEq", // adminpass123
-      email: "admin@example.com",
-      name: "Admin User",
+      password: "$2b$10$36boFRKQuSs8jOyeySIiuulk/J5V138KKOYI.ZZmt3/7J6JK.ebzi", // wachtwoord123
+      email: "manager@crewplots.nl",
+      name: "Pieter van der Meer",
       role: "manager",
       locationId: null
     });

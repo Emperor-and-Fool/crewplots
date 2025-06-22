@@ -219,7 +219,7 @@ function NewLocationPage() {
                   <FormItem>
                     <FormLabel>Location Name *</FormLabel>
                     <FormControl>
-          <Input placeholder="e.g., Grand Hotel Amsterdam" {...field} />
+          <Input placeholder="e.g., Hotel De Gouden Leeuw" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

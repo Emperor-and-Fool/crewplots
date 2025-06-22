@@ -20,7 +20,7 @@ export function TopBar({ title = "Dashboard", subtitle = "Welcome back! Here's w
             </div>
             <div className="text-sm">
               <p className="font-medium text-gray-900">Marieke van den Berg</p>
-              <p className="text-gray-500">Hotel Manager</p>
+              <p className="text-gray-500">Hotelmanager</p>
             </div>
           </div>
         </div>
