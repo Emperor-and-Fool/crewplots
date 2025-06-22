@@ -129,7 +129,7 @@ export function Header({ className, onLocationChange }: HeaderProps) {
                 <DropdownMenuItem className="cursor-pointer">
                   <div className="flex flex-col">
                     <span className="font-medium">New applicant</span>
-                    <span className="text-sm text-gray-500">Riley Johnson applied for Bar Staff</span>
+                    <span className="text-sm text-gray-500">Emma de Vries applied for Bar Staff</span>
                     <span className="text-xs text-gray-400 mt-1">2 minutes ago</span>
                   </div>
                 </DropdownMenuItem>

@@ -195,11 +195,11 @@ export default function Login() {
                 >
                   <div>
                     <label className="text-xs text-gray-700">Username</label>
-                    <Input name="username" defaultValue="admin" />
+                    <Input name="username" defaultValue="manager" />
                   </div>
                   <div>
                     <label className="text-xs text-gray-700">Password</label>
-                    <Input name="password" type="password" defaultValue="adminpass123" />
+                    <Input name="password" type="password" defaultValue="wachtwoord123" />
                   </div>
                   <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                     Direct Form Submit (Debug)
