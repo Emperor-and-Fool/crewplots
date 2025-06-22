@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Building2, Upload, Image, Search, MapPin } from 'lucide-react';
 import { insertLocationSchema, type InsertLocation } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import { Sidebar } from '@/components/sidebar';
 
 const locationFormSchema = insertLocationSchema.extend({
   timezone: insertLocationSchema.shape.timezone.optional(),
