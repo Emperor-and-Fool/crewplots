@@ -197,19 +197,45 @@ function App() {
               
               <Route path="/reports">
                 {isAuthenticated ? 
-                  <RoleProtectedRoute 
-                    component={Reports} 
-                    requiredRoles={["manager", "floor_manager"]} 
-                  /> : 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={Reports} 
+                      requiredRoles={["manager", "floor_manager"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/settings">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={Settings} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/settings/email">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={EmailSettings} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
               
               <Route path="/profile">
                 {isAuthenticated ? 
-                  <RoleProtectedRoute 
-                    component={Profile} 
-                    requiredRoles={["manager", "crew_member", "crew_manager"]} 
-                  /> : 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={Profile} 
+                      requiredRoles={["manager", "crew_member", "crew_manager"]} 
+                    />
+                  </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
               
