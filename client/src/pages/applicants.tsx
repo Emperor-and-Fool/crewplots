@@ -517,11 +517,25 @@ export default function Applicants() {
                                 )}
                                 <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
                                 <div className="flex gap-2 mt-3">
-                                  <Button size="sm" variant="outline" onClick={() => handleHire(applicant)}>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleHire(applicant);
+                                    }}
+                                  >
                                     <UserCheck className="h-3 w-3 mr-1" />
                                     Hire
                                   </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleDelete(applicant)}>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(applicant);
+                                    }}
+                                  >
                                     <Trash2 className="h-3 w-3 mr-1" />
                                     Delete
                                   </Button>
