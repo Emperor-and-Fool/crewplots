@@ -485,15 +485,24 @@ export default function Applicants() {
                             const location = locations?.find(l => l.id === applicant.locationId);
                             
                             return (
-                              <div key={applicant.id} className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
+                              <div 
+                                key={applicant.id} 
+                                className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
                                 <div className="flex justify-between items-start mb-3">
                                   <h4 className="font-medium text-gray-900">{applicant.name}</h4>
                                   <div className="flex gap-2 items-center">
                                     <MessageIndicator applicantId={applicant.id} />
-                                    {applicant.resumeUrl && (
+                                    {applicant.resumeUrl ? (
                                       <div className="flex items-center gap-1">
-                                        <Paperclip className="h-4 w-4 text-green-500" />
-                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has document"></span>
+                                        <Paperclip className="h-4 w-4 text-orange-500" />
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full" title="Has document"></span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No document"></span>
                                       </div>
                                     )}
                                   </div>
