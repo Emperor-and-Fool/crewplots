@@ -349,46 +349,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/locations/lookup-address", async (req, res) => {
     try {
       const { address } = req.body;
+      console.log("[ADDRESS LOOKUP] Request received:", { address });
       
       if (!address) {
         return res.status(400).json({ error: "Address is required" });
       }
       
-      // Dynamic import to avoid issues with ES modules
-      const { AddressLookupService } = await import('./services/address-lookup.js');
-      const result = await AddressLookupService.lookupAddress(address);
+      // Direct implementation instead of dynamic import
+      const encodedAddress = encodeURIComponent(address);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodedAddress}`;
       
-      if (!result) {
+      console.log("[ADDRESS LOOKUP] Fetching from:", url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'CrewPlots-LocationManager/1.0 (contact@crewplots.com)'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`[ADDRESS LOOKUP] API error: ${response.status}`);
+        return res.status(500).json({ error: "External API error" });
+      }
+      
+      const data = await response.json();
+      console.log("[ADDRESS LOOKUP] API response:", data);
+      
+      if (!data || data.length === 0) {
         return res.status(404).json({ error: "Address not found" });
       }
       
-      res.json(result);
+      const result = data[0];
+      const addressData = {
+        address: result.display_name || address,
+        postalCode: result.address?.postcode,
+        city: result.address?.city || result.address?.town || result.address?.village,
+        country: result.address?.country,
+        coordinates: result.lat && result.lon ? {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon)
+        } : undefined
+      };
+      
+      console.log("[ADDRESS LOOKUP] Returning:", addressData);
+      res.json(addressData);
+      
     } catch (error) {
       console.error("Error looking up address:", error);
       res.status(500).json({ error: "Failed to lookup address" });
-    }
-  });
-
-  // Postal code lookup endpoint
-  app.post("/api/locations/lookup-postal", async (req, res) => {
-    try {
-      const { postalCode, country = 'UK' } = req.body;
-      
-      if (!postalCode) {
-        return res.status(400).json({ error: "Postal code is required" });
-      }
-      
-      const { AddressLookupService } = await import('./services/address-lookup.js');
-      const result = await AddressLookupService.lookupByPostalCode(postalCode, country);
-      
-      if (!result) {
-        return res.status(404).json({ error: "Postal code not found" });
-      }
-      
-      res.json(result);
-    } catch (error) {
-      console.error("Error looking up postal code:", error);
-      res.status(500).json({ error: "Failed to lookup postal code" });
     }
   });
 
