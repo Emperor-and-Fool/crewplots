@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Building2, Upload, Image } from 'lucide-react';
+import { ArrowLeft, Building2, Upload, Image, Search, MapPin } from 'lucide-react';
 import { insertLocationSchema, type InsertLocation } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -27,6 +27,8 @@ function NewLocationPage() {
   const queryClient = useQueryClient();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isLookingUpAddress, setIsLookingUpAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
 
   const form = useForm<LocationFormData>({
     resolver: zodResolver(locationFormSchema),
@@ -90,6 +92,50 @@ function NewLocationPage() {
         setLogoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const lookupAddress = async (address: string) => {
+    if (!address.trim()) return;
+    
+    setIsLookingUpAddress(true);
+    try {
+      const response = await fetch('/api/locations/lookup-address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ address }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Address lookup result:', result);
+        
+        if (result.address && result.address !== address) {
+          setAddressSuggestions([result.address]);
+          toast({
+            title: "Address found",
+            description: `Found: ${result.city || ''} ${result.postalCode || ''}`.trim(),
+          });
+        }
+        
+        // Auto-fill postal code or city if found
+        if (result.postalCode && result.city) {
+          const updatedAddress = `${address}\n${result.city} ${result.postalCode}`;
+          form.setValue('address', updatedAddress);
+        }
+      }
+    } catch (error) {
+      console.error('Address lookup failed:', error);
+      toast({
+        title: "Address lookup failed",
+        description: "Could not validate the address. Please check manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLookingUpAddress(false);
     }
   };
 
@@ -182,11 +228,51 @@ function NewLocationPage() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Full address including city and postal code" 
-                        {...field} 
-                        rows={3}
-                      />
+                      <div className="space-y-2">
+                        <Textarea 
+                          placeholder="Full address including city and postal code" 
+                          {...field} 
+                          rows={3}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => lookupAddress(field.value)}
+                          disabled={!field.value || isLookingUpAddress}
+                          className="w-full"
+                        >
+                          {isLookingUpAddress ? (
+                            <>
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                              Looking up address...
+                            </>
+                          ) : (
+                            <>
+                              <MapPin className="h-4 w-4 mr-2" />
+                              Lookup Postal Code & Validate
+                            </>
+                          )}
+                        </Button>
+                        {addressSuggestions.length > 0 && (
+                          <div className="p-3 bg-blue-50 rounded-md">
+                            <p className="text-sm font-medium text-blue-800 mb-2">Suggestions:</p>
+                            {addressSuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                className="text-sm text-blue-600 hover:text-blue-800 underline block"
+                                onClick={() => {
+                                  form.setValue('address', suggestion);
+                                  setAddressSuggestions([]);
+                                }}
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

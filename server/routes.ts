@@ -345,6 +345,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Address lookup endpoint
+  app.post("/api/locations/lookup-address", async (req, res) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address) {
+        return res.status(400).json({ error: "Address is required" });
+      }
+      
+      // Dynamic import to avoid issues with ES modules
+      const { AddressLookupService } = await import('./services/address-lookup.js');
+      const result = await AddressLookupService.lookupAddress(address);
+      
+      if (!result) {
+        return res.status(404).json({ error: "Address not found" });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error looking up address:", error);
+      res.status(500).json({ error: "Failed to lookup address" });
+    }
+  });
+
+  // Postal code lookup endpoint
+  app.post("/api/locations/lookup-postal", async (req, res) => {
+    try {
+      const { postalCode, country = 'UK' } = req.body;
+      
+      if (!postalCode) {
+        return res.status(400).json({ error: "Postal code is required" });
+      }
+      
+      const { AddressLookupService } = await import('./services/address-lookup.js');
+      const result = await AddressLookupService.lookupByPostalCode(postalCode, country);
+      
+      if (!result) {
+        return res.status(404).json({ error: "Postal code not found" });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error looking up postal code:", error);
+      res.status(500).json({ error: "Failed to lookup postal code" });
+    }
+  });
+
   // Get specific location
   app.get("/api/locations/:id", async (req, res) => {
     try {
