@@ -66,6 +66,8 @@ router.post('/register', async (req, res) => {
             locationId: null, // Will be assigned by manager later
             // Phone number is already in the required format: +xx xxxxxxx
             phoneNumber: data.phoneNumber,
+            // Store the address
+            address: data.address,
             // Generate unique code
             uniqueCode: generateUniqueCode()
         });

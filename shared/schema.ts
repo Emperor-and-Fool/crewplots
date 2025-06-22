@@ -87,6 +87,7 @@ export const users = pgTable("users", {
   // locationId kept for backward compatibility
   locationId: integer("location_id").references(() => locations.id),
   phoneNumber: text("phone_number"),        // Combined phone number in format +xx xxxxxxx
+  address: text("address"),                 // Full address including postal code
   // Applicant-specific fields (for users with role="applicant")
   status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new"),
   resumeUrl: text("resume_url"),
