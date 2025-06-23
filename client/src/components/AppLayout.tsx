@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { 
@@ -65,6 +65,20 @@ const getNavigationForRole = (role: string) => {
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
+  
+  // Global keyboard shortcut for logout (Ctrl+Shift+Q)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'Q') {
+        event.preventDefault();
+        console.log("Using direct server-side logout from keyboard shortcut");
+        window.location.href = "/api/auth/dev-logout";
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
   
   // Get current user to determine role
   const { data: user } = useQuery({
