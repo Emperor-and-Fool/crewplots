@@ -18,6 +18,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
+import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
