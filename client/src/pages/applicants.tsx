@@ -31,6 +31,7 @@ import { printQRCode } from "@/lib/qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { User, Location, Staff, Message } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { format } from "date-fns";
 
 export default function Applicants() {
