@@ -19,19 +19,34 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    console.log('🚨 ERROR BOUNDARY: getDerivedStateFromError triggered');
+    console.log('🚨 ERROR BOUNDARY: Error:', error.message);
+    console.log('🚨 ERROR BOUNDARY: Stack:', error.stack);
+    console.log('🚨 ERROR BOUNDARY: Timestamp:', new Date().toISOString());
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Permission Error Boundary caught an error:', error, errorInfo);
+    console.log('🚨 ERROR BOUNDARY: componentDidCatch called');
+    console.log('🚨 ERROR BOUNDARY: Error message:', error.message);
+    console.log('🚨 ERROR BOUNDARY: Error stack:', error.stack);
+    console.log('🚨 ERROR BOUNDARY: Component stack:', errorInfo.componentStack);
+    console.log('🚨 ERROR BOUNDARY: Error info:', errorInfo);
+    console.log('🚨 ERROR BOUNDARY: Current URL:', window.location.href);
+    console.log('🚨 ERROR BOUNDARY: Current time:', new Date().toISOString());
   }
 
   resetErrorBoundary = () => {
+    console.log('🔄 ERROR BOUNDARY: Reset button clicked');
+    console.log('🔄 ERROR BOUNDARY: Resetting error state');
     this.setState({ hasError: false, error: undefined });
   };
 
   render() {
     if (this.state.hasError) {
+      console.log('🚨 ERROR BOUNDARY: Rendering error state');
+      console.log('🚨 ERROR BOUNDARY: Error details:', this.state.error);
+      
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
         return <FallbackComponent error={this.state.error} resetErrorBoundary={this.resetErrorBoundary} />;
