@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/AppLayout";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { EmergencyLogout } from "@/components/emergency-logout";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
@@ -71,15 +73,19 @@ function App() {
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
         <p className="mt-4 text-lg">Loading...</p>
+        <div className="mt-8">
+          <EmergencyLogout />
+        </div>
       </div>
     </div>;
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow">
-          <Router>
+    <ErrorBoundary>
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow">
+            <Router>
             <Switch>
               {/* PUBLIC ROUTES */}
               <Route path="/login">
@@ -258,6 +264,7 @@ function App() {
         <Toaster />
       </div>
     </TooltipProvider>
+    </ErrorBoundary>
   );
 }
 
