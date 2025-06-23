@@ -127,7 +127,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
         // Special case for admin development login
-        if (identifier === 'admin' && password === 'admin123') {
+        if (identifier === 'admin' && password === 'adminpass123') {
             console.log('Admin login detected using development credentials');
             
             // Look up the admin user first
