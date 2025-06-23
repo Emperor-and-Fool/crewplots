@@ -67,6 +67,20 @@ function App() {
       }
     }
   }, [isLoading, isAuthenticated, user]);
+
+  // Emergency logout key combination (Ctrl+Shift+L)
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'L') {
+        event.preventDefault();
+        console.log('Emergency logout triggered');
+        window.location.href = '/api/auth/dev-logout';
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
