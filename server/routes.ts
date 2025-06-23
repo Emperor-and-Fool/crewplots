@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
-      name: 'crewplots.sid', // Custom name to avoid conflicts
+      name: 'connect.sid', // Use default session name
       rolling: true, // Force cookies to be set on every response
     })
   );
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // For testing with admin account (hash comparison bypassed)
-        if (username === 'admin' && password === 'adminpass123') {
+        if (username === 'admin' && password === 'admin123') {
           return done(null, user);
         }
         
