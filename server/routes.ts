@@ -49,6 +49,12 @@ const upload = multer({
 const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize workflow permissions for existing users (one-time operation)
+  try {
+    await assignDefaultPermissionsToExistingUsers();
+  } catch (error) {
+    console.warn('Could not assign default permissions to existing users:', error);
+  }
   // Setup session middleware
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
