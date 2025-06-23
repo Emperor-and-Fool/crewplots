@@ -445,7 +445,7 @@ export function MessagingSystem({
     console.log(`🐛 AUTO-SAVE DEBUG: useEffect triggered - editContent="${editContent.slice(0,50)}...", lastSavedContent="${lastSavedContent.slice(0,50)}...", draftMessageId=${draftMessageId}, filteredMessages.length=${filteredMessages.length}`);
     
     if (editContent.trim() && editContent !== lastSavedContent) {
-      console.log(`🐛 AUTO-SAVE DEBUG: Setting 500ms timeout for auto-save`);
+      console.log(`🐛 AUTO-SAVE DEBUG: Setting 2000ms timeout for auto-save (longer delay for data loading)`);
       const timeoutId = setTimeout(() => {
         console.log(`🐛 AUTO-SAVE DEBUG: Timeout fired - draftMessageId=${draftMessageId}, isNoteMode=${isNoteMode}`);
         
@@ -458,13 +458,13 @@ export function MessagingSystem({
             setTimeout(() => {
               console.log(`🐛 AUTO-SAVE DEBUG: Delayed auto-save firing after setDraftMessageId`);
               autoSaveDraftMutation.mutate(editContent);
-            }, 100);
+            }, 200);
             return;
           }
         }
         console.log(`🐛 AUTO-SAVE DEBUG: Direct auto-save firing`);
         autoSaveDraftMutation.mutate(editContent);
-      }, 500);
+      }, 2000);
 
       return () => {
         console.log(`🐛 AUTO-SAVE DEBUG: Clearing timeout`);
