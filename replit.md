@@ -114,6 +114,7 @@ Changelog:
 - June 23, 2025. Fixed auto-save race condition by restoring debug logging and proper timing from commit 420c4446 after bad merge b2a99e33
 - June 23, 2025. Schema analysis revealed workflow permission system was added after June 22 but admin user role mismatch prevents settings access
 - June 23, 2025. Updated admin user role from "manager" to "administrator" in database, enabling proper access to settings and email configuration
+- June 23, 2025. Migrated database to current schema: created roles, permissions, role_permissions tables, added missing columns, updated role constraints
 ```
 
 ## User Preferences
