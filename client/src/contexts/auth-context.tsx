@@ -33,17 +33,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute isAuthenticated from user state
   const isAuthenticated = Boolean(user);
 
-  // Single auth check on mount - no React Query to prevent session conflicts
+  // Single auth check on mount with timeout protection
   useEffect(() => {
     const checkAuth = async () => {
       const startTime = Date.now();
       console.log(`🔍 AUTH TIMING: Single auth check starting at ${startTime}`);
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log("🚨 AUTH TIMEOUT: Setting loading to false after 10 seconds");
+        setIsLoading(false);
+        setUser(null);
+      }, 10000);
       
       try {
         const response = await fetch('/api/auth/me', {
           credentials: "include"
         });
         
+        clearTimeout(timeoutId);
         console.log(`🔍 AUTH TIMING: Single auth completed at ${Date.now() - startTime}ms, status: ${response.status}`);
         
         if (response.ok) {
@@ -59,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
         }
       } catch (error) {
+        clearTimeout(timeoutId);
         console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
         setUser(null);
       } finally {

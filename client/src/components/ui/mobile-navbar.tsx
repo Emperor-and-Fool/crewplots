@@ -229,7 +229,7 @@ export function MobileNavbar() {
                 <div className="ml-3">
                   <p className="text-sm font-medium text-white">{user?.name}</p>
                   <p className="text-xs font-medium text-primary-300">
-                    {user?.role ? formatRole(user.role) : ""}
+                    {effectiveUser?.role ? formatRole(effectiveUser.role) : ""}
                   </p>
                 </div>
                 <Button 

@@ -18,6 +18,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
+import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
@@ -67,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
-      name: 'crewplots.sid', // Custom name to avoid conflicts
+      name: 'connect.sid', // Use default session name
       rolling: true, // Force cookies to be set on every response
     })
   );
