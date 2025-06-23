@@ -111,6 +111,7 @@ CrewPlots is a comprehensive crew management system built with a modern full-sta
 Changelog:
 - June 23, 2025. Initial setup
 - June 23, 2025. Applied MongoDB WiredTiger cache limit workaround (0.25GB) to resolve vm.max_map_count container limitations
+- June 23, 2025. Fixed auto-save race condition by restoring debug logging and proper timing from commit 420c4446 after bad merge b2a99e33
 ```
 
 ## User Preferences
