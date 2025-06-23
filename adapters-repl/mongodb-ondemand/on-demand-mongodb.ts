@@ -56,7 +56,7 @@ export class OnDemandMongoService {
         '--logpath', './logs/mongodb_ondemand.log',
         '--quiet',
         '--storageEngine', 'wiredTiger',
-        '--wiredTigerCacheSizeGB', '0.25'
+        '--wiredTigerCacheSizeGB', '0.5'
       ];
 
       this.mongoProcess = spawn('mongod', mongoArgs, {
