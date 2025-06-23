@@ -1,0 +1,119 @@
+# CrewPlots Application
+
+## Overview
+
+CrewPlots is a comprehensive crew management system built with a modern full-stack architecture. The application provides tools for managing staff applications, scheduling, locations, and messaging workflows for hospitality businesses. It features a hybrid database architecture using PostgreSQL for metadata, MongoDB for rich content storage, and Redis for caching and session management.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React with TypeScript
+- **Build Tool**: Vite with custom configuration
+- **UI Components**: shadcn/ui component library with Radix UI primitives
+- **Styling**: Tailwind CSS with custom design tokens
+- **Rich Text Editor**: TipTap editor for content creation
+- **State Management**: TanStack Query for server state
+- **Form Handling**: React Hook Form with Zod validation
+
+### Backend Architecture
+- **Runtime**: Node.js with TypeScript (ES modules)
+- **Framework**: Express.js with session-based authentication
+- **Database ORM**: Drizzle ORM for type-safe database operations
+- **Authentication**: Passport.js with local strategy and bcrypt password hashing
+- **Session Management**: Hybrid Redis-PostgreSQL session store
+- **File Uploads**: Multer with local filesystem storage
+
+### Database Architecture (Hybrid Multi-Database)
+- **PostgreSQL**: Primary database for metadata, user accounts, and relational data
+- **MongoDB**: Document storage for rich text content and file attachments
+- **Redis**: Cache layer and session storage with on-demand service management
+
+## Key Components
+
+### Database Schema (PostgreSQL)
+- **Users**: Authentication, roles, and permissions management
+- **Locations**: Multi-location support with public IDs and settings
+- **Staff & Competencies**: Crew management with skill tracking
+- **Schedules**: Template-based scheduling system
+- **Applications**: Job application workflow management
+- **Knowledge Base**: Categories and articles for documentation
+
+### Hybrid Storage Services
+- **Message Storage Service**: Coordinates PostgreSQL metadata with MongoDB content storage
+- **Profile Fetcher Service**: Redis-cached user profile aggregation
+- **Hybrid Cache Service**: Read-through/write-through cache with PostgreSQL persistence
+- **Session Store**: Redis-first with PostgreSQL fallback for session management
+
+### Replit Adapters
+- **On-Demand MongoDB**: Custom service management for Replit container limitations
+- **On-Demand Redis**: Lightweight Redis implementation designed for Replit environment
+- **Custom Redis Server**: 21KB C implementation with RESP-2 protocol compliance
+
+## Data Flow
+
+### Content Management Pattern
+1. **Metadata Storage**: PostgreSQL stores entity metadata and MongoDB ObjectId references
+2. **Content Storage**: MongoDB stores rich text content, files, and complex documents
+3. **Cache Layer**: Redis provides fast access to frequently requested data
+4. **Explicit Failure**: System fails visibly when MongoDB unavailable (no silent fallbacks)
+
+### Session Management Flow
+1. **Redis Primary**: Fast session retrieval and storage
+2. **PostgreSQL Fallback**: Persistent session storage when Redis unavailable
+3. **Cache Repopulation**: Automatic Redis cache warming from PostgreSQL data
+
+### File Upload Workflow
+1. **Local Storage**: Files stored in filesystem with database metadata tracking
+2. **GridFS Integration**: MongoDB GridFS for sensitive document storage
+3. **Encryption Support**: Built-in encryption for compliance documents
+
+## External Dependencies
+
+### Core Production Dependencies
+- **Database**: @neondatabase/serverless, drizzle-orm, pg
+- **Authentication**: passport, bcryptjs, express-session
+- **Validation**: zod, drizzle-zod
+- **File Handling**: multer, mongodb GridFS
+- **Caching**: ioredis with custom Redis implementation
+
+### UI Dependencies
+- **React Ecosystem**: @tanstack/react-query, react-hook-form
+- **UI Components**: @radix-ui components, @tiptap editor
+- **Styling**: tailwindcss, autoprefixer
+
+### Development Tools
+- **Build**: vite, esbuild, tsx
+- **Types**: TypeScript with strict configuration
+- **Database**: drizzle-kit for migrations
+
+## Deployment Strategy
+
+### Replit Configuration
+- **Modules**: nodejs-20, web, postgresql-16
+- **Packages**: jq, redis, mongodb via Nix
+- **Ports**: Multiple port configuration for services
+- **Auto-scaling**: Configured for production deployment
+
+### Environment Setup
+- **Development**: On-demand service management for databases
+- **Production**: Standard database connections
+- **Docker**: Multi-service container setup with docker-compose
+
+### Service Management
+- **PostgreSQL**: Native Replit service via DATABASE_URL
+- **MongoDB**: Custom proxy server for Replit compatibility
+- **Redis**: Custom 21KB implementation with RESP-2 protocol
+- **File Storage**: Local filesystem with configurable upload directory
+
+## Changelog
+
+```
+Changelog:
+- June 23, 2025. Initial setup
+```
+
+## User Preferences
+
+```
+Preferred communication style: Simple, everyday language.
+```
