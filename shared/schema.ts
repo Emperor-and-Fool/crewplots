@@ -91,6 +91,13 @@ export const users = pgTable("users", {
   status: text("status", { enum: ["new", "contacted", "interviewed", "hired", "rejected", "short-listed"] }).default("new"),
   resumeUrl: text("resume_url"),
   notes: text("notes"),
+  // Workflow-based permissions system
+  workflowPermissions: jsonb("workflow_permissions").$type<{
+    [workflowName: string]: string[] // array of permissions like ['view', 'hire', 'delete']
+  }>(),
+  blockedPermissions: jsonb("blocked_permissions").$type<{
+    [workflowName: string]: string[] // permissions to BLOCK for administrators
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
