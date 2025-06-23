@@ -335,7 +335,7 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="ml-3">
             <p className="text-sm font-medium text-white">{user?.name}</p>
             <p className="text-xs font-medium text-primary-200">
-              {user?.role ? formatRole(user.role) : ""}
+              {effectiveUser?.role ? formatRole(effectiveUser.role) : ""}
             </p>
           </div>
           <Button 
