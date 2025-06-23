@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -44,6 +45,7 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
 export function Sidebar({ className }: SidebarProps) {
   const [location, navigate] = useLocation();
   const { user } = useAuth();
+  const { hasWorkflowAccess, hasPermission } = useWorkflowPermissions();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
     user: any;
@@ -87,14 +89,12 @@ export function Sidebar({ className }: SidebarProps) {
   
   const isActive = (path: string) => location === path;
   
-  // Only managers can access locations page
-  const canAccessLocations = effectiveUser?.role === "manager";
-  
-  // Managers and floor managers can access these pages
-  const canAccessManagementPages = ["manager", "floor_manager"].includes(effectiveUser?.role || "");
-  
-  // Force enable all menu items for now to debug visibility issue
-  const forceEnableAll = true;
+  // Workflow-based permission checks
+  const canAccessLocations = hasWorkflowAccess('location');
+  const canAccessApplications = hasWorkflowAccess('application');
+  const canAccessCrew = hasWorkflowAccess('crew');
+  const canAccessScheduling = hasWorkflowAccess('scheduling');
+  const canAccessFinancial = hasWorkflowAccess('financial');
   
   // Format user role for display
   const formatRole = (role: string) => {
@@ -172,7 +172,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Staff Management */}
-            {(canAccessManagementPages || forceEnableAll) && (
+            {canAccessCrew && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="staff" className="border-0">
                   <AccordionTrigger className="py-0">
@@ -217,7 +217,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Scheduling */}
-            {(canAccessManagementPages || forceEnableAll) && (
+            {canAccessScheduling && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="scheduling" className="border-0">
                   <AccordionTrigger className="py-0">
@@ -270,7 +270,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Applicants */}
-            {(canAccessManagementPages || forceEnableAll) && (
+            {canAccessApplications && (
               <div
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -284,7 +284,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             
             {/* Cash Management */}
-            {(canAccessManagementPages || forceEnableAll) && (
+            {canAccessFinancial && (
               <div
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -310,7 +310,7 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             
             {/* Reports */}
-            {(canAccessManagementPages || forceEnableAll) && (
+            {canAccessFinancial && (
               <div
                 className={cn(
                   "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",

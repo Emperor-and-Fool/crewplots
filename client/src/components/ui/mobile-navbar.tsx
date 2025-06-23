@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import {
   Menu,
   X,
@@ -23,6 +24,7 @@ export function MobileNavbar() {
   const [open, setOpen] = useState(false);
   const [location, navigate] = useLocation();
   const { user } = useAuth();
+  const { hasWorkflowAccess, hasPermission } = useWorkflowPermissions();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
     user: any;
@@ -59,14 +61,12 @@ export function MobileNavbar() {
   
   const isActive = (path: string) => location === path;
   
-  // Only managers can access locations page
-  const canAccessLocations = effectiveUser?.role === "manager";
-  
-  // Managers and floor managers can access these pages
-  const canAccessManagementPages = ["manager", "floor_manager"].includes(effectiveUser?.role || "");
-  
-  // Force enable all menu items for now
-  const forceEnableAll = true;
+  // Workflow-based permission checks
+  const canAccessLocations = hasWorkflowAccess('location');
+  const canAccessApplications = hasWorkflowAccess('application');
+  const canAccessCrew = hasWorkflowAccess('crew');
+  const canAccessScheduling = hasWorkflowAccess('scheduling');
+  const canAccessFinancial = hasWorkflowAccess('financial');
   
   // Format user role for display
   const formatRole = (role: string) => {
@@ -121,8 +121,8 @@ export function MobileNavbar() {
                     Dashboard
                   </div>
                   
-                  {/* Locations - Manager only */}
-                  {(canAccessLocations || forceEnableAll) && (
+                  {/* Locations */}
+                  {canAccessLocations && (
                     <div 
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -136,7 +136,7 @@ export function MobileNavbar() {
                   )}
                   
                   {/* Staff Management */}
-                  {(canAccessManagementPages || forceEnableAll) && (
+                  {canAccessCrew && (
                     <div
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -150,7 +150,7 @@ export function MobileNavbar() {
                   )}
                   
                   {/* Scheduling */}
-                  {(canAccessManagementPages || forceEnableAll) && (
+                  {canAccessScheduling && (
                     <div
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -164,7 +164,7 @@ export function MobileNavbar() {
                   )}
                   
                   {/* Applicants */}
-                  {(canAccessManagementPages || forceEnableAll) && (
+                  {canAccessApplications && (
                     <div
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -178,7 +178,7 @@ export function MobileNavbar() {
                   )}
                   
                   {/* Cash Management */}
-                  {(canAccessManagementPages || forceEnableAll) && (
+                  {canAccessFinancial && (
                     <div
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
@@ -204,7 +204,7 @@ export function MobileNavbar() {
                   </div>
                   
                   {/* Reports */}
-                  {(canAccessManagementPages || forceEnableAll) && (
+                  {canAccessFinancial && (
                     <div
                       className={cn(
                         "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
