@@ -8,6 +8,12 @@ class MongoDBConnection {
 
   async connect(): Promise<void> {
     try {
+      // Try to activate on-demand MongoDB service first
+      const serviceReady = await onDemandMongoService.ensureReady();
+      if (!serviceReady && !process.env.DOCKER_ENV) {
+        throw new Error('On-demand MongoDB service failed to start');
+      }
+
       const mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017';
       const dbName = process.env.MONGODB_DB_NAME || 'crewplots_documents';
       
@@ -19,8 +25,7 @@ class MongoDBConnection {
       console.log('✅ MongoDB connection established successfully');
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error);
-      console.log('MongoDB connection failed, document storage features disabled');
-      // Don't throw error - allow app to continue without MongoDB
+      throw error;
     }
   }
 
@@ -35,8 +40,7 @@ class MongoDBConnection {
 
   getDatabase(): Db {
     if (!this.db) {
-      console.log('⚠️ MongoDB not available, returning null for graceful degradation');
-      return null as any;
+      throw new Error('MongoDB not connected. Call connect() first.');
     }
     return this.db;
   }
