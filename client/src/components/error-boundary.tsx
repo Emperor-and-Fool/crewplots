@@ -62,6 +62,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 export default ErrorBoundary;
+export { ErrorBoundary };
 
 // Functional wrapper for easier use with hooks
 export function PermissionErrorBoundary({ 
