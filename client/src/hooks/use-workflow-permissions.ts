@@ -10,10 +10,17 @@ export const useWorkflowPermissions = () => {
   const hasPermission = (workflow: string, permission: string): boolean => {
     if (!user) return false;
 
-    // Administrator uses reversed permission system (blocked permissions)
-    if (user.role === 'administrator') {
+    // Admin fallback: if user has manager role, treat as admin with full access
+    if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
+      // Use blocked permissions if available, otherwise grant full access
       const blockedPermissions = user.blockedPermissions?.[workflow] || [];
-      return !blockedPermissions.includes(permission); // Return false if blocked
+      return !blockedPermissions.includes(permission);
+    }
+
+    // Manager with permissions: use workflow permissions normally
+    if (user.role === 'manager' && user.workflowPermissions) {
+      const workflowPermissions = user.workflowPermissions[workflow] || [];
+      return workflowPermissions.includes(permission);
     }
 
     // Everyone else uses normal workflow permissions
@@ -33,12 +40,13 @@ export const useWorkflowPermissions = () => {
   const hasWorkflowAccess = (workflow: string): boolean => {
     if (!user) return false;
 
-    if (user.role === 'administrator') {
-      // Admin has access unless completely blocked
+    // Admin fallback: manager without permissions gets full access
+    if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
       const blockedPermissions = user.blockedPermissions?.[workflow] || [];
       return blockedPermissions.length === 0 || !blockedPermissions.includes('view');
     }
 
+    // Manager with permissions or other roles
     const workflowPermissions = user.workflowPermissions?.[workflow] || [];
     return workflowPermissions.length > 0;
   };
