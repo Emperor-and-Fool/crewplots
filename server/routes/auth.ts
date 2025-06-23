@@ -276,7 +276,7 @@ router.get('/me', async (req, res) => {
         console.log('Session ID:', req.sessionID || 'none');
         console.log('Is authenticated (Passport):', req.isAuthenticated());
         console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
-        console.timeLog("me:total", "after initial auth check");
+        console.log("Initial auth check completed");
         
         // Set debug cookie for testing - use SameSite=None for cross-domain cookies
         res.cookie('debug-auth-check', 'was-checked', { 
@@ -292,7 +292,7 @@ router.get('/me', async (req, res) => {
         // Use Passport's isAuthenticated() method 
         if (!req.isAuthenticated()) {
             console.log('Not authenticated according to Passport');
-            console.timeLog("me:total", "authentication check failed");
+            console.timeEnd("me:total");
             return res.status(200).json({ 
                 authenticated: false,
                 debug: {
@@ -305,7 +305,7 @@ router.get('/me', async (req, res) => {
                 }
             });
         }
-        console.timeLog("me:total", "after isAuthenticated check");
+        console.log("After isAuthenticated check - user found");
         
         // At this point, req.user should have the user data
         if (!req.user) {
@@ -328,7 +328,7 @@ router.get('/me', async (req, res) => {
         });
     } catch (error) {
         console.error('Error in /me endpoint:', error);
-        console.timeLog("me:total", "error in auth processing");
+        console.timeEnd("me:total");
         
         // Return a more detailed error response for debugging
         return res.status(200).json({ 
