@@ -135,7 +135,7 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             
             {/* Locations - Manager only */}
-            {(canAccessLocations || forceEnableAll) && (
+            {canAccessLocations && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="locations" className="border-0">
                   <AccordionTrigger className="py-0">

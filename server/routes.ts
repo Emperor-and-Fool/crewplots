@@ -130,17 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false);
       }
       
-      // OPTIMIZATION: Use cached session data if available, avoid DB query
-      if (sessionData.username && sessionData.role) {
-        console.log("Using cached session data for user:", sessionData.username);
-        const cachedUser = {
-          id: sessionData.id,
-          username: sessionData.username,
-          role: sessionData.role,
-          // Add other essential fields as needed
-        };
-        return done(null, cachedUser);
-      }
+      // ALWAYS query database to get current role data - no caching for role updates
+      // This ensures role changes are immediately reflected in authentication
       
       // Fallback: Look up the user by ID with timeout
       console.log("Cache miss, querying database for user ID:", sessionData.id);
