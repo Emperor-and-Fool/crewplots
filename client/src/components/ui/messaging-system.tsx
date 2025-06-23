@@ -228,6 +228,7 @@ export function MessagingSystem({
       });
       
       // Also refetch to ensure consistency
+      console.log(`🐛 REFETCH DEBUG: Calling refetch() after delete - this may reset component state`);
       refetch();
       
       toast({
@@ -272,6 +273,7 @@ export function MessagingSystem({
       });
       
       // Also refetch to ensure consistency
+      console.log(`🐛 REFETCH DEBUG: Calling refetch() after edit - this may reset component state`);
       refetch();
       
       // Reset edit state
@@ -324,6 +326,7 @@ export function MessagingSystem({
       });
       
       // Also use programmatic refetch for guaranteed fresh data
+      console.log(`🐛 REFETCH DEBUG: Calling refetch() after create - this may reset component state`);
       await refetch();
       
       // Reset form
@@ -359,7 +362,10 @@ export function MessagingSystem({
       // Use single endpoint for all operations
       const baseEndpoint = '/api/messaging/notes';
 
+      console.log(`🐛 AUTO-SAVE DEBUG: Starting auto-save with draftMessageId=${draftMessageId}, content length=${content.length}`);
+
       if (draftMessageId) {
+        console.log(`🐛 AUTO-SAVE DEBUG: Using PUT request for existing draft ${draftMessageId}`);
         // Update existing draft
         const response = await fetch(`${baseEndpoint}/${draftMessageId}`, {
           method: 'PUT',
@@ -372,8 +378,11 @@ export function MessagingSystem({
           throw new Error(`Failed to update draft: ${response.statusText}`);
         }
 
-        return response.json();
+        const result = await response.json();
+        console.log(`🐛 AUTO-SAVE DEBUG: PUT request completed, returned message ID=${result.id}`);
+        return result;
       } else {
+        console.log(`🐛 AUTO-SAVE DEBUG: Using POST request to create new draft`);
         // Create new draft - in note mode this will upsert
         const response = await fetch(baseEndpoint, {
           method: 'POST',
@@ -386,14 +395,18 @@ export function MessagingSystem({
           throw new Error(`Failed to create draft: ${response.statusText}`);
         }
 
-        return response.json();
+        const result = await response.json();
+        console.log(`🐛 AUTO-SAVE DEBUG: POST request completed, returned message ID=${result.id}`);
+        return result;
       }
     },
     onMutate: () => {
+      console.log(`🐛 AUTO-SAVE DEBUG: onMutate - draftMessageId before mutation=${draftMessageId}`);
       setIsAutoSaving(true);
       setHasSaveError(false);
     },
     onSuccess: (message) => {
+      console.log(`🐛 AUTO-SAVE DEBUG: onSuccess - received message ID=${message.id}, setting draftMessageId`);
       setDraftMessageId(message.id);
       setLastSavedContent(message.content);
       setIsAutoSaving(false);
@@ -403,6 +416,7 @@ export function MessagingSystem({
       // This keeps the editor visible while saving in background
     },
     onError: () => {
+      console.log(`🐛 AUTO-SAVE DEBUG: onError - auto-save failed`);
       setIsAutoSaving(false);
       setHasSaveError(true);
     },
@@ -428,23 +442,36 @@ export function MessagingSystem({
 
   // Debounced auto-save effect - behavior depends on mode
   React.useEffect(() => {
+    console.log(`🐛 AUTO-SAVE DEBUG: useEffect triggered - editContent="${editContent.slice(0,50)}...", lastSavedContent="${lastSavedContent.slice(0,50)}...", draftMessageId=${draftMessageId}, filteredMessages.length=${filteredMessages.length}`);
+    
     if (editContent.trim() && editContent !== lastSavedContent) {
+      console.log(`🐛 AUTO-SAVE DEBUG: Setting 500ms timeout for auto-save`);
       const timeoutId = setTimeout(() => {
+        console.log(`🐛 AUTO-SAVE DEBUG: Timeout fired - draftMessageId=${draftMessageId}, isNoteMode=${isNoteMode}`);
+        
         if (isNoteMode) {
           // Note mode: ensure only one note per user - SET DRAFT ID FIRST
           if (filteredMessages.length > 0 && !draftMessageId) {
+            console.log(`🐛 AUTO-SAVE DEBUG: Setting draftMessageId to existing note ${filteredMessages[0].id} before auto-save`);
             setDraftMessageId(filteredMessages[0].id);
             // Wait for state update before auto-saving
-            setTimeout(() => autoSaveDraftMutation.mutate(editContent), 100);
+            setTimeout(() => {
+              console.log(`🐛 AUTO-SAVE DEBUG: Delayed auto-save firing after setDraftMessageId`);
+              autoSaveDraftMutation.mutate(editContent);
+            }, 100);
             return;
           }
         }
+        console.log(`🐛 AUTO-SAVE DEBUG: Direct auto-save firing`);
         autoSaveDraftMutation.mutate(editContent);
       }, 500);
 
-      return () => clearTimeout(timeoutId);
+      return () => {
+        console.log(`🐛 AUTO-SAVE DEBUG: Clearing timeout`);
+        clearTimeout(timeoutId);
+      };
     }
-  }, [editContent, lastSavedContent, draftMessageId, filteredMessages, isNoteMode]);
+  }, [editContent, lastSavedContent, draftMessageId, filteredMessages, isNoteMode, autoSaveDraftMutation]);
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
