@@ -53,7 +53,7 @@ export class OnDemandMongoService {
         '--port', '27017',
         '--bind_ip', '0.0.0.0',
         '--noauth',
-        '--logpath', './mongodb_data/temp/mongodb_ondemand.log',
+        '--logpath', './logs/mongodb_ondemand.log',
         '--quiet'
       ];
 
@@ -177,20 +177,14 @@ export class OnDemandMongoService {
             clearTimeout(timeout);
             resolve(void 0);
           });
+        } else {
+          clearTimeout(timeout);
+          resolve(void 0);
         }
       });
     }
 
     this.cleanup();
-    console.log('[OnDemandMongo] Service stopped');
-  }
-
-  getStatus() {
-    return {
-      serverRunning: this.isReady,
-      dockerMode: this.dockerMode,
-      processExists: !!this.mongoProcess
-    };
   }
 }
 
