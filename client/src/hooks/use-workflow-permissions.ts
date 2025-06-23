@@ -8,7 +8,8 @@ export const useWorkflowPermissions = () => {
   const { user } = useAuth();
 
   const hasPermission = (workflow: string, permission: string): boolean => {
-    if (!user) return false;
+    // Return false if user is not loaded yet to prevent errors during loading
+    if (!user || !user.id) return false;
 
     // Admin fallback: if user has manager role, treat as admin with full access
     if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
@@ -38,7 +39,8 @@ export const useWorkflowPermissions = () => {
 
   // Helper to check if user has access to a workflow at all
   const hasWorkflowAccess = (workflow: string): boolean => {
-    if (!user) return false;
+    // Return false if user is not loaded yet to prevent errors during loading
+    if (!user || !user.id) return false;
 
     // Admin fallback: manager without permissions gets full access
     if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
