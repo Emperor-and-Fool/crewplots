@@ -54,7 +54,9 @@ export class OnDemandMongoService {
         '--bind_ip', '0.0.0.0',
         '--noauth',
         '--logpath', './logs/mongodb_ondemand.log',
-        '--quiet'
+        '--quiet',
+        '--storageEngine', 'wiredTiger',
+        '--wiredTigerCacheSizeGB', '0.25'
       ];
 
       this.mongoProcess = spawn('mongod', mongoArgs, {
