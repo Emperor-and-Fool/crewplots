@@ -231,7 +231,7 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={Settings} 
-                      requiredRoles={["administrator"]} 
+                      requiredRoles={["administrator", "manager"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}
@@ -242,7 +242,7 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={EmailSettings} 
-                      requiredRoles={["administrator"]} 
+                      requiredRoles={["administrator", "manager"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}

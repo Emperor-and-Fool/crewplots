@@ -112,6 +112,8 @@ Changelog:
 - June 23, 2025. Initial setup
 - June 23, 2025. Applied MongoDB WiredTiger cache limit workaround (0.25GB) to resolve vm.max_map_count container limitations
 - June 23, 2025. Fixed auto-save race condition by restoring debug logging and proper timing from commit 420c4446 after bad merge b2a99e33
+- June 23, 2025. Schema analysis revealed workflow permission system was added after June 22 but admin user role mismatch prevents settings access
+- June 23, 2025. Updated settings route requirements to include "manager" role, enabling admin user access to settings and email configuration
 ```
 
 ## User Preferences
