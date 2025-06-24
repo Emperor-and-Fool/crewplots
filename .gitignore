@@ -48,6 +48,7 @@ redis_data/*
 # MongoDB WiredTiger files (runtime metadata)
 **/WiredTiger.turtle
 **/WiredTiger.lock
+**/WiredTiger.wt
 **/mongod.lock
 *.db
 *.sqlite
