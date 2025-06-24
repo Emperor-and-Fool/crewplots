@@ -133,6 +133,7 @@ Changelog:
 - June 24, 2025. FIXED: Toast notification duration - Reduced from 16.7 minutes to 4 seconds for better UX
 - June 24, 2025. ADDED: Location-based navigation system - Blue sidebar now includes location selector with individual location filtering positioned under "Manage Locations"
 - June 24, 2025. IMPLEMENTED: Database-based location filtering system - Dashboard shows location-specific data with WHERE locationId clauses, location headers, and "All Locations" unfiltered overview
+- June 24, 2025. IMPROVED: Dashboard header location selector - Moved location selection to clickable header title, simplified sidebar to management options only, updated terminology from "crew scheduling" to "production overview"
 ```
 
 ## User Preferences

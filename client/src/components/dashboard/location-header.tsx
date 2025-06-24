@@ -36,15 +36,15 @@ export function LocationHeader() {
   const activeLocations = locations?.filter(loc => loc.status === 'active') || [];
 
   const getHeaderTitle = () => {
-    if (isAllLocations) return "All Locations Dashboard";
-    if (currentLocation) return `${currentLocation.name} Dashboard`;
-    return "Select Location Dashboard";
+    if (isAllLocations) return "All Locations";
+    if (currentLocation) return currentLocation.name;
+    return "Select Location";
   };
 
   const getHeaderSubtitle = () => {
     if (isAllLocations) return "Combined overview across all locations";
-    if (currentLocation) return "Location-specific crew scheduling overview";
-    return "Choose a location to view its dashboard";
+    if (currentLocation) return "Location-specific production overview";
+    return "Choose a location to view its production overview";
   };
 
   const getHeaderColor = () => {
@@ -125,7 +125,7 @@ export function LocationHeader() {
                     <Building2 className="mr-2 h-4 w-4" />
                     <div>
                       <div className="font-medium truncate">{location.name}</div>
-                      <div className="text-xs text-muted-foreground">Location dashboard</div>
+                      <div className="text-xs text-muted-foreground">Production overview</div>
                     </div>
                     {selectedLocationId === location.id && (
                       <span className="ml-auto text-primary-600">✓</span>
