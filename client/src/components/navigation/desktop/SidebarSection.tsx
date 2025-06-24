@@ -34,21 +34,16 @@ export function SidebarSection({
     >
       {/* Handle sections with only one child (simplified display) */}
       {section.children && section.children.length === 1 ? (
-        <NavigationItem
-          item={{
-            id: section.id,
-            label: section.label,
-            path: section.children[0].path,
-            icon: section.icon,
-            permission: section.permission
-          }}
-          layout="desktop"
-          user={user}
-          hasWorkflowAccess={hasWorkflowAccess}
-          onNavigate={onNavigate}
-          currentPath={currentPath}
-          className="group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer hover:bg-primary-700"
-        />
+        <div 
+          className={cn(
+            "group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
+            currentPath === section.children[0].path ? "bg-primary-700" : "hover:bg-primary-700"
+          )}
+          onClick={() => onNavigate(section.children[0].path)}
+        >
+          <section.icon className="h-5 w-5 mr-3" />
+          {section.label}
+        </div>
       ) : (
         /* Handle sections with multiple children using accordion */
         section.children && section.children.length > 1 && (

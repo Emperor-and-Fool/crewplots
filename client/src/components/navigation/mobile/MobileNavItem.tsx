@@ -30,22 +30,19 @@ export function MobileNavItem({
     >
       {/* Handle sections with only one child (simplified display) */}
       {section.children && section.children.length === 1 ? (
-        <NavigationItem
-          item={{
-            id: section.id,
-            label: section.label,
-            path: section.children[0].path,
-            icon: section.icon,
-            permission: section.permission
+        <div 
+          className={cn(
+            "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer text-white hover:bg-primary-700",
+            currentPath === section.children[0].path && "bg-primary-700"
+          )}
+          onClick={() => {
+            onNavigate(section.children[0].path);
+            onMobileClose();
           }}
-          layout="mobile"
-          user={user}
-          hasWorkflowAccess={hasWorkflowAccess}
-          onNavigate={onNavigate}
-          onMobileClose={onMobileClose}
-          currentPath={currentPath}
-          className="flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer hover:bg-primary-700"
-        />
+        >
+          <section.icon className="h-5 w-5 mr-3" />
+          {section.label}
+        </div>
       ) : (
         /* Handle sections with multiple children using flat hierarchy */
         section.children && section.children.length > 1 && (
@@ -53,7 +50,7 @@ export function MobileNavItem({
             {/* Section header */}
             <div className={cn(
               "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-              "text-primary-100 hover:bg-primary-700"
+              "text-white hover:bg-primary-700"
             )}>
               <IconComponent className="h-5 w-5 mr-3" />
               {section.label}

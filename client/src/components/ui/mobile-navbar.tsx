@@ -116,19 +116,14 @@ export function MobileNavbar() {
             
             <div className="overflow-y-auto flex-grow">
               <nav className="mt-5 px-2">
-                <div className="space-y-2">
-                  {/* Dashboard */}
-                  <div 
-                    className={cn(
-                      "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                      isActive("/dashboard") ? "bg-primary-700" : "hover:bg-primary-700"
-                    )}
-                    onClick={() => navigateTo("/dashboard")}
-                  >
-                    <LayoutDashboard className="h-5 w-5 mr-3" />
-                    Dashboard
-                  </div>
-
+                <div className="text-white mt-4 space-y-1">
+                  <NavigationRenderer
+                    layout="mobile"
+                    onNavigate={navigateTo}
+                    onMobileClose={() => setOpen(false)}
+                    currentPath={location}
+                    serverAuthData={serverAuthData}
+                  />
                 </div>
               </nav>
             </div>

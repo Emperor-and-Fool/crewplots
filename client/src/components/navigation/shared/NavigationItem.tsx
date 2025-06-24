@@ -34,11 +34,11 @@ export function NavigationItem({
   };
   
   const baseClasses = cn(
-    "flex items-center py-1 text-sm cursor-pointer",
+    "flex items-center text-sm cursor-pointer",
     layout === 'desktop' 
-      ? "text-primary-200 hover:text-white"
-      : "px-2 py-2 font-medium rounded-md hover:bg-primary-700",
-    isActive && layout === 'mobile' && "bg-primary-700",
+      ? "py-1 text-primary-200 hover:text-white"
+      : "px-2 py-2 font-medium rounded-md text-primary-200 hover:bg-primary-700 hover:text-white",
+    isActive && layout === 'mobile' && "bg-primary-700 text-white",
     className
   );
   
