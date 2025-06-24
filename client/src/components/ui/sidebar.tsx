@@ -208,6 +208,29 @@ export function Sidebar({ className }: SidebarProps) {
                         </div>
                       </li>
                     </ul>
+                    
+                    {/* Location Selector - positioned under Manage Locations */}
+                    <div className="mt-3">
+                      <LocationSelector 
+                        currentLocationId={selectedLocationId}
+                        onLocationChange={setSelectedLocationId}
+                      />
+                    </div>
+                      <LocationSelector 
+                        currentLocationId={selectedLocationId}
+                        onLocationChange={setSelectedLocationId}
+                      />
+                    </div>
+                      </li>
+                      <li>
+                        <div 
+                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/locations")}
+                        >
+                          Manage Locations
+                        </div>
+                      </li>
+                    </ul>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

@@ -52,9 +52,9 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
   const activeLocations = locations?.filter(loc => loc.status === 'active') || [];
 
   return (
-    <div className="px-3 py-2 border-b border-primary-600">
-      <div className="text-xs font-semibold text-primary-100 uppercase tracking-wide mb-2">
-        Locations
+    <div className="py-2">
+      <div className="text-xs font-semibold text-primary-200 uppercase tracking-wide mb-2">
+        Select Location
       </div>
       
       <div className="space-y-1">
@@ -62,10 +62,10 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
         <button
           onClick={() => handleLocationSelect(null)}
           className={cn(
-            "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+            "w-full flex items-center px-2 py-1 text-xs rounded-md transition-colors",
             currentLocationId === null
-              ? "bg-primary-700 text-white"
-              : "text-primary-100 hover:bg-primary-700 hover:text-white"
+              ? "bg-primary-600 text-white"
+              : "text-primary-200 hover:bg-primary-600 hover:text-white"
           )}
         >
           <Globe className="mr-3 h-4 w-4" />
@@ -78,21 +78,21 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
             key={location.id}
             onClick={() => handleLocationSelect(location.id)}
             className={cn(
-              "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+              "w-full flex items-center px-2 py-1 text-xs rounded-md transition-colors",
               currentLocationId === location.id
-                ? "bg-primary-700 text-white"
-                : "text-primary-100 hover:bg-primary-700 hover:text-white"
+                ? "bg-primary-600 text-white"
+                : "text-primary-200 hover:bg-primary-600 hover:text-white"
             )}
             title={location.address || location.name}
           >
-            <Building2 className="mr-3 h-4 w-4" />
+            <Building2 className="mr-2 h-3 w-3" />
             <span className="truncate">{location.name}</span>
           </button>
         ))}
         
         {/* No locations state */}
         {activeLocations.length === 0 && (
-          <div className="px-2 py-2 text-sm text-primary-200 italic">
+          <div className="px-2 py-1 text-xs text-primary-300 italic">
             No active locations
           </div>
         )}
