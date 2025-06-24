@@ -117,11 +117,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <TooltipProvider>
-        <div className="flex flex-col min-h-screen">
-          <div className="flex-grow">
-            <Router>
-            <Switch>
+      <LocationProvider>
+        <TooltipProvider>
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-grow">
+              <Router>
+              <Switch>
               {/* PUBLIC ROUTES */}
               <Route path="/home" component={LandingPage} />
               
