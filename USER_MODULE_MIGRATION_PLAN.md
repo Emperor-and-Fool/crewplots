@@ -65,57 +65,58 @@ This plan transforms the scattered user management system into a cohesive module
 
 ---
 
-## Phase 2: Type System Migration (Low Risk)
-**Duration:** 45 minutes  
+## Phase 2: Schema-First Module Type Integration (Low Risk)
+**Duration:** 30 minutes  
 **Risk Level:** Low  
-**Goal:** Extract and centralize user-related types
+**Goal:** Create module types that extend @shared/schema without duplicating
 
-### Tasks
-1. **Extract User Types from Scattered Files**
-   From:
-   - `shared/schema.ts` - User table definitions
-   - `components/applicants/applicant-form.tsx` - Application form types
-   - `hooks/use-auth.ts` - Authentication types
-   - `contexts/auth-context.tsx` - Auth context types
-   - `contexts/profile-context.tsx` - Profile context types
+### Discovered Architecture
+During compliance verification, we confirmed the system already follows **schema-first architecture**:
+- `@shared/schema` provides canonical User, Location, and all database types
+- All authentication chains use schema types correctly
+- No duplicate type definitions exist (they were already cleaned up)
 
-2. **Create Comprehensive Type System**
+### Adapted Tasks
+1. **Create Module-Specific UI Type Extensions**
    ```typescript
-   // types/user.types.ts
-   interface User {
-     id: number;
-     email: string;
-     role: UserRole;
-     profile: UserProfile;
-     // Extract from existing schema
+   // types/user-ui.types.ts - UI-only extensions
+   export interface UserFormState extends Omit<InsertUser, 'id'> {
+     confirmPassword?: string;
+     isSubmitting?: boolean;
    }
 
-   // types/applicant.types.ts
-   interface ApplicantForm {
-     personalInfo: PersonalInfo;
-     workExperience: WorkExperience;
-     availability: Availability;
-     // Extract from applicant-form.tsx
+   export interface UserListFilters {
+     role?: string;
+     location?: number;
+     searchTerm?: string;
    }
 
-   // types/auth.types.ts
-   interface AuthState {
-     user: User | null;
-     isAuthenticated: boolean;
-     isLoading: boolean;
-     // Extract from auth contexts
+   // types/applicant-ui.types.ts - Application workflow UI types
+   export interface ApplicantFormWizardState {
+     currentStep: number;
+     completedSteps: Set<number>;
+     formData: Partial<InsertUser>;
    }
    ```
 
-3. **Update Existing Files to Use Centralized Types**
-   - Update `components/applicants/application-notes.tsx` to import from module
-   - Update any other files using inline user types
+2. **Create Re-export Hub**
+   ```typescript
+   // types/index.ts - Clean module interface
+   export type { User, InsertUser, SelectUser } from '@shared/schema';
+   export * from './user-ui.types';
+   export * from './applicant-ui.types';
+   ```
+
+3. **Validate Integration**
+   - Confirm all module types properly extend schema types
+   - No conflicts with existing @shared/schema imports
+   - Module provides clean type interface for components
 
 **Validation Checkpoint 2:**
-- [ ] All user-related types extracted and centralized
-- [ ] Existing components build with new type imports
-- [ ] No type errors or build failures
-- [ ] Type coverage comprehensive for all user operations
+- [ ] Module types extend schema without duplicating
+- [ ] Clean re-export interface created
+- [ ] No build errors or type conflicts
+- [ ] Ready for hook and component migration
 
 ---
 
