@@ -26,7 +26,7 @@ interface LocationFormProps {
   isEditing?: boolean;
 }
 
-export function LocationForm({ location, isEditing = false }: LocationFormProps) {
+function LocationForm({ location, isEditing = false }: LocationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
@@ -189,3 +189,5 @@ export function LocationForm({ location, isEditing = false }: LocationFormProps)
     </Card>
   );
 }
+
+export default LocationForm;

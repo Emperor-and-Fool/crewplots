@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { Location } from '@shared/schema';
 
-export default function LocationDetail() {
+function LocationDetailPage() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute('/locations/:id');
 
@@ -314,3 +314,5 @@ export default function LocationDetail() {
     </div>
   );
 }
+
+export default LocationDetailPage;

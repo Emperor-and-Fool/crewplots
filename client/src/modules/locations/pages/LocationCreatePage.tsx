@@ -22,7 +22,7 @@ const locationFormSchema = insertLocationSchema.extend({
 
 type LocationFormData = typeof locationFormSchema._type;
 
-function NewLocationPage() {
+function LocationCreatePage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -399,4 +399,4 @@ function NewLocationPage() {
   );
 }
 
-export default NewLocationPage;
+export default LocationCreatePage;
