@@ -1,4 +1,4 @@
-# Database Schema Migration Analysis - User Module
+# User Module Database Schema Migration Analysis
 
 ## Investigation Summary
 
