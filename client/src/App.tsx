@@ -159,10 +159,12 @@ function App() {
               
               <Route path="/locations/new">
                 {isAuthenticated ? 
-                  <RoleProtectedRoute 
-                    component={LocationNewPage} 
-                    requiredRoles={["manager", "administrator"]} 
-                  /> : 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={LocationNewPage} 
+                      requiredRoles={["manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
               

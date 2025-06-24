@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Building2, Upload, Image, Search, MapPin } from 'lucide-react';
 import { insertLocationSchema, type InsertLocation } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
-import { Sidebar } from '@/components/sidebar';
+
 
 const locationFormSchema = insertLocationSchema.extend({
   timezone: insertLocationSchema.shape.timezone.optional(),
@@ -145,11 +145,7 @@ function NewLocationPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="sm" onClick={() => navigate('/locations')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -399,9 +395,6 @@ function NewLocationPage() {
           </Form>
         </CardContent>
       </Card>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
