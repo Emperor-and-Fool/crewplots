@@ -28,6 +28,7 @@ import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import EmailSettings from "@/pages/email-settings";
+import SecuritySettings from "@/pages/security-settings";
 import UserSettings from "@/pages/user-settings";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";

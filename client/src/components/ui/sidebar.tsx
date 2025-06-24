@@ -18,6 +18,7 @@ import {
   LogOut,
   Settings,
   Mail,
+  Shield,
   Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,15 @@ export function Sidebar({ className }: SidebarProps) {
                         >
                           <Mail className="h-4 w-4 mr-2" />
                           Email Settings
+                        </div>
+                      </li>
+                      <li>
+                        <div 
+                          className="flex items-center py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/settings/security")}
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Security Settings
                         </div>
                       </li>
                     </ul>

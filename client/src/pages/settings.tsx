@@ -34,22 +34,23 @@ export default function Settings() {
         </Card>
 
         {/* Security Settings */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-green-600" />
-              Security
-            </CardTitle>
-            <CardDescription>
-              Authentication and access control
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Manage user permissions, session settings, and security policies
-            </p>
-            <p className="text-xs text-gray-400 mt-2">Coming soon</p>
-          </CardContent>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/settings/security">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-600" />
+                Security Settings
+              </CardTitle>
+              <CardDescription>
+                Location deletion security and access control
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Configure location deletion security, audit trails, and verification methods
+              </p>
+            </CardContent>
+          </Link>
         </Card>
 
         {/* Database Settings */}
@@ -107,10 +108,12 @@ export default function Settings() {
                 Configure Email
               </Button>
             </Link>
-            <Button variant="outline" size="sm" disabled>
-              <Shield className="h-4 w-4 mr-2" />
-              Security Audit
-            </Button>
+            <Link href="/settings/security">
+              <Button variant="outline" size="sm">
+                <Shield className="h-4 w-4 mr-2" />
+                Security Settings
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" disabled>
               <Database className="h-4 w-4 mr-2" />
               Database Backup
