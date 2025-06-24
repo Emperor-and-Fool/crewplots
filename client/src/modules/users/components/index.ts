@@ -4,11 +4,11 @@
  * Central export for all user module components, organized by category.
  */
 
-// Shared components
+// Shared components usable across all user contexts
 export * from './shared';
 
-// Applicant-specific components  
-export * from './applicants';
+// Profile-specific components
+export * from './profiles';
 
-// Note: Auth and Profile components will be added in future phases
-// as we migrate existing components to the module structure
+// Workflow-specific components (applicant processing, etc.)
+export * from './workflows';

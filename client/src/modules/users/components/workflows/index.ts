@@ -1,8 +1,7 @@
 /**
- * User Module - Workflow Components Export
+ * User Module - Applicant Components Export
  * 
- * Central export hub for workflow-specific user components.
- * These handle specific user workflows like application processing.
+ * Central export hub for applicant-specific components.
  */
 
 export { ApplicantCard } from './ApplicantCard';

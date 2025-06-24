@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/components/ui/messaging-system';
-import { ProfileCard } from '@/modules/users/components/profiles/ProfileCard';
+import { ProfileCard } from '@/modules/users/components/profiles';
 
 function ApplicantPortal() {
   const { user, isLoading: authLoading } = useAuth();
