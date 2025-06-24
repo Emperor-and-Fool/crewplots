@@ -1,68 +1,90 @@
-// User module core types
-// Extracted from shared/schema.ts and existing user components
+// User Module - Core User Types
+// Extracted from shared/schema.ts and existing components
 
-export type UserRole = 'administrator' | 'manager' | 'crew_manager' | 'crew_member' | 'applicant';
+export type UserRole = 'applicant' | 'crew' | 'manager' | 'administrator';
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
-
-export interface BaseUser {
+export interface User {
   id: number;
-  publicId: string;
-  username: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
-  locationId?: number;
-  phoneNumber?: string;
   status: UserStatus;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
+  
+  // Profile fields
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  
+  // Applicant-specific fields
+  resumeUrl?: string;
+  notes?: string;
+  applicationStatus?: string;
+  
+  // Location assignment
+  locationId?: number;
 }
 
-export interface UserWithProfile extends BaseUser {
-  location?: {
-    id: number;
-    name: string;
-    address?: string;
-  };
-  permissions: {
-    [workflowName: string]: string[];
-  };
-  blockedPermissions: {
-    [workflowName: string]: string[];
-  };
-}
-
-export interface UserFormData {
-  username: string;
+export interface UserProfile {
+  id: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
   email: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  role: UserRole;
+  status: UserStatus;
+  locationId?: number;
+}
+
+export interface UserSettings {
+  id: number;
+  userId: number;
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+}
+
+export interface UserCreateInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: UserRole;
+  phone?: string;
+  locationId?: number;
+}
+
+export interface UserUpdateInput {
   firstName?: string;
   lastName?: string;
-  phoneNumber?: string;
-  role: UserRole;
-  locationId?: number;
-  password?: string;
-}
-
-export interface UserUpdateData extends Partial<UserFormData> {
+  email?: string;
+  phone?: string;
+  bio?: string;
+  avatar?: string;
   status?: UserStatus;
+  role?: UserRole;
+  locationId?: number;
 }
 
-// User management context
-export interface UserManagementState {
-  currentUser: UserWithProfile | null;
-  users: UserWithProfile[];
-  selectedLocation?: number;
-  filters: UserFilters;
-  isLoading: boolean;
-  error: string | null;
-}
-
+// User listing and filtering
 export interface UserFilters {
   role?: UserRole;
   status?: UserStatus;
-  location?: number;
+  locationId?: number;
   search?: string;
+}
+
+export interface UserListResponse {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
 }

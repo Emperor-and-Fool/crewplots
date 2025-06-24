@@ -1,72 +1,127 @@
-// Authentication and authorization types
+// User Module - Authentication Types
+// Extracted from hooks/use-auth.ts and auth contexts
 
-import type { UserRole, UserWithProfile } from './user.types';
+import type { User, UserRole } from './user.types';
 
-export interface AuthUser {
-  id: number;
-  username: string;
-  email: string;
-  role: UserRole;
-  locationId?: number;
+export interface AuthState {
+  user: User | null;
   isAuthenticated: boolean;
-  permissions: string[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface LoginCredentials {
-  username: string;
+  email: string;
   password: string;
   rememberMe?: boolean;
 }
 
 export interface RegisterData {
-  username: string;
   email: string;
   password: string;
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  phoneNumber?: string;
-  locationId?: number;
+  phone?: string;
+  agreedToTerms: boolean;
 }
 
-export interface AuthState {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  lastLoginDate?: string;
+export interface PasswordResetRequest {
+  email: string;
 }
 
-export interface AuthContextValue extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<AuthUser>;
-  logout: () => Promise<void>;
-  register: (data: RegisterData) => Promise<AuthUser>;
-  refreshUser: () => Promise<void>;
-  updateProfile: (data: Partial<UserWithProfile>) => Promise<void>;
-  checkPermission: (permission: string, workflow?: string) => boolean;
+export interface PasswordResetConfirm {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
-// Permission system
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  workflow?: string;
-  level: 'read' | 'write' | 'admin';
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
-export interface RolePermissions {
-  role: UserRole;
-  permissions: Permission[];
-  workflows: string[];
+export interface AuthResponse {
+  success: boolean;
+  user?: User;
+  message?: string;
+  token?: string;
 }
 
-// Session management
 export interface SessionInfo {
   sessionId: string;
   userId: number;
-  expiresAt: string;
-  lastActivity: string;
-  ipAddress: string;
-  userAgent: string;
+  expiresAt: Date;
+  createdAt: Date;
+  lastActivity: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+// Permission-related types
+export interface UserPermissions {
+  canViewDashboard: boolean;
+  canManageUsers: boolean;
+  canManageApplicants: boolean;
+  canManageLocations: boolean;
+  canManageSchedules: boolean;
+  canViewReports: boolean;
+  canManageSettings: boolean;
+  canAccessAdmin: boolean;
+}
+
+export interface RolePermissions {
+  [key: string]: UserPermissions;
+}
+
+// Auth context types
+export interface AuthContextValue {
+  authState: AuthState;
+  login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
+  register: (data: RegisterData) => Promise<AuthResponse>;
+  resetPassword: (request: PasswordResetRequest) => Promise<AuthResponse>;
+  confirmPasswordReset: (data: PasswordResetConfirm) => Promise<AuthResponse>;
+  changePassword: (request: ChangePasswordRequest) => Promise<AuthResponse>;
+  checkPermission: (permission: keyof UserPermissions) => boolean;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
+  refreshUser: () => Promise<void>;
+}
+
+// Authentication hooks
+export interface UseAuthReturn extends AuthContextValue {
+  permissions: UserPermissions;
+  isAdmin: boolean;
+  isManager: boolean;
+  isCrew: boolean;
+  isApplicant: boolean;
+}
+
+export interface UseUserReturn {
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string>;
+  deleteAccount: () => Promise<void>;
+}
+
+// Session management
+export interface SessionConfig {
+  maxAge: number;
+  rolling: boolean;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+}
+
+export interface LoginOptions {
+  redirectTo?: string;
+  rememberMe?: boolean;
+}
+
+export interface LogoutOptions {
+  redirectTo?: string;
+  clearAllSessions?: boolean;
 }

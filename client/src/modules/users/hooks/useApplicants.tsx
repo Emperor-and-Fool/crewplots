@@ -1,256 +1,213 @@
-// useApplicants hook - Comprehensive applicant management
-// Extracted from existing applicant functionality
+// User Module - Applicant Management Hook
 
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { 
-  Applicant, 
-  ApplicantFormData, 
+  ApplicantSummary,
+  ApplicantDetail,
   ApplicantFilters,
-  ApplicantStats,
-  ApplicationStatus 
+  ApplicationForm,
+  ApplicationStatus,
+  CreateApplicationRequest,
+  UpdateApplicationStatusRequest
 } from '../types/applicant.types';
 
-export interface ApplicantsConfig {
-  locationId?: number;
-  initialFilters?: ApplicantFilters;
-  enableRealtime?: boolean;
+export interface UseApplicantsConfig {
+  filters?: ApplicantFilters;
+  page?: number;
+  limit?: number;
 }
 
-export function useApplicants(config: ApplicantsConfig = {}) {
-  const { locationId, initialFilters, enableRealtime = false } = config;
-  const { toast } = useToast();
+export interface UseApplicantsReturn {
+  // Data
+  applicants: ApplicantSummary[];
+  total: number;
+  isLoading: boolean;
+  error: string | null;
   
-  // Filter state
-  const [filters, setFilters] = useState<ApplicantFilters>(initialFilters || {});
-  const [selectedApplicant, setSelectedApplicant] = useState<number | null>(null);
+  // Operations
+  createApplication: (data: CreateApplicationRequest) => Promise<void>;
+  updateStatus: (data: UpdateApplicationStatusRequest) => Promise<void>;
+  deleteApplication: (applicantId: number) => Promise<void>;
+  
+  // Utility
+  refetch: () => Promise<any>;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
 
-  // Fetch applicants query
-  const { data: applicants = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/applicants', locationId, filters],
+export function useApplicants(config: UseApplicantsConfig = {}): UseApplicantsReturn {
+  const queryClient = useQueryClient();
+  const { filters = {}, page = 1, limit = 20 } = config;
+
+  // Build query parameters
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(filters.status && { status: filters.status }),
+    ...(filters.locationId && { locationId: filters.locationId.toString() }),
+    ...(filters.search && { search: filters.search }),
+    ...(filters.dateRange?.start && { startDate: filters.dateRange.start }),
+    ...(filters.dateRange?.end && { endDate: filters.dateRange.end })
+  });
+
+  // Applicants list query
+  const { 
+    data: applicantsData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: ['/api/applicants', queryParams.toString()],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (locationId) params.append('locationId', locationId.toString());
-      if (filters.status) params.append('status', filters.status);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.competencies?.length) {
-        filters.competencies.forEach(comp => params.append('competencies', comp));
-      }
-      
-      const response = await fetch(`/api/applicants?${params}`, {
+      const response = await fetch(`/api/applicants?${queryParams}`, {
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch applicants: ${response.status}`);
+        throw new Error('Failed to fetch applicants');
       }
       
       return response.json();
     },
-    staleTime: enableRealtime ? 0 : 30000,
-    refetchInterval: enableRealtime ? 10000 : false
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Fetch applicant stats
-  const { data: stats } = useQuery({
-    queryKey: ['/api/applicants/stats', locationId],
-    queryFn: async () => {
-      const params = locationId ? `?locationId=${locationId}` : '';
-      const response = await fetch(`/api/applicants/stats${params}`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch stats: ${response.status}`);
-      }
-      
-      return response.json();
-    },
-    staleTime: 60000 // 1 minute
-  });
-
-  // Create applicant mutation
-  const createApplicantMutation = useMutation({
-    mutationFn: async (data: ApplicantFormData) => {
+  // Create application mutation
+  const createApplicationMutation = useMutation({
+    mutationFn: async (data: CreateApplicationRequest) => {
       const formData = new FormData();
+      formData.append('application', JSON.stringify(data.application));
       
-      // Add text fields
-      Object.entries(data).forEach(([key, value]) => {
-        if (value instanceof File) return; // Handle files separately
-        if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
-        } else if (value !== undefined) {
-          formData.append(key, value.toString());
-        }
-      });
-      
-      // Add file uploads
-      if (data.resume) formData.append('resume', data.resume);
-      if (data.coverLetter) formData.append('coverLetter', data.coverLetter);
-      
-      const response = await fetch('/api/applicants', {
+      if (data.documents) {
+        data.documents.forEach((file, index) => {
+          formData.append(`document_${index}`, file);
+        });
+      }
+
+      const response = await fetch('/api/applicant-portal/apply', {
         method: 'POST',
-        credentials: 'include',
-        body: formData
+        body: formData,
+        credentials: 'include'
       });
-      
+
       if (!response.ok) {
-        throw new Error(`Failed to create applicant: ${response.status}`);
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit application');
       }
-      
+
       return response.json();
     },
-    onSuccess: (newApplicant) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/applicants/stats'] });
-      
-      toast({
-        title: 'Application submitted',
-        description: `Application for ${newApplicant.firstName} ${newApplicant.lastName} has been created.`,
-        duration: 4000
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to submit application. Please try again.',
-        variant: 'destructive',
-        duration: 4000
-      });
     }
   });
 
-  // Update applicant status mutation
+  // Update status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ applicantId, status, reason }: { 
-      applicantId: number; 
-      status: ApplicationStatus; 
-      reason?: string 
-    }) => {
-      const response = await fetch(`/api/applicants/${applicantId}/status`, {
-        method: 'PUT',
+    mutationFn: async (data: UpdateApplicationStatusRequest) => {
+      const response = await fetch(`/api/applicants/${data.applicantId}/status`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status, reason })
+        body: JSON.stringify({ 
+          status: data.status, 
+          note: data.note 
+        }),
+        credentials: 'include'
       });
-      
+
       if (!response.ok) {
-        throw new Error(`Failed to update status: ${response.status}`);
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update status');
       }
-      
+
       return response.json();
     },
-    onSuccess: (updatedApplicant, { status }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/applicants/stats'] });
-      
-      const statusLabels = {
-        contacted: 'contacted',
-        interviewed: 'scheduled for interview',
-        hired: 'hired',
-        rejected: 'rejected',
-        'short-listed': 'short-listed'
-      };
-      
-      toast({
-        title: 'Status updated',
-        description: `Applicant has been ${statusLabels[status] || status}.`,
-        duration: 4000
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to update applicant status. Please try again.',
-        variant: 'destructive',
-        duration: 4000
-      });
     }
   });
 
-  // Delete applicant mutation
-  const deleteApplicantMutation = useMutation({
+  // Delete application mutation
+  const deleteApplicationMutation = useMutation({
     mutationFn: async (applicantId: number) => {
       const response = await fetch(`/api/applicants/${applicantId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete application');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
+    }
+  });
+
+  // API functions
+  const createApplication = useCallback(async (data: CreateApplicationRequest): Promise<void> => {
+    await createApplicationMutation.mutateAsync(data);
+  }, [createApplicationMutation]);
+
+  const updateStatus = useCallback(async (data: UpdateApplicationStatusRequest): Promise<void> => {
+    await updateStatusMutation.mutateAsync(data);
+  }, [updateStatusMutation]);
+
+  const deleteApplication = useCallback(async (applicantId: number): Promise<void> => {
+    await deleteApplicationMutation.mutateAsync(applicantId);
+  }, [deleteApplicationMutation]);
+
+  return {
+    applicants: applicantsData?.applicants || [],
+    total: applicantsData?.total || 0,
+    isLoading,
+    error: error?.message || null,
+    createApplication,
+    updateStatus,
+    deleteApplication,
+    refetch,
+    hasNextPage: page * limit < (applicantsData?.total || 0),
+    hasPreviousPage: page > 1
+  };
+}
+
+// Hook for single applicant detail
+export function useApplicantDetail(applicantId: number) {
+  return useQuery({
+    queryKey: ['/api/applicants', applicantId],
+    queryFn: async (): Promise<ApplicantDetail> => {
+      const response = await fetch(`/api/applicants/${applicantId}`, {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
-        throw new Error(`Failed to delete applicant: ${response.status}`);
+        throw new Error('Failed to fetch applicant detail');
       }
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/applicants/stats'] });
-      
-      toast({
-        title: 'Applicant deleted',
-        description: 'Applicant has been removed from the system.',
-        duration: 4000
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete applicant. Please try again.',
-        variant: 'destructive',
-        duration: 4000
-      });
-    }
+    enabled: !!applicantId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+}
 
-  // Utility functions
-  const getApplicantById = (id: number): Applicant | undefined => {
-    return applicants.find((applicant: Applicant) => applicant.id === id);
-  };
-
-  const getApplicantsByStatus = (status: ApplicationStatus): Applicant[] => {
-    return applicants.filter((applicant: Applicant) => applicant.status === status);
-  };
-
-  const updateFilters = (newFilters: Partial<ApplicantFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const clearFilters = () => {
-    setFilters({});
-  };
-
-  // Public interface
-  return {
-    // Data
-    applicants,
-    stats,
-    isLoading,
-    error,
-    
-    // Selection
-    selectedApplicant,
-    setSelectedApplicant,
-    
-    // Filters
-    filters,
-    updateFilters,
-    clearFilters,
-    
-    // Operations
-    createApplicant: createApplicantMutation.mutate,
-    updateStatus: updateStatusMutation.mutate,
-    deleteApplicant: deleteApplicantMutation.mutate,
-    refetch,
-    
-    // Utilities
-    getApplicantById,
-    getApplicantsByStatus,
-    
-    // Mutation states
-    isCreating: createApplicantMutation.isPending,
-    isUpdating: updateStatusMutation.isPending,
-    isDeleting: deleteApplicantMutation.isPending
-  };
+// Hook for applicant statistics (dashboard integration)
+export function useApplicantStats() {
+  return useQuery({
+    queryKey: ['/api/applicants/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/applicants/stats', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch applicant stats');
+      }
+      
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 }

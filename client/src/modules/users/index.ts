@@ -5,22 +5,23 @@
 export type * from './types/user.types';
 export type * from './types/applicant.types';
 export type * from './types/auth.types';
+export type * from './types/permissions.types';
 
 // Hooks  
-export { useUser } from './hooks/useUser';
 export { useAuth } from './hooks/useAuth';
-export { useApplicants } from './hooks/useApplicants';
-export { useUserProfile } from './hooks/useUserProfile';
+export { useApplicants, useApplicantDetail, useApplicantStats } from './hooks/useApplicants';
+export { useUserProfile, useUsers } from './hooks/useUserProfile';
+export { useUserPermissions, useWorkflowPermissions, PermissionGuard, RoleGuard } from './hooks/useUserPermissions';
 
-// Components
-export { UserProfile } from './components/UserProfile';
-export { ApplicantForm } from './components/ApplicantForm';
-export { ApplicantCard } from './components/ApplicantCard';
-export { UserSettings } from './components/UserSettings';
+// Components (to be implemented in later phases)
+// export { UserProfile } from './components/UserProfile';
+// export { ApplicantForm } from './components/ApplicantForm';
+// export { ApplicantCard } from './components/ApplicantCard';
+// export { UserSettings } from './components/UserSettings';
 
-// Services
-export { UserService } from './services/UserService';
-export { ApplicantService } from './services/ApplicantService';
+// Services (to be implemented in later phases)
+// export { UserService } from './services/UserService';
+// export { ApplicantService } from './services/ApplicantService';
 
 // Module version
 export const USER_MODULE_VERSION = '1.0.0';
