@@ -6,23 +6,12 @@ import {
   X,
   Search,
   Bell,
-  LogOut,
-  LayoutDashboard,
-  MapPin,
-  Users,
-  Calendar,
-  UserPlus,
-  DollarSign,
-  Book,
-  BarChart,
-  Settings,
-  Mail,
-  Shield,
-  Plus
+  LogOut
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
+import { NavigationRenderer } from "@/components/navigation";
 
 import {
   Menu,
@@ -84,13 +73,6 @@ export function MobileNavbar() {
   const effectiveUser = serverAuthData.user || user;
   
   const isActive = (path: string) => location === path;
-  
-  // Workflow-based permission checks
-  const canAccessLocations = hasWorkflowAccess('location');
-  const canAccessApplications = hasWorkflowAccess('application');
-  const canAccessCrew = hasWorkflowAccess('crew');
-  const canAccessScheduling = hasWorkflowAccess('scheduling');
-  const canAccessFinancial = hasWorkflowAccess('financial');
   
 
   
