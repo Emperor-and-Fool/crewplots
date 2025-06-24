@@ -220,8 +220,15 @@ export default function LandingPage() {
 
       {/* Benefits Section */}
       <section className="py-20 bg-white relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-50/30 via-transparent to-primary-100/20"></div>
+        {/* Background image with blur overlay */}
+        <div className="absolute inset-0">
+          <img 
+            src={homepageBackground} 
+            alt="Production team background" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-white/85 backdrop-blur-sm"></div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
