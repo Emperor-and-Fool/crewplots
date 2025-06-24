@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: true, // We're on HTTPS in Replit
+        secure: process.env.NODE_ENV === 'production', // Dynamic: HTTPS in production, HTTP allowed in development
         httpOnly: true,
         sameSite: 'lax', // More compatible and secure than 'none'
         path: '/'
