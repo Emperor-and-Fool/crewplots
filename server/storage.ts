@@ -85,6 +85,11 @@ export interface IStorage {
   updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined>;
   deleteStaffCompetency(id: number): Promise<boolean>;
 
+  // Location-filtered methods
+  getShiftsByLocation(locationId: number): Promise<Shift[]>;
+  getApplicationsByLocation(locationId: number): Promise<User[]>;
+  getCashCountsByLocation(locationId: number): Promise<CashCount[]>;
+
   // Applicants (now using User type with role filtering)
   getApplicant(id: number): Promise<User | undefined>;
   getApplicants(): Promise<User[]>;
@@ -1160,7 +1165,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompetenciesByLocation(locationId: number): Promise<Competency[]> {
-    return await db.select().from(competencies).where(eq(competencies.locationId, locationId));
+    try {
+      return await db.select().from(competencies).where(eq(competencies.locationId, locationId));
+    } catch (error) {
+      console.error("Error in getCompetenciesByLocation:", error);
+      // Return empty array if table doesn't exist yet
+      return [];
+    }
   }
 
   async createCompetency(competency: InsertCompetency): Promise<Competency> {
@@ -1645,6 +1656,36 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  // Location-filtered shifts (via schedule relationship)
+  async getShiftsByLocation(locationId: number): Promise<Shift[]> {
+    try {
+      // Get shifts that belong to schedules for this location
+      const result = await db.select()
+        .from(shifts)
+        .innerJoin(weeklySchedules, eq(shifts.scheduleId, weeklySchedules.id))
+        .where(eq(weeklySchedules.locationId, locationId));
+      
+      return result.map(row => row.shifts);
+    } catch (error) {
+      console.error("Error in getShiftsByLocation:", error);
+      return [];
+    }
+  }
+
+  // Location-filtered applications (users with applicant role)
+  async getApplicationsByLocation(locationId: number): Promise<User[]> {
+    try {
+      const result = await db.select()
+        .from(users)
+        .where(and(eq(users.role, 'applicant'), eq(users.locationId, locationId)));
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getApplicationsByLocation:", error);
+      return [];
+    }
+  }
+
   // Cash Counts
   async getCashCount(id: number): Promise<CashCount | undefined> {
     const [cashCount] = await db.select().from(cashCounts).where(eq(cashCounts.id, id));
@@ -1656,7 +1697,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCashCountsByLocation(locationId: number): Promise<CashCount[]> {
-    return await db.select().from(cashCounts).where(eq(cashCounts.locationId, locationId));
+    try {
+      return await db.select().from(cashCounts).where(eq(cashCounts.locationId, locationId));
+    } catch (error) {
+      console.error("Error in getCashCountsByLocation:", error);
+      // Return empty array if table structure doesn't match
+      return [];
+    }
   }
 
   async getCashCountsByShift(shiftId: number): Promise<CashCount[]> {
