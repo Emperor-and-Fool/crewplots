@@ -117,12 +117,11 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <LocationProvider>
-        <TooltipProvider>
-          <div className="flex flex-col min-h-screen">
-            <div className="flex-grow">
-              <Router>
-              <Switch>
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow">
+            <Router>
+            <Switch>
               {/* PUBLIC ROUTES */}
               <Route path="/home" component={LandingPage} />
               
@@ -322,11 +321,10 @@ function App() {
                 <NotFound />
               </Route>
             </Switch>
-          </Router>
+            </Router>
+          </div>
         </div>
-        <Toaster />
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
     </ErrorBoundary>
   );
 }
