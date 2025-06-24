@@ -88,21 +88,23 @@ CrewPlots is a comprehensive day production crew scheduling system built with a 
 
 ## Deployment Strategy
 
-### Replit Configuration
+### Current Development (Replit)
 - **Modules**: nodejs-20, web, postgresql-16
 - **Packages**: jq, redis, mongodb via Nix
 - **Ports**: Multiple port configuration for services
 - **Auto-scaling**: Configured for production deployment
 
-### Environment Setup
-- **Development**: On-demand service management for databases
-- **Production**: Standard database connections
-- **Docker**: Multi-service container setup with docker-compose
+### Future Production Architecture
+- **Landing Page**: Separate website with own domain and deployment
+- **Customer Environments**: Individual docker-compose IaC deployments per customer
+- **Isolation**: Each customer gets dedicated PostgreSQL, MongoDB, Redis instances
+- **Scaling**: Per-customer resource allocation and management
 
 ### Service Management
-- **PostgreSQL**: Native Replit service via DATABASE_URL
-- **MongoDB**: Custom proxy server for Replit compatibility
-- **Redis**: Custom 21KB implementation with RESP-2 protocol
+- **Development**: On-demand service management for databases
+- **PostgreSQL**: Native Replit service via DATABASE_URL (dev), dedicated per customer (prod)
+- **MongoDB**: Custom proxy server for Replit compatibility (dev), dedicated per customer (prod)
+- **Redis**: Custom 21KB implementation with RESP-2 protocol (dev), dedicated per customer (prod)
 - **File Storage**: Local filesystem with configurable upload directory
 
 ## Changelog
@@ -126,6 +128,7 @@ Changelog:
 - June 24, 2025. ADDED: Professional landing page - Created marketing front-page showcasing CrewPlots as universal day production platform with industry examples and feature highlights
 - June 24, 2025. UPDATED: Landing page positioning - Emphasized hospitality/bar/restaurant origins while showing natural expansion to other day-production industries
 - June 24, 2025. REBRANDED: Changed "management" to "scheduling" throughout platform to better reflect core functionality
+- June 24, 2025. ORGANIZED: Created home-page/ directory structure for future landing page separation and docker-compose IaC customer deployment model
 ```
 
 ## User Preferences

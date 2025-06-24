@@ -223,7 +223,7 @@ export default function LandingPage() {
       <section 
         className="py-20 relative overflow-hidden"
         style={{
-          backgroundImage: 'url(/homepage-bg.png)',
+          backgroundImage: 'url(/home-page/assets/homepage-bg.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
