@@ -116,6 +116,7 @@ Changelog:
 - June 23, 2025. Updated admin user role from "manager" to "administrator" in database, enabling proper access to settings and email configuration
 - June 23, 2025. Migrated database to current schema: created roles, permissions, role_permissions tables, added missing columns, updated role constraints
 - June 23, 2025. Fixed session/role synchronization: cleared stale sessions, removed forceEnableAll references, disabled session role caching to ensure fresh role data
+- June 24, 2025. RESOLVED: Passport session persistence issue - Fixed cookie security configuration (secure: production-only) enabling proper authentication flow in development
 ```
 
 ## User Preferences
