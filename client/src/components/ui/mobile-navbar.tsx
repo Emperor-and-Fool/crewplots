@@ -12,22 +12,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
 import { NavigationRenderer } from "@/components/navigation";
-
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  MapPin,
-  Users,
-  Calendar,
-  UserPlus,
-  DollarSign,
-  Book,
-  BarChart,
-  LogOut,
-  Settings,
-  Plus
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
