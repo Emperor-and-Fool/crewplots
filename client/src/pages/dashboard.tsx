@@ -182,6 +182,15 @@ export default function Dashboard() {
             {isAllLocations && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                 <StatsCard
+                  title="Total Applicants"
+                  value={totalApplicants}
+                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
+                  icon={<UserPlus className="h-6 w-6" />}
+                  link={{ text: "Review applicants", href: "/applicants" }}
+                  onClick={() => navigate("/applicants")}
+                />
+                
+                <StatsCard
                   title="Total Staff"
                   value={totalStaff}
                   icon={<Users className="h-6 w-6" />}
@@ -203,15 +212,6 @@ export default function Dashboard() {
                   icon={<Clock className="h-6 w-6" />}
                   link={{ text: "View details", href: "/reports" }}
                   onClick={() => navigate("/reports")}
-                />
-                
-                <StatsCard
-                  title="Total Applicants"
-                  value={totalApplicants}
-                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
-                  icon={<UserPlus className="h-6 w-6" />}
-                  link={{ text: "Review applicants", href: "/applicants" }}
-                  onClick={() => navigate("/applicants")}
                 />
               </div>
             )}

@@ -163,6 +163,7 @@ Changelog:
 - June 24, 2025. CLEANED: Database test users - Removed test users created during development (finn/Finn TestUser and testapplicant/Test Applicant) to maintain clean production dataset with only authentic user records
 - June 24, 2025. ADDED: Dutch phone numbers to applicants - Added realistic Dutch mobile numbers (+31 6 format) to all existing applicants to enable clickable tel: protocol functionality in the user interface
 - June 24, 2025. IMPROVED: Dashboard applicants display - Removed scroll container and redesigned as clean, mobile-responsive list with better spacing and hover effects, eliminating scrollbar while maintaining all information accessibility
+- June 24, 2025. REORDERED: Dashboard stats cards - Changed order to Total Applicants first, Total Staff second, Shifts This Week third, Hours Scheduled fourth as requested by user
 ```
 
 ## User Preferences
