@@ -2,7 +2,7 @@
 // Will be populated in Phase 3 with extracted logic from messaging-system.tsx
 
 import { useState } from 'react';
-import type { ExtendedMessage, ComponentMode, WorkflowType } from '../types/messaging.types';
+import type { ExtendedMessage, ComponentMode, WorkflowType, MessagingSystemProps } from '../types/messaging.types';
 
 export interface MessagingConfig {
   userId: number;

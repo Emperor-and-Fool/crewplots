@@ -12,10 +12,10 @@
 // export { useNotes } from './hooks/useNotes';
 // export { useMessagePermissions } from './hooks/useMessagePermissions';
 
-// TODO: Phase 2 - Add type exports
-// export type * from './types/messaging.types';
-// export type * from './types/storage.types';
-// export type * from './types/workflow.types';
+// Phase 2 - Type exports
+export type * from './types/messaging.types';
+export type * from './types/storage.types';
+export type * from './types/workflow.types';
 
 // Temporary placeholder to ensure module structure is valid
 export const MESSAGING_MODULE_VERSION = '1.0.0-migration';

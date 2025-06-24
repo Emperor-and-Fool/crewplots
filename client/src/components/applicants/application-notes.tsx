@@ -12,24 +12,8 @@ interface ApplicationNotesProps {
   userId?: number;
 }
 
-interface CompiledNote {
-  id: number;
-  content: string;
-  workflow: string;
-  messageType: string;
-  createdAt: string;
-  updatedAt: string;
-  author: {
-    id: number;
-    name: string;
-    role: string;
-  };
-  permissions: {
-    canEdit: boolean;
-    canDelete: boolean;
-    canShare: boolean;
-  };
-}
+// Using centralized types from messaging module
+import type { CompiledNote } from '@/modules/messaging';
 
 export function ApplicationNotes({ userId }: ApplicationNotesProps) {
   const [newNoteContent, setNewNoteContent] = useState('');

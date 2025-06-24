@@ -2,7 +2,7 @@
 // Will be populated in Phase 3 with extracted logic from application-notes.tsx and messaging-system.tsx
 
 import { useState } from 'react';
-import type { WorkflowType } from '../types/messaging.types';
+import type { WorkflowType, CompiledNote } from '../types/messaging.types';
 
 export interface NotesConfig {
   userId: number;
@@ -17,7 +17,7 @@ export function useNotes(config: NotesConfig) {
   // - Preserve MongoDB/PostgreSQL hybrid operations
   
   const [isLoading, setIsLoading] = useState(false);
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<CompiledNote[]>([]);
   
   // Placeholder implementation
   return {
