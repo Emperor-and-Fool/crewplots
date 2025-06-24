@@ -692,7 +692,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(profileData);
       }
       
-      // For managers and crew members, get basic user data and cache it using the same pattern
+      // For managers, crew members, and administrators, get basic user data and cache it using the same pattern
+      console.log(`[PROFILE API] Fetching profile for ${req.user.role} user ID: ${userId}`);
       const user = await storage.getUser(userId);
       
       if (!user) {
