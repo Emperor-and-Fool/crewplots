@@ -58,7 +58,7 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
   return (
     <div className="py-2">
       <div className="text-xs font-semibold text-primary-200 uppercase tracking-wide mb-2">
-        Current: {getCurrentLocationName()}
+        {getCurrentLocationName()}
       </div>
       
       <div className="space-y-1">

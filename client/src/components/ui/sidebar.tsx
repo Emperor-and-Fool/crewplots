@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
-import { LocationButton } from "@/components/location-button";
+import { LocationSelector } from "@/components/location-selector";
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -209,9 +209,12 @@ export function Sidebar({ className }: SidebarProps) {
                       </li>
                     </ul>
                     
-                    {/* Location Button - positioned under Manage Locations */}
-                    <div className="mt-3 px-2">
-                      <LocationButton className="w-full text-xs" />
+                    {/* Location Selector - positioned under Manage Locations */}
+                    <div className="mt-3">
+                      <LocationSelector 
+                        currentLocationId={selectedLocationId}
+                        onLocationChange={setSelectedLocationId}
+                      />
                     </div>
                   </AccordionContent>
                 </AccordionItem>
