@@ -57,6 +57,7 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
 
 function App() {
   const { isLoading, user, isAuthenticated } = useAuth();
+  const [showEmergencyLogout, setShowEmergencyLogout] = React.useState(false);
   
   // Handle role-based redirects after authentication is complete
   React.useEffect(() => {
@@ -84,14 +85,30 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   
+  // Show emergency logout after 15 seconds of loading
+  React.useEffect(() => {
+    if (isLoading) {
+      setShowEmergencyLogout(false);
+      const timer = setTimeout(() => {
+        setShowEmergencyLogout(true);
+      }, 15000); // 15 seconds: 6s MongoDB + 6s Redis + 3s buffer
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowEmergencyLogout(false);
+    }
+  }, [isLoading]);
+  
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
         <p className="mt-4 text-lg">Loading...</p>
-        <div className="mt-8">
-          <EmergencyLogout />
-        </div>
+        {showEmergencyLogout && (
+          <div className="mt-8">
+            <EmergencyLogout />
+          </div>
+        )}
       </div>
     </div>;
   }

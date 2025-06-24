@@ -129,6 +129,7 @@ Changelog:
 - June 24, 2025. UPDATED: Landing page positioning - Emphasized hospitality/bar/restaurant origins while showing natural expansion to other day-production industries
 - June 24, 2025. REBRANDED: Changed "management" to "scheduling" throughout platform to better reflect core functionality
 - June 24, 2025. ORGANIZED: Created home-page/ directory structure for future landing page separation and docker-compose IaC customer deployment model
+- June 24, 2025. FIXED: Page loading UX issue - Emergency logout component now appears only after 15 seconds instead of immediately on every page load
 ```
 
 ## User Preferences
