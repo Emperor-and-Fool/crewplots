@@ -2,27 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Phone, MapPin, Calendar, Users, ArrowLeft } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, MapPin, Calendar, Users, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLocation } from 'wouter';
-
-interface UserProfile {
-  id: number;
-  username: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  name: string;
-  role: string;
-  phoneNumber?: string;
-  locationId?: number;
-  status?: string;
-  createdAt: string;
-}
+import { User } from '@shared/schema';
 
 export default function Profile() {
   const [, navigate] = useLocation();
-  const { data: profile, isLoading, error } = useQuery<UserProfile>({
+  const { data: profile, isLoading, error } = useQuery<User>({
     queryKey: ['/api/profile'],
     queryFn: async () => {
       const response = await fetch('/api/profile', {
@@ -144,7 +131,7 @@ export default function Profile() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-full">
-                <User className="w-6 h-6 text-blue-600" />
+                <UserIcon className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <CardTitle className="text-2xl">{displayName}</CardTitle>
@@ -200,7 +187,7 @@ export default function Profile() {
               </div>
               
               <div className="flex items-center gap-3 text-gray-700">
-                <User className="w-4 h-4 text-gray-500" />
+                <UserIcon className="w-4 h-4 text-gray-500" />
                 <span>User ID: {profile.id}</span>
               </div>
             </div>
