@@ -3,11 +3,13 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Register } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { hasAdminBypass } from "@shared/utils/permissions";
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isSuperuser: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
@@ -18,6 +20,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  isSuperuser: false,
   login: async () => false,
   logout: async () => {},
   register: async () => false,
@@ -32,6 +35,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // Compute isAuthenticated from user state
   const isAuthenticated = Boolean(user);
+  
+  // Compute superuser status
+  const isSuperuser = hasAdminBypass(user);
 
   // Single auth check on mount with timeout protection
   useEffect(() => {
@@ -335,6 +341,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isLoading,
         isAuthenticated,
+        isSuperuser,
         login,
         logout,
         register,
