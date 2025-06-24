@@ -283,7 +283,7 @@ function App() {
                   (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
-                  <Redirect to="/login" />}
+                  <LandingPage />}
               </Route>
               
               {/* CATCH ALL */}

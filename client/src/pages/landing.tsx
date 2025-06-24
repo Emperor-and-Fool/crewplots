@@ -56,6 +56,12 @@ export default function LandingPage() {
 
   const industries = [
     {
+      icon: <Users className="h-8 w-8" />,
+      title: "Hospitality & Service",
+      description: "Bars, restaurants, hotels, event venues",
+      highlight: true
+    },
+    {
       icon: <Film className="h-8 w-8" />,
       title: "Film Production",
       description: "Feature films, shorts, documentaries"
@@ -69,11 +75,6 @@ export default function LandingPage() {
       icon: <Music className="h-8 w-8" />,
       title: "Festivals & Events", 
       description: "Music festivals, conferences, trade shows"
-    },
-    {
-      icon: <Mic className="h-8 w-8" />,
-      title: "Live Productions",
-      description: "Theater, concerts, corporate events"
     }
   ];
 
@@ -104,9 +105,12 @@ export default function LandingPage() {
             Day Production Crew
             <span className="block text-primary-600">Management Platform</span>
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Streamline your production workflow with comprehensive crew management, 
-            scheduling, and operational tools designed for festivals, film, television, and live events.
+          <p className="text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
+            Born in hospitality for bars, restaurants, and service teams—now powering 
+            day-production crew management across festivals, film, television, and live events.
+          </p>
+          <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
+            The same scheduling precision that keeps restaurants running now manages film sets, festival stages, and production crews worldwide.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -133,16 +137,25 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Built for Production Teams
+              From Restaurant Floors to Film Sets
             </h3>
             <p className="text-lg text-gray-600">
-              Whether you're managing a film set, festival stage, or television studio
+              Started in hospitality, expanded across all day-production industries
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {industries.map((industry, index) => (
-              <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-lg mb-4">
+              <div key={index} className={`text-center ${industry.highlight ? 'relative' : ''}`}>
+                {industry.highlight && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary-600 text-white">
+                    Our Roots
+                  </Badge>
+                )}
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-lg mb-4 ${
+                  industry.highlight 
+                    ? 'bg-primary-600 text-white' 
+                    : 'bg-primary-100 text-primary-600'
+                }`}>
                   {industry.icon}
                 </div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-2">
@@ -193,16 +206,22 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-3xl font-bold text-gray-900 mb-6">
-                Why Production Teams Choose CrewPlots
+                Proven in Hospitality, Perfected for Productions
               </h3>
+              <div className="mb-6 p-4 bg-primary-50 rounded-lg">
+                <p className="text-primary-800 font-medium">
+                  "If it can handle the chaos of a busy restaurant during dinner rush, 
+                  it can manage any day-production crew."
+                </p>
+              </div>
               <div className="space-y-4">
                 {[
-                  "Reduce scheduling conflicts and last-minute changes",
-                  "Streamline crew applications and hiring workflows", 
-                  "Track competencies and match skills to roles",
-                  "Manage multiple locations and projects simultaneously",
-                  "Maintain compliance with labor regulations",
-                  "Generate detailed reports and analytics"
+                  "Battle-tested scheduling from high-volume restaurant operations",
+                  "Cash management systems refined by bar and hotel environments", 
+                  "Competency tracking that scales from servers to camera operators",
+                  "Multi-location management across venues, sets, and stages",
+                  "Compliance tools for hospitality labor laws and union requirements",
+                  "Real-time analytics from fast-paced service environments"
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-start">
                     <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
@@ -212,9 +231,10 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl p-8 text-white">
-              <h4 className="text-2xl font-bold mb-4">Ready to Get Started?</h4>
+              <h4 className="text-2xl font-bold mb-4">From Service to Set</h4>
               <p className="text-primary-100 mb-6">
-                Join production teams using CrewPlots to manage their day crews more efficiently.
+                Whether you're running a restaurant, managing a film crew, or coordinating a festival—the same 
+                principles of day-production scheduling apply. Join teams who've made the switch.
               </p>
               <Button 
                 size="lg" 
@@ -242,10 +262,10 @@ export default function LandingPage() {
             <div>
               <h5 className="text-lg font-semibold mb-4">Industries</h5>
               <ul className="space-y-2 text-gray-400">
+                <li>Hospitality & Service</li>
                 <li>Film Production</li>
                 <li>Television</li>
                 <li>Festivals & Events</li>
-                <li>Live Productions</li>
               </ul>
             </div>
             <div>
@@ -259,7 +279,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 CrewPlots Pro. Built for production teams worldwide.</p>
+            <p>&copy; 2025 CrewPlots Pro. Born in hospitality, serving production teams worldwide.</p>
           </div>
         </div>
       </footer>
