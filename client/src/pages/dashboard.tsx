@@ -178,41 +178,43 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Stats cards */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-              <StatsCard
-                title="Total Staff"
-                value={totalStaff}
-                icon={<Users className="h-6 w-6" />}
-                link={{ text: "View all", href: "/staff-management" }}
-                onClick={() => navigate("/staff-management")}
-              />
-              
-              <StatsCard
-                title="Shifts This Week"
-                value={shiftsThisWeek}
-                icon={<Calendar className="h-6 w-6" />}
-                link={{ text: "View schedule", href: "/scheduling" }}
-                onClick={() => navigate("/scheduling")}
-              />
-              
-              <StatsCard
-                title="Hours Scheduled"
-                value={hoursScheduled}
-                icon={<Clock className="h-6 w-6" />}
-                link={{ text: "View details", href: "/reports" }}
-                onClick={() => navigate("/reports")}
-              />
-              
-              <StatsCard
-                title="Total Applicants"
-                value={totalApplicants}
-                subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
-                icon={<UserPlus className="h-6 w-6" />}
-                link={{ text: "Review applicants", href: "/applicants" }}
-                onClick={() => navigate("/applicants")}
-              />
-            </div>
+            {/* Stats cards - Only show in All Locations view since they're not location-filtered */}
+            {isAllLocations && (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <StatsCard
+                  title="Total Staff"
+                  value={totalStaff}
+                  icon={<Users className="h-6 w-6" />}
+                  link={{ text: "View all", href: "/staff-management" }}
+                  onClick={() => navigate("/staff-management")}
+                />
+                
+                <StatsCard
+                  title="Shifts This Week"
+                  value={shiftsThisWeek}
+                  icon={<Calendar className="h-6 w-6" />}
+                  link={{ text: "View schedule", href: "/scheduling" }}
+                  onClick={() => navigate("/scheduling")}
+                />
+                
+                <StatsCard
+                  title="Hours Scheduled"
+                  value={hoursScheduled}
+                  icon={<Clock className="h-6 w-6" />}
+                  link={{ text: "View details", href: "/reports" }}
+                  onClick={() => navigate("/reports")}
+                />
+                
+                <StatsCard
+                  title="Total Applicants"
+                  value={totalApplicants}
+                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
+                  icon={<UserPlus className="h-6 w-6" />}
+                  link={{ text: "Review applicants", href: "/applicants" }}
+                  onClick={() => navigate("/applicants")}
+                />
+              </div>
+            )}
 
             {/* Weekly Schedule */}
             {currentLocationId && (
@@ -221,24 +223,26 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Recent Applicants Section */}
-            <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Applicants</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {profileData?.filter(user => user.role === 'applicant').slice(0, 4).map((applicant) => (
-                  <ApplicantCard
-                    key={applicant.id}
-                    applicant={applicant}
-                    onClick={(id) => navigate(`/applicant/${id}`)}
-                  />
-                ))}
-                {(!profileData?.filter(user => user.role === 'applicant').length) && (
-                  <div className="col-span-full text-center py-8 text-gray-500">
-                    No applicants found
-                  </div>
-                )}
+            {/* Recent Applicants Section - Only show in All Locations view */}
+            {isAllLocations && (
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Applicants</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {profileData?.filter(user => user.role === 'applicant').slice(0, 4).map((applicant) => (
+                    <ApplicantCard
+                      key={applicant.id}
+                      applicant={applicant}
+                      onClick={(id) => navigate(`/applicant/${id}`)}
+                    />
+                  ))}
+                  {(!profileData?.filter(user => user.role === 'applicant').length) && (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      No applicants found
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Staff Overview and Applicants */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
