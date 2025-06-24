@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
+import { useLocationContext } from "@/contexts/location-context";
+import { LocationSelector } from "@/components/location-selector";
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -48,6 +50,7 @@ export function Sidebar({ className }: SidebarProps) {
   const [location, navigate] = useLocation();
   const { user } = useAuth();
   const { hasWorkflowAccess, hasPermission } = useWorkflowPermissions();
+  const { selectedLocationId, setSelectedLocationId } = useLocationContext();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
     user: any;

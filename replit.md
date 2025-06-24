@@ -131,6 +131,7 @@ Changelog:
 - June 24, 2025. ORGANIZED: Created home-page/ directory structure for future landing page separation and docker-compose IaC customer deployment model
 - June 24, 2025. FIXED: Page loading UX issue - Emergency logout component now appears only after 15 seconds instead of immediately on every page load
 - June 24, 2025. FIXED: Toast notification duration - Reduced from 16.7 minutes to 4 seconds for better UX
+- June 24, 2025. ADDED: Location-based navigation system - Blue sidebar now includes location selector with "All Locations" mode and individual location filtering
 ```
 
 ## User Preferences

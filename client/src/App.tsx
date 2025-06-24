@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
+import { LocationProvider } from "@/contexts/location-context";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/AppLayout";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -331,7 +332,9 @@ export default function Root() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
-          <App />
+          <LocationProvider>
+            <App />
+          </LocationProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
