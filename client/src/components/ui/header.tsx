@@ -160,13 +160,6 @@ export function Header({ className, onLocationChange }: HeaderProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => window.location.href = '/profile'}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.location.href = '/user-settings'}>Settings</DropdownMenuItem>
-              {user?.role === 'administrator' && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Administration</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => window.location.href = '/settings/email'}>Email Settings</DropdownMenuItem>
-                </>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 Logout

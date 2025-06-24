@@ -121,6 +121,7 @@ Changelog:
 - June 24, 2025. IMPLEMENTED: ForceEnableAll system with Docker-aware security - Development warnings for administrator bypass, browser-safe environment detection
 - June 24, 2025. FIXED: Settings page routing - Connected /settings/email path, administrator-only access for technical email configuration
 - June 24, 2025. IMPROVED: Account dropdown navigation - Added Administration section for administrator users, proper Settings/User Settings separation
+- June 24, 2025. FIXED: Sidebar navigation consistency - Moved Administration section to blue sidebar, made "Crew Plots Pro" clickable to Dashboard
 ```
 
 ## User Preferences
