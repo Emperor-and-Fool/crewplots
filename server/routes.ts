@@ -694,7 +694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For managers, crew members, and administrators, get basic user data and cache it using the same pattern
       console.log(`[PROFILE API] Fetching profile for ${req.user.role} user ID: ${userId}`);
+      console.log(`[PROFILE API] User object from session:`, { id: req.user.id, username: req.user.username, role: req.user.role });
       const user = await storage.getUser(userId);
+      console.log(`[PROFILE API] User from database:`, user ? { id: user.id, username: user.username, role: user.role } : 'null');
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
