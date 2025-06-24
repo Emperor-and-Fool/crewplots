@@ -16,6 +16,7 @@ import {
   Camera,
   Mic
 } from "lucide-react";
+import homepageBackground from "@assets/homepage-background.png";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -223,7 +224,7 @@ export default function LandingPage() {
         {/* Background image with blur overlay */}
         <div className="absolute inset-0">
           <img 
-            src="/images/homepage-background.png" 
+            src={homepageBackground} 
             alt="Production team background" 
             className="w-full h-full object-cover"
           />
