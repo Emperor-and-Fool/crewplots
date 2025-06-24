@@ -1,6 +1,26 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from "react";
+import {
+  Menu,
+  X,
+  Search,
+  Bell,
+  LogOut,
+  LayoutDashboard,
+  MapPin,
+  Users,
+  Calendar,
+  UserPlus,
+  DollarSign,
+  Book,
+  BarChart,
+  Settings,
+  Mail,
+  Shield,
+  Plus
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
@@ -65,6 +85,13 @@ export function MobileNavbar() {
   const effectiveUser = serverAuthData.user || user;
   
   const isActive = (path: string) => location === path;
+  
+  // Workflow-based permission checks
+  const canAccessLocations = hasWorkflowAccess('location');
+  const canAccessApplications = hasWorkflowAccess('application');
+  const canAccessCrew = hasWorkflowAccess('crew');
+  const canAccessScheduling = hasWorkflowAccess('scheduling');
+  const canAccessFinancial = hasWorkflowAccess('financial');
   
 
   
