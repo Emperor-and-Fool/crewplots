@@ -98,7 +98,12 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
             <p className="text-sm font-medium text-gray-900">Phone</p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="h-4 w-4" />
-              {profile.phoneNumber}
+              <a 
+                href={`tel:${profile.phoneNumber}`}
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {profile.phoneNumber}
+              </a>
             </div>
           </div>
         )}

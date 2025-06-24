@@ -158,6 +158,8 @@ Changelog:
 - June 24, 2025. FIXED: Administrator profile access bug - Added "administrator" role to profile route protection allowing admin users to access their profile page via header dropdown button, confirmed working correctly
 - June 24, 2025. COMPLETED: User Module Migration Phase 4 cleanup - Recovered ApplicantForm and ApplicationNotes components from git history, migrated to user module structure following schema-first architecture, eliminated old /components/applicants/ directory maintaining modular organization
 - June 24, 2025. RESTORED: Original applicants summary implementation - Recovered honest, data-driven ApplicantsSummary from commit eebf59c7, adapted to user module with existing /api/profile-data endpoint, eliminated placeholder data in favor of authentic schema-based information display
+- June 24, 2025. COMPLETED: User module structure reorganization - Successfully migrated ProfileCard, PortalProfileSkeleton to /profiles/, renamed /applicants/ to /workflows/, moved Profile and UserSettings pages to user module, updated all import paths maintaining unified user-centric architecture treating applicants as workflow rather than separate domain
+- June 24, 2025. RESTORED: Clickable phone number functionality - Implemented tel: protocol links in ProfileCard, ApplicantsSummary, and ApplicantCard components following commit b0242330 pattern, making phone numbers clickable for immediate calling with proper styling and event handling
 ```
 
 ## User Preferences

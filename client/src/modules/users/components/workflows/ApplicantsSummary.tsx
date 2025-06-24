@@ -115,6 +115,17 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
                     <div className="mt-1 text-sm text-gray-500">
                       {applicant.email}
                     </div>
+                    {applicant.phoneNumber && (
+                      <div className="mt-1 text-sm text-gray-500">
+                        <a 
+                          href={`tel:${applicant.phoneNumber}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {applicant.phoneNumber}
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-4 flex-shrink-0 sm:mt-0">
                     <div className="text-xs text-gray-500">
