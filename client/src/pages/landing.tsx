@@ -223,7 +223,7 @@ export default function LandingPage() {
         {/* Background image with blur overlay */}
         <div className="absolute inset-0">
           <img 
-            src={homepageBackground} 
+            src="/images/homepage-background.png" 
             alt="Production team background" 
             className="w-full h-full object-cover"
           />
