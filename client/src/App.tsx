@@ -129,7 +129,7 @@ function App() {
                     <Redirect to="/applicant-portal" /> : 
                     <RoleProtectedRoute 
                       component={Dashboard} 
-                      requiredRoles={["manager", "crew_member", "crew_manager"]} 
+                      requiredRoles={["manager", "crew_member", "crew_manager", "administrator"]} 
                     />) : 
                   <Redirect to="/login" />}
               </Route>
