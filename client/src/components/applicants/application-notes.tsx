@@ -8,12 +8,13 @@ import { MessageSquare, Plus, Clock, User, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+// Using centralized types from user and messaging modules
+import type { CompiledNote } from '@/modules/messaging';
+import type { User } from '@/modules/users';
+
 interface ApplicationNotesProps {
   userId?: number;
 }
-
-// Using centralized types from messaging module
-import type { CompiledNote } from '@/modules/messaging';
 
 export function ApplicationNotes({ userId }: ApplicationNotesProps) {
   const [newNoteContent, setNewNoteContent] = useState('');
