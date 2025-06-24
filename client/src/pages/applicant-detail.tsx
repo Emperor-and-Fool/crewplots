@@ -158,7 +158,7 @@ function ApplicantDetail() {
       
       toast({
         title: "Success",
-        description: `${applicant?.name} has been promoted to crew member with full dashboard access`,
+        description: `${applicant?.name} has been promoted to day production crew member with full dashboard access`,
       });
       
       // Navigate back to see updated user list

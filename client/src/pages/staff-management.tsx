@@ -346,11 +346,11 @@ export default function StaffManagement() {
                                   <TableCell>
                                     <div className="flex items-center">
                                       <Avatar className="h-8 w-8 mr-2">
-                                        <AvatarImage src={`https://ui-avatars.com/api/?name=${staff.user?.name || 'Staff Member'}`} />
-                                        <AvatarFallback>{staff.user?.name?.charAt(0) || 'S'}</AvatarFallback>
+                                        <AvatarImage src={`https://ui-avatars.com/api/?name=${staff.user?.name || 'Crew Member'}`} />
+                                        <AvatarFallback>{staff.user?.name?.charAt(0) || 'C'}</AvatarFallback>
                                       </Avatar>
                                       <div>
-                                        <div className="font-medium">{staff.user?.name || `Staff #${staff.id}`}</div>
+                                        <div className="font-medium">{staff.user?.name || `Crew #${staff.id}`}</div>
                                         <div className="text-sm text-gray-500">{staff.user?.email}</div>
                                       </div>
                                     </div>

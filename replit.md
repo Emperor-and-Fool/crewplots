@@ -2,7 +2,7 @@
 
 ## Overview
 
-CrewPlots is a comprehensive crew management system built with a modern full-stack architecture. The application provides tools for managing staff applications, scheduling, locations, and messaging workflows for hospitality businesses. It features a hybrid database architecture using PostgreSQL for metadata, MongoDB for rich content storage, and Redis for caching and session management.
+CrewPlots is a comprehensive day production crew management system built with a modern full-stack architecture. The application provides tools for managing crew applications, scheduling, locations, and messaging workflows for production teams across industries like festivals, film production, television, and events. It features a hybrid database architecture using PostgreSQL for metadata, MongoDB for rich content storage, and Redis for caching and session management.
 
 ## System Architecture
 
@@ -33,9 +33,9 @@ CrewPlots is a comprehensive crew management system built with a modern full-sta
 ### Database Schema (PostgreSQL)
 - **Users**: Authentication, roles, and permissions management
 - **Locations**: Multi-location support with public IDs and settings
-- **Staff & Competencies**: Crew management with skill tracking
+- **Crew & Competencies**: Day production crew management with skill tracking
 - **Schedules**: Template-based scheduling system
-- **Applications**: Job application workflow management
+- **Applications**: Crew application workflow management
 - **Knowledge Base**: Categories and articles for documentation
 
 ### Hybrid Storage Services

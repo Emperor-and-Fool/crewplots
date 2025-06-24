@@ -116,11 +116,11 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Staff Overview</CardTitle>
+          <CardTitle>Crew Overview</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-40">
-            <p>Loading staff data...</p>
+            <p>Loading crew data...</p>
           </div>
         </CardContent>
       </Card>
@@ -189,7 +189,7 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
           {(!staffWithCompetencies || staffWithCompetencies.length === 0) && (
             <li>
               <div className="px-4 py-6 text-center text-sm text-gray-500">
-                No staff members assigned to this location yet
+                No crew members assigned to this location yet
               </div>
             </li>
           )}

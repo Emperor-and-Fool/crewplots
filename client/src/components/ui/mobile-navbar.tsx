@@ -135,7 +135,7 @@ export function MobileNavbar() {
                     </div>
                   )}
                   
-                  {/* Staff Management */}
+                  {/* Crew Management */}
                   {canAccessCrew && (
                     <div
                       className={cn(
@@ -145,7 +145,7 @@ export function MobileNavbar() {
                       onClick={() => navigateTo("/staff-management")}
                     >
                       <Users className="h-5 w-5 mr-3" />
-                      Staff Management
+                      Crew Management
                     </div>
                   )}
                   

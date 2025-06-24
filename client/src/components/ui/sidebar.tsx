@@ -210,17 +210,17 @@ export function Sidebar({ className }: SidebarProps) {
               </Accordion>
             )}
             
-            {/* Staff Management */}
+            {/* Crew Management */}
             {canAccessCrew && (
               <Accordion type="single" collapsible className="border-0">
-                <AccordionItem value="staff" className="border-0">
+                <AccordionItem value="crew" className="border-0">
                   <AccordionTrigger className="py-0">
                     <div className={cn(
                       "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
                       isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Users className="h-5 w-5 mr-3" />
-                      Staff Management
+                      Crew Management
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pt-0 pb-1 px-2">
@@ -230,7 +230,7 @@ export function Sidebar({ className }: SidebarProps) {
                           className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
                           onClick={() => navigate("/staff-management/create")}
                         >
-                          Add Staff
+                          Add Crew
                         </div>
                       </li>
                       <li>
