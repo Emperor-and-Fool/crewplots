@@ -216,21 +216,6 @@ export function Sidebar({ className }: SidebarProps) {
                         onLocationChange={setSelectedLocationId}
                       />
                     </div>
-                      <LocationSelector 
-                        currentLocationId={selectedLocationId}
-                        onLocationChange={setSelectedLocationId}
-                      />
-                    </div>
-                      </li>
-                      <li>
-                        <div 
-                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
-                          onClick={() => navigate("/locations")}
-                        >
-                          Manage Locations
-                        </div>
-                      </li>
-                    </ul>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
