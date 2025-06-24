@@ -16,7 +16,7 @@ import {
   Camera,
   Mic
 } from "lucide-react";
-import homepageBackground from "@assets/homepage-background.png";
+
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -223,14 +223,15 @@ export default function LandingPage() {
       <section 
         className="py-20 relative overflow-hidden"
         style={{
-          backgroundImage: `url(${homepageBackground})`,
+          backgroundImage: 'url(/homepage-bg.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       >
+
         {/* Background overlay with blur effect */}
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-0"></div>
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-0"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
