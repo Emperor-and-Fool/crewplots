@@ -127,7 +127,7 @@ export default function LandingPage() {
               onClick={() => navigate("/login")}
               className="bg-primary-600 hover:bg-primary-700 text-lg px-8 py-3"
             >
-              Start Managing Your Crew
+              Start Scheduling Your Crew
             </Button>
             <Button 
               variant="outline" 
@@ -262,7 +262,7 @@ export default function LandingPage() {
                 onClick={() => navigate("/login")}
                 className="w-full"
               >
-                Access Your Production Dashboard
+                Access Your Scheduling Dashboard
               </Button>
             </div>
           </div>
