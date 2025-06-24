@@ -3,6 +3,8 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
+import { useLocationContext } from "@/contexts/location-context";
+import { LocationSelector } from "@/components/location-selector";
 import {
   Menu,
   X,
@@ -25,6 +27,7 @@ export function MobileNavbar() {
   const [location, navigate] = useLocation();
   const { user } = useAuth();
   const { hasWorkflowAccess, hasPermission } = useWorkflowPermissions();
+  const { selectedLocationId, setSelectedLocationId } = useLocationContext();
   const [serverAuthData, setServerAuthData] = useState<{
     authenticated: boolean;
     user: any;
@@ -132,6 +135,19 @@ export function MobileNavbar() {
                     >
                       <MapPin className="h-5 w-5 mr-3" />
                       Locations
+                    </div>
+                  )}
+                  
+                  {/* Location Selector - Mobile Version */}
+                  {canAccessLocations && (
+                    <div className="px-2 py-2">
+                      <LocationSelector 
+                        currentLocationId={selectedLocationId}
+                        onLocationChange={(id) => {
+                          setSelectedLocationId(id);
+                          setOpen(false); // Close mobile menu after selection
+                        }}
+                      />
                     </div>
                   )}
                   
