@@ -618,7 +618,13 @@ export class MemStorage implements IStorage {
   }
 
   async getScheduleTemplatesByLocation(locationId: number): Promise<ScheduleTemplate[]> {
-    return Array.from(this.scheduleTemplates.values()).filter(template => template.locationId === locationId);
+    try {
+      return await db.select().from(scheduleTemplates).where(eq(scheduleTemplates.locationId, locationId));
+    } catch (error) {
+      console.error("Error in getScheduleTemplatesByLocation:", error);
+      // Return empty array if table doesn't exist yet
+      return [];
+    }
   }
 
   async createScheduleTemplate(template: InsertScheduleTemplate): Promise<ScheduleTemplate> {
@@ -1204,7 +1210,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStaffByLocation(locationId: number): Promise<Staff[]> {
-    return await db.select().from(staff).where(eq(staff.locationId, locationId));
+    try {
+      // Join staff with users table to filter by location_id in users table
+      const result = await db.select({
+        id: staff.id,
+        userId: staff.user_id,
+        firstName: staff.first_name,
+        lastName: staff.last_name,
+        position: staff.position,
+        department: staff.department,
+        phone: staff.phone,
+        hireDate: staff.hire_date
+      })
+      .from(staff)
+      .innerJoin(users, eq(staff.user_id, users.id))
+      .where(eq(users.location_id, locationId));
+      
+      return result.map(row => ({
+        id: row.id,
+        userId: row.userId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        position: row.position,
+        department: row.department,
+        phone: row.phone,
+        hireDate: row.hireDate
+      })) as Staff[];
+    } catch (error) {
+      console.error("Error in getStaffByLocation:", error);
+      return [];
+    }
   }
 
   async getStaffByUser(userId: number): Promise<Staff | undefined> {
@@ -1677,7 +1712,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.select()
         .from(users)
-        .where(and(eq(users.role, 'applicant'), eq(users.locationId, locationId)));
+        .where(and(eq(users.role, 'applicant'), eq(users.location_id, locationId)));
       
       return result;
     } catch (error) {
@@ -1698,7 +1733,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCashCountsByLocation(locationId: number): Promise<CashCount[]> {
     try {
-      return await db.select().from(cashCounts).where(eq(cashCounts.locationId, locationId));
+      return await db.select().from(cashCounts).where(eq(cashCounts.location_id, locationId));
     } catch (error) {
       console.error("Error in getCashCountsByLocation:", error);
       // Return empty array if table structure doesn't match
