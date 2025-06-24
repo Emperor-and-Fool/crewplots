@@ -66,8 +66,12 @@ export function MobileNavbar() {
   
   const isActive = (path: string) => location === path;
   
-  // Get accessible navigation items based on user permissions
-  const accessibleNavigation = getAccessibleNavigation(effectiveUser, hasWorkflowAccess);
+  // Workflow-based permission checks
+  const canAccessLocations = hasWorkflowAccess('location');
+  const canAccessApplications = hasWorkflowAccess('application');
+  const canAccessCrew = hasWorkflowAccess('crew');
+  const canAccessScheduling = hasWorkflowAccess('scheduling');
+  const canAccessFinancial = hasWorkflowAccess('financial');
   
   // Format user role for display
   const formatRole = (role: string) => {

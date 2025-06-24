@@ -3,12 +3,23 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
-import { navigationConfig, getAccessibleNavigation } from "@shared/navigation-config";
 
 import React, { useState, useEffect } from "react";
 import {
+  LayoutDashboard,
+  MapPin,
+  Users,
+  Calendar,
+  UserPlus,
+  DollarSign,
+  Book,
+  BarChart,
   ChevronDown,
-  LogOut
+  LogOut,
+  Settings,
+  Mail,
+  Shield,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -87,8 +98,12 @@ export function Sidebar({ className }: SidebarProps) {
   
   const isActive = (path: string) => location === path;
   
-  // Get accessible navigation items based on user permissions
-  const accessibleNavigation = getAccessibleNavigation(effectiveUser, hasWorkflowAccess);
+  // Workflow-based permission checks
+  const canAccessLocations = hasWorkflowAccess('location');
+  const canAccessApplications = hasWorkflowAccess('application');
+  const canAccessCrew = hasWorkflowAccess('crew');
+  const canAccessScheduling = hasWorkflowAccess('scheduling');
+  const canAccessFinancial = hasWorkflowAccess('financial');
   
   // Format user role for display
   const formatRole = (role: string) => {
