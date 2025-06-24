@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: '/'
       },
       store: hybridSessionStore,
-      secret: process.env.SESSION_SECRET || "crewplots-dev-key-" + Math.random().toString(36).substring(2, 15),
+      secret: process.env.SESSION_SECRET || "crewplots-dev-static-key-2025",
       resave: true, // Force session save on each request to ensure cross-frame compatibility
       saveUninitialized: true, // Create session for tracking before user logs in
       name: 'connect.sid', // Use default session name
