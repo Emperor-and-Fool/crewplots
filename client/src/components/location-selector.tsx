@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { MapPin, Building2, Globe } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Location } from '@shared/schema';
 
@@ -26,13 +26,10 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
     },
   });
 
-  const handleLocationSelect = (locationId: number | null) => {
+  const handleLocationSelect = (locationId: number) => {
     onLocationChange?.(locationId);
-    // For now, just navigate to dashboard with location context
-    // Later we can implement location-specific routing
-    if (locationId) {
-      navigate('/dashboard');
-    }
+    // Navigate to dashboard with location context
+    navigate('/dashboard');
   };
 
   if (isLoading) {
@@ -58,20 +55,6 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
       </div>
       
       <div className="space-y-1">
-        {/* All Locations Option */}
-        <button
-          onClick={() => handleLocationSelect(null)}
-          className={cn(
-            "w-full flex items-center px-2 py-1 text-xs rounded-md transition-colors",
-            currentLocationId === null
-              ? "bg-primary-600 text-white"
-              : "text-primary-200 hover:bg-primary-600 hover:text-white"
-          )}
-        >
-          <Globe className="mr-3 h-4 w-4" />
-          All Locations
-        </button>
-
         {/* Individual Locations */}
         {activeLocations.map((location) => (
           <button
@@ -93,7 +76,7 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
         {/* No locations state */}
         {activeLocations.length === 0 && (
           <div className="px-2 py-1 text-xs text-primary-300 italic">
-            No active locations
+            No locations created yet
           </div>
         )}
       </div>

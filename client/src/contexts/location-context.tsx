@@ -14,8 +14,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   // Load from session storage on mount
   useEffect(() => {
     const saved = sessionStorage.getItem('selectedLocationId');
-    if (saved) {
-      const locationId = saved === 'null' ? null : parseInt(saved, 10);
+    if (saved && saved !== 'null') {
+      const locationId = parseInt(saved, 10);
       setSelectedLocationId(locationId);
     }
   }, []);
