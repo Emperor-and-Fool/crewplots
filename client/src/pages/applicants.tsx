@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApplicantForm } from "@/modules/users/components/applicants/ApplicantForm";
+import { ApplicantForm } from "@/modules/users/components/workflows/ApplicantForm";
 
 import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip, StickyNote } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";
