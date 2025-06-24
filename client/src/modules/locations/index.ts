@@ -12,8 +12,14 @@ export { default as LocationDetailPage } from './pages/LocationDetailPage';
 export { default as LocationCreatePage } from './pages/LocationCreatePage';
 
 // Hooks
-export { useLocationData } from './hooks/useLocationData';
-export { useLocationPermissions } from './hooks/useLocationPermissions';
+export { 
+  useLocationData, 
+  useLocation, 
+  useCreateLocation, 
+  useUpdateLocation, 
+  useDeleteLocation 
+} from './hooks/useLocationData';
+export { useLocationPermissions, useCanAccessLocation } from './hooks/useLocationPermissions';
 export { useLocationActions } from './hooks/useLocationActions';
 
 // Types

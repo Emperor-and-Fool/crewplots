@@ -10,7 +10,7 @@ interface LocationSelectorProps {
   onLocationChange?: (locationId: number | null) => void;
 }
 
-export function LocationSelector({ currentLocationId, onLocationChange }: LocationSelectorProps) {
+function LocationSelector({ currentLocationId, onLocationChange }: LocationSelectorProps) {
   const [, navigate] = useLocation();
 
   const { data: locations, isLoading } = useQuery({
@@ -105,3 +105,5 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
     </div>
   );
 }
+
+export default LocationSelector;

@@ -6,7 +6,7 @@ import { Header } from "@/components/ui/header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
-import { LocationHeader } from "@/components/dashboard/location-header";
+import { LocationHeader } from "@/modules/locations";
 import { useLocationContext } from "@/contexts/location-context";
 
 import { ApplicantCard } from "@/components/ui/applicant-card";

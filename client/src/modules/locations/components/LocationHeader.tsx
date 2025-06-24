@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Location } from '@shared/schema';
 
-export function LocationHeader() {
+function LocationHeader() {
   const { selectedLocationId, isAllLocations, setSelectedLocationId } = useLocationContext();
 
   const { data: locations, isLoading } = useQuery({
@@ -150,3 +150,5 @@ export function LocationHeader() {
     </div>
   );
 }
+
+export default LocationHeader;
