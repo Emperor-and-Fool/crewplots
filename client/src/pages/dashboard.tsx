@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sidebar } from "@/components/ui/sidebar";
+
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -129,14 +129,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for larger screens */}
-      <Sidebar />
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile navigation */}
-        <MobileNavbar />
+    <div className="flex flex-col overflow-hidden">
+      {/* Mobile navigation */}
+      <MobileNavbar />
         
         {/* Top header with search and user */}
         <Header onLocationChange={handleLocationChange} />
@@ -274,7 +269,6 @@ export default function Dashboard() {
             </div>
           </div>
         </main>
-      </div>
 
       {/* Quick Actions Fixed Button */}
       <div className="fixed right-4 bottom-4">
