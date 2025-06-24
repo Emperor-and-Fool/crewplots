@@ -1,17 +1,8 @@
-import { useState, useEffect } from "react";
 import { Search, Bell } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,59 +11,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Location } from "@shared/schema";
 
 interface HeaderProps {
   className?: string;
-  onLocationChange?: (locationId: number) => void;
 }
 
-export function Header({ className, onLocationChange }: HeaderProps) {
+export function Header({ className }: HeaderProps) {
   const { user } = useAuth();
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
   
   // Direct server-side logout that bypasses the React state issues
   const handleLogout = () => {
     console.log("Using direct server-side logout from header");
     // Navigate directly to the dev-logout endpoint
     window.location.href = "/api/auth/dev-logout";
-  };
-
-  // Fetch locations
-  const { data: locations } = useQuery<Location[]>({
-    queryKey: ["/api/locations"],
-    queryFn: async () => {
-      const response = await fetch('/api/locations', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-      return response.json();
-    },
-    enabled: user?.role === "manager" || user?.role === "floor_manager"
-  });
-
-  // If user is a floor manager, filter only their location
-  const availableLocations = user?.role === "floor_manager" && user?.locationId
-    ? locations?.filter(loc => loc.id === user.locationId)
-    : locations;
-
-  // Set first location as default when data is loaded
-  useEffect(() => {
-    if (availableLocations && availableLocations.length > 0 && !selectedLocation) {
-      setSelectedLocation(String(availableLocations[0].id));
-      if (onLocationChange) {
-        onLocationChange(availableLocations[0].id);
-      }
-    }
-  }, [availableLocations, selectedLocation, onLocationChange]);
-
-  const handleLocationChange = (value: string) => {
-    setSelectedLocation(value);
-    if (onLocationChange) {
-      onLocationChange(Number(value));
-    }
   };
 
   return (
@@ -95,23 +46,6 @@ export function Header({ className, onLocationChange }: HeaderProps) {
           </div>
         </div>
         <div className="ml-4 flex items-center md:ml-6">
-          {/* Location Selector */}
-          {availableLocations && availableLocations.length > 0 && (
-            <div className="mr-3">
-              <Select value={selectedLocation} onValueChange={handleLocationChange}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableLocations.map((location) => (
-                    <SelectItem key={location.id} value={String(location.id)}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           
           {/* Notification button */}
           <DropdownMenu>
