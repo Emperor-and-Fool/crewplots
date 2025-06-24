@@ -42,6 +42,15 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
   // Use existing profile-data endpoint and filter for applicants
   const { data: profileData, isLoading } = useQuery<User[]>({
     queryKey: ['/api/profile-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/profile-data', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+      return response.json();
+    },
     enabled: true,
   });
 
@@ -69,20 +78,20 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
           <Skeleton className="h-4 w-28 mt-1" />
         </CardHeader>
         <CardContent>
-          <ul className="space-y-4">
+          <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <li key={i}>
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <Skeleton className="h-5 w-32 mb-1" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-5 w-5 ml-3" />
+              <div key={i} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-16" />
                 </div>
-              </li>
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-3 w-36" />
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </CardContent>
         <CardFooter className="bg-gray-50 px-4 py-4">
           <Skeleton className="h-4 w-40" />
@@ -103,20 +112,28 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
         </p>
       </CardHeader>
       <CardContent className="p-0">
-        <ul className="divide-y divide-gray-200 max-h-96 overflow-y-auto scrollbar-hide">
+        <div className="divide-y divide-gray-200">
           {recentApplicants.map((applicant) => (
-            <li key={applicant.id}>
-              <div className="px-4 py-4 flex items-center sm:px-6">
-                <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-primary-600 truncate">
+            <div key={applicant.id} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">
                       {applicant.name}
+                    </h4>
+                    <div className="ml-2 flex-shrink-0">
+                      <span className="text-xs text-gray-500">
+                        {applicant.createdAt ? formatRelativeTime(applicant.createdAt) : 'Recently'}
+                      </span>
                     </div>
-                    <div className="mt-1 text-sm text-gray-500">
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600 truncate">
                       {applicant.email}
                     </div>
                     {applicant.phoneNumber && (
-                      <div className="mt-1 text-sm text-gray-500">
+                      <div className="text-sm">
                         <a 
                           href={`tel:${applicant.phoneNumber}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
@@ -127,27 +144,21 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 flex-shrink-0 sm:mt-0">
-                    <div className="text-xs text-gray-500">
-                      {applicant.createdAt ? formatRelativeTime(applicant.createdAt) : 'Recently'}
-                    </div>
-                  </div>
                 </div>
-                <div className="ml-5 flex-shrink-0">
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                
+                <div className="ml-4 flex-shrink-0">
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
-            </li>
+            </div>
           ))}
           
           {recentApplicants.length === 0 && (
-            <li>
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
-                No applicants found
-              </div>
-            </li>
+            <div className="px-4 py-6 text-center text-sm text-gray-500">
+              No applicants found
+            </div>
           )}
-        </ul>
+        </div>
       </CardContent>
       <CardFooter className="bg-gray-50 px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between">
