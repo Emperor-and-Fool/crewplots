@@ -310,7 +310,7 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={Profile} 
-                      requiredRoles={["manager", "crew_member", "crew_manager"]} 
+                      requiredRoles={["manager", "crew_member", "crew_manager", "administrator"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}
