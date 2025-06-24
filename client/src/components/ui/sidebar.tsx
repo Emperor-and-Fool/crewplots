@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
-import { LocationSelector } from "@/components/location-selector";
+
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -209,12 +209,34 @@ export function Sidebar({ className }: SidebarProps) {
                       </li>
                     </ul>
                     
-                    {/* Location Selector - positioned under Manage Locations */}
+                    {/* Location Management Options */}
                     <div className="mt-3">
-                      <LocationSelector 
-                        currentLocationId={selectedLocationId}
-                        onLocationChange={setSelectedLocationId}
-                      />
+                      <ul className="space-y-1">
+                        <li>
+                          <Link
+                            to="/locations"
+                            className={cn(
+                              "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                              "text-primary-200 hover:bg-primary-700 hover:text-white"
+                            )}
+                          >
+                            <Settings className="mr-3 h-4 w-4" />
+                            Manage Locations
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            to="/locations/create"
+                            className={cn(
+                              "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                              "text-primary-200 hover:bg-primary-700 hover:text-white"
+                            )}
+                          >
+                            <Plus className="mr-3 h-4 w-4" />
+                            Create Location
+                          </Link>
+                        </li>
+                      </ul>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
-import { LocationSelector } from "@/components/location-selector";
+
 import {
   Menu,
   X,
@@ -138,17 +138,36 @@ export function MobileNavbar() {
                     </div>
                   )}
                   
-                  {/* Location Selector - Mobile Version */}
+                  {/* Location Management - Mobile Version */}
                   {canAccessLocations && (
-                    <div className="px-2 py-2">
-                      <LocationSelector 
-                        currentLocationId={selectedLocationId}
-                        onLocationChange={(id) => {
-                          setSelectedLocationId(id);
-                          setOpen(false); // Close mobile menu after selection
+                    <>
+                      <div 
+                        className={cn(
+                          "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ml-4",
+                          "text-primary-200 hover:bg-primary-700"
+                        )}
+                        onClick={() => {
+                          navigateTo("/locations");
+                          setOpen(false);
                         }}
-                      />
-                    </div>
+                      >
+                        <Settings className="h-4 w-4 mr-3" />
+                        Manage Locations
+                      </div>
+                      <div 
+                        className={cn(
+                          "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ml-4",
+                          "text-primary-200 hover:bg-primary-700"
+                        )}
+                        onClick={() => {
+                          navigateTo("/locations/create");
+                          setOpen(false);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-3" />
+                        Create Location
+                      </div>
+                    </>
                   )}
                   
                   {/* Crew Management */}
