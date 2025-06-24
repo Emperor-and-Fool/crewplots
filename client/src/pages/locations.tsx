@@ -4,6 +4,8 @@ import { Link, useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MobileNavbar } from '@/components/ui/mobile-navbar';
+import { Header } from '@/components/ui/header';
 import { MapPin, Phone, Mail, Plus, Settings, Building2 } from 'lucide-react';
 import type { Location } from '@shared/schema';
 
@@ -39,14 +41,18 @@ function LocationsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Locations</h1>
-            <p className="text-gray-600">Manage your hotel locations and properties</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col overflow-hidden">
+        <MobileNavbar />
+        <Header />
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold">Locations</h1>
+                <p className="text-gray-600">Manage your hotel locations and properties</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -61,13 +67,19 @@ function LocationsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="flex flex-col overflow-hidden">
+      <MobileNavbar />
+      <Header />
+      <main className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold">Locations</h1>
@@ -169,8 +181,10 @@ function LocationsPage() {
                 </div>
               </div>
             )}
-    </div>
-  );
-}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
 export default LocationsPage;
