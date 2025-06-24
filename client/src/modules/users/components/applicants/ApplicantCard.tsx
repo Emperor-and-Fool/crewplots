@@ -26,6 +26,7 @@ interface ApplicantCardProps {
   applicant: User;
   showNotes?: boolean;
   showActions?: boolean;
+  onClick?: (id: number) => void;
   onView?: (applicant: User) => void;
   onApprove?: (applicant: User) => void;
   onReject?: (applicant: User) => void;
@@ -60,6 +61,7 @@ export function ApplicantCard({
   applicant,
   showNotes = true,
   showActions = true,
+  onClick,
   onView,
   onApprove,
   onReject,
@@ -78,7 +80,10 @@ export function ApplicantCard({
   const daysSinceApplication = Math.floor((Date.now() - applicationDate.getTime()) / (1000 * 60 * 60 * 24));
 
   return (
-    <Card className="w-full hover:shadow-md transition-shadow">
+    <Card 
+      className="w-full hover:shadow-md transition-shadow cursor-pointer" 
+      onClick={() => onClick?.(applicant.id)}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center space-x-3">
           <Avatar className="h-12 w-12">

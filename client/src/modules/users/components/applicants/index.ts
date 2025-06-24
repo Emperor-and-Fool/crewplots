@@ -7,3 +7,4 @@
 export { ApplicantCard } from './ApplicantCard';
 export { ApplicantForm } from './ApplicantForm';
 export { ApplicationNotes } from './ApplicationNotes';
+export { ApplicantsSummary } from './ApplicantsSummary';
