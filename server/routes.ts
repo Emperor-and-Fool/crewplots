@@ -456,9 +456,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Legacy staff endpoint removed - now using unified profile data
+  // Location-filtered API endpoints for database-based filtering
 
-  // Get all shifts - needed for dashboard
+  // Get staff by location
+  app.get("/api/staff/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const staff = await storage.getStaffByLocation(locationId);
+      console.log(`[STAFF API] Returning ${staff.length} staff members for location ${locationId}`);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching staff by location:", error);
+      res.status(500).json({ error: "Failed to fetch staff by location" });
+    }
+  });
+
+  // Get competencies by location
+  app.get("/api/competencies/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const competencies = await storage.getCompetenciesByLocation(locationId);
+      console.log(`[COMPETENCIES API] Returning ${competencies.length} competencies for location ${locationId}`);
+      res.json(competencies);
+    } catch (error) {
+      console.error("Error fetching competencies by location:", error);
+      res.status(500).json({ error: "Failed to fetch competencies by location" });
+    }
+  });
+
+  // Get shifts by location (via schedule filtering)
+  app.get("/api/shifts/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const shifts = await storage.getShiftsByLocation(locationId);
+      console.log(`[SHIFTS API] Returning ${shifts.length} shifts for location ${locationId}`);
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts by location:", error);
+      res.status(500).json({ error: "Failed to fetch shifts by location" });
+    }
+  });
+
+  // Get applications by location
+  app.get("/api/applications/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const applications = await storage.getApplicationsByLocation(locationId);
+      console.log(`[APPLICATIONS API] Returning ${applications.length} applications for location ${locationId}`);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications by location:", error);
+      res.status(500).json({ error: "Failed to fetch applications by location" });
+    }
+  });
+
+  // Get cash counts by location
+  app.get("/api/cash-counts/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const cashCounts = await storage.getCashCountsByLocation(locationId);
+      console.log(`[CASH COUNTS API] Returning ${cashCounts.length} cash counts for location ${locationId}`);
+      res.json(cashCounts);
+    } catch (error) {
+      console.error("Error fetching cash counts by location:", error);
+      res.status(500).json({ error: "Failed to fetch cash counts by location" });
+    }
+  });
+
+  // Get schedule templates by location
+  app.get("/api/schedule-templates/location/:locationId", async (req, res) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      if (isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid location ID" });
+      }
+      
+      const templates = await storage.getScheduleTemplatesByLocation(locationId);
+      console.log(`[SCHEDULE TEMPLATES API] Returning ${templates.length} templates for location ${locationId}`);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching schedule templates by location:", error);
+      res.status(500).json({ error: "Failed to fetch schedule templates by location" });
+    }
+  });
+
+  // Legacy: Get all shifts - needed for dashboard
   app.get("/api/shifts", async (req, res) => {
     try {
       const shifts = await storage.getShifts();
