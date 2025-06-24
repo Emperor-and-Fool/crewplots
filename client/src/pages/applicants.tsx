@@ -24,7 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApplicantForm } from "@/components/applicants/applicant-form";
+// Temporarily comment out until we migrate the form component
+// import { ApplicantForm } from "@/components/applicants/applicant-form";
 
 import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip, StickyNote } from "lucide-react";
 import { printQRCode } from "@/lib/qr-code";

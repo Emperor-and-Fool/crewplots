@@ -9,7 +9,7 @@ import { StaffOverview } from "@/components/dashboard/staff-overview";
 import { LocationHeader } from "@/modules/locations";
 import { useLocationContext } from "@/contexts/location-context";
 
-import { ApplicantCard } from "@/components/ui/applicant-card";
+import { ApplicantCard } from "@/modules/users/components/applicants/ApplicantCard";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { 
