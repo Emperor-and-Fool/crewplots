@@ -86,7 +86,9 @@ export function Sidebar({ className }: SidebarProps) {
   console.log("Sidebar user data:", { 
     serverUser: serverAuthData.user, 
     reactUser: user, 
-    effectiveUser
+    effectiveUser,
+    adminCheck: effectiveUser?.role === 'administrator',
+    roleValue: effectiveUser?.role
   });
   
   const isActive = (path: string) => location === path;
