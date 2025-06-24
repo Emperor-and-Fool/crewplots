@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
-import { LocationSelector } from "@/components/location-selector";
+import { LocationButton } from "@/components/location-button";
 import {
   Menu,
   X,
@@ -138,13 +138,12 @@ export function MobileNavbar() {
                     </div>
                   )}
                   
-                  {/* Location Selector - Mobile Version */}
+                  {/* Location Button - Mobile Version */}
                   {canAccessLocations && (
                     <div className="px-2 py-2">
-                      <LocationSelector 
-                        currentLocationId={selectedLocationId}
+                      <LocationButton 
+                        className="w-full text-sm"
                         onLocationChange={(id) => {
-                          setSelectedLocationId(id);
                           setOpen(false); // Close mobile menu after selection
                         }}
                       />

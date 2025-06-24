@@ -48,10 +48,17 @@ export function LocationSelector({ currentLocationId, onLocationChange }: Locati
 
   const activeLocations = locations?.filter(loc => loc.status === 'active') || [];
 
+  // Get current location name for button text
+  const getCurrentLocationName = () => {
+    if (currentLocationId === null) return "All Locations";
+    const current = activeLocations.find(loc => loc.id === currentLocationId);
+    return current ? current.name : "Select Location";
+  };
+
   return (
     <div className="py-2">
       <div className="text-xs font-semibold text-primary-200 uppercase tracking-wide mb-2">
-        Select Location
+        Current: {getCurrentLocationName()}
       </div>
       
       <div className="space-y-1">
