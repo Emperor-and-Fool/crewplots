@@ -39,7 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Staff, User, StaffCompetency, Competency, Location } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function StaffManagement() {
+export default function CrewManagement() {
   const [activeTab, setActiveTab] = useState("staff");
   const [showForm, setShowForm] = useState(false);
   const [showCompetencyForm, setShowCompetencyForm] = useState(false);

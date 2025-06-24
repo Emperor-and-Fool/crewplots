@@ -101,11 +101,11 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
   const getCompetencyBadgeType = (competencyName?: string) => {
     if (!competencyName) return "bg-gray-100 text-gray-800";
     
-    if (competencyName.toLowerCase().includes("bar")) {
+    if (competencyName.toLowerCase().includes("lighting") || competencyName.toLowerCase().includes("sound")) {
       return "bg-primary-100 text-primary-800";
-    } else if (competencyName.toLowerCase().includes("floor")) {
+    } else if (competencyName.toLowerCase().includes("stage") || competencyName.toLowerCase().includes("production")) {
       return "bg-green-100 text-green-800";
-    } else if (competencyName.toLowerCase().includes("cash")) {
+    } else if (competencyName.toLowerCase().includes("camera") || competencyName.toLowerCase().includes("video")) {
       return "bg-amber-100 text-amber-800";
     }
     
@@ -131,7 +131,7 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
     <Card>
       <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <CardTitle className="text-lg font-medium text-gray-900">
-          Staff Overview
+          Crew Overview
         </CardTitle>
         <p className="mt-1 text-sm text-gray-500">
           {locationId ? `Showing staff assigned to location #${locationId}` : 'No location selected'}
