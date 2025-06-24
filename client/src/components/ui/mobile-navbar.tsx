@@ -66,12 +66,7 @@ export function MobileNavbar() {
   
   const isActive = (path: string) => location === path;
   
-  // Workflow-based permission checks
-  const canAccessLocations = hasWorkflowAccess('location');
-  const canAccessApplications = hasWorkflowAccess('application');
-  const canAccessCrew = hasWorkflowAccess('crew');
-  const canAccessScheduling = hasWorkflowAccess('scheduling');
-  const canAccessFinancial = hasWorkflowAccess('financial');
+
   
   // Format user role for display
   const formatRole = (role: string) => {
@@ -125,134 +120,7 @@ export function MobileNavbar() {
                     <LayoutDashboard className="h-5 w-5 mr-3" />
                     Dashboard
                   </div>
-                  
-                  {/* Locations */}
-                  {canAccessLocations && (
-                    <div 
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/locations") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/locations")}
-                    >
-                      <MapPin className="h-5 w-5 mr-3" />
-                      Locations
-                    </div>
-                  )}
-                  
-                  {/* Location Management - Mobile Version */}
-                  {canAccessLocations && (
-                    <>
-                      <div 
-                        className={cn(
-                          "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ml-4",
-                          "text-primary-200 hover:bg-primary-700"
-                        )}
-                        onClick={() => {
-                          navigateTo("/locations");
-                          setOpen(false);
-                        }}
-                      >
-                        <Settings className="h-4 w-4 mr-3" />
-                        Manage Locations
-                      </div>
-                      <div 
-                        className={cn(
-                          "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ml-4",
-                          "text-primary-200 hover:bg-primary-700"
-                        )}
-                        onClick={() => {
-                          navigateTo("/locations/create");
-                          setOpen(false);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-3" />
-                        Create Location
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Crew Management */}
-                  {canAccessCrew && (
-                    <div
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/staff-management")}
-                    >
-                      <Users className="h-5 w-5 mr-3" />
-                      Crew Management
-                    </div>
-                  )}
-                  
-                  {/* Scheduling */}
-                  {canAccessScheduling && (
-                    <div
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/scheduling") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/scheduling")}
-                    >
-                      <Calendar className="h-5 w-5 mr-3" />
-                      Scheduling
-                    </div>
-                  )}
-                  
-                  {/* Applicants */}
-                  {canAccessApplications && (
-                    <div
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/applicants") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/applicants")}
-                    >
-                      <UserPlus className="h-5 w-5 mr-3" />
-                      Applicants
-                    </div>
-                  )}
-                  
-                  {/* Cash Management */}
-                  {canAccessFinancial && (
-                    <div
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/cash-management") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/cash-management")}
-                    >
-                      <DollarSign className="h-5 w-5 mr-3" />
-                      Cash Management
-                    </div>
-                  )}
-                  
-                  {/* Knowledge Base */}
-                  <div
-                    className={cn(
-                      "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                      isActive("/knowledge-base") ? "bg-primary-700" : "hover:bg-primary-700"
-                    )}
-                    onClick={() => navigateTo("/knowledge-base")}
-                  >
-                    <Book className="h-5 w-5 mr-3" />
-                    Knowledge Base
-                  </div>
-                  
-                  {/* Reports */}
-                  {canAccessFinancial && (
-                    <div
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
-                        isActive("/reports") ? "bg-primary-700" : "hover:bg-primary-700"
-                      )}
-                      onClick={() => navigateTo("/reports")}
-                    >
-                      <BarChart className="h-5 w-5 mr-3" />
-                      Reports
-                    </div>
-                  )}
+
                 </div>
               </nav>
             </div>
