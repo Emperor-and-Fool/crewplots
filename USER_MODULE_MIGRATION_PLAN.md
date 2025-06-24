@@ -390,3 +390,53 @@ rm USER_SYSTEM_ANALYSIS.md USER_MODULE_MIGRATION_PLAN.md
 - **Maintainability**: Easier to modify and extend user features
 
 This migration plan provides a systematic approach to consolidating the scattered user management system into a cohesive module while preserving all critical functionality and integrations.
+
+---
+
+## Sub-Plan: Authentication Flow Analysis & Parallel Implementation Strategy
+
+### Authentication Flow Trace (New User Registration → Login → Applicant Portal)
+
+**Flow Analysis Results:**
+1. **Registration Flow**: `login.tsx` → `registerSchema` from `@shared/schema` → `auth.ts` backend
+2. **Login Flow**: `loginSchema` from `@shared/schema` → `auth-context.tsx` → authentication
+3. **Applicant Portal**: `useAuth()` → `@shared/schema.User` → role-based access control
+
+**Key Discovery: Current Authentication Chain is Type-Consistent**
+- All components use `@shared/schema.User` throughout the entire flow
+- No immediate type conflicts in main user journey
+- New module types exist in parallel without interference
+
+### Type Cross-Points Identified
+
+**✅ Safe Integration Points (No Conflicts):**
+- New applicant management components
+- Enhanced profile features  
+- Dashboard statistics with `useApplicantStats()`
+- Additional user management tools
+
+**⚠️ Conflict Points (Gradual Migration Needed):**
+- `applicant-form.tsx`: Uses `type User` from `@shared/schema`
+- `profile.tsx`: Defines custom `UserProfile` interface
+- Auth system enhancements requiring better type safety
+
+### Recommended Parallel Implementation Strategy
+
+**Phase A: Parallel Implementation (No Breaking Changes)**
+- Preserve existing auth flow using `@shared/schema.User`
+- Implement new module features alongside existing system
+- Use new module types for NEW components only
+- No type conflicts or authentication disruption
+
+**Phase B: Gradual Type Alignment**
+- Align `@shared/schema.User` with module types (compatible interfaces)
+- Update components individually with backward compatibility
+- Maintain existing authentication throughout transition
+
+**Phase C: Full Type System Unification**
+- Replace schema imports with module imports
+- Remove duplicate type definitions
+- Complete migration to unified type system
+
+**Implementation Decision: Proceed with Phase A - Parallel Implementation**
+This approach adds immediate value through new user module features while completely avoiding authentication system risks and type conflicts.
