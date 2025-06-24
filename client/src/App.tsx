@@ -17,6 +17,7 @@ import ApplicantPortal from "@/pages/applicant-portal";
 import Locations from "@/pages/locations";
 import LocationsPage from "@/pages/locations";
 import LocationNewPage from "@/pages/location-new";
+import LocationDetail from "@/pages/location-detail";
 import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
@@ -183,6 +184,17 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={LocationNewPage} 
+                      requiredRoles={["manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/locations/:id">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={LocationDetail} 
                       requiredRoles={["manager", "administrator"]} 
                     />
                   </AppLayout> : 

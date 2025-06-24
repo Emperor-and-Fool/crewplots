@@ -142,7 +142,11 @@ function LocationsPage() {
                         <Button 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => navigate(`/location/${location.public_id || location.id}/dashboard`)}
+                          onClick={() => {
+                            // Set the location in context and navigate to dashboard
+                            localStorage.setItem('selectedLocationId', location.id.toString());
+                            navigate('/dashboard');
+                          }}
                         >
                           <Building2 className="h-4 w-4 mr-2" />
                           Dashboard
