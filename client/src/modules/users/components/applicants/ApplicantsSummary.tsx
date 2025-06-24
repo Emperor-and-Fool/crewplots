@@ -62,7 +62,7 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
   // Get only the most recent applicants up to the limit
   const recentApplicants = applicants
     ? [...applicants]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
         .slice(0, limit)
     : [];
 
@@ -126,7 +126,7 @@ export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryPr
                   </div>
                   <div className="mt-4 flex-shrink-0 sm:mt-0">
                     <div className="text-xs text-gray-500">
-                      {formatRelativeTime(applicant.createdAt)}
+                      {applicant.createdAt ? formatRelativeTime(applicant.createdAt) : 'Recently'}
                     </div>
                   </div>
                 </div>

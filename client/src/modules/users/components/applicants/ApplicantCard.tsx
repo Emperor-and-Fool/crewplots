@@ -71,13 +71,25 @@ export function ApplicantCard({
   const applicantInitials = applicant.name?.split(' ').map(n => n[0]).join('') || 
                            applicant.username?.[0]?.toUpperCase() || 'A';
   
-  // For now, we'll use a default status since it's not in the schema yet
-  const status = 'pending';
-  const statusInfo = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+  // Map schema status to display status
+  const statusMapping: Record<string, keyof typeof statusConfig> = {
+    'new': 'pending',
+    'contacted': 'pending', 
+    'interviewed': 'interview',
+    'short-listed': 'approved',
+    'hired': 'approved',
+    'rejected': 'rejected'
+  };
+  
+  const status = statusMapping[displayStatus] || 'pending';
+  const statusInfo = statusConfig[status];
   const StatusIcon = statusInfo.icon;
 
   const applicationDate = applicant.createdAt ? new Date(applicant.createdAt) : new Date();
   const daysSinceApplication = Math.floor((Date.now() - applicationDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Use actual status from schema or default to pending for display
+  const displayStatus = applicant.status || 'pending';
 
   return (
     <Card 
@@ -174,7 +186,7 @@ export function ApplicantCard({
               </Button>
             )}
             
-            {status === 'pending' && (
+            {(status === 'pending' || displayStatus === 'new' || displayStatus === 'contacted') && (
               <>
                 {onApprove && (
                   <Button 
