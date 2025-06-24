@@ -14,10 +14,7 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
-import Locations from "@/pages/locations";
-import LocationsPage from "@/pages/locations";
-import LocationNewPage from "@/pages/location-new";
-import LocationDetail from "@/pages/location-detail";
+import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
 import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
@@ -184,7 +181,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={LocationNewPage} 
+                      component={LocationCreatePage} 
                       requiredRoles={["manager", "administrator"]} 
                     />
                   </AppLayout> : 
@@ -195,7 +192,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={LocationDetail} 
+                      component={LocationDetailPage} 
                       requiredRoles={["manager", "administrator"]} 
                     />
                   </AppLayout> : 
