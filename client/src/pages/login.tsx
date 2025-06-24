@@ -101,6 +101,15 @@ export default function Login() {
       <div className="w-full max-w-md px-4 flex-grow flex items-center justify-center">
         <Card className="shadow-lg">
           <CardHeader className="space-y-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-md">
+            <div className="flex justify-between items-center mb-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/home")}
+                className="text-white hover:bg-white/20 text-sm p-2"
+              >
+                ← Back to Home
+              </Button>
+            </div>
             <CardTitle className="text-2xl font-bold text-center">
               Crew Plots Pro - Login Page
             </CardTitle>

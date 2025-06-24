@@ -463,7 +463,7 @@ router.get('/dev-logout', (req, res) => {
                 <html>
                 <head>
                     <title>Logout Successful</title>
-                    <meta http-equiv="refresh" content="3;url=/login" />
+                    <meta http-equiv="refresh" content="2;url=/login" />
                     <style>
                         body {
                             font-family: system-ui, -apple-system, sans-serif;
