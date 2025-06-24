@@ -24,8 +24,8 @@ export default function LandingPage() {
   const features = [
     {
       icon: <Users className="h-6 w-6" />,
-      title: "Crew Management",
-      description: "Organize your production team with skill tracking, competency management, and role assignments."
+      title: "Crew Scheduling",
+      description: "Organize your production team with skill tracking, competency scheduling, and role assignments."
     },
     {
       icon: <Calendar className="h-6 w-6" />,
@@ -44,8 +44,8 @@ export default function LandingPage() {
     },
     {
       icon: <DollarSign className="h-6 w-6" />,
-      title: "Cash Management",
-      description: "Track petty cash, equipment deposits, and expense reconciliation for productions."
+      title: "Cash Scheduling",
+      description: "Schedule and track petty cash, equipment deposits, and expense reconciliation for productions."
     },
     {
       icon: <BarChart className="h-6 w-6" />,
@@ -112,11 +112,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Day Production Crew
-            <span className="block text-primary-600">Management Platform</span>
+            <span className="block text-primary-600">Scheduling Platform</span>
           </h2>
           <p className="text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
             Born in hospitality for bars, restaurants, and service teams—now powering 
-            day-production crew management across festivals, film, television, and live events.
+            day-production crew scheduling across festivals, film, television, and live events.
           </p>
           <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
             The same scheduling precision that keeps restaurants running now manages film sets, festival stages, and production crews worldwide.
@@ -193,11 +193,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything You Need to Manage Your Crew
+              Everything You Need to Schedule Your Crew
             </h3>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               From initial application to final wrap, CrewPlots handles every aspect 
-              of day production crew management.
+              of day production crew scheduling.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -237,9 +237,9 @@ export default function LandingPage() {
               <div className="space-y-4">
                 {[
                   "Battle-tested scheduling from high-volume restaurant operations",
-                  "Cash management systems refined by bar and hotel environments", 
+                  "Cash scheduling systems refined by bar and hotel environments", 
                   "Competency tracking that scales from servers to camera operators",
-                  "Multi-location management across venues, sets, and stages",
+                  "Multi-location scheduling across venues, sets, and stages",
                   "Compliance tools for hospitality labor laws and union requirements",
                   "Real-time analytics from fast-paced service environments"
                 ].map((benefit, index) => (
@@ -276,7 +276,7 @@ export default function LandingPage() {
             <div>
               <h5 className="text-lg font-semibold mb-4">CrewPlots Pro</h5>
               <p className="text-gray-400">
-                The complete day production crew management platform for modern productions.
+                The complete day production crew scheduling platform for modern productions.
               </p>
             </div>
             <div>
@@ -291,15 +291,15 @@ export default function LandingPage() {
             <div>
               <h5 className="text-lg font-semibold mb-4">Features</h5>
               <ul className="space-y-2 text-gray-400">
-                <li>Crew Management</li>
+                <li>Crew Scheduling</li>
                 <li>Smart Scheduling</li>
                 <li>Application Pipeline</li>
-                <li>Cash Management</li>
+                <li>Cash Scheduling</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 CrewPlots Pro. Born in hospitality, serving production teams worldwide.</p>
+            <p>&copy; 2025 CrewPlots Pro. Born in hospitality, scheduling production teams worldwide.</p>
           </div>
         </div>
       </footer>

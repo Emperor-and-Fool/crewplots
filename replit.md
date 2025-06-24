@@ -2,7 +2,7 @@
 
 ## Overview
 
-CrewPlots is a comprehensive day production crew management system built with a modern full-stack architecture. The application provides tools for managing crew applications, scheduling, locations, and messaging workflows for production teams across industries like festivals, film production, television, and events. It features a hybrid database architecture using PostgreSQL for metadata, MongoDB for rich content storage, and Redis for caching and session management.
+CrewPlots is a comprehensive day production crew scheduling system built with a modern full-stack architecture. The application provides tools for scheduling crew applications, shifts, locations, and messaging workflows for production teams across industries like festivals, film production, television, and events. It features a hybrid database architecture using PostgreSQL for metadata, MongoDB for rich content storage, and Redis for caching and session management.
 
 ## System Architecture
 
@@ -125,6 +125,7 @@ Changelog:
 - June 24, 2025. REBRANDED: Removed hospitality constraints - Updated from hospitality management to "day production crew" management system supporting festivals, film, television, and events
 - June 24, 2025. ADDED: Professional landing page - Created marketing front-page showcasing CrewPlots as universal day production platform with industry examples and feature highlights
 - June 24, 2025. UPDATED: Landing page positioning - Emphasized hospitality/bar/restaurant origins while showing natural expansion to other day-production industries
+- June 24, 2025. REBRANDED: Changed "management" to "scheduling" throughout platform to better reflect core functionality
 ```
 
 ## User Preferences

@@ -210,7 +210,7 @@ export function Sidebar({ className }: SidebarProps) {
               </Accordion>
             )}
             
-            {/* Crew Management */}
+            {/* Crew Scheduling */}
             {canAccessCrew && (
               <Accordion type="single" collapsible className="border-0">
                 <AccordionItem value="crew" className="border-0">
@@ -220,7 +220,7 @@ export function Sidebar({ className }: SidebarProps) {
                       isActive("/staff-management") ? "bg-primary-700" : "hover:bg-primary-700"
                     )}>
                       <Users className="h-5 w-5 mr-3" />
-                      Crew Management
+                      Crew Scheduling
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pt-0 pb-1 px-2">
