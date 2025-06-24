@@ -142,6 +142,36 @@ export function Sidebar({ className }: SidebarProps) {
               <LayoutDashboard className="h-5 w-5 mr-3" />
               Dashboard
             </div>
+
+            {/* Administration - Only for administrators */}
+            {effectiveUser?.role === 'administrator' && (
+              <Accordion type="single" collapsible className="border-0">
+                <AccordionItem value="administration" className="border-0">
+                  <AccordionTrigger className="py-0">
+                    <div className={cn(
+                      "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                      isActive("/settings") ? "bg-primary-700" : "hover:bg-primary-700"
+                    )}>
+                      <Settings className="h-5 w-5 mr-3" />
+                      Administration
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-0 pb-1 px-2">
+                    <ul className="pl-8">
+                      <li>
+                        <div 
+                          className="flex items-center py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
+                          onClick={() => navigate("/settings/email")}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Email Settings
+                        </div>
+                      </li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
             
             {/* Locations - Manager only */}
             {canAccessLocations && (
@@ -330,36 +360,6 @@ export function Sidebar({ className }: SidebarProps) {
                 <BarChart className="h-5 w-5 mr-3" />
                 Reports
               </div>
-            )}
-
-            {/* Administration - Only for administrators */}
-            {effectiveUser?.role === 'administrator' && (
-              <Accordion type="single" collapsible className="border-0">
-                <AccordionItem value="administration" className="border-0">
-                  <AccordionTrigger className="py-0">
-                    <div className={cn(
-                      "w-full flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      isActive("/settings") ? "bg-primary-700" : "hover:bg-primary-700"
-                    )}>
-                      <Settings className="h-5 w-5 mr-3" />
-                      Administration
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-0 pb-1 px-2">
-                    <ul className="pl-8">
-                      <li>
-                        <div 
-                          className="flex items-center py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
-                          onClick={() => navigate("/settings/email")}
-                        >
-                          <Mail className="h-4 w-4 mr-2" />
-                          Email Settings
-                        </div>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
             )}
           </div>
         </nav>
