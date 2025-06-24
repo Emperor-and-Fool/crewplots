@@ -296,6 +296,17 @@ function App() {
                   </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
+
+              <Route path="/settings/security">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SecuritySettings} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
               
               <Route path="/profile">
                 {isAuthenticated ? 
