@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Staff, StaffCompetency, User, Competency } from "@shared/schema";
+import { Staff, StaffCompetency, User, Competency, Location } from "@shared/schema";
 
 interface StaffOverviewProps {
   locationId: number;
@@ -36,6 +36,20 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
       return response.json();
     },
     enabled: !!locationId,
+  });
+
+  // Fetch location details to get the location name
+  const { data: locations } = useQuery<Location[]>({
+    queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    }
   });
 
   // Fetch users to get names
@@ -97,6 +111,9 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
     };
   });
 
+  // Find the current location name
+  const currentLocation = locations?.find(loc => loc.id === locationId);
+
   // Get the competency badge type based on name
   const getCompetencyBadgeType = (competencyName?: string) => {
     if (!competencyName) return "bg-gray-100 text-gray-800";
@@ -134,7 +151,7 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
           Crew Overview
         </CardTitle>
         <p className="mt-1 text-sm text-gray-500">
-          {locationId ? `Showing staff assigned to location #${locationId}` : 'No location selected'}
+          {currentLocation ? `Showing staff assigned to ${currentLocation.name}` : 'No location selected'}
         </p>
       </CardHeader>
       <CardContent className="p-0">
