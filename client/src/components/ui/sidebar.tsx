@@ -191,24 +191,6 @@ export function Sidebar({ className }: SidebarProps) {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pt-0 pb-1 px-2">
-                    <ul className="pl-8">
-                      <li>
-                        <div 
-                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
-                          onClick={() => navigate("/locations/create")}
-                        >
-                          Create Location
-                        </div>
-                      </li>
-                      <li>
-                        <div 
-                          className="block py-1 text-sm text-primary-200 hover:text-white cursor-pointer"
-                          onClick={() => navigate("/locations")}
-                        >
-                          Manage Locations
-                        </div>
-                      </li>
-                    </ul>
                     
                     {/* Location Management Options */}
                     <div className="mt-3">
