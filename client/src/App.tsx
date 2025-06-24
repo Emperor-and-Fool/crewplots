@@ -26,6 +26,7 @@ import KnowledgeBase from "@/pages/knowledge-base";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import EmailSettings from "@/pages/email-settings";
+import UserSettings from "@/pages/user-settings";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 
@@ -233,6 +234,14 @@ function App() {
                       component={Settings} 
                       requiredRoles={["administrator"]} 
                     />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/user-settings">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <UserSettings />
                   </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
