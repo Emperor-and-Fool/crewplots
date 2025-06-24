@@ -307,8 +307,9 @@ export default function Applicants() {
                   </h1>
                 </div>
                 <ApplicantForm 
-                  applicant={selectedApplicant || undefined} 
-                  isEditing={!!selectedApplicant} 
+                  showForm={showForm} 
+                  onClose={() => setShowForm(false)}
+                  editingApplicant={selectedApplicant}
                 />
               </div>
             ) : (

@@ -14,7 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessagingSystem } from '@/components/ui/messaging-system';
+import { MessagingSystem } from '@/modules/messaging';
+import { ApplicationNotes } from '@/modules/users/components/applicants/ApplicationNotes';
 import { ProfileCard } from '@/components/ui/profile-card';
 import { ArrowLeft } from 'lucide-react';
 
