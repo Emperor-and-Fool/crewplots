@@ -39,35 +39,27 @@ const formatRelativeTime = (date: string | Date) => {
 };
 
 export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryProps) {
-  // Fetch applicants, filtered by location if provided
-  const { data: applicants, isLoading } = useQuery<User[]>({
-    queryKey: locationId 
-      ? ['/api/applicants/location', locationId] 
-      : ['/api/applicants'],
+  // Use existing profile-data endpoint and filter for applicants
+  const { data: profileData, isLoading } = useQuery<User[]>({
+    queryKey: ['/api/profile-data'],
     enabled: true,
-    queryFn: async () => {
-      const url = locationId 
-        ? `/api/applicants/location/${locationId}` 
-        : '/api/applicants';
-      const response = await fetch(url, {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch applicants');
-      }
-      return response.json();
-    }
   });
 
-  // Get only the most recent applicants up to the limit
-  const recentApplicants = applicants
-    ? [...applicants]
-        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-        .slice(0, limit)
-    : [];
+  // Filter for applicants only
+  const applicants = profileData?.filter(user => user.role === 'applicant') || [];
 
-  const totalApplicants = applicants?.length || 0;
-  const newApplicants = applicants?.filter(a => a.status === 'new').length || 0;
+  // Filter by location if specified
+  const filteredApplicants = locationId 
+    ? applicants.filter(applicant => applicant.locationId === locationId)
+    : applicants;
+
+  // Get only the most recent applicants up to the limit
+  const recentApplicants = [...filteredApplicants]
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, limit);
+
+  const totalApplicants = filteredApplicants.length;
+  const newApplicants = filteredApplicants.filter(a => a.status === 'new').length;
 
   if (isLoading) {
     return (
