@@ -1,4 +1,5 @@
 import { useAuth } from "./use-auth";
+import { isForceEnableAllActive } from "@shared/utils/permissions";
 
 /**
  * Hook for checking workflow-based permissions
@@ -20,6 +21,12 @@ export const useWorkflowPermissions = () => {
     // Admin fallback: if user has manager role, treat as admin with full access
     if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
       console.log(`🔍 PERMISSION CHECK: Admin fallback for ${user.username} (${user.role})`);
+      
+      // Add development warning for forceEnableAll
+      if (isForceEnableAllActive()) {
+        console.warn('⚠️ ADMIN BYPASS ACTIVE - Development mode only');
+      }
+      
       // Use blocked permissions if available, otherwise grant full access
       const blockedPermissions = user.blockedPermissions?.[workflow] || [];
       const result = !blockedPermissions.includes(permission);
@@ -64,6 +71,11 @@ export const useWorkflowPermissions = () => {
 
     // Admin fallback: manager without permissions gets full access
     if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
+      // Add development warning for forceEnableAll
+      if (isForceEnableAllActive()) {
+        console.warn('⚠️ ADMIN BYPASS ACTIVE - Development mode only');
+      }
+      
       const blockedPermissions = user.blockedPermissions?.[workflow] || [];
       return blockedPermissions.length === 0 || !blockedPermissions.includes('view');
     }
@@ -78,7 +90,8 @@ export const useWorkflowPermissions = () => {
     hasAnyPermission,
     hasAllPermissions,
     hasWorkflowAccess,
-    user
+    user,
+    isSuperuser: user?.role === 'administrator' && isForceEnableAllActive()
   };
 };
 
