@@ -147,7 +147,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={LocationsPage} 
-                    requiredRoles={["manager"]} 
+                    requiredRoles={["manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -156,7 +156,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={LocationNewPage} 
-                    requiredRoles={["manager"]} 
+                    requiredRoles={["manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -165,7 +165,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={StaffManagement} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "floor_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -174,7 +174,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={Scheduling} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "floor_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -183,7 +183,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={ViewCalendar} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "floor_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -210,7 +210,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={KnowledgeBase} 
-                    requiredRoles={["manager", "floor_manager"]} 
+                    requiredRoles={["manager", "floor_manager", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -220,7 +220,7 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={Reports} 
-                      requiredRoles={["manager", "floor_manager"]} 
+                      requiredRoles={["manager", "floor_manager", "administrator"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}
