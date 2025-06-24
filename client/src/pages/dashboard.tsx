@@ -6,6 +6,8 @@ import { Header } from "@/components/ui/header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 import { StaffOverview } from "@/components/dashboard/staff-overview";
+import { LocationHeader } from "@/components/dashboard/location-header";
+import { useLocationContext } from "@/contexts/location-context";
 
 import { ApplicantCard } from "@/components/ui/applicant-card";
 import { CashManagementSummary } from "@/components/dashboard/cash-management-summary";
@@ -23,12 +25,12 @@ import { useToast } from "@/hooks/use-toast";
 
 
 export default function Dashboard() {
-  const [selectedLocation, setSelectedLocation] = useState<number>(0);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
   const { user } = useAuth();
   const { toast } = useToast();
   const [isClearing, setIsClearing] = useState(false);
+  const { selectedLocationId, isAllLocations } = useLocationContext();
   
   // Function to clear all sessions (admin only)
   const clearAllSessions = async () => {
@@ -81,7 +83,6 @@ export default function Dashboard() {
 
   const { data: shiftsStats } = useQuery({
     queryKey: ['/api/shifts'],
-    enabled: !!selectedLocation,
     queryFn: async () => {
       const response = await fetch('/api/shifts', {
         credentials: 'include'
@@ -123,10 +124,8 @@ export default function Dashboard() {
   const shortListedApplicants = applicantUsers?.filter(applicant => applicant.status === 'short-listed').length || 0;
   const totalApplicants = applicantUsers?.length || 0;
 
-  // Handle location change from header
-  const handleLocationChange = (locationId: number) => {
-    setSelectedLocation(locationId);
-  };
+  // Use location-filtered data when location is selected
+  const currentLocationId = selectedLocationId || 0;
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -134,18 +133,17 @@ export default function Dashboard() {
       <MobileNavbar />
         
         {/* Top header with search and user */}
-        <Header onLocationChange={handleLocationChange} />
+        <Header />
         
         {/* Main scrollable area */}
         <main className="flex-1 overflow-y-auto bg-gray-50 relative">
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Dashboard Header */}
+            {/* Location-aware Dashboard Header */}
+            <LocationHeader />
+            
             <div className="md:flex md:items-center md:justify-between mb-8">
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                  Dashboard
-                </h2>
                 <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
                   <div className="mt-2 flex items-center text-sm text-gray-500">
                     <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
@@ -217,9 +215,9 @@ export default function Dashboard() {
             </div>
 
             {/* Weekly Schedule */}
-            {selectedLocation > 0 && (
+            {currentLocationId > 0 && (
               <div className="mb-8">
-                <WeeklySchedule locationId={selectedLocation} />
+                <WeeklySchedule locationId={currentLocationId} />
               </div>
             )}
 
@@ -246,15 +244,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Staff List */}
               <div className="lg:col-span-2">
-                {selectedLocation > 0 ? (
-                  <StaffOverview locationId={selectedLocation} />
+                {currentLocationId > 0 ? (
+                  <StaffOverview locationId={currentLocationId} />
                 ) : (
                   <div className="bg-white shadow rounded-md p-8 text-center">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       Select a Location
                     </h3>
                     <p className="text-gray-500">
-                      Please select a location from the dropdown in the header to view staff information.
+                      Please select a location from the sidebar to view staff information.
                     </p>
                   </div>
                 )}
@@ -262,8 +260,8 @@ export default function Dashboard() {
               
               {/* Cash Management */}
               <div className="lg:col-span-1 space-y-6">
-                {selectedLocation > 0 && (
-                  <CashManagementSummary locationId={selectedLocation} />
+                {currentLocationId > 0 && (
+                  <CashManagementSummary locationId={currentLocationId} />
                 )}
               </div>
             </div>
