@@ -123,6 +123,7 @@ Changelog:
 - June 24, 2025. IMPROVED: Account dropdown navigation - Added Administration section for administrator users, proper Settings/User Settings separation
 - June 24, 2025. FIXED: Sidebar navigation consistency - Moved Administration section to blue sidebar, made "Crew Plots Pro" clickable to Dashboard
 - June 24, 2025. REBRANDED: Removed hospitality constraints - Updated from hospitality management to "day production crew" management system supporting festivals, film, television, and events
+- June 24, 2025. ADDED: Professional landing page - Created marketing front-page showcasing CrewPlots as universal day production platform with industry examples and feature highlights
 ```
 
 ## User Preferences

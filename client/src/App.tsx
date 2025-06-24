@@ -29,6 +29,7 @@ import EmailSettings from "@/pages/email-settings";
 import UserSettings from "@/pages/user-settings";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
+import LandingPage from "@/pages/landing";
 
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
@@ -103,6 +104,8 @@ function App() {
             <Router>
             <Switch>
               {/* PUBLIC ROUTES */}
+              <Route path="/home" component={LandingPage} />
+              
               <Route path="/login">
                 {isAuthenticated ? 
                   (user?.role === 'applicant' ? 
