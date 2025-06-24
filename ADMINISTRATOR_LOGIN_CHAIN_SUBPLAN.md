@@ -74,3 +74,9 @@
 The administrator login chain follows the **same successful pattern** as fixed applicant and crew member chains - all components already import from `@shared/schema` with no conflicting duplicate types.
 
 **No migration work needed** - this chain is already properly aligned with the schema-first architecture.
+
+### Applicants Page Chain Analysis ✅
+**Date**: June 24, 2025  
+**Issue Found**: `applicant-form.tsx` used undefined `Applicant` type instead of `@shared/schema.User`  
+**Fix Applied**: Changed `applicant?: Applicant` to `applicant?: User` in props interface  
+**Status**: Applicants page now complies with schema-first architecture

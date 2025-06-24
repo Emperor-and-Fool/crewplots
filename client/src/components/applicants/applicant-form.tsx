@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 
 interface ApplicantFormProps {
-  applicant?: Applicant;
+  applicant?: User;
   isEditing?: boolean;
 }
 
