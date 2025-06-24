@@ -78,3 +78,8 @@
 The crew member login chain follows the **same successful pattern** as the fixed applicant chain - all components already import from `@shared/schema` with no conflicting duplicate types.
 
 **No migration work needed** - this chain is already properly aligned with the schema-first architecture.
+
+### Password Reset
+- **Date**: June 24, 2025
+- **Action**: Reset testkai password back to `kaipass123` after accidental modification
+- **Status**: Ready for user testing
