@@ -124,8 +124,8 @@ export default function Dashboard() {
   const shortListedApplicants = applicantUsers?.filter(applicant => applicant.status === 'short-listed').length || 0;
   const totalApplicants = applicantUsers?.length || 0;
 
-  // Use location-filtered data when location is selected
-  const currentLocationId = selectedLocationId || 0;
+  // Use location-filtered data when location is selected, or show all data when no location selected
+  const currentLocationId = selectedLocationId;
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -215,7 +215,7 @@ export default function Dashboard() {
             </div>
 
             {/* Weekly Schedule */}
-            {currentLocationId > 0 && (
+            {currentLocationId && (
               <div className="mb-8">
                 <WeeklySchedule locationId={currentLocationId} />
               </div>
@@ -244,7 +244,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Staff List */}
               <div className="lg:col-span-2">
-                {currentLocationId > 0 ? (
+                {isAllLocations ? (
+                  <div className="bg-white shadow rounded-md p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      All Locations Staff Overview
+                    </h3>
+                    <div className="text-gray-600">
+                      <p>Total Staff Across All Locations: {totalStaff}</p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Select a specific location to view detailed staff information and scheduling.
+                      </p>
+                    </div>
+                  </div>
+                ) : currentLocationId ? (
                   <StaffOverview locationId={currentLocationId} />
                 ) : (
                   <div className="bg-white shadow rounded-md p-8 text-center">
@@ -260,7 +272,27 @@ export default function Dashboard() {
               
               {/* Cash Management */}
               <div className="lg:col-span-1 space-y-6">
-                {currentLocationId > 0 && (
+                {isAllLocations ? (
+                  <div className="bg-white shadow rounded-md p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      All Locations Summary
+                    </h3>
+                    <div className="space-y-3 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <span>Total Applicants:</span>
+                        <span>{totalApplicants}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>New Applications:</span>
+                        <span>{newApplicants}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Hours Scheduled:</span>
+                        <span>{hoursScheduled}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : currentLocationId && (
                   <CashManagementSummary locationId={currentLocationId} />
                 )}
               </div>
