@@ -2,6 +2,7 @@ import React from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@shared/schema';
 
 import { 
   Card, 
@@ -38,7 +39,7 @@ function ApplicantDetail() {
     enabled: !!applicantId,
   });
 
-  const applicant = profileData?.find((user: any) => user.id === applicantId);
+  const applicant = profileData?.find((user: User) => user.id === applicantId);
   
   console.log('Applicant lookup debug:', { 
     applicantId, 
