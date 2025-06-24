@@ -221,7 +221,7 @@ export default function LandingPage() {
 
       {/* Benefits Section */}
       <section 
-        className="py-20 bg-white relative overflow-hidden"
+        className="py-20 relative overflow-hidden"
         style={{
           backgroundImage: `url(${homepageBackground})`,
           backgroundSize: 'cover',
@@ -230,8 +230,8 @@ export default function LandingPage() {
         }}
       >
         {/* Background overlay with blur effect */}
-        <div className="absolute inset-0 bg-white/85 backdrop-blur-sm"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-0"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-3xl font-bold text-gray-900 mb-6">
