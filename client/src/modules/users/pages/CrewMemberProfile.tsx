@@ -138,7 +138,11 @@ export default function CrewMemberProfile() {
         .map(locationId => fetch('/api/user-locations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: parseInt(userId!), locationId })
+          body: JSON.stringify({ 
+            userId: parseInt(userId!), 
+            locationId,
+            roleAtLocation: 'crew_member' // Required field with default value
+          })
         }));
 
       const results = await Promise.all([...removePromises, ...addPromises]);

@@ -476,8 +476,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/user-locations', async (req, res) => {
     try {
+      console.log(`🔍 API DEBUG: POST /api/user-locations - Request body:`, req.body);
       const result = insertUserLocationSchema.safeParse(req.body);
       if (!result.success) {
+        console.log(`🔍 API DEBUG: Schema validation failed:`, fromZodError(result.error).toString());
         return res.status(400).json({ 
           error: "Invalid user location data", 
           details: fromZodError(result.error).toString() 
