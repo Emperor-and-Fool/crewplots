@@ -131,7 +131,7 @@ export interface IStorage {
   getShift(id: number): Promise<Shift | undefined>;
   getShifts(): Promise<Shift[]>;
   getShiftsBySchedule(scheduleId: number): Promise<Shift[]>;
-  getShiftsByUser(userId: number): Promise<Shift[]>;
+  getShiftsByStaff(staffId: number): Promise<Shift[]>;
   getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]>;
   createShift(shift: InsertShift): Promise<Shift>;
   updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined>;
@@ -782,8 +782,8 @@ export class MemStorage implements IStorage {
     return Array.from(this.shifts.values()).filter(shift => shift.scheduleId === scheduleId);
   }
 
-  async getShiftsByUser(userId: number): Promise<Shift[]> {
-    return Array.from(this.shifts.values()).filter(shift => shift.userId === userId);
+  async getShiftsByStaff(staffId: number): Promise<Shift[]> {
+    return Array.from(this.shifts.values()).filter(shift => shift.staffId === staffId);
   }
 
   async getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]> {
@@ -1742,8 +1742,8 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(shifts).where(eq(shifts.scheduleId, scheduleId));
   }
 
-  async getShiftsByUser(userId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.userId, userId));
+  async getShiftsByStaff(staffId: number): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.staffId, staffId));
   }
 
   async getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]> {
