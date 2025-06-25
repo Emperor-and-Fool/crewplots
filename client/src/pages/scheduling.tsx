@@ -8,7 +8,7 @@ import { PlusCircle, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { ScheduleCalendar } from "@/components/scheduling/schedule-calendar";
 import { ShiftForm } from "@/components/scheduling/shift-form";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 
 export default function Scheduling() {
   const [, setLocation] = useLocation();

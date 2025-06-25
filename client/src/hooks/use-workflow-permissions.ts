@@ -1,4 +1,4 @@
-import { useAuth } from "./use-auth";
+import { useAuth } from "@/modules/auth";
 import { isForceEnableAllActive } from "@shared/utils/permissions";
 
 /**

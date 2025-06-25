@@ -10,7 +10,7 @@ export { useApplicantManagement } from './useApplicantManagement';
 export { useUserProfile } from './useUserProfile';
 
 // Re-export existing auth hook for convenience (maintains compatibility)
-export { useAuth } from '@/hooks/use-auth';
+export { useAuth } from '@/modules/auth';
 
 // Type exports for hook consumers
 export type {

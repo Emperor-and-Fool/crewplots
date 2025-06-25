@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Globe, ChevronDown } from 'lucide-react';
 import { useLocationContext } from '@/contexts/location-context';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/modules/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,

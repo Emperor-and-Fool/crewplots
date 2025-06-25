@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/modules/auth';
 import type { LocationPermissions } from '../types/location.types';
 
 export function useLocationPermissions(): LocationPermissions {
