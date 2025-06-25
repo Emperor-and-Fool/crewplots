@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth";
-import { useLocationContext } from "@/contexts/LocationContext";
+import { useLocationContext } from "@/contexts/location-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, UserPlus, Clock, BarChart3, PlusCircle, Trash2, User } from "lucide-react";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
-import { LocationHeader } from "@/modules/locations/components/LocationHeader";
+import LocationHeader from "@/modules/locations/components/LocationHeader";
 
 // Dashboard module components and hooks
 import { 
@@ -154,7 +154,7 @@ export default function Dashboard() {
                 
                 <StatsCard
                   title="Total Crew"
-                  value={totalStaff}
+                  value={totalStaffCount}
                   icon={<Users className="h-6 w-6" />}
                   link={{ text: "View all", href: "/crew-management" }}
                   onClick={() => navigate("/crew-management")}
@@ -162,7 +162,7 @@ export default function Dashboard() {
                 
                 <StatsCard
                   title="Shifts This Week"
-                  value={shiftsThisWeek}
+                  value={shiftsThisWeekCount}
                   icon={<Calendar className="h-6 w-6" />}
                   link={{ text: "View schedule", href: "/scheduling" }}
                   onClick={() => navigate("/scheduling")}
@@ -170,7 +170,7 @@ export default function Dashboard() {
                 
                 <StatsCard
                   title="Hours Scheduled"
-                  value={hoursScheduled}
+                  value={hoursScheduledCount}
                   icon={<Clock className="h-6 w-6" />}
                   link={{ text: "View details", href: "/reports" }}
                   onClick={() => navigate("/reports")}
