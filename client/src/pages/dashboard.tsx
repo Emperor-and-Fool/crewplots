@@ -191,7 +191,7 @@ export default function Dashboard() {
                 />
                 
                 <StatsCard
-                  title="Total Staff"
+                  title="Total Crew"
                   value={totalStaff}
                   icon={<Users className="h-6 w-6" />}
                   link={{ text: "View all", href: "/staff-management" }}
@@ -237,12 +237,12 @@ export default function Dashboard() {
                 {isAllLocations ? (
                   <div className="bg-white shadow rounded-md p-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      All Locations Staff Overview
+                      All Locations Crew Overview
                     </h3>
                     <div className="text-gray-600">
-                      <p>Total Staff Across All Locations: {totalStaff}</p>
+                      <p>Total Crew Across All Locations: {totalStaff}</p>
                       <p className="text-sm text-gray-500 mt-2">
-                        Select a specific location to view detailed staff information and scheduling.
+                        Select a specific location to view detailed crew information and scheduling.
                       </p>
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export default function Dashboard() {
                       Select a Location
                     </h3>
                     <p className="text-gray-500">
-                      Please select a location from the sidebar to view staff information.
+                      Please select a location from the sidebar to view crew information.
                     </p>
                   </div>
                 )}

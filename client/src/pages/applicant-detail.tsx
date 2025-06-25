@@ -76,6 +76,13 @@ function ApplicantDetail() {
   // Fetch locations for assignment
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch locations');
+      return response.json();
+    },
   });
 
   // Fetch current user location assignments
