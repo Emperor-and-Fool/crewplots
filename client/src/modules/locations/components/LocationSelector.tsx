@@ -12,6 +12,7 @@ interface LocationSelectorProps {
 
 function LocationSelector({ currentLocationId, onLocationChange }: LocationSelectorProps) {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
 
   const { data: locations, isLoading } = useQuery({
     queryKey: ['/api/locations'],
@@ -24,6 +25,23 @@ function LocationSelector({ currentLocationId, onLocationChange }: LocationSelec
       }
       return response.json() as Location[];
     },
+  });
+
+  // Fetch user's assigned locations for role-based filtering
+  const { data: userLocations } = useQuery({
+    queryKey: ['/api/user-locations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/user-locations/${user.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 404) return []; // No assignments
+        throw new Error('Failed to fetch user locations');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id && (user?.role === 'crew_manager' || user?.role === 'floor_manager')
   });
 
   const handleLocationSelect = (locationId: number | null) => {
@@ -46,7 +64,15 @@ function LocationSelector({ currentLocationId, onLocationChange }: LocationSelec
     );
   }
 
-  const activeLocations = locations?.filter(loc => loc.status === 'active') || [];
+  let activeLocations = locations?.filter(loc => loc.status === 'active') || [];
+
+  // Filter locations for crew managers and floor managers
+  const assignedLocationIds = userLocations?.map(ul => ul.locationId) || [];
+  const isLocationRestricted = (user?.role === 'crew_manager' || user?.role === 'floor_manager') && assignedLocationIds.length > 0;
+  
+  if (isLocationRestricted) {
+    activeLocations = activeLocations.filter(loc => assignedLocationIds.includes(loc.id));
+  }
 
   // Get current location name for button text
   const getCurrentLocationName = () => {
@@ -62,20 +88,22 @@ function LocationSelector({ currentLocationId, onLocationChange }: LocationSelec
       </div>
       
       <div className="space-y-1">
-        {/* All Locations Option */}
-        <button
-          onClick={() => handleLocationSelect(null)}
-          className={cn(
-            "w-full flex items-center px-2 py-1 text-xs rounded-md transition-colors",
-            currentLocationId === null
-              ? "bg-primary-600 text-white"
-              : "text-primary-200 hover:bg-primary-600 hover:text-white"
-          )}
-          title="View all locations combined"
-        >
-          <Globe className="mr-2 h-3 w-3" />
-          <span className="truncate font-medium">All Locations</span>
-        </button>
+        {/* All Locations Option - Only show for unrestricted users */}
+        {!isLocationRestricted && (
+          <button
+            onClick={() => handleLocationSelect(null)}
+            className={cn(
+              "w-full flex items-center px-2 py-1 text-xs rounded-md transition-colors",
+              currentLocationId === null
+                ? "bg-primary-600 text-white"
+                : "text-primary-200 hover:bg-primary-600 hover:text-white"
+            )}
+            title="View all locations combined"
+          >
+            <Globe className="mr-2 h-3 w-3" />
+            <span className="truncate font-medium">All Locations</span>
+          </button>
+        )}
         
         {/* Individual Locations */}
         {activeLocations.map((location) => (

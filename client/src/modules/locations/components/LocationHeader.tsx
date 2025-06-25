@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Globe, ChevronDown } from 'lucide-react';
 import { useLocationContext } from '@/contexts/location-context';
+import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import type { Location } from '@shared/schema';
 
 function LocationHeader() {
   const { selectedLocationId, isAllLocations, setSelectedLocationId } = useLocationContext();
+  const { user } = useAuth();
 
   const { data: locations, isLoading } = useQuery({
     queryKey: ['/api/locations'],
@@ -27,13 +29,38 @@ function LocationHeader() {
     },
   });
 
+  // Fetch user's assigned locations for role-based filtering
+  const { data: userLocations } = useQuery({
+    queryKey: ['/api/user-locations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/user-locations/${user.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 404) return []; // No assignments
+        throw new Error('Failed to fetch user locations');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id && (user?.role === 'crew_manager' || user?.role === 'floor_manager')
+  });
+
   const getCurrentLocation = () => {
     if (isAllLocations) return null;
     return locations?.find(loc => loc.id === selectedLocationId) || null;
   };
 
   const currentLocation = getCurrentLocation();
-  const activeLocations = locations?.filter(loc => loc.status === 'active') || [];
+  let activeLocations = locations?.filter(loc => loc.status === 'active') || [];
+
+  // Filter locations for crew managers and floor managers
+  const assignedLocationIds = userLocations?.map(ul => ul.locationId) || [];
+  const isLocationRestricted = (user?.role === 'crew_manager' || user?.role === 'floor_manager') && assignedLocationIds.length > 0;
+  
+  if (isLocationRestricted) {
+    activeLocations = activeLocations.filter(loc => assignedLocationIds.includes(loc.id));
+  }
 
   const getHeaderTitle = () => {
     if (isAllLocations) return "All Locations";
@@ -102,18 +129,20 @@ function LocationHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-64">
-                {/* All Locations Option */}
-                <DropdownMenuItem
-                  onClick={() => setSelectedLocationId(null)}
-                  className="flex items-center"
-                >
-                  <Globe className="mr-2 h-4 w-4" />
-                  <div>
-                    <div className="font-medium">All Locations</div>
-                    <div className="text-xs text-muted-foreground">Combined overview</div>
-                  </div>
-                  {isAllLocations && <span className="ml-auto text-primary-600">✓</span>}
-                </DropdownMenuItem>
+                {/* All Locations Option - Only show for unrestricted users */}
+                {!isLocationRestricted && (
+                  <DropdownMenuItem
+                    onClick={() => setSelectedLocationId(null)}
+                    className="flex items-center"
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    <div>
+                      <div className="font-medium">All Locations</div>
+                      <div className="text-xs text-muted-foreground">Combined overview</div>
+                    </div>
+                    {isAllLocations && <span className="ml-auto text-primary-600">✓</span>}
+                  </DropdownMenuItem>
+                )}
                 
                 {/* Individual Locations */}
                 {activeLocations.map((location) => (
