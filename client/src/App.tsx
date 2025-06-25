@@ -197,7 +197,7 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={LocationDetailPage} 
-                      requiredRoles={["manager", "administrator"]} 
+                      requiredRoles={["owner", "administrator"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}
@@ -247,7 +247,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={Applicants} 
-                    requiredRoles={["manager", "crew_manager", "administrator"]} 
+                    requiredRoles={["owner", "crew_chief", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
@@ -256,7 +256,7 @@ function App() {
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
                     component={ApplicantDetail} 
-                    requiredRoles={["manager", "crew_manager", "administrator"]} 
+                    requiredRoles={["owner", "crew_chief", "administrator"]} 
                   /> : 
                   <Redirect to="/login" />}
               </Route>
