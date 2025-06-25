@@ -82,7 +82,7 @@ export const RegistrationForm = ({
   };
 
   // Form submission handler
-  const onSubmit = async (data: Register) => {
+  const onSubmit = async (data: RegistrationFormData) => {
     try {
       setIsLoading(true);
       console.log("Registration form submission:", data);
