@@ -10,8 +10,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/AppLayout";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { EmergencyLogout } from "@/components/emergency-logout";
-import Login from "@/pages/login";
-import Register from "@/pages/register";
 import { RegistrationPage, LoginPage } from "@/modules/auth";
 import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
