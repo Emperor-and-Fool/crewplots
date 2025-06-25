@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { insertStaffSchema, type InsertStaff, type Staff, type User, type Location } from "@shared/schema";
+import { insertUserLocationSchema, type InsertUserLocation, type UserLocation, type User, type Location } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -27,21 +27,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface StaffFormProps {
-  staff?: Staff;
+interface CrewMemberFormProps {
+  userLocation?: UserLocation;
   isEditing?: boolean;
 }
 
-export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
+export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch available users (staff role)
+  // Fetch available users (crew member role)
   const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users/role/staff'],
+    queryKey: ['/api/users/role/crew'],
   });
 
   // Fetch locations
@@ -59,33 +59,34 @@ export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
   });
 
   // Form definition
-  const form = useForm<InsertStaff>({
-    resolver: zodResolver(insertStaffSchema),
+  const form = useForm<InsertUserLocation>({
+    resolver: zodResolver(insertUserLocationSchema),
     defaultValues: {
-      userId: staff?.userId || 0,
-      locationId: staff?.locationId || 0,
-      position: staff?.position || "",
-      wantedHours: staff?.wantedHours || 20,
+      userId: userLocation?.userId || 0,
+      locationId: userLocation?.locationId || 0,
+      roleAtLocation: userLocation?.roleAtLocation || "crew_member",
+      position: userLocation?.position || "",
+      wantedHours: userLocation?.wantedHours || 20,
     },
   });
 
-  // Mutation for creating/updating a staff member
+  // Mutation for creating/updating a crew member assignment
   const mutation = useMutation({
-    mutationFn: async (data: InsertStaff) => {
-      if (isEditing && staff) {
-        return apiRequest('PUT', `/api/staff/${staff.id}`, data);
+    mutationFn: async (data: InsertUserLocation) => {
+      if (isEditing && userLocation) {
+        return apiRequest('PUT', `/api/user-locations/${userLocation.id}`, data);
       } else {
-        return apiRequest('POST', '/api/staff', data);
+        return apiRequest('POST', '/api/user-locations', data);
       }
     },
     onSuccess: async () => {
       // Invalidate queries to refetch the data
-      await queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user-locations'] });
       
       // Show success message
       toast({
-        title: `Staff member ${isEditing ? 'updated' : 'created'} successfully`,
-        description: `The staff member has been ${isEditing ? 'updated' : 'created'}.`,
+        title: `Crew member ${isEditing ? 'updated' : 'assigned'} successfully`,
+        description: `The crew member has been ${isEditing ? 'updated' : 'assigned to location'}.`,
         variant: "default",
       });
       
@@ -93,10 +94,10 @@ export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
       navigate("/staff-management");
     },
     onError: (error) => {
-      console.error('Error saving staff member:', error);
+      console.error('Error saving crew member:', error);
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? 'update' : 'create'} staff member. Please try again.`,
+        description: `Failed to ${isEditing ? 'update' : 'assign'} crew member. Please try again.`,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -104,7 +105,7 @@ export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
   });
 
   // Form submission handler
-  const onSubmit = async (data: InsertStaff) => {
+  const onSubmit = async (data: InsertUserLocation) => {
     setIsSubmitting(true);
     mutation.mutate(data);
   };
@@ -112,7 +113,7 @@ export function StaffForm({ staff, isEditing = false }: StaffFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Staff Member' : 'Create New Staff Member'}</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Crew Member Assignment' : 'Assign Crew Member to Location'}</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

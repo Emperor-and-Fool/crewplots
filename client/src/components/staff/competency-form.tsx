@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { 
-  insertCompetencySchema, insertStaffCompetencySchema,
-  type InsertCompetency, type InsertStaffCompetency, 
-  type Competency, type Location, type Staff, type StaffCompetency 
+  insertCompetencySchema, insertUserCompetencySchema,
+  type InsertCompetency, type InsertUserCompetency, 
+  type Competency, type Location, type User, type UserCompetency 
 } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,14 +36,14 @@ import { Slider } from "@/components/ui/slider";
 
 interface CompetencyFormProps {
   competency?: Competency;
-  staffCompetency?: StaffCompetency;
+  userCompetency?: UserCompetency;
   isEditing?: boolean;
-  type?: 'competency' | 'staffCompetency';
+  type?: 'competency' | 'userCompetency';
 }
 
 export function CompetencyForm({ 
   competency, 
-  staffCompetency, 
+  userCompetency, 
   isEditing = false, 
   type = 'competency' 
 }: CompetencyFormProps) {
@@ -68,16 +68,16 @@ export function CompetencyForm({
     enabled: type === 'competency',
   });
 
-  // Fetch staff members for staff competency assignment
-  const { data: staffMembers } = useQuery<Staff[]>({
-    queryKey: ['/api/staff'],
-    enabled: type === 'staffCompetency',
+  // Fetch crew members for user competency assignment
+  const { data: crewMembers } = useQuery<User[]>({
+    queryKey: ['/api/users/role/crew'],
+    enabled: type === 'userCompetency',
   });
 
-  // Fetch competencies for staff competency assignment
+  // Fetch competencies for user competency assignment
   const { data: competencies } = useQuery<Competency[]>({
     queryKey: ['/api/competencies'],
-    enabled: type === 'staffCompetency',
+    enabled: type === 'userCompetency',
   });
 
   // Form for creating/editing a competency
@@ -90,13 +90,14 @@ export function CompetencyForm({
     },
   });
 
-  // Form for assigning a competency to a staff member
-  const staffCompetencyForm = useForm<InsertStaffCompetency>({
-    resolver: zodResolver(insertStaffCompetencySchema),
+  // Form for assigning a competency to a user
+  const userCompetencyForm = useForm<InsertUserCompetency>({
+    resolver: zodResolver(insertUserCompetencySchema),
     defaultValues: {
-      staffId: staffCompetency?.staffId || 0,
-      competencyId: staffCompetency?.competencyId || 0,
-      level: staffCompetency?.level || 3,
+      userId: userCompetency?.userId || 0,
+      competencyId: userCompetency?.competencyId || 0,
+      level: userCompetency?.level || 3,
+      locationId: userCompetency?.locationId || 0,
     },
   });
 
@@ -131,31 +132,31 @@ export function CompetencyForm({
     },
   });
 
-  // Mutation for assigning/updating a staff competency
-  const staffCompetencyMutation = useMutation({
-    mutationFn: async (data: InsertStaffCompetency) => {
-      if (isEditing && staffCompetency) {
-        return apiRequest('PUT', `/api/staff-competencies/${staffCompetency.id}`, data);
+  // Mutation for assigning/updating a user competency
+  const userCompetencyMutation = useMutation({
+    mutationFn: async (data: InsertUserCompetency) => {
+      if (isEditing && userCompetency) {
+        return apiRequest('PUT', `/api/user-competencies/${userCompetency.id}`, data);
       } else {
-        return apiRequest('POST', '/api/staff-competencies', data);
+        return apiRequest('POST', '/api/user-competencies', data);
       }
     },
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ['/api/staff-competencies/staff', variables.staffId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user-competencies/user', variables.userId] });
       
       toast({
-        title: `Staff competency ${isEditing ? 'updated' : 'assigned'} successfully`,
-        description: `The competency has been ${isEditing ? 'updated' : 'assigned to the staff member'}.`,
+        title: `User competency ${isEditing ? 'updated' : 'assigned'} successfully`,
+        description: `The competency has been ${isEditing ? 'updated' : 'assigned to the user'}.`,
         variant: "default",
       });
       
       navigate("/staff-management");
     },
     onError: (error) => {
-      console.error('Error saving staff competency:', error);
+      console.error('Error saving user competency:', error);
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? 'update' : 'assign'} staff competency. Please try again.`,
+        description: `Failed to ${isEditing ? 'update' : 'assign'} user competency. Please try again.`,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -168,9 +169,9 @@ export function CompetencyForm({
     competencyMutation.mutate(data);
   };
 
-  const onSubmitStaffCompetency = async (data: InsertStaffCompetency) => {
+  const onSubmitUserCompetency = async (data: InsertUserCompetency) => {
     setIsSubmitting(true);
-    staffCompetencyMutation.mutate(data);
+    userCompetencyMutation.mutate(data);
   };
 
   return (
@@ -179,7 +180,7 @@ export function CompetencyForm({
         <CardTitle>
           {type === 'competency' 
             ? (isEditing ? 'Edit Competency' : 'Create New Competency')
-            : (isEditing ? 'Edit Staff Competency' : 'Assign Competency to Staff')}
+            : (isEditing ? 'Edit User Competency' : 'Assign Competency to User')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -270,14 +271,14 @@ export function CompetencyForm({
             </form>
           </Form>
         ) : (
-          <Form {...staffCompetencyForm}>
-            <form onSubmit={staffCompetencyForm.handleSubmit(onSubmitStaffCompetency)} className="space-y-4">
+          <Form {...userCompetencyForm}>
+            <form onSubmit={userCompetencyForm.handleSubmit(onSubmitUserCompetency)} className="space-y-4">
               <FormField
-                control={staffCompetencyForm.control}
-                name="staffId"
+                control={userCompetencyForm.control}
+                name="userId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Staff Member</FormLabel>
+                    <FormLabel>User</FormLabel>
                     <FormControl>
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
@@ -285,12 +286,12 @@ export function CompetencyForm({
                         disabled={isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a staff member" />
+                          <SelectValue placeholder="Select a user" />
                         </SelectTrigger>
                         <SelectContent>
-                          {staffMembers?.map((staff) => (
-                            <SelectItem key={staff.id} value={staff.id.toString()}>
-                              Staff #{staff.id} - {staff.position}
+                          {crewMembers?.map((user) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.name} ({user.email})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -302,7 +303,7 @@ export function CompetencyForm({
               />
 
               <FormField
-                control={staffCompetencyForm.control}
+                control={userCompetencyForm.control}
                 name="competencyId"
                 render={({ field }) => (
                   <FormItem>
@@ -331,7 +332,7 @@ export function CompetencyForm({
               />
 
               <FormField
-                control={staffCompetencyForm.control}
+                control={userCompetencyForm.control}
                 name="level"
                 render={({ field }) => (
                   <FormItem>
@@ -378,7 +379,7 @@ export function CompetencyForm({
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : isEditing ? 'Update Staff Competency' : 'Assign Competency'}
+                  {isSubmitting ? 'Saving...' : isEditing ? 'Update User Competency' : 'Assign Competency'}
                 </Button>
               </div>
             </form>

@@ -10,7 +10,7 @@ import { hybridSessionStore } from "./services/hybrid-session-store";
 import { onDemandRedis } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
-  insertStaffSchema, insertStaffCompetencySchema, insertApplicantSchema,
+  insertUserLocationSchema, insertUserCompetencySchema, insertApplicantSchema,
   insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
   insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
