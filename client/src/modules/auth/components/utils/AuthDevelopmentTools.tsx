@@ -30,14 +30,16 @@ export const AuthDevelopmentTools = () => {
         <div className="text-xs text-gray-600">
           Role: {user?.role || "None"}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleForceLogout}
-          className="text-xs"
-        >
-          Force Logout
-        </Button>
+        {user && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleForceLogout}
+            className="text-xs"
+          >
+            Force Logout
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
