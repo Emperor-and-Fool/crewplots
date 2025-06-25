@@ -21,7 +21,7 @@ export const useDashboardFilters = (user: User, selectedLocationId?: number) => 
 
   const filters: DashboardFilters = useMemo(() => {
     const assignedLocationIds = userLocations?.map((ul: any) => ul.locationId) || [];
-    const isLocationRestricted = (user?.role === 'crew_manager' || user?.role === 'floor_manager') && assignedLocationIds.length > 0;
+    const isLocationRestricted = user?.role === 'crew_manager' && assignedLocationIds.length > 0;
     
     return {
       selectedLocationId,
