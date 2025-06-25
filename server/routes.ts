@@ -265,11 +265,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all profile data (unified data endpoint)
   app.get("/api/profile-data", async (req, res) => {
     try {
+      console.log(`🔍 API DEBUG: /api/profile-data request received`);
       const allUsers = await storage.getUsers();
-      console.log(`[PROFILE DATA] Returning ${allUsers.length} user profiles for frontend cherry-picking`);
+      console.log(`🔍 API DEBUG: Retrieved ${allUsers.length} users from storage`);
+      console.log(`🔍 API DEBUG: First 3 users:`, allUsers.slice(0, 3).map(u => ({ id: u.id, name: u.name, role: u.role })));
       res.json(allUsers);
     } catch (error) {
-      console.error("Error fetching profile data:", error);
+      console.error("🔍 API DEBUG: Error in /api/profile-data:", error);
       res.status(500).json({ error: "Failed to fetch profile data" });
     }
   });
@@ -536,19 +538,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      console.log(`🔍 API DEBUG: /api/users/${userId} request received`);
+      
       if (isNaN(userId)) {
+        console.log(`🔍 API DEBUG: Invalid user ID: ${req.params.userId}`);
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
       const user = await storage.getUserById(userId);
       if (!user) {
+        console.log(`🔍 API DEBUG: User ${userId} not found`);
         return res.status(404).json({ error: "User not found" });
       }
 
-      console.log(`🔍 API: Retrieved user profile for ID ${userId}`);
+      console.log(`🔍 API DEBUG: Found user:`, { id: user.id, name: user.name, role: user.role });
       res.json(user);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('🔍 API DEBUG: Error in /api/users/:userId:', error);
       res.status(500).json({ error: "Failed to fetch user profile" });
     }
   });
@@ -592,15 +598,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user-locations/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      console.log(`🔍 API DEBUG: /api/user-locations/${userId} request received`);
+      
       if (isNaN(userId)) {
+        console.log(`🔍 API DEBUG: Invalid user ID: ${req.params.userId}`);
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
       const userLocations = await storage.getUserLocations(userId);
-      console.log(`🔍 API: Retrieved ${userLocations.length} location assignments for user ${userId}`);
+      console.log(`🔍 API DEBUG: Found ${userLocations.length} location assignments for user ${userId}`);
       res.json(userLocations);
     } catch (error) {
-      console.error('Error fetching user location assignments:', error);
+      console.error('🔍 API DEBUG: Error in /api/user-locations/:userId:', error);
       res.status(500).json({ error: "Failed to fetch user location assignments" });
     }
   });

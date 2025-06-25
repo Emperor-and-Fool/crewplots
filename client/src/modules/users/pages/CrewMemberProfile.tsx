@@ -28,11 +28,7 @@ export default function CrewMemberProfile() {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
-  console.log('🔍 CREW PROFILE DEBUG:', {
-    userId,
-    userIdType: typeof userId,
-    currentUser: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role } : null
-  });
+
 
   // Permission check - only administrators, managers, and floor_managers can edit roles
   const canEditRoles = currentUser?.role && ['administrator', 'manager', 'floor_manager'].includes(currentUser.role);
@@ -51,13 +47,7 @@ export default function CrewMemberProfile() {
     cacheTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
-  console.log('🔍 CREW PROFILE USER QUERY:', {
-    userLoading,
-    userError: userError?.message,
-    user: user ? { id: user.id, name: user.name, role: user.role } : null,
-    enabled: !!userId,
-    queryKey: ['/api/users', userId]
-  });
+
 
   // Fetch all locations with caching
   const { data: allLocations = [] } = useQuery<Location[]>({
@@ -74,13 +64,7 @@ export default function CrewMemberProfile() {
     cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
 
-  console.log('🔍 CREW PROFILE LOCATIONS QUERY:', {
-    locationsLoading,
-    locationsError: locationsError?.message,
-    userLocationsCount: userLocations.length,
-    enabled: !!userId,
-    queryKey: ['/api/user-locations', userId]
-  });
+
 
   // Initialize state when data loads
   React.useEffect(() => {

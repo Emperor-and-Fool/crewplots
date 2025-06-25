@@ -25,21 +25,9 @@ export default function CrewManagement() {
     staleTime: 2 * 60 * 1000,
   });
 
-  console.log('🔍 CREW MANAGEMENT DEBUG:', {
-    isLoading,
-    error: error?.message,
-    usersCount: users?.length,
-    usersData: users?.slice(0, 3) // Show first 3 users for debugging
-  });
-
   const crewMembers = users?.filter(user => 
     ['crew_member', 'crew_manager', 'floor_manager', 'manager', 'administrator'].includes(user.role)
   ) || [];
-
-  console.log('🔍 CREW MEMBERS FILTERED:', {
-    crewMembersCount: crewMembers.length,
-    crewRoles: crewMembers.map(m => ({ name: m.name, role: m.role }))
-  });
 
   if (isLoading) {
     return (
