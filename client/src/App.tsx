@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { EmergencyLogout } from "@/components/emergency-logout";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import { RegistrationPage } from "@/modules/auth";
 import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
@@ -141,7 +142,7 @@ function App() {
                   (user?.role === 'applicant' ? 
                     <Redirect to="/applicant-portal" /> : 
                     <Redirect to="/dashboard" />) : 
-                  <Register />}
+                  <RegistrationPage />}
               </Route>
               
               <Route path="/registration-success">
