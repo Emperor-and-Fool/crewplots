@@ -173,6 +173,8 @@ Changelog:
 - June 25, 2025. COMPLETED: Crew member profile API fixes - Resolved fetch call parameter issues in role/location/notes mutations, added required roleAtLocation field for user_locations schema validation, implemented complete error handling chain from frontend to backend
 - June 25, 2025. COMPLETED: Messaging System Sender Property Migration Phase 1 - Enhanced MessageStorageService with getUserWithProfile() integration, updated ServiceMessage interface with sender property, modified getNoteRefsByUser(), createNoteRef(), and updateNoteRef() methods to populate sender data, following schema-first architecture pattern
 - June 25, 2025. COMPLETED: Location assignment card for applicant detail page - Added location selection interface with checkboxes, integrated with user-locations API, fixed checkbox flickering issues, enabled recruiters to assign locations during hiring process with proper error handling and state management
+- June 25, 2025. COMPLETED: Server-side upsert prevention system - Implemented findDraftByUser() method and createNoteRef() upsert logic to eliminate dual note creation race conditions, removed client-side prevention logic, successfully tested with single note maintenance across multiple auto-save operations
+- June 25, 2025. CREATED: PRODUCTION_BACKLOG.md - Documented critical production stability requirements including distributed locking, circuit breaker patterns, data integrity cleanup, and graceful degradation strategies to address multi-user race condition vulnerabilities identified during testing
 ```
 
 ## User Preferences
