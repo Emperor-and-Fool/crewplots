@@ -242,14 +242,54 @@ export class MessageService {
     };
   }
 
-  // Create message with dual-database coordination - MONGODB REQUIRED
-  async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
-    console.log('Creating message with MongoDB storage for applicant user', messageData.userId);
+  // Find existing draft for user (server-side duplicate prevention)
+  async findDraftByUser(userId: number, workflow: string = 'general'): Promise<ServiceMessage | null> {
+    const existingDrafts = await storage.getNoteRefsByUser(userId);
+    const draft = existingDrafts.find(note => 
+      note.status === 'draft' && 
+      note.workflow === workflow
+    );
     
-    // Step 1: Store rich content in MongoDB - MUST SUCCEED
+    if (draft) {
+      // Compile with MongoDB content and sender data
+      const compiled = await this.compileNote(draft);
+      const sender = await storage.getUserWithProfile(draft.userId);
+      return {
+        ...compiled,
+        sender: sender ? {
+          id: sender.id,
+          username: sender.username,
+          role: sender.role
+        } : null
+      };
+    }
+    
+    return null;
+  }
+
+  // Create or update note with server-side upsert logic (eliminates dual creation)
+  async createNoteRef(messageData: InsertNoteRef & { workflow?: string }): Promise<ServiceMessage> {
+    const workflow = messageData.workflow || 'general';
+    console.log(`Creating/updating note for user ${messageData.userId}, workflow: ${workflow}`);
+    
+    // Step 1: Check for existing draft (server-side prevention)
+    const existingDraft = await this.findDraftByUser(messageData.userId, workflow);
+    
+    if (existingDraft) {
+      console.log(`Found existing draft ${existingDraft.id}, updating content instead of creating new`);
+      
+      // Update existing draft with new content
+      return await this.updateNoteRef(existingDraft.id, { 
+        content: messageData.content 
+      });
+    }
+    
+    console.log('No existing draft found, creating new note with MongoDB storage');
+    
+    // Step 2: Store rich content in MongoDB - MUST SUCCEED
     const documentId = await this.storeContentDocument(messageData.content, {
       contentType: 'rich-text',
-      workflow: messageData.workflow || 'application',
+      workflow: workflow,
     });
 
     // CRITICAL: Verify MongoDB document was created
@@ -257,7 +297,7 @@ export class MessageService {
       throw new Error('CRITICAL: MongoDB document creation failed - no fallback allowed');
     }
 
-    // Step 2: Calculate metadata for PostgreSQL
+    // Step 3: Calculate metadata for PostgreSQL
     const plainText = messageData.content.replace(/<[^>]*>/g, '');
     const metadata = {
       wordCount: plainText.trim().split(/\s+/).length,
@@ -265,28 +305,30 @@ export class MessageService {
       htmlLength: messageData.content.length,
     };
 
-    // Step 3: Create relational record in PostgreSQL with MongoDB reference ONLY
+    // Step 4: Create relational record in PostgreSQL with MongoDB reference ONLY
     const postgresMessage = await storage.createNoteRef({
       ...messageData,
       content: documentId, // ONLY MongoDB ObjectId - NEVER actual content
       noteId: documentId, // New hybrid architecture field
-      noteType: messageData.workflow || 'motivation',
+      noteType: workflow,
+      workflow: workflow,
+      status: 'draft', // Explicitly set draft status
       wordCount: metadata.wordCount,
       characterCount: metadata.characterCount,
       htmlLength: metadata.htmlLength,
     });
 
-    // Step 4: Update MongoDB document with PostgreSQL reference
+    // Step 5: Update MongoDB document with PostgreSQL reference
     await this.updateDocumentMessageReference(documentId, postgresMessage.id);
 
-    // Step 5: ATOMIC INTEGRITY CHECK - Verify MongoDB document exists before confirming success
+    // Step 6: ATOMIC INTEGRITY CHECK - Verify MongoDB document exists before confirming success
     await this.verifyMongoDBDocumentExists(documentId);
     console.log(`✅ ATOMIC INTEGRITY VERIFIED: MongoDB document ${documentId} confirmed to exist`);
 
-    // Step 6: Populate sender data for immediate frontend use
+    // Step 7: Populate sender data for immediate frontend use
     const sender = await storage.getUserWithProfile(postgresMessage.userId);
     
-    // Step 7: Return unified data structure with sender information
+    // Step 8: Return unified data structure with sender information
     return {
       ...postgresMessage,
       noteId: documentId,

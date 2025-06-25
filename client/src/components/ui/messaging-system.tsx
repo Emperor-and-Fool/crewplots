@@ -440,38 +440,16 @@ export function MessagingSystem({
     );
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
 
-  // Debounced auto-save effect - behavior depends on mode
+  // Debounced auto-save effect - simplified server-side prevention
   React.useEffect(() => {
-    console.log(`🐛 AUTO-SAVE DEBUG: useEffect triggered - editContent="${editContent.slice(0,50)}...", lastSavedContent="${lastSavedContent.slice(0,50)}...", draftMessageId=${draftMessageId}, filteredMessages.length=${filteredMessages.length}`);
-    
     if (editContent.trim() && editContent !== lastSavedContent) {
-      console.log(`🐛 AUTO-SAVE DEBUG: Setting 500ms timeout for auto-save`);
       const timeoutId = setTimeout(() => {
-        console.log(`🐛 AUTO-SAVE DEBUG: Timeout fired - draftMessageId=${draftMessageId}, isNoteMode=${isNoteMode}`);
-        
-        if (isNoteMode) {
-          // Note mode: ensure only one note per user - SET DRAFT ID FIRST
-          if (filteredMessages.length > 0 && !draftMessageId) {
-            console.log(`🐛 AUTO-SAVE DEBUG: Setting draftMessageId to existing note ${filteredMessages[0].id} before auto-save`);
-            setDraftMessageId(filteredMessages[0].id);
-            // Wait for state update before auto-saving
-            setTimeout(() => {
-              console.log(`🐛 AUTO-SAVE DEBUG: Delayed auto-save firing after setDraftMessageId`);
-              autoSaveDraftMutation.mutate(editContent);
-            }, 100);
-            return;
-          }
-        }
-        console.log(`🐛 AUTO-SAVE DEBUG: Direct auto-save firing`);
         autoSaveDraftMutation.mutate(editContent);
       }, 500);
 
-      return () => {
-        console.log(`🐛 AUTO-SAVE DEBUG: Clearing timeout`);
-        clearTimeout(timeoutId);
-      };
+      return () => clearTimeout(timeoutId);
     }
-  }, [editContent, lastSavedContent, draftMessageId, filteredMessages, isNoteMode, autoSaveDraftMutation]);
+  }, [editContent, lastSavedContent, autoSaveDraftMutation]);
 
   // Handle form submission
   const onSubmit = (data: MessageFormData) => {
