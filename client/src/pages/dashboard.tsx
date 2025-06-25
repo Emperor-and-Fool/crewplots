@@ -13,9 +13,10 @@ import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import LocationHeader from "@/modules/locations/components/LocationHeader";
 
-// Dashboard module components (gradual integration)
-import { StatsCard, useAdminActions } from "@/modules/dashboard";
+// Dashboard module components (sophisticated restoration)
+import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions } from "@/modules/dashboard";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
+import { ApplicantsSummary } from "@/components/applicants/applicants-summary";
 
 
 export default function Dashboard() {
