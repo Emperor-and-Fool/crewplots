@@ -459,32 +459,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Location-filtered API endpoints for database-based filtering
 
-  // Get staff by location
-  app.get("/api/staff/location/:locationId", async (req, res) => {
+  // Crew member routes (user-location assignments)
+  app.get('/api/user-locations', async (req, res) => {
+    try {
+      console.log('🔍 API: Fetching user-location assignments');
+      const userLocations = await storage.getUserLocations(0); // Get all assignments
+      console.log(`🔍 API: Retrieved ${userLocations.length} user-location assignments`);
+      res.json(userLocations);
+    } catch (error) {
+      console.error('Error fetching user-location assignments:', error);
+      res.status(500).json({ error: "Failed to fetch user-location assignments" });
+    }
+  });
+
+  app.post('/api/user-locations', async (req, res) => {
+    try {
+      const result = insertUserLocationSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid user location data", 
+          details: fromZodError(result.error).toString() 
+        });
+      }
+
+      const userLocation = await storage.assignUserToLocation(result.data);
+      console.log('🔍 API: Created user-location assignment:', userLocation.id);
+      res.status(201).json(userLocation);
+    } catch (error) {
+      console.error('Error creating user-location assignment:', error);
+      res.status(500).json({ error: "Failed to create user-location assignment" });
+    }
+  });
+
+  app.delete('/api/user-locations/:userId/:locationId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const locationId = parseInt(req.params.locationId);
+      
+      if (isNaN(userId) || isNaN(locationId)) {
+        return res.status(400).json({ error: "Invalid user ID or location ID" });
+      }
+
+      const success = await storage.removeUserFromLocation(userId, locationId);
+      if (!success) {
+        return res.status(404).json({ error: "User-location assignment not found" });
+      }
+
+      console.log(`🔍 API: Removed user ${userId} from location ${locationId}`);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error removing user-location assignment:', error);
+      res.status(500).json({ error: "Failed to remove user-location assignment" });
+    }
+  });
+
+  // Get crew members for a specific location
+  app.get('/api/locations/:locationId/crew', async (req, res) => {
     try {
       const locationId = parseInt(req.params.locationId);
       if (isNaN(locationId)) {
         return res.status(400).json({ error: "Invalid location ID" });
       }
-      
-      const staff = await storage.getStaffByLocation(locationId);
-      console.log(`[STAFF API] Returning ${staff.length} staff members for location ${locationId}`);
-      res.json(staff);
-    } catch (error) {
-      console.error("Error fetching staff by location:", error);
-      res.status(500).json({ error: "Failed to fetch staff by location" });
-    }
-  });
 
-  // Get all staff members (for admin management)
-  app.get("/api/staff", async (req, res) => {
-    try {
-      const staff = await storage.getAllStaff();
-      console.log(`[STAFF API] Returning ${staff.length} staff members`);
-      res.json(staff);
+      const crewMembers = await storage.getCrewMembersByLocation(locationId);
+      console.log(`🔍 API: Retrieved ${crewMembers.length} crew members for location ${locationId}`);
+      res.json(crewMembers);
     } catch (error) {
-      console.error("Error fetching all staff:", error);
-      res.status(500).json({ error: "Failed to fetch staff" });
+      console.error('Error fetching crew members by location:', error);
+      res.status(500).json({ error: "Failed to fetch crew members" });
     }
   });
 

@@ -1282,48 +1282,45 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getStaffByLocation(locationId: number): Promise<Staff[]> {
+  async getCrewMembersByLocation(locationId: number): Promise<User[]> {
     try {
-      // Join staff with users table to filter by location_id in users table
+      // Get crew members assigned to a specific location via user_locations junction table
       const result = await db.select({
-        id: staff.id,
-        userId: staff.user_id,
-        firstName: staff.first_name,
-        lastName: staff.last_name,
-        position: staff.position,
-        department: staff.department,
-        phone: staff.phone,
-        hireDate: staff.hire_date
+        id: users.id,
+        public_id: users.public_id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        name: users.name,
+        role: users.role,
+        locationId: users.locationId,
+        phoneNumber: users.phoneNumber,
+        status: users.status,
+        resumeUrl: users.resumeUrl,
+        notes: users.notes,
+        workflowPermissions: users.workflowPermissions,
+        blockedPermissions: users.blockedPermissions,
+        createdAt: users.createdAt,
+        profileImage: users.profileImage,
       })
-      .from(staff)
-      .innerJoin(users, eq(staff.user_id, users.id))
-      .where(eq(users.location_id, locationId));
+      .from(users)
+      .innerJoin(userLocations, eq(users.id, userLocations.userId))
+      .where(and(
+        eq(userLocations.locationId, locationId),
+        inArray(users.role, ['crew_member', 'crew_manager', 'floor_manager'])
+      ));
       
-      return result.map(row => ({
-        id: row.id,
-        userId: row.userId,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        position: row.position,
-        department: row.department,
-        phone: row.phone,
-        hireDate: row.hireDate
-      })) as Staff[];
+      return result;
     } catch (error) {
-      console.error("Error in getStaffByLocation:", error);
+      console.error("Error in getCrewMembersByLocation:", error);
       return [];
     }
   }
 
-  async getStaffByUser(userId: number): Promise<Staff | undefined> {
-    const [staffMember] = await db.select().from(staff).where(eq(staff.userId, userId));
-    return staffMember;
-  }
+  // Removed getStaffByUser - migrated to user-centric crew management
 
-  async createStaff(staffMember: InsertStaff): Promise<Staff> {
-    const [createdStaff] = await db.insert(staff).values(staffMember).returning();
-    return createdStaff;
-  }
+  // Removed createStaff - migrated to user-centric crew management
 
   async updateStaff(id: number, staffMember: Partial<InsertStaff>): Promise<Staff | undefined> {
     const [updatedStaff] = await db
