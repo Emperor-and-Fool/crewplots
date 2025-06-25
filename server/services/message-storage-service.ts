@@ -27,9 +27,14 @@ import { ObjectId } from 'mongodb';
  * - No content ever stored in PostgreSQL under any circumstances
  */
 
-// Service layer message with compiled content
+// Service layer message with compiled content and sender data
 export interface ServiceMessage extends NoteRef {
   compiledContent?: string;
+  sender?: {
+    id: number;
+    username: string;
+    role: string;
+  } | null;
 }
 
 // MongoDB document structure
@@ -278,28 +283,51 @@ export class MessageService {
     await this.verifyMongoDBDocumentExists(documentId);
     console.log(`✅ ATOMIC INTEGRITY VERIFIED: MongoDB document ${documentId} confirmed to exist`);
 
-    // Step 6: Return unified data structure
+    // Step 6: Populate sender data for immediate frontend use
+    const sender = await storage.getUserWithProfile(postgresMessage.userId);
+    
+    // Step 7: Return unified data structure with sender information
     return {
       ...postgresMessage,
       noteId: documentId,
       compiledContent: messageData.content,
       content: messageData.content, // Keep original content for frontend
+      sender: sender ? {
+        id: sender.id,
+        username: sender.username,
+        role: sender.role
+      } : null
     };
   }
 
-  // Get messages by user with content compilation
+  // Get messages by user with content compilation and sender data
   async getNoteRefsByUser(userId: number): Promise<ServiceMessage[]> {
     console.log('Using hybrid storage for applicant user', userId);
     
     // Fetch metadata from PostgreSQL
     const postgresMessages = await storage.getNoteRefsByUser(userId);
 
-    // Compile with MongoDB content in parallel
+    // Compile with MongoDB content and populate sender data in parallel
     const compiledMessages = await Promise.all(
-      postgresMessages.map(msg => this.compileNote(msg))
+      postgresMessages.map(async (msg) => {
+        // Compile content from MongoDB
+        const compiledMessage = await this.compileNote(msg);
+        
+        // Populate sender data using getUserWithProfile
+        const sender = await storage.getUserWithProfile(msg.userId);
+        
+        return {
+          ...compiledMessage,
+          sender: sender ? {
+            id: sender.id,
+            username: sender.username,
+            role: sender.role
+          } : null
+        };
+      })
     );
 
-    console.log(`Fetched ${compiledMessages.length} compiled messages for applicant user ${userId}`);
+    console.log(`Fetched ${compiledMessages.length} compiled messages with sender data for applicant user ${userId}`);
     return compiledMessages;
   }
 
@@ -345,9 +373,17 @@ export class MessageService {
       htmlLength: metadata.htmlLength,
     });
     
+    // Populate sender data for updated message
+    const sender = await storage.getUserWithProfile(updatedMessage!.userId);
+    
     return {
       ...updatedMessage!,
       noteId: documentId,
+      sender: sender ? {
+        id: sender.id,
+        username: sender.username,
+        role: sender.role
+      } : null,
       compiledContent: updates.content,
       content: updates.content,
     };
