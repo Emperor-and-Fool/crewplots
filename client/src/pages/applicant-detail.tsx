@@ -79,8 +79,21 @@ function ApplicantDetail() {
   });
 
   // Fetch current user location assignments
-  const { data: userLocations = [] } = useQuery({
+  const { data: userLocations = [], isLoading: isLoadingLocations } = useQuery({
     queryKey: ['/api/user-locations', applicantId],
+    queryFn: async () => {
+      const response = await fetch(`/api/user-locations/${applicantId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No location assignments yet, return empty array
+          return [];
+        }
+        throw new Error('Failed to fetch user locations');
+      }
+      return response.json();
+    },
     enabled: !!applicantId,
   });
 
@@ -89,11 +102,11 @@ function ApplicantDetail() {
 
   // Initialize selected locations when data loads
   React.useEffect(() => {
-    if (userLocations && userLocations.length >= 0) {
+    if (!isLoadingLocations && userLocations) {
       const currentLocationIds = userLocations.map((ul: any) => ul.locationId);
       setSelectedLocations(currentLocationIds);
     }
-  }, [userLocations]);
+  }, [userLocations, isLoadingLocations]);
 
   const goBack = () => {
     navigate('/dashboard');
@@ -211,7 +224,7 @@ function ApplicantDetail() {
       console.log('Current user locations:', userLocations);
       
       // Remove existing assignments that are not in the new selection
-      const currentLocationIds = userLocations.map((ul: any) => ul.locationId);
+      const currentLocationIds = (userLocations || []).map((ul: any) => ul.locationId);
       const toRemove = currentLocationIds.filter(id => !locationIds.includes(id));
       const toAdd = locationIds.filter(id => !currentLocationIds.includes(id));
       
@@ -285,8 +298,8 @@ function ApplicantDetail() {
     updateLocationsMutation.mutate(selectedLocations);
   };
 
-  const hasLocationChanges = userLocations && selectedLocations && 
-    JSON.stringify([...selectedLocations].sort()) !== JSON.stringify(userLocations.map((ul: any) => ul.locationId).sort());
+  const hasLocationChanges = !isLoadingLocations && selectedLocations && 
+    JSON.stringify([...selectedLocations].sort()) !== JSON.stringify((userLocations || []).map((ul: any) => ul.locationId).sort());
 
   if (isLoading) {
     return (
@@ -415,9 +428,12 @@ function ApplicantDetail() {
           <CardDescription>Assign this applicant to specific locations where they can work</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {locations.map((location) => (
+          {isLoadingLocations ? (
+            <div className="text-center py-4">Loading location assignments...</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {locations.map((location) => (
                 <div key={location.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                   <Checkbox
                     id={`location-${location.id}`}
@@ -433,10 +449,10 @@ function ApplicantDetail() {
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            {hasLocationChanges && (
+                ))}
+              </div>
+              
+              {hasLocationChanges && (
               <div className="flex items-center justify-between pt-4 border-t">
                 <p className="text-sm text-gray-600">
                   {selectedLocations.length} location{selectedLocations.length !== 1 ? 's' : ''} selected
@@ -449,8 +465,9 @@ function ApplicantDetail() {
                   {updateLocationsMutation.isPending ? "Saving..." : "Save Assignments"}
                 </Button>
               </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
