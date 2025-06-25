@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { navigationConfig } from '@shared/navigation';
 import { SidebarSection } from './desktop/SidebarSection';

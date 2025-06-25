@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
 import { NavigationRenderer } from "@/components/navigation";

@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 
 export default function ViewCalendar() {
   const [, setLocation] = useLocation();

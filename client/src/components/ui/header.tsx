@@ -1,5 +1,5 @@
 import { Search, Bell } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

@@ -8,7 +8,7 @@ import {
   Bell,
   LogOut
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
 import { NavigationRenderer } from "@/components/navigation";
