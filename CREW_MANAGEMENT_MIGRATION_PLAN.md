@@ -36,11 +36,14 @@ This plan outlines the complete migration of staff management functionality to a
 - [ ] Plan migration strategy for existing staff data
 
 #### 1.2 Database Schema Updates
-- [ ] Create `user_locations` junction table for multi-location crew assignment
-- [ ] Update `shared/schema.ts` with crew member extensions to User type
-- [ ] Add crew-specific fields to users table (position, hire_date, department)
-- [ ] Create competencies table (if required for functionality)
-- [ ] Create user_competencies junction table (replacing staff_competencies)
+- [x] Create `user_locations` junction table for multi-location crew assignment
+- [x] Update `shared/schema.ts` with crew member extensions to User type  
+- [x] Create user_competencies junction table (replacing staff_competencies)
+- [x] Update shifts table to use userId instead of staffId
+- [x] Remove staff and staffCompetencies from schema exports
+- [x] Update storage interface to use crew member methods instead of staff
+- [ ] Implement crew member storage methods in DatabaseStorage
+- [ ] Create competencies table (if required for functionality) 
 - [ ] Design migration script for existing staff → users + user_locations conversion
 - [ ] Remove redundant staff table after successful migration
 

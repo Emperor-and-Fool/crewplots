@@ -101,17 +101,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// User Locations - junction table mapping users to locations with specific roles
-export const userLocations = pgTable("user_locations", {
-  userId: integer("user_id").references(() => users.id).notNull(),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
-  roleId: integer("role_id").references(() => roles.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => {
-  return {
-    pk: primaryKey({ columns: [table.userId, table.locationId] }),
-  };
-});
+// User Locations junction table is defined below with crew member support
 
 // Competencies - now explicitly associated with locations
 export const competencies = pgTable("competencies", {
