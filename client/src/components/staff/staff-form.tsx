@@ -90,8 +90,8 @@ export function StaffForm({ userLocation, isEditing = false }: CrewMemberFormPro
         variant: "default",
       });
       
-      // Redirect to staff list
-      navigate("/staff-management");
+      // Redirect to crew list
+      navigate("/crew-management");
     },
     onError: (error) => {
       console.error('Error saving crew member:', error);
@@ -260,7 +260,7 @@ export function StaffForm({ userLocation, isEditing = false }: CrewMemberFormPro
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/staff-management")}
+              onClick={() => navigate("/crew-management")}
             >
               Cancel
             </Button>

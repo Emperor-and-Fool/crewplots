@@ -218,9 +218,9 @@ export function StaffOverview({ locationId }: StaffOverviewProps) {
             <Button variant="outline" size="sm" disabled>
               Previous
             </Button>
-            <Link href="/staff-management">
+            <Link href="/crew-management">
               <Button variant="outline" size="sm">
-                View All Staff
+                View All Crew
               </Button>
             </Link>
             <Button variant="outline" size="sm" disabled>

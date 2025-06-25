@@ -1,31 +1,16 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { insertUserLocationSchema, type InsertUserLocation, type UserLocation, type User, type Location } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
-
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { User, Location, UserLocation, InsertUserLocation, insertUserLocationSchema } from "@shared/schema";
 
 interface CrewMemberFormProps {
   userLocation?: UserLocation;
@@ -39,32 +24,14 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all users for assignment
+  // Fetch available users (crew member role)
   const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-    queryFn: async () => {
-      const response = await fetch('/api/users', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      return response.json();
-    },
+    queryKey: ['/api/users/role/crew'],
   });
 
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
-    queryFn: async () => {
-      const response = await fetch('/api/locations', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-      return response.json();
-    },
   });
 
   // Form definition
@@ -99,8 +66,8 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
         variant: "default",
       });
       
-      // Redirect to staff list
-      navigate("/staff-management");
+      // Redirect to crew list
+      navigate("/crew-management");
     },
     onError: (error) => {
       console.error('Error saving crew member:', error);
@@ -269,7 +236,7 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/staff-management")}
+              onClick={() => navigate("/crew-management")}
             >
               Cancel
             </Button>
