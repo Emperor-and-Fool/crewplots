@@ -15,7 +15,7 @@ import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
-import StaffManagement from "@/pages/staff-management";
+import { CrewManagement, CrewMemberProfile } from "@/modules/users/pages";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
 import Applicants from "@/pages/applicants";
