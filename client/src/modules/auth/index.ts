@@ -12,11 +12,13 @@ export { useAuthState } from './hooks/useAuthState';
 export { AuthFormService } from './services/authFormService';
 export { AuthValidationService } from './services/authValidationService';
 
-// Components
-export { LoginForm, RegistrationForm } from './components/forms';
-export { AuthDevelopmentTools } from './components/utils';
-export { AuthPageLayout } from './components/layouts';
-export { LoginPage, RegistrationPage } from './pages';
+// Component exports
+export { LoginForm } from './components/forms/LoginForm';
+export { RegistrationForm } from './components/forms/RegistrationForm';
+export { AuthDevelopmentTools } from './components/utils/AuthDevelopmentTools';
+export { AuthPageLayout } from './components/layouts/AuthPageLayout';
+export { LoginPage } from './pages/LoginPage';
+export { RegistrationPage } from './pages/RegistrationPage';
 
 // Compatibility re-exports for gradual migration
 export { useAuth } from '@/hooks/use-auth';
