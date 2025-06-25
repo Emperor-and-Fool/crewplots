@@ -145,27 +145,52 @@ export const positionCompetencies = pgTable("position_competencies", {
   };
 });
 
-// Staff (people who are hired and working)
-export const staff = pgTable("staff", {
+// User-Location Assignments (multi-location crew member support)
+export const userLocations = pgTable("user_locations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   locationId: integer("location_id").references(() => locations.id).notNull(),
-  positionId: integer("position_id").references(() => positions.id), // Link to a defined position
-  position: text("position").notNull(), // Keep for backward compatibility
-  wantedHours: integer("wanted_hours").notNull(),
+  roleAtLocation: text("role_at_location", { 
+    enum: ["crew_member", "crew_manager", "floor_manager"] 
+  }).notNull(),
+  position: text("position"), // Position at this specific location
+  department: text("department"), // Department at this specific location
+  hireDate: timestamp("hire_date"), // When hired at this location
+  status: text("status", { enum: ["active", "inactive", "on_leave"] }).default("active"),
+  wantedHours: integer("wanted_hours"), // Desired hours at this location
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    // Ensure unique user-location combinations
+    userLocationUnique: primaryKey({ columns: [table.userId, table.locationId] }),
+    // Indexes for efficient querying
+    userIdIdx: index("idx_user_locations_user_id").on(table.userId),
+    locationIdIdx: index("idx_user_locations_location_id").on(table.locationId),
+    activeStatusIdx: index("idx_user_locations_active").on(table.locationId, table.status),
+  };
 });
 
-// Staff Competencies (junction table with assessment tracking)
-export const staffCompetencies = pgTable("staff_competencies", {
+// User Competencies (replacing staff_competencies, attached to users directly)
+export const userCompetencies = pgTable("user_competencies", {
   id: serial("id").primaryKey(),
-  staffId: integer("staff_id").references(() => staff.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   competencyId: integer("competency_id").references(() => competencies.id).notNull(),
   level: integer("level").notNull(), // 0-5 scale
   assessedBy: integer("assessed_by").references(() => users.id), // Who assessed this competency
   assessedAt: timestamp("assessed_at"), // When the assessment was done
+  locationId: integer("location_id").references(() => locations.id), // Competency assessment context
   notes: text("notes"), // Optional assessment notes
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    // Ensure unique user-competency combinations per location
+    userCompetencyLocationUnique: primaryKey({ columns: [table.userId, table.competencyId, table.locationId] }),
+    userIdIdx: index("idx_user_competencies_user_id").on(table.userId),
+    competencyIdIdx: index("idx_user_competencies_competency_id").on(table.competencyId),
+    locationIdIdx: index("idx_user_competencies_location_id").on(table.locationId),
+  };
 });
 
 
@@ -219,7 +244,8 @@ export const weeklySchedules = pgTable("weekly_schedules", {
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   scheduleId: integer("schedule_id").references(() => weeklySchedules.id).notNull(),
-  staffId: integer("staff_id").references(() => staff.id),
+  userId: integer("user_id").references(() => users.id), // Changed from staffId to userId
+  locationId: integer("location_id").references(() => locations.id).notNull(), // Added for multi-location support
   date: timestamp("date").notNull(),
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
@@ -390,12 +416,11 @@ export const insertLocationSchema = createInsertSchema(locations).omit({
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
 export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
 export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({ createdAt: true });
-export const insertUserLocationSchema = createInsertSchema(userLocations).omit({ createdAt: true });
+export const insertUserLocationSchema = createInsertSchema(userLocations).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPositionSchema = createInsertSchema(positions).omit({ id: true, createdAt: true });
 export const insertPositionCompetencySchema = createInsertSchema(positionCompetencies).omit({ createdAt: true });
 export const insertCompetencySchema = createInsertSchema(competencies).omit({ id: true, createdAt: true });
-export const insertStaffSchema = createInsertSchema(staff).omit({ id: true, createdAt: true });
-export const insertStaffCompetencySchema = createInsertSchema(staffCompetencies).omit({ id: true, createdAt: true });
+export const insertUserCompetencySchema = createInsertSchema(userCompetencies).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
@@ -475,8 +500,7 @@ export type UserLocation = typeof userLocations.$inferSelect;
 export type Position = typeof positions.$inferSelect;
 export type PositionCompetency = typeof positionCompetencies.$inferSelect;
 export type Competency = typeof competencies.$inferSelect;
-export type Staff = typeof staff.$inferSelect;
-export type StaffCompetency = typeof staffCompetencies.$inferSelect;
+export type UserCompetency = typeof userCompetencies.$inferSelect;
 
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;

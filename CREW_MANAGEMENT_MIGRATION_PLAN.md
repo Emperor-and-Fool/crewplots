@@ -8,7 +8,9 @@ This plan outlines the complete migration of staff management functionality to a
 
 ### Database Schema Issues
 - **Staff Table Mismatch**: Current `staff` table has separate fields (`user_id`, `first_name`, `last_name`) instead of following user-centric approach
-- **Schema Inconsistency**: Staff should be users with role="staff" or role="crew_member", not separate entities
+- **Schema Inconsistency**: Staff should be users with role="crew_member" or role="crew_manager", not separate entities
+- **Single Location Limitation**: Current `users.location_id` only supports single location assignment, but crew members need multi-location capability
+- **Missing Junction Table**: Need `user_locations` matrix structure for crew member assignment to multiple locations
 - **Missing Competencies**: No competencies table exists but code references competency system
 
 ### Architecture Violations
@@ -34,17 +36,21 @@ This plan outlines the complete migration of staff management functionality to a
 - [ ] Plan migration strategy for existing staff data
 
 #### 1.2 Database Schema Updates
-- [ ] Update `shared/schema.ts` with staff-related extensions to User type
-- [ ] Add staff-specific fields to users table (position, department, hire_date)
+- [ ] Create `user_locations` junction table for multi-location crew assignment
+- [ ] Update `shared/schema.ts` with crew member extensions to User type
+- [ ] Add crew-specific fields to users table (position, hire_date, department)
 - [ ] Create competencies table (if required for functionality)
-- [ ] Create staff_competencies junction table (if required)
-- [ ] Design migration script for existing staff → users conversion
+- [ ] Create user_competencies junction table (replacing staff_competencies)
+- [ ] Design migration script for existing staff → users + user_locations conversion
+- [ ] Remove redundant staff table after successful migration
 
 #### 1.3 Storage Layer Updates
-- [ ] Update storage interfaces to use User-based staff queries
-- [ ] Add staff-specific query methods (getStaffUsers, getCrewMembers)
-- [ ] Update role-based filtering for staff workflows
-- [ ] Test storage layer with new schema
+- [ ] Update storage interfaces to use User-based crew member queries
+- [ ] Add multi-location query methods (getCrewMembersByLocation, getUserLocations)
+- [ ] Implement junction table queries for user-location assignments
+- [ ] Update role-based filtering for crew member workflows
+- [ ] Add caching for location-filtered crew member queries
+- [ ] Test storage layer with new schema and multi-location support
 
 ### Phase 2: User Module Integration (Architecture)
 **Goal**: Integrate staff management into user module structure
@@ -214,4 +220,35 @@ This plan outlines the complete migration of staff management functionality to a
 
 This migration represents a complete rebuild rather than a fix-in-place approach. The existing staff management page violates too many architectural principles to be efficiently repaired. A clean implementation following established patterns will be faster and more maintainable.
 
-The migration aligns with the successful user module migration methodology and maintains consistency with the "applicants ARE users" principle by treating "staff ARE users with staff roles."
+The migration aligns with the successful user module migration methodology and maintains consistency with the "applicants ARE users" principle by treating "crew members ARE users with crew roles."
+
+## Multi-Location Assignment Architecture
+
+### Junction Table Design
+```sql
+user_locations {
+  user_id: FK → users.id
+  location_id: FK → locations.id
+  role_at_location: text (crew_member, crew_manager)
+  hire_date: timestamp
+  status: text (active, inactive)
+  position: text
+  department: text
+  created_at: timestamp
+  updated_at: timestamp
+}
+```
+
+### Key Benefits
+- **Matrix Structure**: Users can be assigned to multiple locations with different roles
+- **PostgreSQL Optimization**: Leverages existing infrastructure and query patterns
+- **Performance**: Proper indexing supports efficient location-based filtering
+- **Data Integrity**: ACID compliance for crew assignment changes
+- **Caching Ready**: Redis can cache location-filtered crew member lists
+
+### Migration Strategy
+1. Create user_locations junction table
+2. Migrate staff table data to users table + user_locations assignments
+3. Update storage layer for multi-location queries
+4. Remove staff table after validation
+5. Update dashboard filtering to use junction table queries
