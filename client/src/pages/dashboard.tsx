@@ -107,8 +107,29 @@ export default function Dashboard() {
     }
   });
 
+  // Fetch user's assigned locations for role-based filtering
+  const { data: userLocations } = useQuery({
+    queryKey: ['/api/user-locations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/user-locations/${user.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 404) return []; // No assignments
+        throw new Error('Failed to fetch user locations');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id && (user?.role === 'crew_manager' || user?.role === 'floor_manager')
+  });
+
+  // Get assigned location IDs for role-based filtering
+  const assignedLocationIds = userLocations?.map(ul => ul.locationId) || [];
+  const isLocationRestricted = (user?.role === 'crew_manager' || user?.role === 'floor_manager') && assignedLocationIds.length > 0;
+
   // Cherry-pick crew data from unified profile data (include all non-applicant roles)
-  const staffUsers = profileData?.filter(user => 
+  let staffUsers = profileData?.filter(user => 
     user.role === 'staff' || 
     user.role === 'crew_member' || 
     user.role === 'crew_manager' || 
@@ -116,6 +137,14 @@ export default function Dashboard() {
     user.role === 'manager' || 
     user.role === 'administrator'
   ) || [];
+
+  // Apply location filtering for crew managers and floor managers
+  if (isLocationRestricted) {
+    staffUsers = staffUsers.filter(user => 
+      !user.locationId || assignedLocationIds.includes(user.locationId)
+    );
+  }
+
   const totalStaff = staffUsers.length;
   const shiftsThisWeek = shiftsStats?.length || 0;
   const hoursScheduled = shiftsStats?.reduce((total, shift) => {
@@ -126,13 +155,27 @@ export default function Dashboard() {
     return total + hours;
   }, 0) || 0;
   // Calculate applicant stats from profile data (cherry-pick applicants only)
-  const applicantUsers = profileData?.filter(user => user.role === 'applicant') || [];
+  let applicantUsers = profileData?.filter(user => user.role === 'applicant') || [];
+  
+  // Apply location filtering for crew managers and floor managers
+  if (isLocationRestricted) {
+    applicantUsers = applicantUsers.filter(user => 
+      !user.locationId || assignedLocationIds.includes(user.locationId)
+    );
+  }
+  
   const newApplicants = applicantUsers?.filter(applicant => applicant.status === 'new').length || 0;
   const shortListedApplicants = applicantUsers?.filter(applicant => applicant.status === 'short-listed').length || 0;
   const totalApplicants = applicantUsers?.length || 0;
 
   // Use location-filtered data when location is selected, or show all data when no location selected
   const currentLocationId = selectedLocationId;
+  
+  // Override location context for role-restricted users
+  const effectiveIsAllLocations = isLocationRestricted ? false : isAllLocations;
+  const restrictedLocationMessage = isLocationRestricted ? 
+    `Showing data for your assigned locations (${assignedLocationIds.length} locations)` : 
+    null;
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -185,8 +228,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Stats cards - Only show in All Locations view since they're not location-filtered */}
-            {isAllLocations && (
+            {/* Stats cards - Show for administrators/managers or location-restricted users */}
+            {(effectiveIsAllLocations || isLocationRestricted) && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                 <StatsCard
                   title="Total Applicants"
@@ -241,16 +284,23 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Staff List */}
               <div className="lg:col-span-2">
-                {isAllLocations ? (
+                {effectiveIsAllLocations ? (
                   <div className="bg-white shadow rounded-md p-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      All Locations Crew Overview
+                      {isLocationRestricted ? "Your Assigned Locations Crew Overview" : "All Locations Crew Overview"}
                     </h3>
                     <div className="text-gray-600">
-                      <p>Total Crew Across All Locations: {totalStaff}</p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Select a specific location to view detailed crew information and scheduling.
-                      </p>
+                      <p>Total Crew {isLocationRestricted ? "in Your Locations" : "Across All Locations"}: {totalStaff}</p>
+                      {restrictedLocationMessage && (
+                        <p className="text-sm text-blue-600 mt-2 font-medium">
+                          {restrictedLocationMessage}
+                        </p>
+                      )}
+                      {!isLocationRestricted && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Select a specific location to view detailed crew information and scheduling.
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : currentLocationId ? (
