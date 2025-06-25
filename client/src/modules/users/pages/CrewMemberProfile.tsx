@@ -100,10 +100,19 @@ export default function CrewMemberProfile() {
   // Update role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async (newRole: string) => {
-      return apiRequest(`/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         method: 'PATCH',
-        body: { role: newRole }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update role: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
