@@ -22,12 +22,18 @@ export default function CrewManagement() {
   // Fetch all users from existing profile data endpoint
   const { data: users, isLoading, error } = useQuery<User[]>({
     queryKey: ['/api/profile-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/profile-data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+      return response.json();
+    },
     staleTime: 2 * 60 * 1000,
   });
 
-  const crewMembers = users?.filter(user => 
-    ['crew_member', 'crew_manager', 'floor_manager', 'manager', 'administrator'].includes(user.role)
-  ) || [];
+  // All non-applicant users are considered crew
+  const crewMembers = users?.filter(user => user.role !== 'applicant') || [];
 
   if (isLoading) {
     return (
