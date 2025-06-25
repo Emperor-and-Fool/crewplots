@@ -160,12 +160,12 @@ export default function StaffManagement() {
                                 {member.email || "No email"}
                               </TableCell>
                               <TableCell>
-                                {member.phone ? (
+                                {member.phoneNumber ? (
                                   <a 
-                                    href={`tel:${member.phone}`}
+                                    href={`tel:${member.phoneNumber}`}
                                     className="text-blue-600 hover:text-blue-800 hover:underline"
                                   >
-                                    {member.phone}
+                                    {member.phoneNumber}
                                   </a>
                                 ) : (
                                   "No phone"
