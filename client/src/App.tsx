@@ -204,11 +204,11 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/staff-management">
+              <Route path="/crew-management">
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={StaffManagement} 
+                      component={() => import('./modules/users/pages/CrewManagement')} 
                       requiredRoles={["manager", "floor_manager", "administrator"]} 
                     />
                   </AppLayout> : 
