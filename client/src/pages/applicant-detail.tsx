@@ -89,8 +89,9 @@ function ApplicantDetail() {
 
   // Initialize selected locations when data loads
   React.useEffect(() => {
-    if (userLocations.length >= 0) {
-      setSelectedLocations(userLocations.map((ul: any) => ul.locationId));
+    if (userLocations && userLocations.length >= 0) {
+      const currentLocationIds = userLocations.map((ul: any) => ul.locationId);
+      setSelectedLocations(currentLocationIds);
     }
   }, [userLocations]);
 
@@ -206,39 +207,67 @@ function ApplicantDetail() {
   // Location assignment mutation
   const updateLocationsMutation = useMutation({
     mutationFn: async (locationIds: number[]) => {
-      // Remove existing assignments
-      const removePromises = userLocations
-        .filter((ul: any) => !locationIds.includes(ul.locationId))
-        .map((ul: any) => fetch(`/api/user-locations/${applicantId}/${ul.locationId}`, { method: 'DELETE' }));
+      console.log('Updating locations for applicant', applicantId, 'new selections:', locationIds);
+      console.log('Current user locations:', userLocations);
+      
+      // Remove existing assignments that are not in the new selection
+      const currentLocationIds = userLocations.map((ul: any) => ul.locationId);
+      const toRemove = currentLocationIds.filter(id => !locationIds.includes(id));
+      const toAdd = locationIds.filter(id => !currentLocationIds.includes(id));
+      
+      console.log('Locations to remove:', toRemove);
+      console.log('Locations to add:', toAdd);
 
-      // Add new assignments
-      const addPromises = locationIds
-        .filter(locationId => !userLocations.some((ul: any) => ul.locationId === locationId))
-        .map(locationId => fetch('/api/user-locations', {
+      const removePromises = toRemove.map(locationId => 
+        fetch(`/api/user-locations/${applicantId}/${locationId}`, { 
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      );
+
+      const addPromises = toAdd.map(locationId => 
+        fetch('/api/user-locations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ 
             userId: applicantId, 
             locationId,
             roleAtLocation: 'crew_member'
           })
-        }));
+        })
+      );
 
       const results = await Promise.all([...removePromises, ...addPromises]);
       
       for (const response of results) {
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Location operation failed: ${response.status}`, errorText);
           throw new Error(`Failed to update locations: ${response.status}`);
         }
       }
+      
+      return { removed: toRemove.length, added: toAdd.length };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-locations', applicantId] });
-      toast({ title: "Location assignments updated successfully" });
+      toast({ 
+        title: "Location assignments updated", 
+        description: `Updated ${result.removed + result.added} location assignments`
+      });
     },
     onError: (error) => {
       console.error('Location update error:', error);
-      toast({ title: "Failed to update location assignments", variant: "destructive" });
+      // Reset selections to current state on error
+      if (userLocations) {
+        setSelectedLocations(userLocations.map((ul: any) => ul.locationId));
+      }
+      toast({ 
+        title: "Failed to update location assignments", 
+        description: error.message,
+        variant: "destructive" 
+      });
     }
   });
 
@@ -256,7 +285,8 @@ function ApplicantDetail() {
     updateLocationsMutation.mutate(selectedLocations);
   };
 
-  const hasLocationChanges = JSON.stringify(selectedLocations.sort()) !== JSON.stringify(userLocations.map((ul: any) => ul.locationId).sort());
+  const hasLocationChanges = userLocations && selectedLocations && 
+    JSON.stringify([...selectedLocations].sort()) !== JSON.stringify(userLocations.map((ul: any) => ul.locationId).sort());
 
   if (isLoading) {
     return (
