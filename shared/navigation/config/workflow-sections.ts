@@ -25,7 +25,7 @@ export const workflowSections: NavigationSection[] = [
       {
         id: 'crew-main',
         label: 'Crew',
-        path: '/staff',
+        path: '/staff-management',
         permission: { workflow: 'crew' }
       }
     ]

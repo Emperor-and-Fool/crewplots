@@ -165,6 +165,7 @@ Changelog:
 - June 24, 2025. IMPROVED: Dashboard applicants display - Removed scroll container and redesigned as clean, mobile-responsive list with better spacing and hover effects, eliminating scrollbar while maintaining all information accessibility
 - June 24, 2025. REORDERED: Dashboard stats cards - Changed order to Total Applicants first, Total Staff second, Shifts This Week third, Hours Scheduled fourth as requested by user
 - June 24, 2025. FIXED: Crew member visibility in Total Staff count - Updated dashboard filtering to include both 'staff' and 'crew_member' roles, added 'manage' permission to testkai crew member for navigation access
+- June 24, 2025. FIXED: Crew navigation 404 error - Corrected navigation path from '/staff' to '/staff-management' to match existing route in App.tsx
 ```
 
 ## User Preferences
