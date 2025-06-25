@@ -39,9 +39,18 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch available users (crew member role)
+  // Fetch all users for assignment
   const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users/role/crew'],
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      const response = await fetch('/api/users', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return response.json();
+    },
   });
 
   // Fetch locations

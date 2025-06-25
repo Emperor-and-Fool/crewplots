@@ -1248,6 +1248,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserLocations(userId: number): Promise<UserLocation[]> {
     try {
+      if (userId === 0) {
+        // Get all user-location assignments
+        const result = await db.select().from(userLocations);
+        return result;
+      }
       const result = await db.select().from(userLocations).where(eq(userLocations.userId, userId));
       return result;
     } catch (error) {
@@ -1270,7 +1275,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.delete(userLocations)
         .where(and(eq(userLocations.userId, userId), eq(userLocations.locationId, locationId)));
-      return result.rowCount > 0;
+      return result.rowCount !== undefined && result.rowCount > 0;
     } catch (error) {
       console.error("Error in removeUserFromLocation:", error);
       return false;

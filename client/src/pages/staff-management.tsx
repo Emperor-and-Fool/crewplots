@@ -48,6 +48,20 @@ export default function StaffManagement() {
     },
   });
 
+  // Fetch user-location assignments
+  const { data: userLocations } = useQuery({
+    queryKey: ['/api/user-locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/user-locations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user-location assignments');
+      }
+      return response.json();
+    },
+  });
+
   const handleLocationChange = (locationId: number | null) => {
     setSelectedLocation(locationId);
   };
