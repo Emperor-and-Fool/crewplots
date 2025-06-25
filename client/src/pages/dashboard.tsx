@@ -194,8 +194,8 @@ export default function Dashboard() {
                   title="Total Crew"
                   value={totalStaff}
                   icon={<Users className="h-6 w-6" />}
-                  link={{ text: "View all", href: "/staff-management" }}
-                  onClick={() => navigate("/staff-management")}
+                  link={{ text: "View all", href: "/crew-management" }}
+                  onClick={() => navigate("/crew-management")}
                 />
                 
                 <StatsCard

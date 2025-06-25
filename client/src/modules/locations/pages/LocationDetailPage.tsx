@@ -290,7 +290,7 @@ function LocationDetailPage() {
                 className="w-full justify-start"
                 onClick={() => {
                   localStorage.setItem('selectedLocationId', location.id.toString());
-                  navigate('/staff-management');
+                  navigate('/crew-management');
                 }}
               >
                 <Users className="h-4 w-4 mr-2" />
