@@ -16,7 +16,7 @@ import LocationHeader from "@/modules/locations/components/LocationHeader";
 // Dashboard module components (sophisticated restoration)
 import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions } from "@/modules/dashboard";
 import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
-import { ApplicantsSummary } from "@/components/applicants/applicants-summary";
+import { ApplicantsSummary } from "@/modules/users/components/workflows/ApplicantsSummary";
 
 
 export default function Dashboard() {
@@ -177,56 +177,51 @@ export default function Dashboard() {
             {/* Stats cards - Show for administrators/managers or location-restricted users */}
             {(isAllLocations || isLocationRestricted) && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/applicants")}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Applicants</CardTitle>
-                    <UserPlus className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{profileData?.filter((user: any) => user.role === 'applicant').length || 0}</div>
-                  </CardContent>
-                </Card>
+                <StatsCard
+                  title="Total Applicants"
+                  value={displayApplicantCount}
+                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
+                  icon={<UserPlus className="h-6 w-6" />}
+                  link={{ text: "Review applicants", href: "/applicants" }}
+                  onClick={() => navigate("/applicants")}
+                />
                 
-                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/crew-management")}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Crew</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{totalStaff}</div>
-                  </CardContent>
-                </Card>
+                <StatsCard
+                  title="Total Crew"
+                  value={totalStaff}
+                  icon={<Users className="h-6 w-6" />}
+                  link={{ text: "View all", href: "/staff-management" }}
+                  onClick={() => navigate("/staff-management")}
+                />
                 
-                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/scheduling")}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Shifts This Week</CardTitle>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{shiftsThisWeek}</div>
-                  </CardContent>
-                </Card>
+                <StatsCard
+                  title="Shifts This Week"
+                  value={shiftsThisWeek}
+                  icon={<Calendar className="h-6 w-6" />}
+                  link={{ text: "View schedule", href: "/scheduling" }}
+                  onClick={() => navigate("/scheduling")}
+                />
                 
-                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/reports")}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Hours Scheduled</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{hoursScheduled}</div>
-                  </CardContent>
-                </Card>
+                <StatsCard
+                  title="Hours Scheduled"
+                  value={hoursScheduled}
+                  icon={<Clock className="h-6 w-6" />}
+                  link={{ text: "View details", href: "/reports" }}
+                  onClick={() => navigate("/reports")}
+                />
               </div>
             )}
 
-            {/* Weekly summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              <div className="lg:col-span-2">
-                <WeeklySchedule locationId={selectedLocationId} />
+            {/* Dashboard content grid - sophisticated layout restoration */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+              {/* Weekly schedule - main content area */}
+              <div className="lg:col-span-8">
+                <WeeklySchedule locationId={selectedLocationId || undefined} />
               </div>
               
-              {/* Quick actions */}
-              <div className="lg:col-span-1">
+              {/* Right sidebar - summary components */}
+              <div className="lg:col-span-4 space-y-6">
+                {/* Quick actions */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
@@ -258,66 +253,22 @@ export default function Dashboard() {
                     </Button>
                   </CardContent>
                 </Card>
+                
+                {/* Staff overview - location-specific */}
+                {selectedLocationId && (
+                  <StaffOverview locationId={selectedLocationId} />
+                )}
+                
+                {/* Cash management summary - location-specific */}
+                {selectedLocationId && (
+                  <CashManagementSummary locationId={selectedLocationId} />
+                )}
               </div>
             </div>
 
-            {/* Recent applicants - Show for administrators/managers only or when viewing all locations */}
+            {/* Recent applicants - sophisticated component replacement */}
             {effectiveIsAllLocations && (
-              <div className="bg-white shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Applicants
-                  </h3>
-                  
-                  {applicantUsers && applicantUsers.length > 0 ? (
-                    <div className="space-y-3">
-                      {applicantUsers.slice(0, 5).map((applicant: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                             onClick={() => navigate(`/applicants/${applicant.id}`)}>
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={applicant.profileImage} />
-                              <AvatarFallback>
-                                <User className="h-4 w-4" />
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {applicant.name || `${applicant.firstName} ${applicant.lastName}`.trim()}
-                              </p>
-                              <p className="text-sm text-gray-500">{applicant.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={applicant.status === 'new' ? 'default' : 'secondary'}>
-                              {applicant.status || 'new'}
-                            </Badge>
-                            {applicant.phoneNumber && (
-                              <a 
-                                href={`tel:${applicant.phoneNumber}`}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Call
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {applicantUsers.length > 5 && (
-                        <div className="text-center pt-4">
-                          <Button variant="outline" onClick={() => navigate("/applicants")}>
-                            View All Applicants
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No recent applicants</p>
-                  )}
-                </div>
-              </div>
+              <ApplicantsSummary limit={6} />
             )}
           </div>
         </main>
