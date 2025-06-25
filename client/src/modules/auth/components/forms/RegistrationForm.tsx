@@ -85,20 +85,21 @@ export const RegistrationForm = ({
   const onSubmit = async (data: Register) => {
     try {
       setIsLoading(true);
-      console.log("Registration form submission:", data);
+      console.log("🔄 Registration form submission starting:", data);
+      console.log("🔄 Form validation errors:", form.formState.errors);
       
       const success = await register(data);
-      console.log("Registration result:", success);
+      console.log("✅ Registration result:", success);
       
       if (success) {
-        console.log("Registration successful, calling onSuccess");
+        console.log("✅ Registration successful, calling onSuccess");
         onSuccess?.(data);
       } else {
-        console.log("Registration failed");
+        console.log("❌ Registration failed");
         onError?.("Registration failed - please check your information");
       }
     } catch (error) {
-      console.error("Registration submission error:", error);
+      console.error("❌ Registration submission error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       onError?.(errorMessage);
     } finally {
@@ -250,6 +251,15 @@ export const RegistrationForm = ({
           type="submit"
           className="w-full"
           disabled={isLoading}
+          onClick={(e) => {
+            console.log("🔄 Button clicked, form valid:", form.formState.isValid);
+            console.log("🔄 Form errors:", form.formState.errors);
+            console.log("🔄 Form values:", form.getValues());
+            if (!form.formState.isValid) {
+              e.preventDefault();
+              console.log("❌ Form validation failed, preventing submission");
+            }
+          }}
         >
           {isLoading ? (
             <>
