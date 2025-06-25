@@ -130,23 +130,32 @@ export default function CrewMemberProfile() {
       // Remove existing assignments
       const removePromises = userLocations
         .filter(ul => !locationIds.includes(ul.locationId))
-        .map(ul => apiRequest(`/api/user-locations/${userId}/${ul.locationId}`, { method: 'DELETE' }));
+        .map(ul => fetch(`/api/user-locations/${userId}/${ul.locationId}`, { method: 'DELETE' }));
 
       // Add new assignments
       const addPromises = locationIds
         .filter(locationId => !userLocations.some(ul => ul.locationId === locationId))
-        .map(locationId => apiRequest('/api/user-locations', {
+        .map(locationId => fetch('/api/user-locations', {
           method: 'POST',
-          body: { userId: parseInt(userId!), locationId }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: parseInt(userId!), locationId })
         }));
 
-      await Promise.all([...removePromises, ...addPromises]);
+      const results = await Promise.all([...removePromises, ...addPromises]);
+      
+      // Check if any requests failed
+      for (const response of results) {
+        if (!response.ok) {
+          throw new Error(`Failed to update locations: ${response.status}`);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-locations', userId] });
       toast({ title: "Location assignments updated successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Location update error:', error);
       toast({ title: "Failed to update location assignments", variant: "destructive" });
     }
   });
@@ -154,16 +163,24 @@ export default function CrewMemberProfile() {
   // Update motivation note mutation
   const updateNoteMutation = useMutation({
     mutationFn: async (note: string) => {
-      return apiRequest(`/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         method: 'PATCH',
-        body: { notes: note }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: note })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update notes: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
       toast({ title: "Motivation note updated successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Notes update error:', error);
       toast({ title: "Failed to update motivation note", variant: "destructive" });
     }
   });
