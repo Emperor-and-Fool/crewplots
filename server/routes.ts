@@ -513,18 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get users by role for crew management
-  app.get('/api/users/role/crew', async (req, res) => {
-    try {
-      const crewRoles = ['crew_member', 'crew_manager', 'floor_manager', 'manager', 'administrator'];
-      const users = await storage.getUsersByRoles(crewRoles);
-      console.log(`🔍 API: Retrieved ${users.length} users with crew roles`);
-      res.json(users);
-    } catch (error) {
-      console.error('Error fetching users by crew roles:', error);
-      res.status(500).json({ error: "Failed to fetch crew users" });
-    }
-  });
+  // Removed redundant crew endpoint - using existing /api/profile-data instead
 
   // Get crew members for a specific location
   app.get('/api/locations/:locationId/crew', async (req, res) => {

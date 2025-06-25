@@ -19,9 +19,9 @@ import { CrewMemberForm } from "@/modules/users/components/crew";
 export default function CrewManagement() {
   const [showForm, setShowForm] = useState(false);
   
-  // Fetch all users with crew-related roles
+  // Fetch all users from existing profile data endpoint
   const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: ['/api/users/role/crew'],
+    queryKey: ['/api/profile-data'],
     staleTime: 2 * 60 * 1000,
   });
 

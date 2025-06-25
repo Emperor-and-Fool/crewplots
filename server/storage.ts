@@ -1140,16 +1140,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUsersByRoles(roles: string[]): Promise<User[]> {
-    try {
-      const result = await db.select().from(users).where(inArray(users.role, roles));
-      console.log(`🔍 STORAGE: Retrieved ${result.length} users with roles: ${roles.join(', ')}`);
-      return result;
-    } catch (error) {
-      console.error("Error fetching users by roles:", error);
-      return [];
-    }
-  }
+  // Removed getUsersByRoles - using existing getProfileData instead
 
   // Locations
   async getLocation(id: number): Promise<Location | undefined> {
