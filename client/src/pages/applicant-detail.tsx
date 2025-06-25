@@ -17,7 +17,9 @@ import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/modules/messaging';
 import { ApplicationNotes } from '@/modules/users/components/workflows';
 import { ProfileCard } from '@/modules/users/components/profiles';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Location } from '@shared/schema';
 
 function ApplicantDetail() {
   const [, params] = useRoute("/applicant/:id");
@@ -70,6 +72,27 @@ function ApplicantDetail() {
   };
 
   const queryClient = useQueryClient();
+
+  // Fetch locations for assignment
+  const { data: locations = [] } = useQuery<Location[]>({
+    queryKey: ['/api/locations'],
+  });
+
+  // Fetch current user location assignments
+  const { data: userLocations = [] } = useQuery({
+    queryKey: ['/api/user-locations', applicantId],
+    enabled: !!applicantId,
+  });
+
+  // Location assignment state
+  const [selectedLocations, setSelectedLocations] = React.useState<number[]>([]);
+
+  // Initialize selected locations when data loads
+  React.useEffect(() => {
+    if (userLocations.length >= 0) {
+      setSelectedLocations(userLocations.map((ul: any) => ul.locationId));
+    }
+  }, [userLocations]);
 
   const goBack = () => {
     navigate('/dashboard');
@@ -179,6 +202,61 @@ function ApplicantDetail() {
   const promoteToCrewMember = () => {
     promotionMutation.mutate();
   };
+
+  // Location assignment mutation
+  const updateLocationsMutation = useMutation({
+    mutationFn: async (locationIds: number[]) => {
+      // Remove existing assignments
+      const removePromises = userLocations
+        .filter((ul: any) => !locationIds.includes(ul.locationId))
+        .map((ul: any) => fetch(`/api/user-locations/${applicantId}/${ul.locationId}`, { method: 'DELETE' }));
+
+      // Add new assignments
+      const addPromises = locationIds
+        .filter(locationId => !userLocations.some((ul: any) => ul.locationId === locationId))
+        .map(locationId => fetch('/api/user-locations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: applicantId, 
+            locationId,
+            roleAtLocation: 'crew_member'
+          })
+        }));
+
+      const results = await Promise.all([...removePromises, ...addPromises]);
+      
+      for (const response of results) {
+        if (!response.ok) {
+          throw new Error(`Failed to update locations: ${response.status}`);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user-locations', applicantId] });
+      toast({ title: "Location assignments updated successfully" });
+    },
+    onError: (error) => {
+      console.error('Location update error:', error);
+      toast({ title: "Failed to update location assignments", variant: "destructive" });
+    }
+  });
+
+  const handleLocationChange = (locationId: number, checked: boolean) => {
+    setSelectedLocations(prev => {
+      if (checked) {
+        return [...prev, locationId];
+      } else {
+        return prev.filter(id => id !== locationId);
+      }
+    });
+  };
+
+  const saveLocationAssignments = () => {
+    updateLocationsMutation.mutate(selectedLocations);
+  };
+
+  const hasLocationChanges = JSON.stringify(selectedLocations.sort()) !== JSON.stringify(userLocations.map((ul: any) => ul.locationId).sort());
 
   if (isLoading) {
     return (
@@ -294,6 +372,55 @@ function ApplicantDetail() {
             workflow="application"
             readOnlyMode={true}
           />
+        </CardContent>
+      </Card>
+
+      {/* Location Assignment */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Location Assignments
+          </CardTitle>
+          <CardDescription>Assign this applicant to specific locations where they can work</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {locations.map((location) => (
+                <div key={location.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id={`location-${location.id}`}
+                    checked={selectedLocations.includes(location.id)}
+                    onCheckedChange={(checked) => handleLocationChange(location.id, !!checked)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor={`location-${location.id}`} className="font-medium cursor-pointer">
+                      {location.name}
+                    </label>
+                    {location.address && (
+                      <p className="text-sm text-gray-500">{location.address}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {hasLocationChanges && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <p className="text-sm text-gray-600">
+                  {selectedLocations.length} location{selectedLocations.length !== 1 ? 's' : ''} selected
+                </p>
+                <Button 
+                  onClick={saveLocationAssignments}
+                  disabled={updateLocationsMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {updateLocationsMutation.isPending ? "Saving..." : "Save Assignments"}
+                </Button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

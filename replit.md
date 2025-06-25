@@ -170,6 +170,7 @@ Changelog:
 - June 24, 2025. FIXED: Crew member visibility in Total Staff count - Updated dashboard filtering to include both 'staff' and 'crew_member' roles, added 'manage' permission to testkai crew member for navigation access
 - June 24, 2025. FIXED: Crew navigation 404 error - Corrected navigation path from '/staff' to '/staff-management' to match existing route in App.tsx
 - June 24, 2025. FIXED: Staff management page redirect issue - Added missing queryFn functions to prevent query failures and added AppLayout wrapper to staff-management route for proper navigation
+- June 25, 2025. COMPLETED: Crew member profile API fixes - Resolved fetch call parameter issues in role/location/notes mutations, added required roleAtLocation field for user_locations schema validation, implemented complete error handling chain from frontend to backend
 ```
 
 ## User Preferences
