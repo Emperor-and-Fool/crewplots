@@ -24,9 +24,10 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch available users (crew member role)
+  // Fetch available users from profile data
   const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users/role/crew'],
+    queryKey: ['/api/profile-data'],
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch locations
