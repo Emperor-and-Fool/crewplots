@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+// Removed apiRequest import - using direct fetch calls
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
@@ -60,19 +60,22 @@ export default function Applicants() {
   const canDelete = hasPermission('application', 'delete');
   const canEdit = hasPermission('application', 'edit');
 
-  // Fetch applicants
-  const { data: applicants, isLoading } = useQuery<User[]>({
-    queryKey: ['/api/applicants'],
+  // Fetch applicants (users with role="applicant")
+  const { data: profileData, isLoading } = useQuery<User[]>({
+    queryKey: ['/api/profile-data'],
     queryFn: async () => {
-      const response = await fetch('/api/applicants', {
+      const response = await fetch('/api/profile-data', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch applicants');
+        throw new Error('Failed to fetch profile data');
       }
       return response.json();
     },
   });
+
+  // Filter for applicants only
+  const applicants = profileData?.filter(user => user.role === 'applicant') || [];
 
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({
@@ -164,10 +167,15 @@ export default function Applicants() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/applicants/${id}`);
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete applicant');
+      return response.json();
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
       toast({
         title: "Applicant Deleted",
         description: "The applicant has been successfully deleted",
@@ -184,33 +192,50 @@ export default function Applicants() {
     },
   });
 
-  // Hire mutation (update status and create staff record)
+  // Hire mutation (update status and promote to crew_member)
   const hireMutation = useMutation({
     mutationFn: async ({ id, locationId }: { id: number, locationId: number }) => {
-      // First update the applicant status
-      await apiRequest('PUT', `/api/applicants/${id}`, {
-        status: "hired"
+      // Update the user to crew_member role and hired status
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          role: 'crew_member',
+          status: 'hired'
+        })
       });
       
-      // Then create a staff record
-      const applicant = applicants?.find(a => a.id === id);
-      if (!applicant) throw new Error("Applicant not found");
+      if (!response.ok) throw new Error('Failed to promote applicant');
       
-      return apiRequest('POST', '/api/staff', {
-        userId: null, // Would need to find or create user
-        locationId,
-        position: "General", // Default position
-        wantedHours: 20 // Default
-      });
+      // Add location assignment
+      if (locationId) {
+        const locationResponse = await fetch('/api/user-locations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            userId: id, 
+            locationId,
+            roleAtLocation: 'crew_member'
+          })
+        });
+        
+        if (!locationResponse.ok) {
+          console.warn('Failed to assign location, but user was promoted successfully');
+        }
+      }
+      
+      return response.json();
     },
     onSuccess: async () => {
       // Invalidate relevant queries
-      await queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       
       toast({
         title: "Applicant Hired",
-        description: "The applicant has been marked as hired and added to staff",
+        description: "The applicant has been promoted to crew member",
       });
       
       setHireDialogOpen(false);

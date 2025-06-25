@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+// Removed apiRequest import - using direct fetch calls
 import { insertUserSchema, type InsertUser, type User, type Location } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -85,13 +85,28 @@ export function ApplicantForm({ showForm, onClose, editingApplicant }: Applicant
   const mutation = useMutation({
     mutationFn: async (data: InsertUser) => {
       if (editingApplicant) {
-        return apiRequest('PATCH', `/api/applicants/${editingApplicant.id}`, data);
+        const response = await fetch(`/api/users/${editingApplicant.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to update applicant');
+        return response.json();
       } else {
-        return apiRequest('POST', '/api/applicants', data);
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to create applicant');
+        return response.json();
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
       toast({
         title: editingApplicant ? "Applicant Updated" : "Applicant Created",
         description: editingApplicant 
