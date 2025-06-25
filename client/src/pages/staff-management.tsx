@@ -40,6 +40,8 @@ import { Staff, User, StaffCompetency, Competency, Location } from "@shared/sche
 import { useAuth } from "@/hooks/use-auth";
 
 export default function CrewManagement() {
+  console.log('🔍 STAFF MANAGEMENT: Component mounting');
+  
   const [activeTab, setActiveTab] = useState("staff");
   const [showForm, setShowForm] = useState(false);
   const [showCompetencyForm, setShowCompetencyForm] = useState(false);
@@ -47,11 +49,16 @@ export default function CrewManagement() {
   const [selectedCompetency, setSelectedCompetency] = useState<Competency | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [, setLocation] = useLocation();
-  const navigate = (to: string) => setLocation(to);
+  const navigate = (to: string) => {
+    console.log('🔍 STAFF MANAGEMENT: Navigating to:', to);
+    setLocation(to);
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState<number | null>(user?.locationId || null);
+
+  console.log('🔍 STAFF MANAGEMENT: User role:', user?.role);
 
   // Check if user has management role
   const isManager = user?.role === "manager";
@@ -60,17 +67,47 @@ export default function CrewManagement() {
   // Fetch staff members
   const { data: staffMembers, isLoading: isLoadingStaff } = useQuery<Staff[]>({
     queryKey: ['/api/staff'],
+    queryFn: async () => {
+      console.log('🔍 STAFF MANAGEMENT: Fetching staff members');
+      const response = await fetch('/api/staff', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch staff members');
+      }
+      return response.json();
+    },
   });
 
   // Fetch users to get names
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      console.log('🔍 STAFF MANAGEMENT: Fetching users');
+      const response = await fetch('/api/users', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return response.json();
+    },
     enabled: !!staffMembers,
   });
 
   // Fetch competencies
   const { data: competencies, isLoading: isLoadingCompetencies } = useQuery<Competency[]>({
     queryKey: ['/api/competencies'],
+    queryFn: async () => {
+      console.log('🔍 STAFF MANAGEMENT: Fetching competencies');
+      const response = await fetch('/api/competencies', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch competencies');
+      }
+      return response.json();
+    },
   });
 
   // Fetch locations

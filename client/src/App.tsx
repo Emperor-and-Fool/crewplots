@@ -35,6 +35,8 @@ import LandingPage from "@/pages/landing";
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
   const { user, isLoading } = useAuth();
   
+  console.log('🔍 ROLE PROTECTION: Checking access for:', Component.name, 'user role:', user?.role, 'required:', requiredRoles);
+  
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center">
@@ -45,13 +47,16 @@ const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest 
   }
   
   if (!user) {
+    console.log('🔍 ROLE PROTECTION: No user, redirecting to login');
     return <Redirect to="/login" />;
   }
   
   if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+    console.log('🔍 ROLE PROTECTION: Access denied, redirecting to dashboard');
     return <Redirect to="/dashboard" />;
   }
   
+  console.log('🔍 ROLE PROTECTION: Access granted');
   return <Component {...rest} />;
 };
 
@@ -201,10 +206,12 @@ function App() {
               
               <Route path="/staff-management">
                 {isAuthenticated ? 
-                  <RoleProtectedRoute 
-                    component={StaffManagement} 
-                    requiredRoles={["manager", "floor_manager", "administrator"]} 
-                  /> : 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={StaffManagement} 
+                      requiredRoles={["manager", "floor_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
               
