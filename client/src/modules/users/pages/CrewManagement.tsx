@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   Table, 
   TableBody, 
@@ -9,10 +11,14 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserPlus } from "lucide-react";
 import { User } from "@shared/schema";
 import { Link } from "wouter";
+import { CrewMemberForm } from "@/modules/users/components/crew";
 
 export default function CrewManagement() {
+  const [showForm, setShowForm] = useState(false);
+  
   // Fetch all users with crew-related roles
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ['/api/users/role/crew'],
