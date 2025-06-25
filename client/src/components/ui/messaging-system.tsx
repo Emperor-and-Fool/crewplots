@@ -359,61 +359,36 @@ export function MessagingSystem({
         isPrivate: false,
       };
 
-      // Use single endpoint for all operations
-      const baseEndpoint = '/api/messaging/notes';
+      // Always POST - server handles upsert logic (client-side prevention disabled)
+      console.log(`🐛 AUTO-SAVE DEBUG: Starting auto-save, content length=${content.length}`);
+      console.log(`🐛 AUTO-SAVE DEBUG: Using POST request - server will handle upsert`);
+      
+      const response = await fetch('/api/messaging/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData),
+        credentials: 'include',
+      });
 
-      console.log(`🐛 AUTO-SAVE DEBUG: Starting auto-save with draftMessageId=${draftMessageId}, content length=${content.length}`);
-
-      if (draftMessageId) {
-        console.log(`🐛 AUTO-SAVE DEBUG: Using PUT request for existing draft ${draftMessageId}`);
-        // Update existing draft
-        const response = await fetch(`${baseEndpoint}/${draftMessageId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update draft: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log(`🐛 AUTO-SAVE DEBUG: PUT request completed, returned message ID=${result.id}`);
-        return result;
-      } else {
-        console.log(`🐛 AUTO-SAVE DEBUG: Using POST request to create new draft`);
-        // Create new draft - in note mode this will upsert
-        const response = await fetch(baseEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(messageData),
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to create draft: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log(`🐛 AUTO-SAVE DEBUG: POST request completed, returned message ID=${result.id}`);
-        return result;
+      if (!response.ok) {
+        throw new Error(`Failed to save note: ${response.statusText}`);
       }
+
+      const result = await response.json();
+      console.log(`🐛 AUTO-SAVE DEBUG: POST request completed, returned message ID=${result.id}`);
+      return result;
     },
     onMutate: () => {
-      console.log(`🐛 AUTO-SAVE DEBUG: onMutate - draftMessageId before mutation=${draftMessageId}`);
+      console.log(`🐛 AUTO-SAVE DEBUG: onMutate - server-side upsert mode`);
       setIsAutoSaving(true);
       setHasSaveError(false);
     },
     onSuccess: (message) => {
-      console.log(`🐛 AUTO-SAVE DEBUG: onSuccess - received message ID=${message.id}, setting draftMessageId`);
+      console.log(`🐛 AUTO-SAVE DEBUG: onSuccess - received message ID=${message.id}`);
       setDraftMessageId(message.id);
       setLastSavedContent(message.content);
       setIsAutoSaving(false);
       setHasSaveError(false);
-      
-      // Don't change UI state or invalidate cache during auto-save
-      // This keeps the editor visible while saving in background
     },
     onError: () => {
       console.log(`🐛 AUTO-SAVE DEBUG: onError - auto-save failed`);
