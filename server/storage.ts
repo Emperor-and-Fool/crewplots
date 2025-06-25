@@ -67,24 +67,20 @@ export interface IStorage {
   updateCompetency(id: number, competency: Partial<InsertCompetency>): Promise<Competency | undefined>;
   deleteCompetency(id: number): Promise<boolean>;
 
-  // Staff
-  getStaff(id: number): Promise<Staff | undefined>;
-  getStaffMembers(): Promise<Staff[]>;
-  getAllStaff(): Promise<Staff[]>;
-  getStaffByLocation(locationId: number): Promise<Staff[]>;
-  getStaffByUser(userId: number): Promise<Staff | undefined>;
-  createStaff(staff: InsertStaff): Promise<Staff>;
-  updateStaff(id: number, staff: Partial<InsertStaff>): Promise<Staff | undefined>;
-  deleteStaff(id: number): Promise<boolean>;
+  // Crew Members (Users with crew roles)
+  getCrewMembersByLocation(locationId: number): Promise<User[]>;
+  getUserLocations(userId: number): Promise<UserLocation[]>;
+  assignUserToLocation(assignment: InsertUserLocation): Promise<UserLocation>;
+  removeUserFromLocation(userId: number, locationId: number): Promise<boolean>;
 
-  // Staff Competencies
-  getStaffCompetency(id: number): Promise<StaffCompetency | undefined>;
-  getStaffCompetencies(): Promise<StaffCompetency[]>;
-  getStaffCompetenciesByStaff(staffId: number): Promise<StaffCompetency[]>;
-  getStaffCompetenciesByCompetency(competencyId: number): Promise<StaffCompetency[]>;
-  createStaffCompetency(staffCompetency: InsertStaffCompetency): Promise<StaffCompetency>;
-  updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined>;
-  deleteStaffCompetency(id: number): Promise<boolean>;
+  // User Competencies
+  getUserCompetency(id: number): Promise<UserCompetency | undefined>;
+  getUserCompetencies(): Promise<UserCompetency[]>;
+  getUserCompetenciesByUser(userId: number): Promise<UserCompetency[]>;
+  getUserCompetenciesByCompetency(competencyId: number): Promise<UserCompetency[]>;
+  createUserCompetency(userCompetency: InsertUserCompetency): Promise<UserCompetency>;
+  updateUserCompetency(id: number, userCompetency: Partial<InsertUserCompetency>): Promise<UserCompetency | undefined>;
+  deleteUserCompetency(id: number): Promise<boolean>;
 
   // Location-filtered methods
   getShiftsByLocation(locationId: number): Promise<Shift[]>;
@@ -257,8 +253,8 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     this.currentLocationId = 1;
     this.currentCompetencyId = 1;
-    this.currentStaffId = 1;
-    this.currentStaffCompetencyId = 1;
+    this.currentUserLocationId = 1;
+    this.currentUserCompetencyId = 1;
     this.currentApplicantId = 1;
     this.currentScheduleTemplateId = 1;
     this.currentTemplateShiftId = 1;
@@ -424,24 +420,42 @@ export class MemStorage implements IStorage {
   }
 
   // Staff
-  async getStaff(id: number): Promise<Staff | undefined> {
-    return this.staff.get(id);
+  async getCrewMembersByLocation(locationId: number): Promise<User[]> {
+    // Get users who have crew roles at this location
+    const userLocationPairs = Array.from(this.userLocations.values())
+      .filter(ul => ul.locationId === locationId && 
+                   ['crew_member', 'crew_manager', 'floor_manager'].includes(ul.roleAtLocation));
+    
+    return userLocationPairs
+      .map(ul => this.users.get(ul.userId))
+      .filter(user => user !== undefined) as User[];
   }
 
-  async getStaffMembers(): Promise<Staff[]> {
-    return Array.from(this.staff.values());
+  async getUserLocations(userId: number): Promise<UserLocation[]> {
+    return Array.from(this.userLocations.values())
+      .filter(ul => ul.userId === userId);
   }
 
-  async getAllStaff(): Promise<Staff[]> {
-    return Array.from(this.staff.values());
+  async assignUserToLocation(assignment: InsertUserLocation): Promise<UserLocation> {
+    const newAssignment: UserLocation = {
+      id: this.currentUserLocationId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...assignment
+    };
+    this.userLocations.set(newAssignment.id, newAssignment);
+    return newAssignment;
   }
 
-  async getStaffByLocation(locationId: number): Promise<Staff[]> {
-    return Array.from(this.staff.values()).filter(staff => staff.locationId === locationId);
-  }
-
-  async getStaffByUser(userId: number): Promise<Staff | undefined> {
-    return Array.from(this.staff.values()).find(staff => staff.userId === userId);
+  async removeUserFromLocation(userId: number, locationId: number): Promise<boolean> {
+    const assignment = Array.from(this.userLocations.values())
+      .find(ul => ul.userId === userId && ul.locationId === locationId);
+    
+    if (assignment) {
+      this.userLocations.delete(assignment.id);
+      return true;
+    }
+    return false;
   }
 
   async createStaff(staffMember: InsertStaff): Promise<Staff> {
@@ -1214,14 +1228,52 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(staff);
   }
 
-  async getAllStaff(): Promise<Staff[]> {
+  async getCrewMembersByLocation(locationId: number): Promise<User[]> {
     try {
-      const result = await db.select().from(staff);
-      console.log(`[DATABASE] Retrieved ${result.length} staff members`);
+      const result = await db.select({
+        user: users,
+        userLocation: userLocations
+      })
+      .from(users)
+      .innerJoin(userLocations, eq(users.id, userLocations.userId))
+      .where(eq(userLocations.locationId, locationId));
+      
+      console.log(`[DATABASE] Retrieved ${result.length} crew members for location ${locationId}`);
+      return result.map(row => row.user);
+    } catch (error) {
+      console.error("Error in getCrewMembersByLocation:", error);
+      return [];
+    }
+  }
+
+  async getUserLocations(userId: number): Promise<UserLocation[]> {
+    try {
+      const result = await db.select().from(userLocations).where(eq(userLocations.userId, userId));
       return result;
     } catch (error) {
-      console.error("Error in getAllStaff:", error);
+      console.error("Error in getUserLocations:", error);
       return [];
+    }
+  }
+
+  async assignUserToLocation(assignment: InsertUserLocation): Promise<UserLocation> {
+    try {
+      const [result] = await db.insert(userLocations).values(assignment).returning();
+      return result;
+    } catch (error) {
+      console.error("Error in assignUserToLocation:", error);
+      throw error;
+    }
+  }
+
+  async removeUserFromLocation(userId: number, locationId: number): Promise<boolean> {
+    try {
+      const result = await db.delete(userLocations)
+        .where(and(eq(userLocations.userId, userId), eq(userLocations.locationId, locationId)));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error in removeUserFromLocation:", error);
+      return false;
     }
   }
 

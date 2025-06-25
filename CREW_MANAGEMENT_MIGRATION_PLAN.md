@@ -42,7 +42,9 @@ This plan outlines the complete migration of staff management functionality to a
 - [x] Update shifts table to use userId instead of staffId
 - [x] Remove staff and staffCompetencies from schema exports
 - [x] Update storage interface to use crew member methods instead of staff
-- [ ] Implement crew member storage methods in DatabaseStorage
+- [x] Implement crew member storage methods in DatabaseStorage
+- [x] Create user_locations and user_competencies tables manually
+- [x] Update MemoryStorage to use UserLocation and UserCompetency maps
 - [ ] Create competencies table (if required for functionality) 
 - [ ] Design migration script for existing staff → users + user_locations conversion
 - [ ] Remove redundant staff table after successful migration
