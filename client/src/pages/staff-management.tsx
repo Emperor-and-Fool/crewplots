@@ -148,7 +148,12 @@ export default function StaffManagement() {
                                   </Avatar>
                                   <div>
                                     <div className="font-medium">
-                                      {member.name || "Unknown User"}
+                                      <Link 
+                                        href={`/crew/${member.id}`}
+                                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                                      >
+                                        {member.name || "Unknown User"}
+                                      </Link>
                                     </div>
                                   </div>
                                 </div>

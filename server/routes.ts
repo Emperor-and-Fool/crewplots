@@ -530,6 +530,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual user profile
+  app.get('/api/users/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log(`🔍 API: Retrieved user profile for ID ${userId}`);
+      res.json(user);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ error: "Failed to fetch user profile" });
+    }
+  });
+
+  // Update user profile
+  app.patch('/api/users/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      // Validate allowed fields for update
+      const allowedFields = ['role', 'notes', 'status', 'phoneNumber', 'email'];
+      const updateData: any = {};
+      
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log(`🔍 API: Updated user ${userId} with fields:`, Object.keys(updateData));
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ error: "Failed to update user profile" });
+    }
+  });
+
+  // Get user-location assignments for a specific user
+  app.get('/api/user-locations/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const userLocations = await storage.getUserLocations(userId);
+      console.log(`🔍 API: Retrieved ${userLocations.length} location assignments for user ${userId}`);
+      res.json(userLocations);
+    } catch (error) {
+      console.error('Error fetching user location assignments:', error);
+      res.status(500).json({ error: "Failed to fetch user location assignments" });
+    }
+  });
+
   // Get competencies by location
   app.get("/api/competencies/location/:locationId", async (req, res) => {
     try {
