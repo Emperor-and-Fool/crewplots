@@ -25,8 +25,14 @@ export interface DashboardLayoutProps {
 export interface StatsCardProps {
   title: string;
   value: number;
-  icon: React.ComponentType<any>;
+  subtitle?: string;
+  icon: React.ReactNode;
+  link?: {
+    text: string;
+    href: string;
+  };
   className?: string;
+  onClick?: () => void;
 }
 
 export interface LocationSummaryProps {
