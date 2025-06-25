@@ -24,6 +24,7 @@ import { UserPlus } from "lucide-react";
 import { CrewMemberForm } from "@/modules/users/components/crew";
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 
 export default function StaffManagement() {
   const [showForm, setShowForm] = useState(false);

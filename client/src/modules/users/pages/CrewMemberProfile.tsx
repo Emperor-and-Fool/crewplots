@@ -37,21 +37,27 @@ export default function CrewMemberProfile() {
   const [motivationNote, setMotivationNote] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Fetch user profile
+  // Fetch user profile with Redis caching
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/users', userId],
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    cacheTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
-  // Fetch all locations
+  // Fetch all locations with caching
   const { data: allLocations = [] } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
+    cacheTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
-  // Fetch user's location assignments
+  // Fetch user's location assignments with caching
   const { data: userLocations = [] } = useQuery<UserLocationAssignment[]>({
     queryKey: ['/api/user-locations', userId],
     enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
+    cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
 
   // Initialize state when data loads

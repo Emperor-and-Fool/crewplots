@@ -215,6 +215,17 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
+              <Route path="/crew/:userId">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={() => import('./modules/users/pages/CrewMemberProfile')} 
+                      requiredRoles={["manager", "floor_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
               <Route path="/scheduling">
                 {isAuthenticated ? 
                   <RoleProtectedRoute 
