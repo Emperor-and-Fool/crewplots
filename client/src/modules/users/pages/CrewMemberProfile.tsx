@@ -109,7 +109,8 @@ export default function CrewMemberProfile() {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
       toast({ title: "Role updated successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Role update error:', error);
       toast({ title: "Failed to update role", variant: "destructive" });
     }
   });

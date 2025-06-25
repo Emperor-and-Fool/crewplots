@@ -563,7 +563,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      console.log(`🔍 API DEBUG: PATCH /api/users/${userId} - Request body:`, req.body);
+      
       if (isNaN(userId)) {
+        console.log(`🔍 API DEBUG: Invalid user ID: ${req.params.userId}`);
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
@@ -577,7 +580,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      console.log(`🔍 API DEBUG: Update data:`, updateData);
+
       if (Object.keys(updateData).length === 0) {
+        console.log(`🔍 API DEBUG: No valid fields to update. Request body was:`, req.body);
         return res.status(400).json({ error: "No valid fields to update" });
       }
 
