@@ -193,7 +193,7 @@ export default function CrewMemberProfile() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/staff-management')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/crew-management')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Crew Management
           </Button>
@@ -210,7 +210,7 @@ export default function CrewMemberProfile() {
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">User not found</h2>
-          <Button onClick={() => navigate('/staff-management')} className="mt-4">
+          <Button onClick={() => navigate('/crew-management')} className="mt-4">
             Back to Crew Management
           </Button>
         </div>
@@ -223,7 +223,7 @@ export default function CrewMemberProfile() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/staff-management')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/crew-management')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Crew Management
           </Button>
