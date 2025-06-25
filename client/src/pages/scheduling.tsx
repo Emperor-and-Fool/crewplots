@@ -20,11 +20,11 @@ export default function Scheduling() {
   const { user } = useAuth();
 
   // Check if user has management role
-  const isManager = user?.role === "manager";
-  const isFloorManager = user?.role === "floor_manager";
+  const isManager = user?.role === "owner";
+  const isCrewChief = user?.role === "crew_chief";
 
-  // If user is a floor manager, use their assigned location
-  const defaultLocationId = isFloorManager && user?.locationId ? user.locationId : selectedLocation;
+  // If user is a crew chief, use their assigned location
+  const defaultLocationId = isCrewChief && user?.locationId ? user.locationId : selectedLocation;
 
   // Fetch shift if editing
   const { data: shift } = useQuery({
@@ -58,8 +58,8 @@ export default function Scheduling() {
     }
   });
 
-  // If not a manager or floor manager, redirect to dashboard
-  if (!isManager && !isFloorManager) {
+  // If not a manager or crew chief, redirect to dashboard
+  if (!isManager && !isCrewChief) {
     navigate("/dashboard");
     return null;
   }

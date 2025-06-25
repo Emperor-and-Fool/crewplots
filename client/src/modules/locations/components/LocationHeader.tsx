@@ -43,7 +43,7 @@ function LocationHeader() {
       }
       return response.json();
     },
-    enabled: !!user?.id && (user?.role === 'crew_manager' || user?.role === 'floor_manager')
+    enabled: !!user?.id && (user?.role === 'crew_chief')
   });
 
   const getCurrentLocation = () => {
@@ -54,9 +54,9 @@ function LocationHeader() {
   const currentLocation = getCurrentLocation();
   let activeLocations = locations?.filter(loc => loc.status === 'active') || [];
 
-  // Filter locations for crew managers and floor managers
+  // Filter locations for crew chiefs
   const assignedLocationIds = userLocations?.map(ul => ul.locationId) || [];
-  const isLocationRestricted = (user?.role === 'crew_manager' || user?.role === 'floor_manager') && assignedLocationIds.length > 0;
+  const isLocationRestricted = (user?.role === 'crew_chief') && assignedLocationIds.length > 0;
   
   if (isLocationRestricted) {
     activeLocations = activeLocations.filter(loc => assignedLocationIds.includes(loc.id));

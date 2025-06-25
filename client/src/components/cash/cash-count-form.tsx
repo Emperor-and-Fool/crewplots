@@ -184,7 +184,7 @@ export function CashCountForm({ cashCount, isEditing = false }: CashCountFormPro
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
                         defaultValue={field.value?.toString()}
-                        disabled={user?.role === "floor_manager" && user?.locationId !== null}
+                        disabled={user?.role === "crew_chief" && user?.locationId !== null}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a location" />
