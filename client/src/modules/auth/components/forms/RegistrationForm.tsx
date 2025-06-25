@@ -184,6 +184,19 @@ export const RegistrationForm = ({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <FormField
@@ -251,15 +264,6 @@ export const RegistrationForm = ({
           type="submit"
           className="w-full"
           disabled={isLoading}
-          onClick={(e) => {
-            console.log("🔄 Button clicked, form valid:", form.formState.isValid);
-            console.log("🔄 Form errors:", form.formState.errors);
-            console.log("🔄 Form values:", form.getValues());
-            if (!form.formState.isValid) {
-              e.preventDefault();
-              console.log("❌ Form validation failed, preventing submission");
-            }
-          }}
         >
           {isLoading ? (
             <>
