@@ -36,17 +36,15 @@ import { CompetencyForm } from "@/components/staff/competency-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, Pencil, Trash2, UserPlus, Award, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Staff, User, StaffCompetency, Competency, Location } from "@shared/schema";
+import { User, UserLocation, Location } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function CrewManagement() {
+export default function StaffManagement() {
   console.log('🔍 STAFF MANAGEMENT: Component mounting');
   
-  const [activeTab, setActiveTab] = useState("staff");
+  const [activeTab, setActiveTab] = useState("crew");
   const [showForm, setShowForm] = useState(false);
-  const [showCompetencyForm, setShowCompetencyForm] = useState(false);
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [selectedCompetency, setSelectedCompetency] = useState<Competency | null>(null);
+  const [selectedUserLocation, setSelectedUserLocation] = useState<UserLocation | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => {
@@ -64,51 +62,36 @@ export default function CrewManagement() {
   const isManager = user?.role === "manager";
   const isFloorManager = user?.role === "floor_manager";
 
-  // Fetch staff members
-  const { data: staffMembers, isLoading: isLoadingStaff } = useQuery<Staff[]>({
-    queryKey: ['/api/staff'],
+  // Fetch crew members (users with location assignments)
+  const { data: crewMembers, isLoading: isLoadingCrew } = useQuery<User[]>({
+    queryKey: ['/api/users/role/crew'],
     queryFn: async () => {
-      console.log('🔍 STAFF MANAGEMENT: Fetching staff members');
-      const response = await fetch('/api/staff', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch staff members');
-      }
-      return response.json();
-    },
-  });
-
-  // Fetch users to get names
-  const { data: users } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-    queryFn: async () => {
-      console.log('🔍 STAFF MANAGEMENT: Fetching users');
+      console.log('🔍 CREW MANAGEMENT: Fetching crew members');
       const response = await fetch('/api/users', {
         credentials: 'include'
       });
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
-      return response.json();
+      const users = await response.json();
+      // Filter for crew members
+      return users.filter((user: User) => 
+        ['crew_member', 'crew_manager', 'floor_manager'].includes(user.role)
+      );
     },
-    enabled: !!staffMembers,
   });
 
-  // Fetch competencies
-  const { data: competencies, isLoading: isLoadingCompetencies } = useQuery<Competency[]>({
-    queryKey: ['/api/competencies'],
+  // Fetch user location assignments
+  const { data: userLocations } = useQuery<UserLocation[]>({
+    queryKey: ['/api/user-locations'],
     queryFn: async () => {
-      console.log('🔍 STAFF MANAGEMENT: Fetching competencies');
-      const response = await fetch('/api/competencies', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch competencies');
-      }
-      return response.json();
+      console.log('🔍 CREW MANAGEMENT: Fetching user-location assignments');
+      // This endpoint doesn't exist yet, so return empty array for now
+      return [];
     },
   });
+
+  // Competencies will be implemented later
 
   // Fetch locations
   const { data: locations } = useQuery<Location[]>({

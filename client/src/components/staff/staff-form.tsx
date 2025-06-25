@@ -32,7 +32,7 @@ interface CrewMemberFormProps {
   isEditing?: boolean;
 }
 
-export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFormProps) {
+export function StaffForm({ userLocation, isEditing = false }: CrewMemberFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
@@ -142,7 +142,7 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
                     </Select>
                   </FormControl>
                   <FormDescription>
-                    Select a user account to assign as staff
+                    Select a user account to assign as crew member
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -209,6 +209,32 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
 
             <FormField
               control={form.control}
+              name="roleAtLocation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role at Location</FormLabel>
+                  <FormControl>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="crew_member">Crew Member</SelectItem>
+                        <SelectItem value="crew_manager">Crew Manager</SelectItem>
+                        <SelectItem value="floor_manager">Floor Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="wantedHours"
               render={({ field }) => (
                 <FormItem>
@@ -223,7 +249,7 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
                     />
                   </FormControl>
                   <FormDescription>
-                    Target weekly hours for this staff member
+                    Target weekly hours for this crew member
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -239,7 +265,7 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEditing ? 'Update Staff Member' : 'Create Staff Member'}
+              {isSubmitting ? 'Saving...' : isEditing ? 'Update Crew Assignment' : 'Assign Crew Member'}
             </Button>
           </CardFooter>
         </form>
