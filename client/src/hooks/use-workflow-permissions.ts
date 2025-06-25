@@ -1,6 +1,16 @@
 import { useAuth } from "@/modules/auth";
 import { isForceEnableAllActive } from "@shared/utils/permissions";
 
+// Role migration aliases for backward compatibility
+const ROLE_MIGRATION_ALIASES = {
+  'manager': 'owner',
+  'crew_manager': 'crew_chief'
+} as const;
+
+function normalizeRole(role: string): string {
+  return ROLE_MIGRATION_ALIASES[role as keyof typeof ROLE_MIGRATION_ALIASES] || role;
+}
+
 /**
  * Hook for checking workflow-based permissions
  * Supports both normal workflow permissions and administrator blocked permissions
@@ -18,9 +28,12 @@ export const useWorkflowPermissions = () => {
       return false;
     }
 
-    // Admin fallback: if user has manager role, treat as admin with full access
-    if (user.role === 'administrator' || (user.role === 'manager' && !user.workflowPermissions)) {
-      console.log(`🔍 PERMISSION CHECK: Admin fallback for ${user.username} (${user.role})`);
+    // Normalize role for migration compatibility
+    const normalizedRole = normalizeRole(user.role);
+
+    // Admin fallback: if user has administrator or owner role, treat as admin with full access
+    if (normalizedRole === 'administrator' || (normalizedRole === 'owner' && !user.workflowPermissions)) {
+      console.log(`🔍 PERMISSION CHECK: Admin fallback for ${user.username} (${user.role} → ${normalizedRole})`);
       
       // Add development warning for forceEnableAll
       if (isForceEnableAllActive()) {
@@ -34,12 +47,12 @@ export const useWorkflowPermissions = () => {
       return result;
     }
 
-    // Manager with permissions: use workflow permissions normally
-    if (user.role === 'manager' && user.workflowPermissions) {
-      console.log(`🔍 PERMISSION CHECK: Manager with permissions for ${user.username}`);
+    // Owner with permissions: use workflow permissions normally
+    if (normalizedRole === 'owner' && user.workflowPermissions) {
+      console.log(`🔍 PERMISSION CHECK: Owner with permissions for ${user.username} (${user.role} → ${normalizedRole})`);
       const workflowPermissions = user.workflowPermissions[workflow] || [];
       const result = workflowPermissions.includes(permission);
-      console.log(`🔍 PERMISSION CHECK: Manager result for ${workflow}.${permission}: ${result}`, workflowPermissions);
+      console.log(`🔍 PERMISSION CHECK: Owner result for ${workflow}.${permission}: ${result}`, workflowPermissions);
       return result;
     }
 

@@ -83,7 +83,7 @@ export const users = pgTable("users", {
   lastName: text("last_name"),              // Add lastName field (nullable for migration)
   name: text("name").notNull(),             // Keep for backwards compatibility
   // Default role for backward compatibility, will be replaced by user_locations table
-  role: text("role", { enum: ["administrator", "manager", "crew_manager", "crew_member", "applicant"] }).notNull(),
+  role: text("role", { enum: ["administrator", "owner", "manager", "app_manager", "crew_chief", "crew_manager", "crew_member", "applicant"] }).notNull(),
   // locationId kept for backward compatibility
   locationId: integer("location_id").references(() => locations.id),
   phoneNumber: text("phone_number"),        // Combined phone number in format +xx xxxxxxx

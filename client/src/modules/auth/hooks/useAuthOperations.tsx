@@ -1,6 +1,16 @@
 import { useAuth } from '@/hooks/use-auth';
 import { Login, Register } from '@shared/schema';
 
+// Role migration aliases for backward compatibility
+const ROLE_MIGRATION_ALIASES = {
+  'manager': 'owner',
+  'crew_manager': 'crew_chief'
+} as const;
+
+function normalizeRole(role: string): string {
+  return ROLE_MIGRATION_ALIASES[role as keyof typeof ROLE_MIGRATION_ALIASES] || role;
+}
+
 /**
  * Auth Operations Hook
  * 
