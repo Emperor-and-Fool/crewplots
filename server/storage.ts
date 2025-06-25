@@ -839,6 +839,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.cashCounts.values()).filter(cashCount => cashCount.locationId === locationId);
   }
 
+  // Composite user profile method (for messaging and auth systems)
+  async getUserWithProfile(userId: number): Promise<User | undefined> {
+    return this.users.get(userId);
+  }
+
   async getCashCountsByShift(shiftId: number): Promise<CashCount[]> {
     return Array.from(this.cashCounts.values()).filter(cashCount => cashCount.shiftId === shiftId);
   }
