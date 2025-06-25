@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserPlus } from "lucide-react";
-import { StaffForm } from "@/components/staff/staff-form";
+import { CrewMemberForm } from "@/modules/users/components/crew";
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -88,7 +88,7 @@ export default function StaffManagement() {
                 >
                   Back to Crew Management
                 </Button>
-                <StaffForm 
+                <CrewMemberForm 
                   isEditing={false}
                 />
               </div>
