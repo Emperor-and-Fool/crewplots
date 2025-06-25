@@ -13,14 +13,9 @@ import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import LocationHeader from "@/modules/locations/components/LocationHeader";
 
-// Dashboard module components and hooks
-import { 
-  StatsCard, 
-  WeeklySummary,
-  useDashboardData,
-  useDashboardFilters,
-  useAdminActions 
-} from "@/modules/dashboard";
+// Dashboard module components (gradual integration)
+import { StatsCard, useAdminActions } from "@/modules/dashboard";
+import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
 
 
 export default function Dashboard() {
@@ -29,17 +24,37 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { selectedLocationId, isAllLocations } = useLocationContext();
   
-  // Dashboard module hooks
-  const dashboardData = useDashboardData(selectedLocationId || undefined);
-  const filters = useDashboardFilters(user || null, selectedLocationId || undefined);
+  // Admin actions from dashboard module
   const { clearAllSessions, isClearing } = useAdminActions();
 
-  // Extract data from dashboard hooks
-  const { statsData, profileQuery, shiftsQuery } = dashboardData;
-  const profileData = profileQuery.data;
-  const shiftsStats = shiftsQuery.data;
+  // Preserve existing data queries
+  const { data: shiftsStats } = useQuery({
+    queryKey: ['/api/shifts'],
+    queryFn: async () => {
+      const response = await fetch('/api/shifts', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    }
+  });
 
-  // Fetch user's assigned locations for role-based filtering (preserved existing logic)
+  const { data: profileData } = useQuery({
+    queryKey: ['/api/profile-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/profile-data', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+      return response.json();
+    }
+  });
+
+  // Fetch user's assigned locations for role-based filtering
   const { data: userLocations } = useQuery({
     queryKey: ['/api/user-locations', user?.id],
     queryFn: async () => {
@@ -60,11 +75,29 @@ export default function Dashboard() {
   const assignedLocationIds = userLocations?.map((ul: any) => ul.locationId) || [];
   const isLocationRestricted = (user?.role === 'crew_manager') && assignedLocationIds.length > 0;
 
-  // Use modular dashboard stats
-  const totalApplicantsCount = statsData.totalApplicants;
-  const totalStaffCount = statsData.totalStaff;
-  const shiftsThisWeekCount = statsData.shiftsThisWeek;
-  const hoursScheduledCount = statsData.hoursScheduled;
+  // Cherry-pick crew data from unified profile data (include all non-applicant roles)
+  let staffUsers = profileData?.filter((user: any) => 
+    user.role === 'crew_member' || 
+    user.role === 'crew_manager' || 
+    user.role === 'manager' || 
+    user.role === 'administrator'
+  ) || [];
+
+  // Apply location filtering for crew managers
+  if (isLocationRestricted) {
+    staffUsers = staffUsers.filter((user: any) => 
+      !user.locationId || assignedLocationIds.includes(user.locationId)
+    );
+  }
+
+  const totalStaff = staffUsers.length;
+  const shiftsThisWeek = shiftsStats?.length || 0;
+  const hoursScheduled = shiftsStats?.reduce((total: number, shift: any) => {
+    const startHour = parseInt(shift.startTime.split(":")[0]);
+    const endHour = parseInt(shift.endTime.split(":")[0]);
+    const hours = endHour - startHour;
+    return total + hours;
+  }, 0) || 0;
 
   // Calculate applicant stats from profile data (cherry-pick applicants only)
   let applicantUsers = profileData?.filter((user: any) => user.role === 'applicant') || [];
@@ -141,51 +174,54 @@ export default function Dashboard() {
             </div>
 
             {/* Stats cards - Show for administrators/managers or location-restricted users */}
-            {(effectiveIsAllLocations || isLocationRestricted) && (
+            {(isAllLocations || isLocationRestricted) && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                <StatsCard
-                  title="Total Applicants"
-                  value={displayApplicantCount}
-                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
-                  icon={<UserPlus className="h-6 w-6" />}
-                  link={{ text: "Review applicants", href: "/applicants" }}
-                  onClick={() => navigate("/applicants")}
-                />
+                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/applicants")}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Applicants</CardTitle>
+                    <UserPlus className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{profileData?.filter((user: any) => user.role === 'applicant').length || 0}</div>
+                  </CardContent>
+                </Card>
                 
-                <StatsCard
-                  title="Total Crew"
-                  value={totalStaffCount}
-                  icon={<Users className="h-6 w-6" />}
-                  link={{ text: "View all", href: "/crew-management" }}
-                  onClick={() => navigate("/crew-management")}
-                />
+                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/crew-management")}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Crew</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalStaff}</div>
+                  </CardContent>
+                </Card>
                 
-                <StatsCard
-                  title="Shifts This Week"
-                  value={shiftsThisWeekCount}
-                  icon={<Calendar className="h-6 w-6" />}
-                  link={{ text: "View schedule", href: "/scheduling" }}
-                  onClick={() => navigate("/scheduling")}
-                />
+                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/scheduling")}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Shifts This Week</CardTitle>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{shiftsThisWeek}</div>
+                  </CardContent>
+                </Card>
                 
-                <StatsCard
-                  title="Hours Scheduled"
-                  value={hoursScheduledCount}
-                  icon={<Clock className="h-6 w-6" />}
-                  link={{ text: "View details", href: "/reports" }}
-                  onClick={() => navigate("/reports")}
-                />
+                <Card className="cursor-pointer hover:bg-gray-50" onClick={() => navigate("/reports")}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Hours Scheduled</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{hoursScheduled}</div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
             {/* Weekly summary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
               <div className="lg:col-span-2">
-                <WeeklySummary 
-                  shiftsData={shiftsStats || []}
-                  isLocationRestricted={isLocationRestricted}
-                  restrictedLocationMessage={restrictedLocationMessage}
-                />
+                <WeeklySchedule locationId={selectedLocationId} />
               </div>
               
               {/* Quick actions */}
