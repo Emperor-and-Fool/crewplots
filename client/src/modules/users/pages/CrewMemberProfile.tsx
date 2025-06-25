@@ -42,6 +42,13 @@ export default function CrewMemberProfile() {
   // Fetch user profile with Redis caching
   const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['/api/users', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user');
+      }
+      return response.json();
+    },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     cacheTime: 30 * 60 * 1000, // 30 minutes in memory
@@ -52,6 +59,13 @@ export default function CrewMemberProfile() {
   // Fetch all locations with caching
   const { data: allLocations = [] } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
     staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
     cacheTime: 60 * 60 * 1000, // 1 hour in memory
   });
@@ -59,6 +73,13 @@ export default function CrewMemberProfile() {
   // Fetch user's location assignments with caching
   const { data: userLocations = [], isLoading: locationsLoading, error: locationsError } = useQuery<UserLocationAssignment[]>({
     queryKey: ['/api/user-locations', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/user-locations/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user locations');
+      }
+      return response.json();
+    },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
     cacheTime: 15 * 60 * 1000, // 15 minutes in memory
