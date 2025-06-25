@@ -476,6 +476,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all staff members (for admin management)
+  app.get("/api/staff", async (req, res) => {
+    try {
+      const staff = await storage.getAllStaff();
+      console.log(`[STAFF API] Returning ${staff.length} staff members`);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching all staff:", error);
+      res.status(500).json({ error: "Failed to fetch staff" });
+    }
+  });
+
   // Get competencies by location
   app.get("/api/competencies/location/:locationId", async (req, res) => {
     try {
@@ -490,6 +502,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching competencies by location:", error);
       res.status(500).json({ error: "Failed to fetch competencies by location" });
+    }
+  });
+
+  // Get all competencies (temporary - returns empty array since no competencies exist yet)
+  app.get("/api/competencies", async (req, res) => {
+    try {
+      console.log(`[COMPETENCIES API] Returning empty array - competencies system not implemented yet`);
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching competencies:", error);
+      res.status(500).json({ error: "Failed to fetch competencies" });
     }
   });
 

@@ -70,6 +70,7 @@ export interface IStorage {
   // Staff
   getStaff(id: number): Promise<Staff | undefined>;
   getStaffMembers(): Promise<Staff[]>;
+  getAllStaff(): Promise<Staff[]>;
   getStaffByLocation(locationId: number): Promise<Staff[]>;
   getStaffByUser(userId: number): Promise<Staff | undefined>;
   createStaff(staff: InsertStaff): Promise<Staff>;
@@ -428,6 +429,10 @@ export class MemStorage implements IStorage {
   }
 
   async getStaffMembers(): Promise<Staff[]> {
+    return Array.from(this.staff.values());
+  }
+
+  async getAllStaff(): Promise<Staff[]> {
     return Array.from(this.staff.values());
   }
 
@@ -1207,6 +1212,17 @@ export class DatabaseStorage implements IStorage {
 
   async getStaffMembers(): Promise<Staff[]> {
     return await db.select().from(staff);
+  }
+
+  async getAllStaff(): Promise<Staff[]> {
+    try {
+      const result = await db.select().from(staff);
+      console.log(`[DATABASE] Retrieved ${result.length} staff members`);
+      return result;
+    } catch (error) {
+      console.error("Error in getAllStaff:", error);
+      return [];
+    }
   }
 
   async getStaffByLocation(locationId: number): Promise<Staff[]> {
