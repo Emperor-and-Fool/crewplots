@@ -107,8 +107,15 @@ export default function Dashboard() {
     }
   });
 
-  // Cherry-pick staff data from unified profile data (include both staff and crew_member roles)
-  const staffUsers = profileData?.filter(user => user.role === 'staff' || user.role === 'crew_member') || [];
+  // Cherry-pick crew data from unified profile data (include all non-applicant roles)
+  const staffUsers = profileData?.filter(user => 
+    user.role === 'staff' || 
+    user.role === 'crew_member' || 
+    user.role === 'crew_manager' || 
+    user.role === 'floor_manager' || 
+    user.role === 'manager' || 
+    user.role === 'administrator'
+  ) || [];
   const totalStaff = staffUsers.length;
   const shiftsThisWeek = shiftsStats?.length || 0;
   const hoursScheduled = shiftsStats?.reduce((total, shift) => {
