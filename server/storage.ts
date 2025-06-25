@@ -14,7 +14,7 @@ import {
   generatePublicId
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { onDemandMongoService } from "../adapters-repl/mongodb-ondemand/on-demand-mongodb";
 import { initializeWorkflowPermissions } from './utils/assign-default-permissions';
@@ -1142,8 +1142,9 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersByRoles(roles: string[]): Promise<User[]> {
     try {
-      const users = await db.select().from(users).where(inArray(users.role, roles));
-      return users;
+      const result = await db.select().from(users).where(inArray(users.role, roles));
+      console.log(`🔍 STORAGE: Retrieved ${result.length} users with roles: ${roles.join(', ')}`);
+      return result;
     } catch (error) {
       console.error("Error fetching users by roles:", error);
       return [];
