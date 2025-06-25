@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { RegistrationFormProps } from "../../types/auth-ui.types";
-import { CountryCodeSelect } from "@/components/ui/country-code-select";
+// import { CountryCodeSelect } from "@/components/ui/country-code-select"; // Not needed with unified phone format
 
 import {
   Form,
@@ -42,11 +42,11 @@ export const RegistrationForm = ({
     defaultValues: {
       username: "",
       password: "",
-      email: "",
+      confirmPassword: "",
       firstName: "",
       lastName: "",
+      email: "",
       phoneNumber: "",
-      countryCode: "+31",
       address: "",
     },
   });
@@ -185,32 +185,19 @@ export const RegistrationForm = ({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <FormField
-            control={form.control}
-            name="countryCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <CountryCodeSelect value={field.value} onValueChange={field.onChange} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="6 12345678" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="+31 6 12345678" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

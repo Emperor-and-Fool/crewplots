@@ -48,10 +48,7 @@ export const LoginPage = () => {
       />
       
       {isDevelopment && (
-        <AuthDevelopmentTools 
-          onAutoLogin={handleAutoLogin}
-          showDebugForm={true}
-        />
+        <AuthDevelopmentTools />
       )}
       
       <div className="mt-6 text-center">
