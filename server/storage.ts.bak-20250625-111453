@@ -87,9 +87,6 @@ export interface IStorage {
   getApplicationsByLocation(locationId: number): Promise<User[]>;
   getCashCountsByLocation(locationId: number): Promise<CashCount[]>;
 
-  // Composite user profile method (for messaging and auth systems)
-  getUserWithProfile(userId: number): Promise<User | undefined>;
-
   // Applicants (now using User type with role filtering)
   getApplicant(id: number): Promise<User | undefined>;
   getApplicants(): Promise<User[]>;
@@ -1837,18 +1834,6 @@ export class DatabaseStorage implements IStorage {
         gte(cashCounts.countDate, startDate),
         lte(cashCounts.countDate, endDate)
       ));
-  }
-
-  // Composite user profile method (for messaging and auth systems)
-  async getUserWithProfile(userId: number): Promise<User | undefined> {
-    try {
-      // Get user with complete profile data (role, location, permissions)
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-      return user;
-    } catch (error) {
-      console.error("Error in getUserWithProfile:", error);
-      return undefined;
-    }
   }
 
   async createCashCount(cashCount: InsertCashCount): Promise<CashCount> {
