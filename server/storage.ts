@@ -1130,6 +1130,26 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).where(eq(users.locationId, locationId));
   }
 
+  async getUserById(id: number): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error("Error fetching user by ID:", error);
+      return undefined;
+    }
+  }
+
+  async getUsersByRoles(roles: string[]): Promise<User[]> {
+    try {
+      const users = await db.select().from(users).where(inArray(users.role, roles));
+      return users;
+    } catch (error) {
+      console.error("Error fetching users by roles:", error);
+      return [];
+    }
+  }
+
   // Locations
   async getLocation(id: number): Promise<Location | undefined> {
     const [location] = await db.select().from(locations).where(eq(locations.id, id));

@@ -208,7 +208,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={() => import('./modules/users/pages/CrewManagement')} 
+                      component={React.lazy(() => import('./modules/users/pages/CrewManagement'))} 
                       requiredRoles={["manager", "floor_manager", "administrator"]} 
                     />
                   </AppLayout> : 
@@ -219,7 +219,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={() => import('./modules/users/pages/CrewMemberProfile')} 
+                      component={React.lazy(() => import('./modules/users/pages/CrewMemberProfile'))} 
                       requiredRoles={["manager", "floor_manager", "administrator"]} 
                     />
                   </AppLayout> : 

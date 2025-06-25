@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserPlus } from "lucide-react";
-import { CrewMemberForm } from "@/modules/users/components/crew";
+// CrewMemberForm will be implemented later
+// import { CrewMemberForm } from "@/modules/users/components/crew";
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -144,12 +145,15 @@ export default function CrewManagement() {
         </CardContent>
       </Card>
 
-      {/* Crew Member Form Dialog */}
+      {/* Crew Member Form Dialog - TODO: Implement CrewMemberForm */}
       {showForm && (
-        <CrewMemberForm 
-          isOpen={showForm}
-          onClose={() => setShowForm(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Assign Crew Member</h3>
+            <p className="text-gray-600 mb-4">Crew member assignment form will be implemented here.</p>
+            <Button onClick={() => setShowForm(false)}>Close</Button>
+          </div>
+        </div>
       )}
     </div>
   );
