@@ -719,15 +719,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Legacy: Get all shifts - needed for dashboard
+  // Shifts - Not yet implemented, return empty array
   app.get("/api/shifts", async (req, res) => {
-    try {
-      const shifts = await storage.getShifts();
-      res.json(shifts);
-    } catch (error) {
-      console.error("Error fetching shifts:", error);
-      res.status(500).json({ error: "Failed to fetch shifts" });
-    }
+    // TODO: Implement shifts functionality
+    res.json([]);
   });
 
   // Get users by status - needed for dashboard

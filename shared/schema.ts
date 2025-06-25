@@ -207,16 +207,14 @@ export const scheduleTemplates = pgTable("schedule_templates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Template Shifts
+// Template Shifts - Simplified for future development
 export const templateShifts = pgTable("template_shifts", {
   id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => scheduleTemplates.id).notNull(),
-  dayOfWeek: integer("day_of_week").notNull(), // 0-6 for Sunday-Saturday
-  startTime: text("start_time").notNull(),
-  endTime: text("end_time").notNull(),
-  role: text("role").notNull(),
-  requiredCompetencyLevel: integer("required_competency_level"),
-  competencyId: integer("competency_id").references(() => competencies.id),
+  templateId: integer("template_id").references(() => scheduleTemplates.id),
+  dayOfWeek: integer("day_of_week"), // 0-6 for Sunday-Saturday
+  startTime: text("start_time"),
+  endTime: text("end_time"),
+  position: text("position"), // Basic position field for future role mapping
   notes: text("notes"),
 });
 
@@ -230,20 +228,17 @@ export const weeklySchedules = pgTable("weekly_schedules", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Shifts (actual scheduled shifts)
+// Shifts (actual scheduled shifts) - Basic structure only, full implementation pending
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  scheduleId: integer("schedule_id").references(() => weeklySchedules.id).notNull(),
-  userId: integer("user_id").references(() => users.id), // Changed from staffId to userId
-  locationId: integer("location_id").references(() => locations.id).notNull(), // Added for multi-location support
-  date: timestamp("date").notNull(),
-  startTime: text("start_time").notNull(),
-  endTime: text("end_time").notNull(),
-  role: text("role").notNull(),
-  requiredCompetencyLevel: integer("required_competency_level"),
-  competencyId: integer("competency_id").references(() => competencies.id),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  scheduleId: integer("schedule_id"),
+  userId: integer("user_id").references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id),
+  date: timestamp("date"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
+  position: text("position"), // Basic position field matching current database
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Cash Management
