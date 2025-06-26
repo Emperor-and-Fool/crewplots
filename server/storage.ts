@@ -1,16 +1,16 @@
 import {
   users, locations, competencies, userLocations, userCompetencies, userDocuments,
-  scheduleTemplates, templateShifts, weeklySchedules, shifts, shiftRequirements,
+  scheduleTemplates, templateShifts, weeklySchedules, weekSchedules, shifts, shiftRequirements,
   shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
   type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
+  type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
   type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
   type UploadedFile, type DocumentAttachment, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertUserDocument, type InsertScheduleTemplate,
-  type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
+  type InsertTemplateShift, type InsertWeeklySchedule, type InsertWeekSchedule, type InsertShift,
   type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
   type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
   type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
@@ -132,6 +132,16 @@ export interface IStorage {
   createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule>;
   updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined>;
   deleteWeeklySchedule(id: number): Promise<boolean>;
+
+  // Week Schedules (Templates)
+  getWeekSchedule(id: number): Promise<WeekSchedule | undefined>;
+  getWeekSchedules(locationId?: number): Promise<WeekSchedule[]>;
+  getWeekScheduleById(id: number): Promise<WeekSchedule | undefined>;
+  createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule>;
+  updateWeekSchedule(id: number, schedule: Partial<InsertWeekSchedule>): Promise<WeekSchedule | undefined>;
+  deleteWeekSchedule(id: number): Promise<boolean>;
+  createShiftForWeekSchedule(shift: InsertShift): Promise<Shift>;
+  getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]>;
 
   // Shifts
   getShift(id: number): Promise<Shift | undefined>;

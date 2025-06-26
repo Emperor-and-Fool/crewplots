@@ -1144,6 +1144,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Week Schedule Management API
+  app.get("/api/week-schedules", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+      const weekSchedules = await storage.getWeekSchedules(locationId);
+      res.json(weekSchedules);
+    } catch (error) {
+      console.error("Error fetching week schedules:", error);
+      res.status(500).json({ error: "Failed to fetch week schedules" });
+    }
+  });
+
+  app.post("/api/week-schedules", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const validatedData = insertWeekScheduleSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
+      });
+      const weekSchedule = await storage.createWeekSchedule(validatedData);
+      res.status(201).json(weekSchedule);
+    } catch (error) {
+      console.error("Error creating week schedule:", error);
+      res.status(400).json({ error: "Failed to create week schedule" });
+    }
+  });
+
+  app.get("/api/week-schedules/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const weekSchedule = await storage.getWeekScheduleById(id);
+      if (!weekSchedule) {
+        return res.status(404).json({ error: "Week schedule not found" });
+      }
+      res.json(weekSchedule);
+    } catch (error) {
+      console.error("Error fetching week schedule:", error);
+      res.status(500).json({ error: "Failed to fetch week schedule" });
+    }
+  });
+
+  app.put("/api/week-schedules/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertWeekScheduleSchema.parse(req.body);
+      const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
+      res.json(weekSchedule);
+    } catch (error) {
+      console.error("Error updating week schedule:", error);
+      res.status(400).json({ error: "Failed to update week schedule" });
+    }
+  });
+
+  app.delete("/api/week-schedules/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteWeekSchedule(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting week schedule:", error);
+      res.status(500).json({ error: "Failed to delete week schedule" });
+    }
+  });
+
+  // Week Schedule Shifts API
+  app.post("/api/week-schedules/:id/shifts", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const weekScheduleId = parseInt(req.params.id);
+      const validatedData = insertShiftSchema.parse({
+        ...req.body,
+        weekScheduleId
+      });
+      const shift = await storage.createShiftForWeekSchedule(validatedData);
+      res.status(201).json(shift);
+    } catch (error) {
+      console.error("Error creating shift for week schedule:", error);
+      res.status(400).json({ error: "Failed to create shift" });
+    }
+  });
+
+  app.get("/api/week-schedules/:id/shifts", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const weekScheduleId = parseInt(req.params.id);
+      const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts for week schedule:", error);
+      res.status(500).json({ error: "Failed to fetch shifts" });
+    }
+  });
+
+  app.put("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const shiftId = parseInt(req.params.shiftId);
+      const validatedData = insertShiftSchema.parse(req.body);
+      const shift = await storage.updateShift(shiftId, validatedData);
+      res.json(shift);
+    } catch (error) {
+      console.error("Error updating shift:", error);
+      res.status(400).json({ error: "Failed to update shift" });
+    }
+  });
+
+  app.delete("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const shiftId = parseInt(req.params.shiftId);
+      await storage.deleteShift(shiftId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting shift:", error);
+      res.status(500).json({ error: "Failed to delete shift" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 
