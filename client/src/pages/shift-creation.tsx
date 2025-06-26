@@ -3,9 +3,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Clock, Users, MapPin, Plus, Save, Eye } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, Plus, Save, Eye, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,16 +15,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import type { ShiftRequirement, Competency, Location } from '@shared/schema';
+import type { Competency, Location } from '@shared/schema';
 
 // Schema for week schedule creation form
 const weekScheduleCreationSchema = z.object({
-  name: z.string().min(1, 'Week schedule name is required'),
+  name: z.string().min(1, 'Schedule name is required'),
   description: z.string().optional(),
-  locationId: z.number().min(1, 'Location is required'),
+  locationId: z.number().min(1, 'Location is required')
 });
 
-// Schema for shift creation within a week schedule
+// Schema for shift creation form with day-of-week
 const shiftCreationSchema = z.object({
   title: z.string().min(1, 'Shift title is required'),
   dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
@@ -33,38 +33,26 @@ const shiftCreationSchema = z.object({
   description: z.string().optional(),
   competencyRequirements: z.array(z.object({
     competencyId: z.number(),
-    requiredCount: z.number().min(1),
-    priority: z.enum(['required', 'preferred', 'optional']).default('required')
-  })).default([])
+    requiredCount: z.number(),
+    priority: z.enum(['required', 'preferred', 'optional'])
+  })).optional()
 });
 
 type WeekScheduleCreationForm = z.infer<typeof weekScheduleCreationSchema>;
 type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
-// Permission checking hook for scheduler features
+// Scheduler permissions helper
 const useSchedulerPermissions = () => {
   const { user } = useAuth();
   
-  const checkSchedulerPermission = (subPermission?: string) => {
-    const hasRole = ['administrator', 'owner', 'app_manager'].includes(user?.role || '');
-    const hasBase = user?.permissions?.includes('scheduler_development');
-    
-    if (!hasRole || !hasBase) return false;
-    
-    if (!subPermission) return true; // Base access only
-    
-    return user?.permissions?.includes(`scheduler_development.${subPermission}`);
+  const checkSchedulerPermission = () => {
+    if (!user?.role) return false;
+    return ['administrator', 'owner', 'app_manager'].includes(user.role);
   };
-  
-  const hasCrewPlanning = user?.permissions?.includes('crew_planning');
-  const hasAuthorizedRole = ['administrator', 'owner', 'app_manager'].includes(user?.role || '');
-  
+
   return {
-    canCreateShifts: hasAuthorizedRole && hasCrewPlanning,
-    canViewDevelopment: checkSchedulerPermission('read'),
-    canProposePlans: checkSchedulerPermission('write'),
-    canPromoteTemplates: checkSchedulerPermission('execute'),
-    canAccessScheduler: checkSchedulerPermission()
+    canCreateShifts: checkSchedulerPermission(),
+    canViewDevelopment: checkSchedulerPermission()
   };
 };
 
@@ -427,171 +415,157 @@ export default function ShiftCreationPage() {
                         </div>
 
                         <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Additional details about this shift..."
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
+                          control={shiftForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Additional details about this shift..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TabsContent>
 
-                    <TabsContent value="competencies" className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium">Competency Requirements</h3>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addCompetencyRequirement}
-                          className="flex items-center gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add Requirement
-                        </Button>
-                      </div>
-
-                      {selectedCompetencies.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>No competency requirements added yet</p>
-                          <p className="text-sm">Add requirements to specify what skills are needed for this shift</p>
+                      <TabsContent value="competencies" className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium">Competency Requirements</h3>
+                          <Select onValueChange={(value) => addCompetencyRequirement(parseInt(value))}>
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Add requirement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(competencies as Competency[])
+                                .filter(c => !selectedCompetencies.find(sc => sc.competencyId === c.id))
+                                .map((competency) => (
+                                <SelectItem key={competency.id} value={competency.id.toString()}>
+                                  {competency.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {selectedCompetencies.map((req) => {
-                            const competency = competencies.find((c: Competency) => c.id === req.competencyId);
-                            return (
-                              <Card key={req.competencyId} className="p-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <h4 className="font-medium">{competency?.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{competency?.description}</p>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                      <label className="text-sm">Count:</label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={req.requiredCount}
-                                        onChange={(e) => updateCompetencyRequirement(
-                                          req.competencyId, 
-                                          'requiredCount', 
-                                          parseInt(e.target.value)
-                                        )}
-                                        className="w-20"
-                                      />
+
+                        {selectedCompetencies.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No competency requirements added yet</p>
+                            <p className="text-sm">Add requirements to specify what skills are needed for this shift</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {selectedCompetencies.map((req) => {
+                              const competency = (competencies as Competency[]).find((c) => c.id === req.competencyId);
+                              return (
+                                <Card key={req.competencyId} className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <h4 className="font-medium">{competency?.name}</h4>
+                                      <p className="text-sm text-muted-foreground">{competency?.description}</p>
                                     </div>
-                                    <Select
-                                      value={req.priority}
-                                      onValueChange={(value) => updateCompetencyRequirement(
-                                        req.competencyId,
-                                        'priority',
-                                        value
-                                      )}
-                                    >
-                                      <SelectTrigger className="w-32">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="required">Required</SelectItem>
-                                        <SelectItem value="preferred">Preferred</SelectItem>
-                                        <SelectItem value="optional">Optional</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => removeCompetencyRequirement(req.competencyId)}
-                                    >
-                                      Remove
-                                    </Button>
+                                    <div className="flex items-center gap-4">
+                                      <div className="flex items-center gap-2">
+                                        <label className="text-sm">Count:</label>
+                                        <Input
+                                          type="number"
+                                          min="1"
+                                          value={req.requiredCount}
+                                          onChange={(e) => updateCompetencyRequirement(
+                                            req.competencyId, 
+                                            'requiredCount', 
+                                            parseInt(e.target.value)
+                                          )}
+                                          className="w-20"
+                                        />
+                                      </div>
+                                      <Select
+                                        value={req.priority}
+                                        onValueChange={(value) => updateCompetencyRequirement(
+                                          req.competencyId,
+                                          'priority',
+                                          value
+                                        )}
+                                      >
+                                        <SelectTrigger className="w-32">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="required">Required</SelectItem>
+                                          <SelectItem value="preferred">Preferred</SelectItem>
+                                          <SelectItem value="optional">Optional</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeCompetencyRequirement(req.competencyId)}
+                                      >
+                                        <Minus className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </div>
-                                </div>
-                              </Card>
-                            );
-                          })}
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="scheduling" className="space-y-4">
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Schedule Preview</h3>
+                          <div className="border rounded-lg p-4">
+                            <div className="text-sm text-muted-foreground mb-2">Week Schedule: {currentWeekSchedule.name}</div>
+                            {shifts.length === 0 ? (
+                              <p className="text-muted-foreground">No shifts added yet</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {shifts.map((shift, index) => (
+                                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                                    <div>
+                                      <div className="font-medium">{shift.title}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {shift.dayOfWeek} • {shift.startTime} - {shift.endTime}
+                                      </div>
+                                    </div>
+                                    <Badge variant="outline">{shift.dayOfWeek}</Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </TabsContent>
+                      </TabsContent>
+                    </Tabs>
 
-                    <TabsContent value="scheduling" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="startTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                                <Input type="time" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="endTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                                <Input type="time" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-
-                  <div className="flex justify-end gap-4 pt-4 border-t">
-                    <Button type="button" variant="outline">
-                      Save as Draft
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createShiftMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {createShiftMutation.isPending ? 'Creating...' : 'Create Shift'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="flex gap-4">
+                      <Button 
+                        type="submit" 
+                        disabled={addShiftToScheduleMutation.isPending}
+                        className="flex-1"
+                      >
+                        {addShiftToScheduleMutation.isPending ? "Adding..." : "Add Shift"}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => setCurrentWeekSchedule(null)}
+                      >
+                        Back to Schedule
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Sidebar */}
         <div className="space-y-6">
@@ -602,45 +576,46 @@ export default function ShiftCreationPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Shifts</span>
-                <Badge variant="secondary">{existingShifts.length}</Badge>
+                <span className="text-sm">Week Schedules</span>
+                <Badge variant="secondary">{(existingWeekSchedules as any[]).length}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Locations</span>
-                <Badge variant="secondary">{locations.length}</Badge>
+                <span className="text-sm">Locations</span>
+                <Badge variant="secondary">{(locations as Location[]).length}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Competencies</span>
-                <Badge variant="secondary">{competencies.length}</Badge>
+                <span className="text-sm">Competencies</span>
+                <Badge variant="secondary">{(competencies as Competency[]).length}</Badge>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Shifts */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Shifts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {existingShifts.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No shifts created yet
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {existingShifts.slice(0, 5).map((shift: ShiftRequirement) => (
-                    <div key={shift.id} className="p-3 rounded-lg border">
-                      <div className="font-medium text-sm">{shift.title}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {shift.startTime} - {shift.endTime}
-                      </div>
-                    </div>
-                  ))}
+              {currentWeekSchedule && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Shifts in Schedule</span>
+                  <Badge variant="secondary">{shifts.length}</Badge>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Recent Week Schedules */}
+          {(existingWeekSchedules as any[]).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Schedules</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {(existingWeekSchedules as any[]).slice(0, 5).map((schedule: any) => (
+                    <div key={schedule.id} className="p-2 border rounded-lg">
+                      <div className="font-medium text-sm">{schedule.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {schedule.shifts?.length || 0} shifts • {schedule.location?.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
