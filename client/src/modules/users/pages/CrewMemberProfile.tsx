@@ -216,7 +216,7 @@ export default function CrewMemberProfile() {
     { value: 'crew_member', label: 'Crew Member', description: 'Basic crew member with standard permissions' },
     { value: 'crew_chief', label: 'Crew Chief', description: 'Senior crew member with leadership responsibilities' },
     { value: 'app_manager', label: 'App Manager', description: 'Reports directly to owner with general business overview' },
-    { value: 'owner', label: 'Owner', description: 'Location owner with full business control' },
+    { value: 'owner', label: 'Owner', description: 'Owner with full business control' },
     { value: 'administrator', label: 'Administrator', description: 'System administrator with full access' }
   ];
 
