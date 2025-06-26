@@ -339,27 +339,108 @@ CREATE INDEX idx_shifts_template ON shifts(template_id);
 - Permission system needs template access control
 - Competency system integration for requirement validation
 
+## Workflow Architecture Integration
+
+### Dedicated Development Workflows
+
+**crew_planning Workflow:**
+- Purpose: Strategic planning and design phases for crew management features
+- Access: Open to all planning stakeholders (owners, app_managers, administrators)
+- Functions: Documentation review, business logic planning, requirement gathering
+- Runs independently of development environment
+
+**scheduler_development Workflow:**
+- Purpose: Active scheduler module development and testing
+- Access: Role-based restriction requiring 'scheduler_development' permission
+- Functions: Frontend development, API testing, component iteration
+- Prerequisite for accessing advanced scheduler creation features
+
+### Permission Integration
+
+**Database Schema Extension for Workflow Permissions:**
+```sql
+-- Add workflow-specific permissions
+INSERT INTO permissions (name, description) VALUES 
+  ('crew_planning', 'Access to crew planning workflow and strategic planning features'),
+  ('scheduler_development', 'Access to scheduler development workflow and advanced creation tools');
+
+-- Assign workflow permissions to appropriate roles
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+  -- crew_planning access for planning roles
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'crew_planning')),
+  ((SELECT id FROM roles WHERE name = 'app_manager'), (SELECT id FROM permissions WHERE name = 'crew_planning')),
+  ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'crew_planning')),
+  
+  -- scheduler_development access for technical roles
+  ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'scheduler_development')),
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development'));
+```
+
+**Frontend Permission Checking:**
+```typescript
+// In shift creation components
+const { user } = useAuth();
+const hasSchedulerDev = user?.permissions?.includes('scheduler_development');
+
+// Advanced features gated behind scheduler_development permission
+{hasSchedulerDev && (
+  <AdvancedShiftCreationTools />
+)}
+```
+
+### Workflow Configuration
+
+**Replit Workflow Definitions:**
+```toml
+# Add to .replit file
+[[workflows.workflow]]
+name = "crew_planning"
+author = "agent"
+mode = "standalone"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo 'Crew Planning Workflow Active - Documentation and Planning Mode'"
+
+[[workflows.workflow]]
+name = "scheduler_development"
+author = "agent"
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo 'Scheduler Development Mode - Advanced Features Enabled'"
+```
+
 ## Development Priority
 
-**Phase 1: Core Infrastructure (Week 1)**
-- Database schema extensions
-- Basic API endpoints for templates
-- Main page layout and navigation integration
+**Phase 1: Workflow Infrastructure (Week 1)**
+- Implement workflow permission system in database
+- Add workflow-based access control to navigation
+- Create crew_planning and scheduler_development workflows
+- Database schema extensions for templates
 
-**Phase 2: Template System (Week 2)**  
-- Template CRUD operations
+**Phase 2: Core Template System (Week 2)**  
+- Template CRUD operations with workflow permissions
 - Default bar-restaurant template implementation
 - Template selection and preview components
+- Basic shift creation interface
 
-**Phase 3: Shift Creation Interface (Week 3)**
-- Weekly grid component with drag-drop
-- Shift creation form with competency integration
+**Phase 3: Advanced Development Features (Week 3)**
+- Weekly grid component with drag-drop (scheduler_development only)
+- Advanced shift creation form with competency integration
 - Project vs ongoing mode implementation
+- Workflow-gated feature access
 
-**Phase 4: Advanced Features (Week 4)**
+**Phase 4: Production Polish (Week 4)**
 - Batch operations and copy functionality
 - Template sharing and versioning
 - Mobile responsiveness and UX polish
+- Cross-workflow integration testing
 
 ## Success Metrics
 
