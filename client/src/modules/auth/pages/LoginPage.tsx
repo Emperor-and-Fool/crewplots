@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
-import { AuthDevelopmentTools } from "../components/utils/AuthDevelopmentTools";
 import { AuthPageLayout } from "../components/layouts/AuthPageLayout";
 import { Link } from "wouter";
 
@@ -31,36 +30,32 @@ export const LoginPage = () => {
     });
   };
 
-  const handleAutoLogin = () => {
-    console.log("Auto-login completed, navigating to dashboard");
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 100);
-  };
-
-  const isDevelopment = import.meta.env.MODE === 'development';
+  const footerContent = (
+    <>
+      <div className="text-sm text-center text-gray-500">
+        Don't have an account?{" "}
+        <Link href="/register">
+          <span className="font-medium text-primary-600 hover:text-primary-500 cursor-pointer">
+            Sign up
+          </span>
+        </Link>
+      </div>
+      <div className="text-xs text-center text-gray-500">
+        By signing in, you agree to our Terms of Service and Privacy Policy.
+      </div>
+    </>
+  );
 
   return (
-    <AuthPageLayout title="Crew Plots Pro - Login Page">
+    <AuthPageLayout 
+      title="Crew Plots Pro - Login Page" 
+      description="Sign in to your account to continue"
+      footerContent={footerContent}
+    >
       <LoginForm 
         onSuccess={handleLoginSuccess}
         onError={handleLoginError}
       />
-      
-      {isDevelopment && (
-        <AuthDevelopmentTools />
-      )}
-      
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link href="/register">
-            <span className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">
-              Register here
-            </span>
-          </Link>
-        </p>
-      </div>
     </AuthPageLayout>
   );
 };
