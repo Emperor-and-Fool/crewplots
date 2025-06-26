@@ -219,21 +219,12 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Weekly Schedules
-export const weeklySchedules = pgTable("weekly_schedules", {
-  id: serial("id").primaryKey(),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
-  weekStartDate: timestamp("week_start_date").notNull(),
-  templateId: integer("template_id").references(() => scheduleTemplates.id),
-  isPublished: boolean("is_published").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // Week Schedule Templates - Reusable week-schedule templates
 export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  templateId: integer("template_id").references(() => scheduleTemplates.id),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
@@ -242,12 +233,12 @@ export const weekSchedules = pgTable("week_schedules", {
 }, (table) => ({
   locationIdx: index("idx_week_schedules_location").on(table.locationId),
   nameIdx: index("idx_week_schedules_name").on(table.name),
+  templateIdx: index("idx_week_schedules_template").on(table.templateId),
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  scheduleId: integer("schedule_id").references(() => weeklySchedules.id),
   weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id),
   userId: integer("user_id").references(() => users.id),
   locationId: integer("location_id").references(() => locations.id).notNull(),
@@ -497,7 +488,7 @@ export const insertUserCompetencySchema = createInsertSchema(userCompetencies).o
 export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: true, uploadedAt: true, verifiedAt: true });
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
-export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
+
 export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
@@ -555,7 +546,7 @@ export type InsertUserCompetency = z.infer<typeof insertUserCompetencySchema>;
 export type InsertUserNote = z.infer<typeof insertUserNoteSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
-export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;
+
 export type InsertWeekSchedule = z.infer<typeof insertWeekScheduleSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
@@ -586,7 +577,7 @@ export type UserCompetency = typeof userCompetencies.$inferSelect;
 
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
-export type WeeklySchedule = typeof weeklySchedules.$inferSelect;
+
 export type WeekSchedule = typeof weekSchedules.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;

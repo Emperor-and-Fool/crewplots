@@ -1,10 +1,10 @@
 import {
   users, locations, competencies, userLocations, userCompetencies, userDocuments,
-  scheduleTemplates, templateShifts, weeklySchedules, weekSchedules, shifts, shiftRequirements,
+  scheduleTemplates, templateShifts, weekSchedules, shifts, shiftRequirements,
   shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
-  type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
+  type UserDocument, type ScheduleTemplate, type TemplateShift,
   type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
   type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
   type UploadedFile, type DocumentAttachment, type HybridCache,

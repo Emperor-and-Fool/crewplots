@@ -11,7 +11,7 @@ import { onDemandRedis } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertUserLocationSchema, insertUserCompetencySchema,
-  insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
+  insertScheduleTemplateSchema, insertTemplateShiftSchema,
   insertWeekScheduleSchema, insertShiftSchema, insertShiftRequirementSchema, insertShiftSubscriptionSchema,
   insertShiftAssignmentSchema, insertSchedulingWindowSchema,
   insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
