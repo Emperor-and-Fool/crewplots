@@ -351,7 +351,7 @@ CREATE INDEX idx_shifts_template ON shifts(template_id);
 
 **scheduler_development Workflow:**
 - Purpose: Active scheduler module development and testing
-- Access: Role-based restriction requiring 'scheduler_development' permission
+- Access: Role/workflow-based restriction requiring authorized role AND 'scheduler_development' permission
 - Functions: Frontend development, API testing, component iteration
 - Prerequisite for accessing advanced scheduler creation features
 
@@ -378,12 +378,24 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 
 **Frontend Permission Checking:**
 ```typescript
-// In shift creation components
+// Role/workflow-based access control in shift creation components
 const { user } = useAuth();
+const hasAuthorizedRole = ['administrator', 'owner', 'app_manager'].includes(user?.role);
 const hasSchedulerDev = user?.permissions?.includes('scheduler_development');
+const hasCrewPlanning = user?.permissions?.includes('crew_planning');
 
-// Advanced features gated behind scheduler_development permission
-{hasSchedulerDev && (
+// Basic shift creation requires authorized role AND crew_planning workflow
+const canCreateShifts = hasAuthorizedRole && hasCrewPlanning;
+
+// Advanced features require authorized role AND scheduler_development workflow
+const canUseAdvancedTools = hasAuthorizedRole && hasSchedulerDev;
+
+// Conditional rendering based on role/workflow combination
+{canCreateShifts && (
+  <BasicShiftCreationForm />
+)}
+
+{canUseAdvancedTools && (
   <AdvancedShiftCreationTools />
 )}
 ```
@@ -419,8 +431,8 @@ args = "echo 'Scheduler Development Mode - Advanced Features Enabled'"
 ## Development Priority
 
 **Phase 1: Workflow Infrastructure (Week 1)**
-- Implement workflow permission system in database
-- Add workflow-based access control to navigation
+- Implement role/workflow-based permission system in database
+- Add role/workflow-based access control to navigation
 - Create crew_planning and scheduler_development workflows
 - Database schema extensions for templates
 
