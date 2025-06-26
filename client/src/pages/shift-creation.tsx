@@ -105,9 +105,18 @@ export default function ShiftCreationPage() {
   });
 
   // Week schedules query 
-  const { data: existingWeekSchedules = [] } = useQuery({
+  const { data: existingWeekSchedules = [], error: weekSchedulesError, isLoading: weekSchedulesLoading } = useQuery({
     queryKey: ['/api/week-schedules'],
-    enabled: permissions.canCreateShifts
+    enabled: permissions.canCreateShifts && !!user
+  });
+
+  // Debug logging for week schedules
+  console.log("Week schedules debug:", {
+    user: user?.username,
+    canCreateShifts: permissions.canCreateShifts,
+    existingWeekSchedules,
+    weekSchedulesError,
+    weekSchedulesLoading
   });
 
   // Mutations
