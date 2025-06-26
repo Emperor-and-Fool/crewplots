@@ -192,6 +192,7 @@ Changelog:
 - June 26, 2025. COMPLETED: Scheduler Frontend Phase 1 - Created comprehensive shift creation page (/shift-creation) with role/workflow-based permission system, hierarchical scheduler_development permissions (.read/.write/.execute), tabbed interface (Basic Info, Requirements, Schedule), competency requirements management with priority levels, and integrated navigation. Fixed administrator role permissions by granting crew_planning and all scheduler_development permissions for full access.
 - June 26, 2025. FIXED: Week schedule save functionality - Corrected permission check from "schedule_development" to "scheduler_development", implemented missing week schedule storage methods (createWeekSchedule, getWeekSchedules, etc.), added comprehensive debug logging to API endpoints for troubleshooting save operations
 - June 26, 2025. RESOLVED: Week schedule API call issues - Fixed frontend apiRequest function signature from (url, options) to (method, url, data), corrected permission validation by adding scheduler_development permissions to administrator/owner roles, enabled successful week schedule template creation
+- June 26, 2025. COMPLETED: Week schedule schema import fix - Added missing insertWeekScheduleSchema import to server routes, resolved ReferenceError that prevented week schedule validation and saving, fully operational week schedule creation system now ready for testing
 ```
 
 ## User Preferences
