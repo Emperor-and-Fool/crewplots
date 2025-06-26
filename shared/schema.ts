@@ -241,7 +241,6 @@ export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id),
   userId: integer("user_id").references(() => users.id),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
   date: timestamp("date"),
   dayOfWeek: text("day_of_week", { 
     enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] 
@@ -255,7 +254,6 @@ export const shifts = pgTable("shifts", {
   status: text("status", { enum: ["open", "filled", "cancelled"] }).default("open").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
-  locationDateIdx: index("idx_shifts_location_date").on(table.locationId, table.date),
   weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
   dayOfWeekIdx: index("idx_shifts_day_of_week").on(table.dayOfWeek),
   statusIdx: index("idx_shifts_status").on(table.status),

@@ -30,7 +30,6 @@ const shiftCreationSchema = z.object({
   dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
-  locationId: z.number().min(1, 'Location is required'),
   description: z.string().optional(),
   competencyRequirements: z.array(z.object({
     competencyId: z.number(),
@@ -75,7 +74,7 @@ export default function ShiftCreationPage() {
     defaultValues: {
       name: '',
       description: '',
-      locationId: 0
+      locationId: 1  // Default to first location
     }
   });
 
@@ -87,7 +86,6 @@ export default function ShiftCreationPage() {
       dayOfWeek: 'monday',
       startTime: '',
       endTime: '',
-      locationId: 0,
       description: '',
       competencyRequirements: []
     }
@@ -387,30 +385,7 @@ export default function ShiftCreationPage() {
                           )}
                         />
 
-                        <FormField
-                          control={shiftForm.control}
-                          name="locationId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Location</FormLabel>
-                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select location" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {(locations as Location[]).map((location) => (
-                                    <SelectItem key={location.id} value={location.id.toString()}>
-                                      {location.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+
 
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
