@@ -24,8 +24,8 @@ import multer from "multer";
 // Permission checking utility function
 function hasPermission(userRole: string, permission: string): boolean {
   const rolePermissions: Record<string, string[]> = {
-    'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin', 'crew_planning'],
-    'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'crew_planning'],
+    'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin', 'crew_planning', 'scheduler_development', 'scheduler_development.read', 'scheduler_development.write', 'scheduler_development.execute'],
+    'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'crew_planning', 'scheduler_development', 'scheduler_development.read', 'scheduler_development.write', 'scheduler_development.execute'],
     'app_manager': ['view', 'create', 'edit', 'schedule', 'manage', 'crew_planning'],
     'crew_chief': ['view', 'create', 'edit', 'schedule'],
     'crew_member': ['view', 'manage'],
