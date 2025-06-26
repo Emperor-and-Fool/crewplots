@@ -30,6 +30,7 @@ const shiftCreationSchema = z.object({
   dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
+  locationId: z.number().min(1, 'Location is required'),
   description: z.string().optional(),
   competencyRequirements: z.array(z.object({
     competencyId: z.number(),
@@ -86,6 +87,7 @@ export default function ShiftCreationPage() {
       dayOfWeek: 'monday',
       startTime: '',
       endTime: '',
+      locationId: 0,
       description: '',
       competencyRequirements: []
     }
@@ -113,12 +115,14 @@ export default function ShiftCreationPage() {
     mutationFn: (data: WeekScheduleCreationForm) => 
       apiRequest('POST', '/api/week-schedules', data),
     onSuccess: (data) => {
+      console.log('Week schedule created, setting current:', data);
       toast({ description: 'Week schedule created successfully' });
       setCurrentWeekSchedule(data);
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
       weekScheduleForm.reset();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Week schedule creation failed:', error);
       toast({ 
         description: 'Failed to create week schedule',
         variant: 'destructive'
@@ -128,19 +132,24 @@ export default function ShiftCreationPage() {
 
   const addShiftToScheduleMutation = useMutation({
     mutationFn: (data: ShiftCreationForm) => {
+      console.log('Shift creation attempt:', { data, currentWeekSchedule, selectedCompetencies });
       if (!currentWeekSchedule) throw new Error('No week schedule selected');
-      return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, {
+      const requestData = {
         ...data,
         competencyRequirements: selectedCompetencies
-      });
+      };
+      console.log('Making API request to:', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, requestData);
+      return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, requestData);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('Shift created successfully:', result);
       toast({ description: 'Shift added successfully' });
       setShifts(prev => [...prev, { ...shiftForm.getValues(), id: Date.now() }]);
       shiftForm.reset();
       setSelectedCompetencies([]);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Shift creation failed:', error);
       toast({ 
         description: 'Failed to add shift',
         variant: 'destructive'
@@ -371,6 +380,31 @@ export default function ShiftCreationPage() {
                                   <SelectItem value="friday">Friday</SelectItem>
                                   <SelectItem value="saturday">Saturday</SelectItem>
                                   <SelectItem value="sunday">Sunday</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={shiftForm.control}
+                          name="locationId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Location</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select location" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {(locations as Location[]).map((location) => (
+                                    <SelectItem key={location.id} value={location.id.toString()}>
+                                      {location.name}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
