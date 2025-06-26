@@ -200,8 +200,7 @@ export function CrewMemberForm({ userLocation, isEditing = false }: CrewMemberFo
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="crew_member">Crew Member</SelectItem>
-                        <SelectItem value="crew_manager">Crew Manager</SelectItem>
-                        <SelectItem value="floor_manager">Floor Manager</SelectItem>
+                        <SelectItem value="crew_chief">Crew Chief</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>

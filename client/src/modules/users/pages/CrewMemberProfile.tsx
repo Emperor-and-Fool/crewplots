@@ -214,9 +214,8 @@ export default function CrewMemberProfile() {
 
   const availableRoles = [
     { value: 'crew_member', label: 'Crew Member', description: 'Basic crew member with standard permissions' },
-    { value: 'crew_manager', label: 'Crew Manager', description: 'Manages crew members and schedules' },
     { value: 'crew_chief', label: 'Crew Chief', description: 'Senior crew member with leadership responsibilities' },
-    { value: 'app_manager', label: 'App Manager', description: 'Application management with advanced permissions' },
+    { value: 'app_manager', label: 'App Manager', description: 'Reports directly to owner with general business overview' },
     { value: 'owner', label: 'Owner', description: 'Location owner with full business control' },
     { value: 'administrator', label: 'Administrator', description: 'System administrator with full access' }
   ];

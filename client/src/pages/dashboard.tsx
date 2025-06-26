@@ -69,18 +69,19 @@ export default function Dashboard() {
       }
       return response.json();
     },
-    enabled: !!user?.id && (user?.role === 'crew_manager')
+    enabled: !!user?.id && (user?.role === 'crew_chief')
   });
 
   // Get assigned location IDs for role-based filtering
   const assignedLocationIds = userLocations?.map((ul: any) => ul.locationId) || [];
-  const isLocationRestricted = (user?.role === 'crew_manager') && assignedLocationIds.length > 0;
+  const isLocationRestricted = (user?.role === 'crew_chief') && assignedLocationIds.length > 0;
 
   // Cherry-pick crew data from unified profile data (include all non-applicant roles)
   let staffUsers = profileData?.filter((user: any) => 
     user.role === 'crew_member' || 
-    user.role === 'crew_manager' || 
-    user.role === 'manager' || 
+    user.role === 'crew_chief' || 
+    user.role === 'app_manager' || 
+    user.role === 'owner' || 
     user.role === 'administrator'
   ) || [];
 

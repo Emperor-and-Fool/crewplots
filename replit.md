@@ -186,6 +186,7 @@ Changelog:
 - June 26, 2025. IMPROVED: Profile page name display - Fixed missing official name display by implementing firstName/lastName priority with fallback to name/username, added username field to Account Details section showing login nickname with @ prefix
 - June 26, 2025. DOCUMENTED: Created DevDoc 05_03 - Authentication Module Architecture Guide providing comprehensive documentation of the completed auth module migration, including component structure, hook patterns, service layer, type system, cross-module integration, and performance metrics based on actual implementation evidence
 - June 26, 2025. UPDATED: DevDoc 06_01 - Database Schema Foundation completely rewritten to reflect current schema state after all June 2025 migrations, including 6-role hierarchy, user_locations table, competencies system, hybrid messaging architecture, and complete PostgreSQL/MongoDB integration patterns
+- June 26, 2025. PHASED OUT: crew_manager role removed from system - Updated role hierarchy to 5 active roles (crew_member, crew_chief, app_manager, owner, administrator), updated app_manager description to "reports directly to owner with general business overview", removed crew_manager from all UI components and dashboard filtering
 ```
 
 ## User Preferences
