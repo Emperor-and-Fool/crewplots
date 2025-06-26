@@ -243,7 +243,7 @@ export default function ShiftCreationPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Week Schedule Creation */}
         {!currentWeekSchedule ? (
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Create Week Schedule</CardTitle>
@@ -322,6 +322,51 @@ export default function ShiftCreationPage() {
                 </Form>
               </CardContent>
             </Card>
+
+            {/* Existing Week Schedules */}
+            {existingWeekSchedules.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Existing Week Schedules</CardTitle>
+                  <CardDescription>
+                    Continue working on existing week schedule templates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {existingWeekSchedules.map((schedule) => {
+                      const location = (locations as Location[]).find(l => l.id === schedule.locationId);
+                      return (
+                        <Card key={schedule.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setCurrentWeekSchedule(schedule)}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <h4 className="font-medium leading-none">{schedule.name}</h4>
+                                {schedule.description && (
+                                  <p className="text-sm text-muted-foreground">{schedule.description}</p>
+                                )}
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3" />
+                                  {location?.name || 'Unknown Location'}
+                                </div>
+                              </div>
+                              <Badge variant={schedule.isActive ? "default" : "secondary"}>
+                                {schedule.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <div className="mt-3">
+                              <Button size="sm" className="w-full">
+                                Add Shifts
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : (
           /* Shift Creation Form */
