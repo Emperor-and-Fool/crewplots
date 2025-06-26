@@ -30,8 +30,8 @@ export default function CrewMemberProfile() {
 
 
 
-  // Permission check - only administrators, managers, and floor_managers can edit roles
-  const canEditRoles = currentUser?.role && ['administrator', 'manager', 'floor_manager'].includes(currentUser.role);
+  // Permission check - only administrators, owners, and app_managers can edit roles
+  const canEditRoles = currentUser?.role && ['administrator', 'owner', 'app_manager'].includes(currentUser.role);
 
   // State for local changes
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -215,8 +215,9 @@ export default function CrewMemberProfile() {
   const availableRoles = [
     { value: 'crew_member', label: 'Crew Member', description: 'Basic crew member with standard permissions' },
     { value: 'crew_manager', label: 'Crew Manager', description: 'Manages crew members and schedules' },
-    { value: 'floor_manager', label: 'Floor Manager', description: 'Manages specific location operations' },
-    { value: 'manager', label: 'Manager', description: 'Full management permissions' },
+    { value: 'crew_chief', label: 'Crew Chief', description: 'Senior crew member with leadership responsibilities' },
+    { value: 'app_manager', label: 'App Manager', description: 'Application management with advanced permissions' },
+    { value: 'owner', label: 'Owner', description: 'Location owner with full business control' },
     { value: 'administrator', label: 'Administrator', description: 'System administrator with full access' }
   ];
 
