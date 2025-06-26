@@ -7,9 +7,22 @@ import { format } from 'date-fns';
 import { useLocation } from 'wouter';
 import { User } from '@shared/schema';
 
+interface NotesMetadata {
+  exists: boolean;
+  documentId: string | null;
+  wordCount: number;
+  characterCount: number;
+  lastUpdated: string | null;
+  workflow: string | null;
+}
+
+interface ProfileResponse extends Omit<User, 'notes'> {
+  notes?: NotesMetadata;
+}
+
 export default function Profile() {
   const [, navigate] = useLocation();
-  const { data: profile, isLoading, error } = useQuery<User>({
+  const { data: profile, isLoading, error } = useQuery<ProfileResponse>({
     queryKey: ['/api/profile'],
     queryFn: async () => {
       const response = await fetch('/api/profile', {
@@ -179,7 +192,30 @@ export default function Profile() {
               </div>
             </div>
 
-            {profile.notes && (
+            {profile.notes && typeof profile.notes === 'object' && profile.notes.exists && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">Notes</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Word count: {profile.notes.wordCount || 0}
+                    </p>
+                    {profile.notes.lastUpdated && (
+                      <p className="text-sm text-gray-600">
+                        Last updated: {format(new Date(profile.notes.lastUpdated), 'MMM d, yyyy')}
+                      </p>
+                    )}
+                    {profile.notes.workflow && (
+                      <p className="text-sm text-gray-600">
+                        Status: {profile.notes.workflow}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profile.notes && typeof profile.notes === 'string' && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">Notes</h3>
                 <div className="bg-gray-50 rounded-lg p-4">
