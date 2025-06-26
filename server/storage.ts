@@ -1,17 +1,20 @@
 import {
   users, locations, competencies, userLocations, userCompetencies, userDocuments,
-  scheduleTemplates, templateShifts, weeklySchedules, shifts, cashCounts,
+  scheduleTemplates, templateShifts, weeklySchedules, shifts, shiftRequirements,
+  shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
   kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
   type UserDocument, type ScheduleTemplate, type TemplateShift, type WeeklySchedule,
-  type Shift, type CashCount, type KbCategory, type KbArticle, type NoteRef,
+  type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
+  type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
   type UploadedFile, type DocumentAttachment, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertUserDocument, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertWeeklySchedule, type InsertShift,
-  type InsertCashCount, type InsertKbCategory, type InsertKbArticle, type InsertNoteRef,
-  type InsertUploadedFile, type InsertDocumentAttachment,
-  generatePublicId
+  type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
+  type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
+  type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
+  type InsertDocumentAttachment, generatePublicId
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
@@ -139,6 +142,40 @@ export interface IStorage {
   createShift(shift: InsertShift): Promise<Shift>;
   updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined>;
   deleteShift(id: number): Promise<boolean>;
+
+  // Shift Requirements
+  getShiftRequirement(id: number): Promise<ShiftRequirement | undefined>;
+  getShiftRequirements(shiftId?: number): Promise<ShiftRequirement[]>;
+  getShiftRequirementsByShift(shiftId: number): Promise<ShiftRequirement[]>;
+  createShiftRequirement(requirement: InsertShiftRequirement): Promise<ShiftRequirement>;
+  updateShiftRequirement(id: number, requirement: Partial<InsertShiftRequirement>): Promise<ShiftRequirement | undefined>;
+  deleteShiftRequirement(id: number): Promise<boolean>;
+
+  // Shift Subscriptions
+  getShiftSubscription(id: number): Promise<ShiftSubscription | undefined>;
+  getShiftSubscriptions(shiftId?: number, userId?: number): Promise<ShiftSubscription[]>;
+  getShiftSubscriptionsByShift(shiftId: number): Promise<ShiftSubscription[]>;
+  getShiftSubscriptionsByUser(userId: number): Promise<ShiftSubscription[]>;
+  createShiftSubscription(subscription: InsertShiftSubscription): Promise<ShiftSubscription>;
+  updateShiftSubscription(id: number, subscription: Partial<InsertShiftSubscription>): Promise<ShiftSubscription | undefined>;
+  deleteShiftSubscription(id: number): Promise<boolean>;
+
+  // Shift Assignments
+  getShiftAssignment(id: number): Promise<ShiftAssignment | undefined>;
+  getShiftAssignments(shiftId?: number, userId?: number): Promise<ShiftAssignment[]>;
+  getShiftAssignmentsByShift(shiftId: number): Promise<ShiftAssignment[]>;
+  getShiftAssignmentsByUser(userId: number): Promise<ShiftAssignment[]>;
+  createShiftAssignment(assignment: InsertShiftAssignment): Promise<ShiftAssignment>;
+  updateShiftAssignment(id: number, assignment: Partial<InsertShiftAssignment>): Promise<ShiftAssignment | undefined>;
+  deleteShiftAssignment(id: number): Promise<boolean>;
+
+  // Scheduling Windows
+  getSchedulingWindow(id: number): Promise<SchedulingWindow | undefined>;
+  getSchedulingWindows(locationId?: number, role?: string): Promise<SchedulingWindow[]>;
+  getSchedulingWindowsByLocation(locationId: number): Promise<SchedulingWindow[]>;
+  createSchedulingWindow(window: InsertSchedulingWindow): Promise<SchedulingWindow>;
+  updateSchedulingWindow(id: number, window: Partial<InsertSchedulingWindow>): Promise<SchedulingWindow | undefined>;
+  deleteSchedulingWindow(id: number): Promise<boolean>;
 
   // Cash Counts
   getCashCount(id: number): Promise<CashCount | undefined>;
@@ -2074,6 +2111,165 @@ export class DatabaseStorage implements IStorage {
     }
     
     return false;
+  }
+
+  // === Scheduler Storage Methods ===
+
+  // Shift Requirements
+  async getShiftRequirement(id: number): Promise<ShiftRequirement | undefined> {
+    const results = await db.select().from(shiftRequirements).where(eq(shiftRequirements.id, id));
+    return results[0];
+  }
+
+  async getShiftRequirements(shiftId?: number): Promise<ShiftRequirement[]> {
+    if (shiftId) {
+      return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
+    }
+    return await db.select().from(shiftRequirements);
+  }
+
+  async getShiftRequirementsByShift(shiftId: number): Promise<ShiftRequirement[]> {
+    return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
+  }
+
+  async createShiftRequirement(requirement: InsertShiftRequirement): Promise<ShiftRequirement> {
+    const results = await db.insert(shiftRequirements).values(requirement).returning();
+    return results[0];
+  }
+
+  async updateShiftRequirement(id: number, requirement: Partial<InsertShiftRequirement>): Promise<ShiftRequirement | undefined> {
+    const results = await db.update(shiftRequirements).set(requirement).where(eq(shiftRequirements.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteShiftRequirement(id: number): Promise<boolean> {
+    const results = await db.delete(shiftRequirements).where(eq(shiftRequirements.id, id)).returning();
+    return results.length > 0;
+  }
+
+  // Shift Subscriptions
+  async getShiftSubscription(id: number): Promise<ShiftSubscription | undefined> {
+    const results = await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.id, id));
+    return results[0];
+  }
+
+  async getShiftSubscriptions(shiftId?: number, userId?: number): Promise<ShiftSubscription[]> {
+    let query = db.select().from(shiftSubscriptions);
+    
+    if (shiftId && userId) {
+      query = query.where(and(eq(shiftSubscriptions.shiftId, shiftId), eq(shiftSubscriptions.userId, userId)));
+    } else if (shiftId) {
+      query = query.where(eq(shiftSubscriptions.shiftId, shiftId));
+    } else if (userId) {
+      query = query.where(eq(shiftSubscriptions.userId, userId));
+    }
+    
+    return await query;
+  }
+
+  async getShiftSubscriptionsByShift(shiftId: number): Promise<ShiftSubscription[]> {
+    return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.shiftId, shiftId));
+  }
+
+  async getShiftSubscriptionsByUser(userId: number): Promise<ShiftSubscription[]> {
+    return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.userId, userId));
+  }
+
+  async createShiftSubscription(subscription: InsertShiftSubscription): Promise<ShiftSubscription> {
+    const results = await db.insert(shiftSubscriptions).values(subscription).returning();
+    return results[0];
+  }
+
+  async updateShiftSubscription(id: number, subscription: Partial<InsertShiftSubscription>): Promise<ShiftSubscription | undefined> {
+    const results = await db.update(shiftSubscriptions).set(subscription).where(eq(shiftSubscriptions.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteShiftSubscription(id: number): Promise<boolean> {
+    const results = await db.delete(shiftSubscriptions).where(eq(shiftSubscriptions.id, id)).returning();
+    return results.length > 0;
+  }
+
+  // Shift Assignments
+  async getShiftAssignment(id: number): Promise<ShiftAssignment | undefined> {
+    const results = await db.select().from(shiftAssignments).where(eq(shiftAssignments.id, id));
+    return results[0];
+  }
+
+  async getShiftAssignments(shiftId?: number, userId?: number): Promise<ShiftAssignment[]> {
+    let query = db.select().from(shiftAssignments);
+    
+    if (shiftId && userId) {
+      query = query.where(and(eq(shiftAssignments.shiftId, shiftId), eq(shiftAssignments.userId, userId)));
+    } else if (shiftId) {
+      query = query.where(eq(shiftAssignments.shiftId, shiftId));
+    } else if (userId) {
+      query = query.where(eq(shiftAssignments.userId, userId));
+    }
+    
+    return await query;
+  }
+
+  async getShiftAssignmentsByShift(shiftId: number): Promise<ShiftAssignment[]> {
+    return await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, shiftId));
+  }
+
+  async getShiftAssignmentsByUser(userId: number): Promise<ShiftAssignment[]> {
+    return await db.select().from(shiftAssignments).where(eq(shiftAssignments.userId, userId));
+  }
+
+  async createShiftAssignment(assignment: InsertShiftAssignment): Promise<ShiftAssignment> {
+    const results = await db.insert(shiftAssignments).values(assignment).returning();
+    return results[0];
+  }
+
+  async updateShiftAssignment(id: number, assignment: Partial<InsertShiftAssignment>): Promise<ShiftAssignment | undefined> {
+    const results = await db.update(shiftAssignments).set(assignment).where(eq(shiftAssignments.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteShiftAssignment(id: number): Promise<boolean> {
+    const results = await db.delete(shiftAssignments).where(eq(shiftAssignments.id, id)).returning();
+    return results.length > 0;
+  }
+
+  // Scheduling Windows
+  async getSchedulingWindow(id: number): Promise<SchedulingWindow | undefined> {
+    const results = await db.select().from(schedulingWindows).where(eq(schedulingWindows.id, id));
+    return results[0];
+  }
+
+  async getSchedulingWindows(locationId?: number, role?: string): Promise<SchedulingWindow[]> {
+    let query = db.select().from(schedulingWindows);
+    
+    if (locationId && role) {
+      query = query.where(and(eq(schedulingWindows.locationId, locationId), eq(schedulingWindows.role, role)));
+    } else if (locationId) {
+      query = query.where(eq(schedulingWindows.locationId, locationId));
+    } else if (role) {
+      query = query.where(eq(schedulingWindows.role, role));
+    }
+    
+    return await query;
+  }
+
+  async getSchedulingWindowsByLocation(locationId: number): Promise<SchedulingWindow[]> {
+    return await db.select().from(schedulingWindows).where(eq(schedulingWindows.locationId, locationId));
+  }
+
+  async createSchedulingWindow(window: InsertSchedulingWindow): Promise<SchedulingWindow> {
+    const results = await db.insert(schedulingWindows).values(window).returning();
+    return results[0];
+  }
+
+  async updateSchedulingWindow(id: number, window: Partial<InsertSchedulingWindow>): Promise<SchedulingWindow | undefined> {
+    const results = await db.update(schedulingWindows).set(window).where(eq(schedulingWindows.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteSchedulingWindow(id: number): Promise<boolean> {
+    const results = await db.delete(schedulingWindows).where(eq(schedulingWindows.id, id)).returning();
+    return results.length > 0;
   }
 }
 

@@ -10,14 +10,30 @@ import { hybridSessionStore } from "./services/hybrid-session-store";
 import { onDemandRedis } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { 
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
-  insertUserLocationSchema, insertUserCompetencySchema, insertApplicantSchema,
+  insertUserLocationSchema, insertUserCompetencySchema,
   insertScheduleTemplateSchema, insertTemplateShiftSchema, insertWeeklyScheduleSchema,
-  insertShiftSchema, insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
+  insertShiftSchema, insertShiftRequirementSchema, insertShiftSubscriptionSchema,
+  insertShiftAssignmentSchema, insertSchedulingWindowSchema,
+  insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
+
+// Permission checking utility function
+function hasPermission(userRole: string, permission: string): boolean {
+  const rolePermissions: Record<string, string[]> = {
+    'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin'],
+    'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage'],
+    'app_manager': ['view', 'create', 'edit', 'schedule', 'manage'],
+    'crew_chief': ['view', 'create', 'edit', 'schedule'],
+    'crew_member': ['view', 'manage'],
+    'applicant': ['view']
+  };
+  
+  return rolePermissions[userRole]?.includes(permission) || false;
+}
 import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
 import path from "path";
 import authRoutes from './routes/auth';
