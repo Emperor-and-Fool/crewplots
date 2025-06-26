@@ -357,6 +357,14 @@ CREATE INDEX idx_shifts_template ON shifts(template_id);
 
 ### Permission Integration
 
+**Dual Permission System Architecture:**
+
+The shift creation module represents the first implementation of the new database-driven permission system, coexisting with the legacy role-based system without conflicts:
+
+- **Legacy System:** Hardcoded role permissions for general operations (`view`, `create`, `edit`, etc.)
+- **New System:** Database-driven workflow permissions for advanced features (`crew_planning`, `scheduler_development.*`)
+- **Coexistence Strategy:** Different namespaces ensure zero conflicts, allowing gradual migration
+
 **Database Schema Extension for Hierarchical Workflow Permissions:**
 ```sql
 -- Add workflow-specific permissions with sub-permission hierarchy
@@ -392,6 +400,33 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
   ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development.execute'));
 ```
 
+**API Endpoint Enhancement for Permission Integration:**
+```typescript
+// Modify /api/auth/me endpoint to populate user.permissions array
+// server/routes/auth.ts enhancement:
+router.get('/me', async (req, res) => {
+  if (req.isAuthenticated() && req.user) {
+    // Join with role_permissions to get user's permissions array
+    const userWithPermissions = await db
+      .select({
+        ...users,
+        permissions: sql<string[]>`ARRAY_AGG(p.name)`
+      })
+      .from(users)
+      .leftJoin(roles, eq(users.role, roles.name))
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(users.id, req.user.id))
+      .groupBy(users.id);
+    
+    return res.json({ 
+      authenticated: true, 
+      user: { ...userWithPermissions[0], permissions: userWithPermissions[0].permissions || [] }
+    });
+  }
+});
+```
+
 **Frontend Permission Checking with Hierarchical Sub-Permissions:**
 ```typescript
 // Role/workflow-based access control with granular sub-permissions
@@ -417,6 +452,18 @@ const canPromoteTemplates = hasAuthorizedRole && hasSchedulerBase && hasSchedule
 {canCreateShifts && (
   <BasicShiftCreationForm />
 )}
+```
+
+**Administrator Role as Creator (scheduler_development):**
+
+The administrator role functions as a creator within the scheduler_development workflow, with full access to all scheduler features:
+
+- **Full Development Access:** Administrator has all scheduler_development permissions (.read, .write, .execute)
+- **Template Creation:** Can create, modify, and promote shift templates
+- **Advanced Features:** Access to development-mode scheduling tools and template management
+- **Permission Inheritance:** Automatically receives all new scheduler permissions as they're added to the system
+
+This ensures administrators can fully utilize and test new scheduler features during development while maintaining proper permission boundaries for other roles.
 
 {canViewDevelopment && (
   <DevelopmentTemplateViewer />
