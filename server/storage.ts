@@ -268,7 +268,7 @@ export class MemStorage implements IStorage {
   private currentApplicantId: number;
   private currentScheduleTemplateId: number;
   private currentTemplateShiftId: number;
-  private currentWeeklyScheduleId: number;
+
   private currentShiftId: number;
   private currentCashCountId: number;
   private currentKbCategoryId: number;
@@ -285,7 +285,7 @@ export class MemStorage implements IStorage {
     this.applicants = new Map();
     this.scheduleTemplates = new Map();
     this.templateShifts = new Map();
-    this.weeklySchedules = new Map();
+
     this.shifts = new Map();
     this.cashCounts = new Map();
     this.kbCategories = new Map();
@@ -302,7 +302,7 @@ export class MemStorage implements IStorage {
     this.currentApplicantId = 1;
     this.currentScheduleTemplateId = 1;
     this.currentTemplateShiftId = 1;
-    this.currentWeeklyScheduleId = 1;
+
     this.currentShiftId = 1;
     this.currentCashCountId = 1;
     this.currentKbCategoryId = 1;
@@ -765,53 +765,7 @@ export class MemStorage implements IStorage {
   }
 
   // Weekly Schedules
-  async getWeeklySchedule(id: number): Promise<WeeklySchedule | undefined> {
-    return this.weeklySchedules.get(id);
-  }
 
-  async getWeeklySchedules(): Promise<WeeklySchedule[]> {
-    return Array.from(this.weeklySchedules.values());
-  }
-
-  async getWeeklySchedulesByLocation(locationId: number): Promise<WeeklySchedule[]> {
-    return Array.from(this.weeklySchedules.values()).filter(schedule => schedule.locationId === locationId);
-  }
-
-  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]> {
-    return Array.from(this.weeklySchedules.values()).filter(schedule => 
-      schedule.locationId === locationId &&
-      schedule.weekStartDate >= startDate &&
-      schedule.weekStartDate <= endDate
-    );
-  }
-
-  async createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule> {
-    const newSchedule: WeeklySchedule = {
-      id: this.currentWeeklyScheduleId++,
-      createdAt: new Date(),
-      ...schedule
-    };
-    this.weeklySchedules.set(newSchedule.id, newSchedule);
-    return newSchedule;
-  }
-
-  async updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined> {
-    const existingSchedule = this.weeklySchedules.get(id);
-    if (!existingSchedule) {
-      return undefined;
-    }
-
-    const updatedSchedule = {
-      ...existingSchedule,
-      ...schedule
-    };
-    this.weeklySchedules.set(id, updatedSchedule);
-    return updatedSchedule;
-  }
-
-  async deleteWeeklySchedule(id: number): Promise<boolean> {
-    return this.weeklySchedules.delete(id);
-  }
 
   // Shifts
   async getShift(id: number): Promise<Shift | undefined> {
@@ -1730,46 +1684,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Weekly Schedules
-  async getWeeklySchedule(id: number): Promise<WeeklySchedule | undefined> {
-    const [schedule] = await db.select().from(weeklySchedules).where(eq(weeklySchedules.id, id));
-    return schedule;
-  }
 
-  async getWeeklySchedules(): Promise<WeeklySchedule[]> {
-    return await db.select().from(weeklySchedules);
-  }
-
-  async getWeeklySchedulesByLocation(locationId: number): Promise<WeeklySchedule[]> {
-    return await db.select().from(weeklySchedules).where(eq(weeklySchedules.locationId, locationId));
-  }
-
-  async getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]> {
-    return await db.select().from(weeklySchedules)
-      .where(and(
-        eq(weeklySchedules.locationId, locationId),
-        gte(weeklySchedules.weekStartDate, startDate),
-        lte(weeklySchedules.weekStartDate, endDate)
-      ));
-  }
-
-  async createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule> {
-    const [createdSchedule] = await db.insert(weeklySchedules).values(schedule).returning();
-    return createdSchedule;
-  }
-
-  async updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined> {
-    const [updatedSchedule] = await db
-      .update(weeklySchedules)
-      .set(schedule)
-      .where(eq(weeklySchedules.id, id))
-      .returning();
-    return updatedSchedule;
-  }
-
-  async deleteWeeklySchedule(id: number): Promise<boolean> {
-    await db.delete(weeklySchedules).where(eq(weeklySchedules.id, id));
-    return true;
-  }
 
   // Week Schedules (Templates)
   async getWeekSchedule(id: number): Promise<WeekSchedule | undefined> {
@@ -1874,8 +1789,8 @@ export class DatabaseStorage implements IStorage {
       // Get shifts that belong to schedules for this location
       const result = await db.select()
         .from(shifts)
-        .innerJoin(weeklySchedules, eq(shifts.scheduleId, weeklySchedules.id))
-        .where(eq(weeklySchedules.locationId, locationId));
+        .innerJoin(weekSchedules, eq(shifts.weekScheduleId, weekSchedules.id))
+        .where(eq(weekSchedules.locationId, locationId));
       
       return result.map(row => row.shifts);
     } catch (error) {
