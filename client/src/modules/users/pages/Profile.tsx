@@ -127,7 +127,9 @@ export default function Profile() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-2xl">
                   <UserIcon className="h-6 w-6" />
-                  {profile.name}
+                  {profile.firstName && profile.lastName 
+                    ? `${profile.firstName} ${profile.lastName}` 
+                    : profile.name || profile.username}
                 </CardTitle>
                 <p className="text-lg text-gray-600 mt-1">{profile.email}</p>
               </div>
