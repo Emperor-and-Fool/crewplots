@@ -290,7 +290,7 @@ export const shiftAssignments = pgTable("shift_assignments", {
   status: text("status", { enum: ["confirmed", "pending", "cancelled"] }).default("confirmed").notNull(),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
 }, (table) => ({
-  shiftUserUnique: unique().on(table.shiftId, table.userId),
+  shiftUserUnique: uniqueIndex("unique_shift_assignment").on(table.shiftId, table.userId),
   shiftIdIdx: index("idx_shift_assignments_shift").on(table.shiftId),
   userIdIdx: index("idx_shift_assignments_user").on(table.userId),
 }));
@@ -304,7 +304,7 @@ export const schedulingWindows = pgTable("scheduling_windows", {
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
-  locationRoleUnique: unique().on(table.locationId, table.role),
+  locationRoleUnique: uniqueIndex("unique_location_role").on(table.locationId, table.role),
 }));
 
 // Cash Management
@@ -534,6 +534,10 @@ export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 export type InsertWeeklySchedule = z.infer<typeof insertWeeklyScheduleSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
+export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
+export type InsertShiftSubscription = z.infer<typeof insertShiftSubscriptionSchema>;
+export type InsertShiftAssignment = z.infer<typeof insertShiftAssignmentSchema>;
+export type InsertSchedulingWindow = z.infer<typeof insertSchedulingWindowSchema>;
 export type InsertCashCount = z.infer<typeof insertCashCountSchema>;
 export type InsertKbCategory = z.infer<typeof insertKbCategorySchema>;
 export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
@@ -560,6 +564,10 @@ export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 export type WeeklySchedule = typeof weeklySchedules.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
+export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
+export type ShiftSubscription = typeof shiftSubscriptions.$inferSelect;
+export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
+export type SchedulingWindow = typeof schedulingWindows.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
