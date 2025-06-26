@@ -11,6 +11,7 @@ import {
   varchar, 
   decimal,
   index,
+  uniqueIndex,
   primaryKey
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -228,18 +229,83 @@ export const weeklySchedules = pgTable("weekly_schedules", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Shifts (actual scheduled shifts) - Basic structure only, full implementation pending
+// Shifts (actual scheduled shifts) - Enhanced for scheduler
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  scheduleId: integer("schedule_id"),
+  scheduleId: integer("schedule_id").references(() => weeklySchedules.id),
   userId: integer("user_id").references(() => users.id),
-  locationId: integer("location_id").references(() => locations.id),
-  date: timestamp("date"),
-  startTime: text("start_time"),
-  endTime: text("end_time"),
-  position: text("position"), // Basic position field matching current database
-  createdAt: timestamp("created_at").defaultNow(),
-});
+  locationId: integer("location_id").references(() => locations.id).notNull(),
+  date: timestamp("date").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  position: text("position"),
+  maxSlots: integer("max_slots").default(1).notNull(),
+  subscriptionDeadline: timestamp("subscription_deadline"),
+  status: text("status", { enum: ["open", "filled", "cancelled"] }).default("open").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  locationDateIdx: index("idx_shifts_location_date").on(table.locationId, table.date),
+  statusIdx: index("idx_shifts_status").on(table.status),
+  subscriptionDeadlineIdx: index("idx_shifts_subscription_deadline").on(table.subscriptionDeadline),
+}));
+
+// Shift Requirements - Link shifts to required competencies
+export const shiftRequirements = pgTable("shift_requirements", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").references(() => shifts.id, { onDelete: "cascade" }).notNull(),
+  competencyId: integer("competency_id").references(() => competencies.id).notNull(),
+  minimumLevel: integer("minimum_level").default(1).notNull(),
+  requiredCount: integer("required_count").default(1).notNull(),
+  weight: decimal("weight", { precision: 3, scale: 2 }).default("1.0").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  shiftCompetencyUnique: uniqueIndex("unique_shift_competency").on(table.shiftId, table.competencyId),
+  shiftIdIdx: index("idx_shift_requirements_shift").on(table.shiftId),
+  competencyIdIdx: index("idx_shift_requirements_competency").on(table.competencyId),
+}));
+
+// Shift Subscriptions - Crew member interest tracking
+export const shiftSubscriptions = pgTable("shift_subscriptions", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").references(() => shifts.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  interestLevel: integer("interest_level").default(3).notNull(),
+  availabilityConfirmed: boolean("availability_confirmed").default(true).notNull(),
+  notes: text("notes"),
+  subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
+}, (table) => ({
+  shiftUserUnique: uniqueIndex("unique_shift_subscription").on(table.shiftId, table.userId),
+  shiftIdIdx: index("idx_shift_subscriptions_shift").on(table.shiftId),
+  userIdIdx: index("idx_shift_subscriptions_user").on(table.userId),
+}));
+
+// Shift Assignments - Final crew assignments
+export const shiftAssignments = pgTable("shift_assignments", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").references(() => shifts.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id).notNull(),
+  competencyMatchScore: decimal("competency_match_score", { precision: 5, scale: 2 }),
+  assignmentNotes: text("assignment_notes"),
+  status: text("status", { enum: ["confirmed", "pending", "cancelled"] }).default("confirmed").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+}, (table) => ({
+  shiftUserUnique: unique().on(table.shiftId, table.userId),
+  shiftIdIdx: index("idx_shift_assignments_shift").on(table.shiftId),
+  userIdIdx: index("idx_shift_assignments_user").on(table.userId),
+}));
+
+// Scheduling Windows - Configurable viewing periods
+export const schedulingWindows = pgTable("scheduling_windows", {
+  id: serial("id").primaryKey(),
+  locationId: integer("location_id").references(() => locations.id).notNull(),
+  role: text("role").notNull(),
+  weeksAhead: integer("weeks_ahead").default(4).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  locationRoleUnique: unique().on(table.locationId, table.role),
+}));
 
 // Cash Management
 export const cashCounts = pgTable("cash_counts", {
@@ -411,6 +477,10 @@ export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 export const insertWeeklyScheduleSchema = createInsertSchema(weeklySchedules).omit({ id: true, createdAt: true });
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
+export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
+export const insertShiftSubscriptionSchema = createInsertSchema(shiftSubscriptions).omit({ id: true, subscribedAt: true });
+export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ id: true, assignedAt: true });
+export const insertSchedulingWindowSchema = createInsertSchema(schedulingWindows).omit({ id: true, createdAt: true });
 export const insertCashCountSchema = createInsertSchema(cashCounts).omit({ id: true, createdAt: true });
 export const insertKbCategorySchema = createInsertSchema(kbCategories).omit({ id: true, createdAt: true });
 export const insertKbArticleSchema = createInsertSchema(kbArticles).omit({ id: true, createdAt: true, updatedAt: true });
