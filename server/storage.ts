@@ -1777,6 +1777,52 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  // Week Schedules (Templates)
+  async getWeekSchedule(id: number): Promise<WeekSchedule | undefined> {
+    const [weekSchedule] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
+    return weekSchedule;
+  }
+
+  async getWeekSchedules(locationId?: number): Promise<WeekSchedule[]> {
+    if (locationId) {
+      return await db.select().from(weekSchedules).where(eq(weekSchedules.locationId, locationId));
+    }
+    return await db.select().from(weekSchedules);
+  }
+
+  async getWeekScheduleById(id: number): Promise<WeekSchedule | undefined> {
+    const [weekSchedule] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
+    return weekSchedule;
+  }
+
+  async createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule> {
+    const [createdSchedule] = await db.insert(weekSchedules).values(schedule).returning();
+    return createdSchedule;
+  }
+
+  async updateWeekSchedule(id: number, schedule: Partial<InsertWeekSchedule>): Promise<WeekSchedule | undefined> {
+    const [updatedSchedule] = await db
+      .update(weekSchedules)
+      .set(schedule)
+      .where(eq(weekSchedules.id, id))
+      .returning();
+    return updatedSchedule;
+  }
+
+  async deleteWeekSchedule(id: number): Promise<boolean> {
+    await db.delete(weekSchedules).where(eq(weekSchedules.id, id));
+    return true;
+  }
+
+  async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
+    const [createdShift] = await db.insert(shifts).values(shift).returning();
+    return createdShift;
+  }
+
+  async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
+  }
+
   // Shifts
   async getShift(id: number): Promise<Shift | undefined> {
     const [shift] = await db.select().from(shifts).where(eq(shifts.id, id));

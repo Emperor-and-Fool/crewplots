@@ -24,9 +24,9 @@ import multer from "multer";
 // Permission checking utility function
 function hasPermission(userRole: string, permission: string): boolean {
   const rolePermissions: Record<string, string[]> = {
-    'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin'],
-    'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage'],
-    'app_manager': ['view', 'create', 'edit', 'schedule', 'manage'],
+    'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin', 'crew_planning'],
+    'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'crew_planning'],
+    'app_manager': ['view', 'create', 'edit', 'schedule', 'manage', 'crew_planning'],
     'crew_chief': ['view', 'create', 'edit', 'schedule'],
     'crew_member': ['view', 'manage'],
     'applicant': ['view']
@@ -1161,7 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/week-schedules", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "crew_planning")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
