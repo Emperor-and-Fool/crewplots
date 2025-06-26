@@ -1161,7 +1161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/week-schedules", async (req, res) => {
+    console.log("Week schedule creation - User:", req.user?.username, "Role:", req.user?.role);
+    console.log("Permission check for crew_planning:", hasPermission(req.user?.role, "crew_planning"));
+    
     if (!req.user || !hasPermission(req.user.role, "crew_planning")) {
+      console.log("Permission denied for user:", req.user?.username, "role:", req.user?.role);
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
