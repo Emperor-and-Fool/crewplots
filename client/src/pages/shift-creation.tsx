@@ -111,10 +111,7 @@ export default function ShiftCreationPage() {
   // Mutations
   const createWeekScheduleMutation = useMutation({
     mutationFn: (data: WeekScheduleCreationForm) => 
-      apiRequest('/api/week-schedules', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('POST', '/api/week-schedules', data),
     onSuccess: (data) => {
       toast({ description: 'Week schedule created successfully' });
       setCurrentWeekSchedule(data);
@@ -132,12 +129,9 @@ export default function ShiftCreationPage() {
   const addShiftToScheduleMutation = useMutation({
     mutationFn: (data: ShiftCreationForm) => {
       if (!currentWeekSchedule) throw new Error('No week schedule selected');
-      return apiRequest(`/api/week-schedules/${currentWeekSchedule.id}/shifts`, {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          competencyRequirements: selectedCompetencies
-        })
+      return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, {
+        ...data,
+        competencyRequirements: selectedCompetencies
       });
     },
     onSuccess: () => {
