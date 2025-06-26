@@ -316,9 +316,42 @@ router.get('/me', async (req, res) => {
             });
         }
         
-        // Remove sensitive data before returning the user
+        // Get user permissions from database
         const user = req.user as any; // Type assertion needed for password property
-        const { password, ...userWithoutPassword } = user;
+        let userWithPermissions = { ...user };
+        
+        try {
+            // Import db and query utilities
+            const { db } = await import('../db');
+            const { users, roles, permissions, rolePermissions } = await import('@shared/schema');
+            const { eq, sql } = await import('drizzle-orm');
+            
+            // Query user with their permissions
+            const userPermissionsQuery = await db
+                .select({
+                    id: users.id,
+                    permissions: sql<string[]>`COALESCE(ARRAY_AGG(DISTINCT ${permissions.name}) FILTER (WHERE ${permissions.name} IS NOT NULL), ARRAY[]::text[])`
+                })
+                .from(users)
+                .leftJoin(roles, eq(users.role, roles.name))
+                .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+                .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                .where(eq(users.id, user.id))
+                .groupBy(users.id);
+            
+            if (userPermissionsQuery.length > 0) {
+                userWithPermissions.permissions = userPermissionsQuery[0].permissions || [];
+                console.log(`User ${user.username} permissions:`, userWithPermissions.permissions);
+            } else {
+                userWithPermissions.permissions = [];
+            }
+        } catch (permError) {
+            console.error('Error fetching user permissions:', permError);
+            userWithPermissions.permissions = [];
+        }
+        
+        // Remove sensitive data before returning the user
+        const { password, ...userWithoutPassword } = userWithPermissions;
         
         console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
         console.timeEnd("me:total");
