@@ -34,6 +34,7 @@ This documentation follows a systematic hierarchy designed to provide clear navi
 - How components and services interact
 - Technical architecture decisions and rationale
 - Service layer implementations and integrations
+- Module architectures (Authentication, Messaging, User management)
 
 ### 06_* - Foundation (Un-Dynamic)
 - Static database schemas and core data structures
