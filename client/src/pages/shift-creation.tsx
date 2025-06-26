@@ -17,16 +17,20 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import type { ShiftRequirement, Competency, Location } from '@shared/schema';
 
-// Schema for shift creation form
+// Schema for week schedule creation form
+const weekScheduleCreationSchema = z.object({
+  name: z.string().min(1, 'Week schedule name is required'),
+  description: z.string().optional(),
+  locationId: z.number().min(1, 'Location is required'),
+});
+
+// Schema for shift creation within a week schedule
 const shiftCreationSchema = z.object({
   title: z.string().min(1, 'Shift title is required'),
-  locationId: z.number().min(1, 'Location is required'),
+  dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
-  date: z.string().min(1, 'Date is required'),
   description: z.string().optional(),
-  isRecurring: z.boolean().default(false),
-  recurringPattern: z.enum(['daily', 'weekly', 'monthly']).optional(),
   competencyRequirements: z.array(z.object({
     competencyId: z.number(),
     requiredCount: z.number().min(1),
@@ -34,6 +38,7 @@ const shiftCreationSchema = z.object({
   })).default([])
 });
 
+type WeekScheduleCreationForm = z.infer<typeof weekScheduleCreationSchema>;
 type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 // Permission checking hook for scheduler features
@@ -67,23 +72,33 @@ export default function ShiftCreationPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
+  const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
+  const [shifts, setShifts] = useState<Array<ShiftCreationForm & { id?: number }>>([]);
   const [selectedCompetencies, setSelectedCompetencies] = useState<Array<{
     competencyId: number;
     requiredCount: number;
     priority: 'required' | 'preferred' | 'optional';
   }>>([]);
 
-  // Form setup
-  const form = useForm<ShiftCreationForm>({
+  // Week Schedule Form setup
+  const weekScheduleForm = useForm<WeekScheduleCreationForm>({
+    resolver: zodResolver(weekScheduleCreationSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      locationId: 0
+    }
+  });
+
+  // Individual Shift Form setup
+  const shiftForm = useForm<ShiftCreationForm>({
     resolver: zodResolver(shiftCreationSchema),
     defaultValues: {
       title: '',
-      locationId: 0,
+      dayOfWeek: 'monday',
       startTime: '',
       endTime: '',
-      date: '',
       description: '',
-      isRecurring: false,
       competencyRequirements: []
     }
   });
@@ -99,31 +114,53 @@ export default function ShiftCreationPage() {
     enabled: permissions.canCreateShifts
   });
 
-  const { data: existingShifts = [] } = useQuery({
-    queryKey: ['/api/shift-requirements'],
+  // Week schedules query 
+  const { data: existingWeekSchedules = [] } = useQuery({
+    queryKey: ['/api/week-schedules'],
     enabled: permissions.canCreateShifts
   });
 
   // Mutations
-  const createShiftMutation = useMutation({
-    mutationFn: (data: ShiftCreationForm) => 
-      apiRequest('/api/shift-requirements', {
+  const createWeekScheduleMutation = useMutation({
+    mutationFn: (data: WeekScheduleCreationForm) => 
+      apiRequest('/api/week-schedules', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+    onSuccess: (data) => {
+      toast({ description: 'Week schedule created successfully' });
+      setCurrentWeekSchedule(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      weekScheduleForm.reset();
+    },
+    onError: () => {
+      toast({ 
+        description: 'Failed to create week schedule',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const addShiftToScheduleMutation = useMutation({
+    mutationFn: (data: ShiftCreationForm) => {
+      if (!currentWeekSchedule) throw new Error('No week schedule selected');
+      return apiRequest(`/api/week-schedules/${currentWeekSchedule.id}/shifts`, {
         method: 'POST',
         body: JSON.stringify({
           ...data,
-          createdBy: user?.id,
-          status: 'draft'
+          competencyRequirements: selectedCompetencies
         })
-      }),
+      });
+    },
     onSuccess: () => {
-      toast({ description: 'Shift created successfully' });
-      queryClient.invalidateQueries({ queryKey: ['/api/shift-requirements'] });
-      form.reset();
+      toast({ description: 'Shift added successfully' });
+      setShifts(prev => [...prev, { ...shiftForm.getValues(), id: Date.now() }]);
+      shiftForm.reset();
       setSelectedCompetencies([]);
     },
     onError: () => {
       toast({ 
-        description: 'Failed to create shift',
+        description: 'Failed to add shift',
         variant: 'destructive'
       });
     }
@@ -159,8 +196,7 @@ export default function ShiftCreationPage() {
   }
 
   // Add competency requirement
-  const addCompetencyRequirement = () => {
-    const competencyId = parseInt(form.watch('competencyRequirements.0.competencyId')?.toString() || '0');
+  const addCompetencyRequirement = (competencyId: number) => {
     if (competencyId && !selectedCompetencies.find(c => c.competencyId === competencyId)) {
       setSelectedCompetencies([...selectedCompetencies, {
         competencyId,
@@ -180,12 +216,17 @@ export default function ShiftCreationPage() {
     ));
   };
 
-  const onSubmit = (data: ShiftCreationForm) => {
-    const formData = {
+  // Week schedule submission
+  const onWeekScheduleSubmit = (data: WeekScheduleCreationForm) => {
+    createWeekScheduleMutation.mutate(data);
+  };
+
+  // Individual shift submission
+  const onShiftSubmit = (data: ShiftCreationForm) => {
+    addShiftToScheduleMutation.mutate({
       ...data,
       competencyRequirements: selectedCompetencies
-    };
-    createShiftMutation.mutate(formData);
+    });
   };
 
   return (
@@ -195,10 +236,10 @@ export default function ShiftCreationPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Calendar className="h-8 w-8" />
-            Create New Shift
+            Week Schedule Creator
           </h1>
           <p className="text-muted-foreground">
-            Design shifts with competency requirements and scheduling details
+            Create reusable week schedules with multiple shifts and competency requirements
           </p>
         </div>
         
@@ -211,66 +252,181 @@ export default function ShiftCreationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Shift Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <Tabs defaultValue="basic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                      <TabsTrigger value="competencies">Requirements</TabsTrigger>
-                      <TabsTrigger value="scheduling">Schedule</TabsTrigger>
-                    </TabsList>
+        {/* Week Schedule Creation */}
+        {!currentWeekSchedule ? (
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Week Schedule</CardTitle>
+                <CardDescription>
+                  Start by creating a week schedule template, then add individual shifts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...weekScheduleForm}>
+                  <form onSubmit={weekScheduleForm.handleSubmit(onWeekScheduleSubmit)} className="space-y-6">
+                    <FormField
+                      control={weekScheduleForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Schedule Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Regular Service Week, Holiday Schedule" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                    <TabsContent value="basic" className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Shift Title</FormLabel>
+                    <FormField
+                      control={weekScheduleForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe this week schedule template..."
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={weekScheduleForm.control}
+                      name="locationId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))}>
                             <FormControl>
-                              <Input placeholder="e.g., Evening Service, Morning Prep" {...field} />
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            <SelectContent>
+                              {(locations as Location[]).map((location) => (
+                                <SelectItem key={location.id} value={location.id.toString()}>
+                                  {location.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <FormField
-                        control={form.control}
-                        name="locationId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                    <Button 
+                      type="submit" 
+                      disabled={createWeekScheduleMutation.isPending}
+                      className="w-full"
+                    >
+                      {createWeekScheduleMutation.isPending ? "Creating..." : "Create Week Schedule"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* Shift Creation Form */
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Shifts to: {currentWeekSchedule.name}</CardTitle>
+                <CardDescription>
+                  Create individual shifts for each day of the week
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...shiftForm}>
+                  <form onSubmit={shiftForm.handleSubmit(onShiftSubmit)} className="space-y-6">
+                    <Tabs defaultValue="basic" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                        <TabsTrigger value="competencies">Requirements</TabsTrigger>
+                        <TabsTrigger value="scheduling">Schedule</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="basic" className="space-y-4">
+                        <FormField
+                          control={shiftForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Shift Title</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select location" />
-                                </SelectTrigger>
+                                <Input placeholder="e.g., Evening Service, Morning Prep" {...field} />
                               </FormControl>
-                              <SelectContent>
-                                {locations.map((location: Location) => (
-                                  <SelectItem key={location.id} value={location.id.toString()}>
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4" />
-                                      {location.name}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
+                        <FormField
+                          control={shiftForm.control}
+                          name="dayOfWeek"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Day of Week</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select day" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="monday">Monday</SelectItem>
+                                  <SelectItem value="tuesday">Tuesday</SelectItem>
+                                  <SelectItem value="wednesday">Wednesday</SelectItem>
+                                  <SelectItem value="thursday">Thursday</SelectItem>
+                                  <SelectItem value="friday">Friday</SelectItem>
+                                  <SelectItem value="saturday">Saturday</SelectItem>
+                                  <SelectItem value="sunday">Sunday</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={shiftForm.control}
+                            name="startTime"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Start Time</FormLabel>
+                                <FormControl>
+                                  <Input type="time" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={shiftForm.control}
+                            name="endTime"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>End Time</FormLabel>
+                                <FormControl>
+                                  <Input type="time" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
                         control={form.control}
                         name="description"
                         render={({ field }) => (

@@ -2281,6 +2281,52 @@ export class DatabaseStorage implements IStorage {
     const results = await db.delete(schedulingWindows).where(eq(schedulingWindows.id, id)).returning();
     return results.length > 0;
   }
+
+  // === Week Schedule Management ===
+
+  async getWeekSchedule(id: number): Promise<WeekSchedule | undefined> {
+    const results = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
+    return results[0];
+  }
+
+  async getWeekSchedules(locationId?: number): Promise<WeekSchedule[]> {
+    if (locationId) {
+      return await db.select().from(weekSchedules).where(eq(weekSchedules.locationId, locationId));
+    }
+    return await db.select().from(weekSchedules);
+  }
+
+  async getWeekScheduleById(id: number): Promise<WeekSchedule | undefined> {
+    const results = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
+    return results[0];
+  }
+
+  async createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule> {
+    const results = await db.insert(weekSchedules).values(schedule).returning();
+    return results[0];
+  }
+
+  async updateWeekSchedule(id: number, schedule: Partial<InsertWeekSchedule>): Promise<WeekSchedule | undefined> {
+    const results = await db.update(weekSchedules).set(schedule).where(eq(weekSchedules.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteWeekSchedule(id: number): Promise<boolean> {
+    // First delete all shifts that belong to this week schedule
+    await db.delete(shifts).where(eq(shifts.weekScheduleId, id));
+    // Then delete the week schedule itself
+    const results = await db.delete(weekSchedules).where(eq(weekSchedules.id, id)).returning();
+    return results.length > 0;
+  }
+
+  async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
+    const results = await db.insert(shifts).values(shift).returning();
+    return results[0];
+  }
+
+  async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
+  }
 }
 
 // Use DatabaseStorage implementation by default
