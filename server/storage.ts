@@ -10,7 +10,7 @@ import {
   type UploadedFile, type DocumentAttachment, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertUserDocument, type InsertScheduleTemplate,
-  type InsertTemplateShift, type InsertWeeklySchedule, type InsertWeekSchedule, type InsertShift,
+  type InsertTemplateShift, type InsertWeekSchedule, type InsertShift,
   type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
   type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
   type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
@@ -125,13 +125,7 @@ export interface IStorage {
   deleteTemplateShift(id: number): Promise<boolean>;
 
   // Weekly Schedules
-  getWeeklySchedule(id: number): Promise<WeeklySchedule | undefined>;
-  getWeeklySchedules(): Promise<WeeklySchedule[]>;
-  getWeeklySchedulesByLocation(locationId: number): Promise<WeeklySchedule[]>;
-  getWeeklyScheduleByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<WeeklySchedule[]>;
-  createWeeklySchedule(schedule: InsertWeeklySchedule): Promise<WeeklySchedule>;
-  updateWeeklySchedule(id: number, schedule: Partial<InsertWeeklySchedule>): Promise<WeeklySchedule | undefined>;
-  deleteWeeklySchedule(id: number): Promise<boolean>;
+
 
   // Week Schedules (Templates)
   getWeekSchedule(id: number): Promise<WeekSchedule | undefined>;
@@ -257,7 +251,7 @@ export class MemStorage implements IStorage {
   private applicants: Map<number, Applicant>;
   private scheduleTemplates: Map<number, ScheduleTemplate>;
   private templateShifts: Map<number, TemplateShift>;
-  private weeklySchedules: Map<number, WeeklySchedule>;
+
   private shifts: Map<number, Shift>;
   private cashCounts: Map<number, CashCount>;
   private kbCategories: Map<number, KbCategory>;
