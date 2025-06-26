@@ -357,12 +357,15 @@ CREATE INDEX idx_shifts_template ON shifts(template_id);
 
 ### Permission Integration
 
-**Database Schema Extension for Workflow Permissions:**
+**Database Schema Extension for Hierarchical Workflow Permissions:**
 ```sql
--- Add workflow-specific permissions
+-- Add workflow-specific permissions with sub-permission hierarchy
 INSERT INTO permissions (name, description) VALUES 
   ('crew_planning', 'Access to crew planning workflow and strategic planning features'),
-  ('scheduler_development', 'Access to scheduler development workflow and advanced creation tools');
+  ('scheduler_development', 'Base access to scheduler development workflow'),
+  ('scheduler_development.read', 'Read access to view shift plans and templates in development mode'),
+  ('scheduler_development.write', 'Write access to propose and modify shift plans'),
+  ('scheduler_development.execute', 'Execute access to promote templates from development to crew_planning workflow');
 
 -- Assign workflow permissions to appropriate roles
 INSERT INTO role_permissions (role_id, permission_id) VALUES
@@ -371,33 +374,90 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
   ((SELECT id FROM roles WHERE name = 'app_manager'), (SELECT id FROM permissions WHERE name = 'crew_planning')),
   ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'crew_planning')),
   
-  -- scheduler_development access for technical roles
+  -- scheduler_development base access
   ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'scheduler_development')),
-  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development'));
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development')),
+  
+  -- scheduler_development.read - View development templates and plans
+  ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'scheduler_development.read')),
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development.read')),
+  ((SELECT id FROM roles WHERE name = 'app_manager'), (SELECT id FROM permissions WHERE name = 'scheduler_development.read')),
+  
+  -- scheduler_development.write - Propose and modify shift plans
+  ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'scheduler_development.write')),
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development.write')),
+  
+  -- scheduler_development.execute - Promote templates to production planning
+  ((SELECT id FROM roles WHERE name = 'administrator'), (SELECT id FROM permissions WHERE name = 'scheduler_development.execute')),
+  ((SELECT id FROM roles WHERE name = 'owner'), (SELECT id FROM permissions WHERE name = 'scheduler_development.execute'));
 ```
 
-**Frontend Permission Checking:**
+**Frontend Permission Checking with Hierarchical Sub-Permissions:**
 ```typescript
-// Role/workflow-based access control in shift creation components
+// Role/workflow-based access control with granular sub-permissions
 const { user } = useAuth();
 const hasAuthorizedRole = ['administrator', 'owner', 'app_manager'].includes(user?.role);
-const hasSchedulerDev = user?.permissions?.includes('scheduler_development');
 const hasCrewPlanning = user?.permissions?.includes('crew_planning');
+
+// Hierarchical scheduler_development permissions
+const hasSchedulerBase = user?.permissions?.includes('scheduler_development');
+const hasSchedulerRead = user?.permissions?.includes('scheduler_development.read');
+const hasSchedulerWrite = user?.permissions?.includes('scheduler_development.write'); 
+const hasSchedulerExecute = user?.permissions?.includes('scheduler_development.execute');
 
 // Basic shift creation requires authorized role AND crew_planning workflow
 const canCreateShifts = hasAuthorizedRole && hasCrewPlanning;
 
-// Advanced features require authorized role AND scheduler_development workflow
-const canUseAdvancedTools = hasAuthorizedRole && hasSchedulerDev;
+// Development access levels (each requires authorized role + base scheduler access)
+const canViewDevelopment = hasAuthorizedRole && hasSchedulerBase && hasSchedulerRead;
+const canProposePlans = hasAuthorizedRole && hasSchedulerBase && hasSchedulerWrite;
+const canPromoteTemplates = hasAuthorizedRole && hasSchedulerBase && hasSchedulerExecute;
 
-// Conditional rendering based on role/workflow combination
+// Conditional rendering based on granular permission hierarchy
 {canCreateShifts && (
   <BasicShiftCreationForm />
 )}
 
-{canUseAdvancedTools && (
-  <AdvancedShiftCreationTools />
+{canViewDevelopment && (
+  <DevelopmentTemplateViewer />
 )}
+
+{canProposePlans && (
+  <ShiftPlanProposalTools />
+)}
+
+{canPromoteTemplates && (
+  <TemplatePromotionInterface 
+    onPromote={promoteToCrewPlanning}
+    targetWorkflow="crew_planning"
+  />
+)}
+```
+
+**Permission Hierarchy Utility Functions:**
+```typescript
+// Helper functions for permission checking
+export const useSchedulerPermissions = () => {
+  const { user } = useAuth();
+  
+  const checkSchedulerPermission = (subPermission?: string) => {
+    const hasRole = ['administrator', 'owner', 'app_manager'].includes(user?.role);
+    const hasBase = user?.permissions?.includes('scheduler_development');
+    
+    if (!hasRole || !hasBase) return false;
+    
+    if (!subPermission) return true; // Base access only
+    
+    return user?.permissions?.includes(`scheduler_development.${subPermission}`);
+  };
+  
+  return {
+    canViewDevelopment: checkSchedulerPermission('read'),
+    canProposePlans: checkSchedulerPermission('write'),
+    canPromoteTemplates: checkSchedulerPermission('execute'),
+    canAccessScheduler: checkSchedulerPermission()
+  };
+};
 ```
 
 ### Workflow Configuration
