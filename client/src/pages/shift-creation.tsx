@@ -67,6 +67,8 @@ export default function ShiftCreationPage() {
     requiredCount: number;
     priority: 'required' | 'preferred' | 'optional';
   }>>([]);
+  const [isCreatingNew, setIsCreatingNew] = useState(true);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string>("CREATE_NEW");
 
   // Week Schedule Form setup
   const weekScheduleForm = useForm<WeekScheduleCreationForm>({
@@ -207,7 +209,16 @@ export default function ShiftCreationPage() {
 
   // Week schedule submission
   const onWeekScheduleSubmit = (data: WeekScheduleCreationForm) => {
-    createWeekScheduleMutation.mutate(data);
+    if (isCreatingNew) {
+      createWeekScheduleMutation.mutate(data);
+    } else {
+      // If editing existing, just proceed to shift creation
+      // The currentWeekSchedule is already set from dropdown selection
+      toast({
+        title: "Week Schedule Selected",
+        description: `Now adding shifts to "${currentWeekSchedule?.name}"`,
+      });
+    }
   };
 
   // Individual shift submission
@@ -259,14 +270,69 @@ export default function ShiftCreationPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Schedule Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Regular Service Week, Holiday Schedule" {...field} />
-                          </FormControl>
+                          <FormLabel>Week Schedule</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === "CREATE_NEW") {
+                                setIsCreatingNew(true);
+                                setSelectedScheduleId("");
+                                field.onChange("");
+                              } else {
+                                const existing = (existingWeekSchedules as any[])?.find((s: any) => s.id.toString() === value);
+                                if (existing) {
+                                  setCurrentWeekSchedule(existing);
+                                  setIsCreatingNew(false);
+                                  setSelectedScheduleId(value);
+                                  field.onChange(existing.name);
+                                }
+                              }
+                            }} 
+                            value={selectedScheduleId}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select existing or create new schedule" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="CREATE_NEW">
+                                <div className="flex items-center gap-2">
+                                  <Plus className="h-4 w-4" />
+                                  Create New Week Schedule
+                                </div>
+                              </SelectItem>
+                              {(existingWeekSchedules as any[])?.map((schedule: any) => (
+                                <SelectItem key={schedule.id} value={schedule.id.toString()}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{schedule.name}</span>
+                                    <Badge variant="outline" className="ml-2">
+                                      {(locations as Location[]).find(l => l.id === schedule.locationId)?.name || 'Unknown'}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {isCreatingNew && (
+                      <FormField
+                        control={weekScheduleForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>New Schedule Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Regular Service Week, Holiday Schedule" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={weekScheduleForm.control}
@@ -313,60 +379,19 @@ export default function ShiftCreationPage() {
 
                     <Button 
                       type="submit" 
-                      disabled={createWeekScheduleMutation.isPending}
+                      disabled={createWeekScheduleMutation.isPending || (!isCreatingNew && !currentWeekSchedule)}
                       className="w-full"
                     >
-                      {createWeekScheduleMutation.isPending ? "Creating..." : "Create Week Schedule"}
+                      {createWeekScheduleMutation.isPending ? "Creating..." : 
+                       isCreatingNew ? "Create Week Schedule" : 
+                       currentWeekSchedule ? "Continue with Selected Schedule" : "Select a Schedule"}
                     </Button>
                   </form>
                 </Form>
               </CardContent>
             </Card>
 
-            {/* Existing Week Schedules */}
-            {existingWeekSchedules.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Existing Week Schedules</CardTitle>
-                  <CardDescription>
-                    Continue working on existing week schedule templates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {existingWeekSchedules.map((schedule) => {
-                      const location = (locations as Location[]).find(l => l.id === schedule.locationId);
-                      return (
-                        <Card key={schedule.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setCurrentWeekSchedule(schedule)}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <h4 className="font-medium leading-none">{schedule.name}</h4>
-                                {schedule.description && (
-                                  <p className="text-sm text-muted-foreground">{schedule.description}</p>
-                                )}
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <MapPin className="h-3 w-3" />
-                                  {location?.name || 'Unknown Location'}
-                                </div>
-                              </div>
-                              <Badge variant={schedule.isActive ? "default" : "secondary"}>
-                                {schedule.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                            <div className="mt-3">
-                              <Button size="sm" className="w-full">
-                                Add Shifts
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         ) : (
           /* Shift Creation Form */
