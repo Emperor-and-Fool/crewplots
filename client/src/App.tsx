@@ -327,7 +327,18 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={Profile} 
-                      requiredRoles={["manager", "crew_member", "crew_manager", "administrator"]} 
+                      requiredRoles={["owner", "app_manager", "crew_chief", "crew_member", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/profile/edit">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={ProfileEdit} 
+                      requiredRoles={["owner", "app_manager", "crew_chief", "crew_member", "administrator"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}
