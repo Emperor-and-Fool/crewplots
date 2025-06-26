@@ -167,6 +167,11 @@ export default function Profile() {
                 <h3 className="font-semibold text-gray-900 mb-3">Account Details</h3>
                 <div className="space-y-3">
                   <div>
+                    <p className="text-sm font-medium text-gray-700">Username</p>
+                    <p className="text-gray-600">@{profile.username}</p>
+                  </div>
+                  
+                  <div>
                     <p className="text-sm font-medium text-gray-700">Role</p>
                     <p className="text-gray-600 capitalize">
                       {profile.role.replace('_', ' ')}
