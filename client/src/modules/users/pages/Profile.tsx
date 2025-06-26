@@ -192,9 +192,9 @@ export default function Profile() {
               </div>
             </div>
 
-            {profile.notes && typeof profile.notes === 'object' && profile.notes.exists && (
+            {profile.notes && profile.notes.exists && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Notes</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">Application Notes</h3>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600">
@@ -211,15 +211,6 @@ export default function Profile() {
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
-            )}
-
-            {profile.notes && typeof profile.notes === 'string' && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Notes</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">{profile.notes}</p>
                 </div>
               </div>
             )}
