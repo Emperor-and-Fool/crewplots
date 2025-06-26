@@ -1161,19 +1161,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/week-schedules", async (req, res) => {
+    console.log("🔄 WEEK SCHEDULE CREATE - Start");
+    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("Request body:", req.body);
+    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    
     if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("❌ WEEK SCHEDULE CREATE - Permission denied");
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
     try {
+      console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
       const validatedData = insertWeekScheduleSchema.parse({
         ...req.body,
         createdBy: req.user.id
       });
+      console.log("✅ WEEK SCHEDULE CREATE - Data validated:", validatedData);
+      
       const weekSchedule = await storage.createWeekSchedule(validatedData);
+      console.log("✅ WEEK SCHEDULE CREATE - Saved successfully:", weekSchedule);
       res.status(201).json(weekSchedule);
     } catch (error) {
-      console.error("Error creating week schedule:", error);
+      console.error("❌ WEEK SCHEDULE CREATE - Error:", error);
       res.status(400).json({ error: "Failed to create week schedule" });
     }
   });
