@@ -1,20 +1,27 @@
-# Scheduler Frontend - Shift Creation Module Implementation Plan
+# Scheduler Frontend - Week-Schedule-with-Shifts Creation Module Implementation Plan
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Created:** June 26, 2025  
+**Updated:** June 26, 2025  
 **Sub-Plan of:** SCHEDULER_IMPLEMENTATION_GUIDE.md  
 **Target Users:** Administrators, Owners, App Managers
 
 ## Executive Summary
 
-This sub-plan details the frontend implementation for shift creation functionality within the CrewPlots Scheduler. The module enables authorized users to create weekly shifts through two distinct workflows: project-based shifts (varying week-to-week) and ongoing operation shifts (recurring patterns). All shift configurations are saved as reusable templates, with a default bar-restaurant template provided.
+This sub-plan details the frontend implementation for week-schedule creation functionality within the CrewPlots Scheduler. The module enables authorized users to create week-schedule templates that contain multiple shifts. Week-schedules serve as reusable templates with unlimited creation flexibility as our competitive advantage.
 
 **Key Features:**
-- Dual shift creation modes (project-based vs ongoing operations)
-- Template-based shift management with save/reuse functionality
-- Default bar-restaurant industry template
-- Week-by-week shift planning interface
+- Week-schedule template creation containing multiple shifts
+- Calendar view card showing visual representation of created schedule
+- Actual date selection instead of generic day-of-week dropdowns
+- Template-based week-schedule management with save/reuse functionality
+- Real-time calendar preview of the week being scheduled
 - Integration with existing scheduler database schema
+
+**Core Concept:**
+- **Week-Schedule:** Reusable template containing multiple shifts for a specific week
+- **Shifts:** Individual work periods within a week-schedule with specific dates, times, and competency requirements
+- **Calendar Preview:** Visual representation showing actual dates and shifts being created
 
 ## Current Architecture Integration
 
@@ -26,27 +33,29 @@ This sub-plan details the frontend implementation for shift creation functionali
 - **Layout System:** `client/src/components/layout/AppLayout.tsx` for consistent page structure
 
 ### Database Schema Integration
-- **Primary Table:** `shifts` - Store individual shift records
-- **Template Storage:** `shift_templates` (new table needed) - Store reusable shift patterns
+- **Primary Table:** `week_schedules` (new table needed) - Store week-schedule templates
+- **Shifts Storage:** `shifts` - Store individual shifts within week-schedules
+- **Template Storage:** Week-schedules serve as reusable templates themselves
 - **Competency Integration:** `shift_requirements` - Link shifts to required competencies
 - **Location Filtering:** Existing `locations` table integration
+- **Date Handling:** Actual date storage (2025-01-15) instead of day-of-week enums
 
 ## Frontend Component Architecture
 
-### Page Structure: `/scheduling/create-shifts`
+### Page Structure: `/scheduling/create-week-schedule`
 
 ```
 client/src/modules/scheduler/
 ├── pages/
-│   ├── CreateShifts.tsx          # Main shift creation page
-│   └── ShiftTemplates.tsx        # Template management page
+│   ├── CreateWeekSchedule.tsx        # Main week-schedule creation page
+│   └── WeekScheduleTemplates.tsx     # Template management page
 ├── components/
-│   ├── ShiftCreationForm.tsx     # Core form component
-│   ├── WeeklyShiftGrid.tsx       # Week view with time slots
-│   ├── ShiftTemplateSelector.tsx # Template selection UI
-│   ├── ProjectModeToggle.tsx     # Project vs Operations mode
-│   ├── ShiftCard.tsx             # Individual shift display
-│   └── TemplatePreview.tsx       # Template preview component
+│   ├── WeekScheduleForm.tsx          # Core week-schedule form
+│   ├── ShiftCreationPanel.tsx        # Panel for adding shifts to week-schedule
+│   ├── CalendarPreviewCard.tsx       # Calendar view showing actual dates
+│   ├── WeekDatePicker.tsx            # Week range selector with actual dates
+│   ├── ShiftCard.tsx                 # Individual shift display within week
+│   └── WeekSchedulePreview.tsx       # Full week-schedule preview
 ├── hooks/
 │   ├── useShiftCreation.tsx      # Shift creation logic
 │   ├── useShiftTemplates.tsx     # Template management
@@ -113,20 +122,27 @@ const shiftCreationSchema = insertShiftSchema.extend({
 });
 ```
 
-### 3. Weekly Shift Grid - WeeklyShiftGrid.tsx
+### 3. Calendar Preview Card - CalendarPreviewCard.tsx
 
 **Visual Design:**
-- 7-day horizontal layout (Monday-Sunday)
-- Time slots from 6 AM to 2 AM (20-hour coverage)
-- Drag-and-drop shift placement
-- Color-coded shift categories
-- Conflict detection visualization
+- 7-day calendar layout showing actual dates (e.g., Jan 15-21, 2025)
+- Time slots displaying scheduled shifts with real times
+- Color-coded shifts by type/role
+- Visual representation of the week-schedule being created
 
 **Key Functions:**
-- Visual shift scheduling with time conflict prevention
-- Copy shifts between days functionality
-- Batch operations (copy week, clear week)
-- Real-time validation feedback
+- Real-time preview of week-schedule as it's built
+- Shows actual dates instead of generic "Monday, Tuesday"
+- Visual feedback for shift conflicts or gaps
+- Click-to-edit shifts directly from calendar view
+
+### 4. Week Date Picker - WeekDatePicker.tsx
+
+**Core Functionality:**
+- Select specific week range (start Monday, end Sunday)
+- Display actual dates: "Week of January 15-21, 2025"
+- Integration with calendar preview to show selected week
+- Validation to prevent past dates for new schedules
 
 ### 4. Template System - ShiftTemplateSelector.tsx
 
