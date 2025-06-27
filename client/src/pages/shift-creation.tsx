@@ -329,94 +329,20 @@ export default function ShiftCreationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Week Schedule Creation or Overview */}
-        {!currentWeekSchedule || (currentWeekSchedule && !isAddingShifts) ? (
+        {/* Week Schedule Creation */}
+        {!currentWeekSchedule ? (
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {currentWeekSchedule && !isAddingShifts ? 
-                    `Week Schedule: ${currentWeekSchedule.name}` : 
-                    'Create Week Schedule'
-                  }
-                </CardTitle>
+                <CardTitle>Create Week Schedule</CardTitle>
                 <CardDescription>
-                  {currentWeekSchedule && !isAddingShifts ? 
-                    'Manage your week schedule and add shifts as needed' :
-                    'Start by creating a week schedule template, then add individual shifts'
-                  }
+                  Start by creating a week schedule template, then add individual shifts
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {currentWeekSchedule && !isAddingShifts ? (
-                  /* Schedule Overview Mode */
-                  <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Created: {new Date(currentWeekSchedule.createdAt).toLocaleDateString()}
-                        </p>
-                        {currentWeekSchedule.description && (
-                          <p className="text-sm mt-1">{currentWeekSchedule.description}</p>
-                        )}
-                      </div>
-                      <Button 
-                        onClick={() => setIsAddingShifts(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Shifts
-                      </Button>
-                    </div>
-
-                    {/* Existing Shifts Display */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-3">Current Shifts</h4>
-                      {scheduleShifts && scheduleShifts.length > 0 ? (
-                        <div className="space-y-3">
-                          {scheduleShifts.map((shift: any) => (
-                            <div 
-                              key={shift.id} 
-                              className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                              onClick={() => handleEditShift(shift)}
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline">{shift.dayOfWeek}</Badge>
-                                  <span className="font-medium">{shift.position}</span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {shift.startTime} - {shift.endTime}
-                                  </span>
-                                </div>
-                                {shift.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
-                                )}
-                              </div>
-                              <Badge variant={shift.status === 'open' ? 'default' : 'secondary'}>
-                                {shift.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No shifts created yet. Click "Add Shifts" to get started.</p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setCurrentWeekSchedule(null)}
-                      >
-                        Back to Selection
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Schedule Creation/Selection Mode */
-                  <Form {...weekScheduleForm}>
-                    <form onSubmit={weekScheduleForm.handleSubmit(onWeekScheduleSubmit)} className="space-y-6">
-                      <FormField
+                <Form {...weekScheduleForm}>
+                  <form onSubmit={weekScheduleForm.handleSubmit(onWeekScheduleSubmit)} className="space-y-6">
+                    <FormField
                       control={weekScheduleForm.control}
                       name="name"
                       render={({ field }) => (
