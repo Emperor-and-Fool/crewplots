@@ -201,6 +201,7 @@ Changelog:
 - June 27, 2025. CREATED: Comprehensive implementation plans - Added SCHEDULER_IMPLEMENTATION_PLAN.md and SESSION_CONSOLIDATION_IMPLEMENTATION_PLAN.md to project root documenting proven individual fetch patterns as foundation with session consolidation as architectural enhancement for scalability
 - June 27, 2025. COMPLETED: Scheduler display system implementation - Fixed Schedule Preview to show actual shifts from database instead of local state, added WeeklyCalendarPreview component for visual weekly format, updated database schema with missing columns (max_slots, subscription_deadline, status), created working examples with Crew Manager Shift (Friday) and Crew Staff Shift (Saturday) demonstrating unlimited creation flexibility competitive advantage
 - June 27, 2025. ENHANCED: Shift creation form with position field based on crew templates - Added position field to shift creation schema and form with template-based placeholders (Manager, Staff, Supervisor, Floor Staff), updated existing demo shifts to Crew Manager Shift and Crew Staff Shift positions, maintaining proven template structure for intuitive crew scheduling
+- June 27, 2025. FIXED: Shift creation cache invalidation issue - Resolved shift saving problem where new shifts weren't appearing in UI despite successful database saves, applied proven cache invalidation pattern using queryClient.invalidateQueries matching week schedule dropdown fix, shift creation now follows complete individual fetch + cache invalidation methodology
 ```
 
 ## User Preferences

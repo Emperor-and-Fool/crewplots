@@ -180,7 +180,12 @@ export default function ShiftCreationPage() {
     onSuccess: (result) => {
       console.log('Shift created successfully:', result);
       toast({ description: 'Shift added successfully' });
-      setShifts(prev => [...prev, { ...shiftForm.getValues(), id: Date.now() }]);
+      
+      // Critical: Invalidate cache to refetch actual shifts from database
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'] 
+      });
+      
       shiftForm.reset();
       setSelectedCompetencies([]);
     },
