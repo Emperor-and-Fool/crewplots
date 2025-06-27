@@ -50,10 +50,10 @@ export default function WeekScheduleEditor({
   const form = useForm<WeekScheduleFormData>({
     resolver: zodResolver(weekScheduleSchema),
     defaultValues: {
-      name: weekSchedule?.name || '',
-      description: weekSchedule?.description || '',
-      locationId: weekSchedule?.locationId || (locations?.[0]?.id || 1),
-      isActive: weekSchedule?.isActive ?? true
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      locationId: initialData?.locationId || (locations?.[0]?.id || 1),
+      isActive: initialData?.isActive ?? true
     }
   });
 
