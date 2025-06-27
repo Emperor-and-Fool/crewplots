@@ -93,21 +93,36 @@ export default function ShiftCreationPage() {
     }
   });
 
-  // Data queries
+  // Individual fetch pattern (proven from CrewMemberProfile)
+  const fetchWithSession = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.status}`);
+    }
+    return response.json();
+  };
+
+  // Data queries using individual fetch pattern
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
-    enabled: permissions.canCreateShifts
+    queryFn: () => fetchWithSession('/api/locations'),
+    enabled: permissions.canCreateShifts,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
   });
 
   const { data: competencies = [] } = useQuery({
     queryKey: ['/api/competencies'],
-    enabled: permissions.canCreateShifts
+    queryFn: () => fetchWithSession('/api/competencies'),
+    enabled: permissions.canCreateShifts,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache for competencies
   });
 
-  // Week schedules query  
+  // Week schedules query - only after user is confirmed
   const { data: existingWeekSchedules = [], error: weekSchedulesError, isLoading: weekSchedulesLoading } = useQuery({
     queryKey: ['/api/week-schedules'],
-    enabled: permissions.canCreateShifts && !!user
+    queryFn: () => fetchWithSession('/api/week-schedules'),
+    enabled: permissions.canCreateShifts && !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache for schedules
   });
 
   // Debug logging for week schedules
