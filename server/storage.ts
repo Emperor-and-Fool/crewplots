@@ -2252,8 +2252,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWeekScheduleById(id: number): Promise<WeekSchedule | undefined> {
-    const results = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
-    return results[0];
+    console.log("🔍 STORAGE DEBUG: getWeekScheduleById called with ID:", id);
+    try {
+      const results = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
+      console.log("🔍 STORAGE DEBUG: Raw DB results:", JSON.stringify(results, null, 2));
+      console.log("🔍 STORAGE DEBUG: Results length:", results.length);
+      console.log("🔍 STORAGE DEBUG: First result:", results[0]);
+      return results[0];
+    } catch (error) {
+      console.error("🔍 STORAGE DEBUG: Database error:", error);
+      throw error;
+    }
   }
 
   async createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule> {
