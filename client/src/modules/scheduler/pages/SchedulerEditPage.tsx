@@ -82,19 +82,40 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Queries - same pattern as create page
+  // Queries - restore missing queryFn functions
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
+    queryFn: async () => {
+      const response = await fetch(`/api/week-schedules/${scheduleId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch schedule');
+      }
+      return response.json();
+    },
     enabled: !!scheduleId && permissions.canEditSchedules
   });
 
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
     enabled: permissions.canEditSchedules
   });
 
   const { data: shifts = [] } = useQuery({
     queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    queryFn: async () => {
+      const response = await fetch(`/api/shifts?scheduleId=${currentWeekSchedule?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    },
     enabled: !!currentWeekSchedule?.id
   });
 
