@@ -1188,6 +1188,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Session Consolidation Endpoint for Scheduler Edit Page
+  app.get("/api/scheduler/edit-data/:id", async (req, res) => {
+    console.log("🔄 SCHEDULER CONSOLIDATION - Edit data request");
+    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("Schedule ID:", req.params.id);
+    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("❌ SCHEDULER CONSOLIDATION - Permission denied");
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const scheduleId = parseInt(req.params.id);
+      console.log("✅ SCHEDULER CONSOLIDATION - Permission granted, loading consolidated data");
+      
+      const { schedulerConsolidationService } = await import('./services/scheduler-consolidation-service');
+      const consolidatedData = await schedulerConsolidationService.getSchedulerEditData(scheduleId, req.user.role);
+      
+      if (!consolidatedData || !consolidatedData.schedule) {
+        console.log("❌ SCHEDULER CONSOLIDATION - Schedule not found");
+        return res.status(404).json({ error: "Schedule not found" });
+      }
+      
+      console.log("✅ SCHEDULER CONSOLIDATION - Data loaded successfully");
+      res.json(consolidatedData);
+    } catch (error) {
+      console.error("❌ SCHEDULER CONSOLIDATION - Error:", error);
+      res.status(500).json({ error: "Failed to fetch scheduler edit data" });
+    }
+  });
+
   app.get("/api/week-schedules/:id", async (req, res) => {
     console.log("🔍 WEEK SCHEDULE FETCH - Single schedule request");
     console.log("User:", req.user?.username, "Role:", req.user?.role);

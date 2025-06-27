@@ -2,41 +2,9 @@ import { storage } from '../storage';
 import { hybridCacheService } from './hybrid-cache-service-v2';
 
 export interface SchedulerEditData {
-  schedule: {
-    id: number;
-    name: string;
-    description: string | null;
-    locationId: number;
-    createdBy: number;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-  } | null;
-  locations: Array<{
-    id: number;
-    name: string;
-    address: string | null;
-    city: string | null;
-    state: string | null;
-    zipCode: string | null;
-    country: string | null;
-    phoneNumber: string | null;
-    email: string | null;
-    isActive: boolean;
-  }>;
-  shifts: Array<{
-    id: number;
-    weekScheduleId: number;
-    position: string | null;
-    dayOfWeek: string;
-    startTime: string;
-    endTime: string;
-    maxSlots: number | null;
-    subscriptionDeadline: string | null;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  }>;
+  schedule: any | null;
+  locations: any[];
+  shifts: any[];
   permissions: {
     canEditSchedules: boolean;
     canCreateShifts: boolean;

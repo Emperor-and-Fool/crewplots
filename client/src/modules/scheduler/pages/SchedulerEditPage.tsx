@@ -85,30 +85,39 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Queries
-  const { data: locations = [] } = useQuery({
-    queryKey: ['/api/locations'],
-    enabled: permissions.canEditSchedules
-  });
-
-  const { data: existingSchedule } = useQuery({
-    queryKey: ['/api/week-schedules', scheduleId],
+  // Use session consolidation endpoint to prevent browser context session isolation
+  const { data: consolidatedData, isLoading, error: consolidatedError } = useQuery({
+    queryKey: ['scheduler-edit-data', scheduleId],
+    queryFn: async () => {
+      console.log('🔄 EDIT PAGE: Using session consolidation endpoint');
+      const response = await fetch(`/api/scheduler/edit-data/${scheduleId}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch scheduler edit data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ EDIT PAGE: Session consolidation data loaded', data);
+      return data;
+    },
     enabled: !!scheduleId && permissions.canEditSchedules
   });
 
-  const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/week-schedules', scheduleId, 'shifts'],
-    enabled: !!scheduleId && (hasBeenEdited || !!currentWeekSchedule)
-  });
+  // Extract data from consolidated response
+  const locations = consolidatedData?.locations || [];
+  const existingSchedule = consolidatedData?.schedule;
+  const shifts = consolidatedData?.shifts || [];
 
-  // Set up form with existing data
+  // Set up form with existing data from consolidated response
   useEffect(() => {
     if (existingSchedule && !currentWeekSchedule && !hasBeenEdited) {
       scheduleForm.reset({
-        name: existingSchedule.name || '',
-        description: existingSchedule.description || '',
-        locationId: existingSchedule.locationId || 0,
-        isActive: existingSchedule.isActive ?? true
+        name: existingSchedule?.name || '',
+        description: existingSchedule?.description || '',
+        locationId: existingSchedule?.locationId || 0,
+        isActive: existingSchedule?.isActive ?? true
       });
       setCurrentWeekSchedule(existingSchedule);
     }
@@ -121,6 +130,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     onSuccess: (updatedSchedule) => {
       setCurrentWeekSchedule(updatedSchedule);
       setHasBeenEdited(true);
+      // Invalidate consolidated cache
+      queryClient.invalidateQueries({ queryKey: ['scheduler-edit-data', scheduleId] });
       toast({
         title: "Schedule updated successfully",
         description: "You can now manage shifts for this schedule."
@@ -151,7 +162,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       return apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, { shifts: shiftsToCreate });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
+      // Invalidate consolidated cache to refresh all edit data
+      queryClient.invalidateQueries({ queryKey: ['scheduler-edit-data', scheduleId] });
       shiftForm.reset();
       toast({
         title: "Shifts created successfully",
