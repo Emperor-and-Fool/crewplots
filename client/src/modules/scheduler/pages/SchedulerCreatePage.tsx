@@ -300,88 +300,85 @@ export default function SchedulerCreatePage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Week Schedule Creation or Shift Creation */}
-        {!currentWeekSchedule ? (
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Week Schedule</CardTitle>
-                <CardDescription>
-                  Start by creating a week schedule template, then add individual shifts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...weekScheduleForm}>
-                  <form onSubmit={weekScheduleForm.handleSubmit(onWeekScheduleSubmit)} className="space-y-6">
-                    <FormField
-                      control={weekScheduleForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Schedule Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Weekend Service Schedule" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+      {/* Simple Schedule Creation Form */}
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Week Schedule</CardTitle>
+            <CardDescription>
+              Start by creating a week schedule template, then add individual shifts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...weekScheduleForm}>
+              <form onSubmit={weekScheduleForm.handleSubmit(onWeekScheduleSubmit)} className="space-y-6">
+                <FormField
+                  control={weekScheduleForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schedule Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Weekend Service Schedule" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <FormField
-                      control={weekScheduleForm.control}
-                      name="locationId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a location" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {(locations as Location[])?.map((location) => (
-                                <SelectItem key={location.id} value={location.id.toString()}>
-                                  {location.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={weekScheduleForm.control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a location" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(locations as Location[])?.map((location) => (
+                            <SelectItem key={location.id} value={location.id.toString()}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <FormField
-                      control={weekScheduleForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Brief description of this schedule template..."
-                              className="resize-none"
-                              rows={3}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={weekScheduleForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Brief description of this schedule template..."
+                          className="resize-none"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <Button type="submit" disabled={createWeekScheduleMutation.isPending}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {createWeekScheduleMutation.isPending ? 'Creating...' : 'Create Week Schedule'}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
+                <Button type="submit" disabled={createWeekScheduleMutation.isPending}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {createWeekScheduleMutation.isPending ? 'Creating...' : 'Create Week Schedule'}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
