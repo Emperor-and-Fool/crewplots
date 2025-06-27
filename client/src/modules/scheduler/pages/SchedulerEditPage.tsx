@@ -135,8 +135,23 @@ export default function SchedulerEditPage() {
     cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
 
+  // Populate form when existing schedule loads
+  useEffect(() => {
+    if (existingSchedule) {
+      console.log('🔍 FRONTEND: Populating form with existing schedule:', existingSchedule);
+      scheduleForm.reset({
+        name: existingSchedule.name || '',
+        description: existingSchedule.description || '',
+        locationId: existingSchedule.locationId || 0,
+        isActive: existingSchedule.isActive !== false
+      });
+      setCurrentWeekSchedule(existingSchedule);
+    }
+  }, [existingSchedule, scheduleForm]);
+
   // Transform page when schedule loads (same as create page)
-  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
+  // For edit page: only show tabbed interface after user has made changes
+  const showTabbedInterface = !!(hasBeenEdited);
 
   const isLoading = scheduleLoading && !existingSchedule;
 
