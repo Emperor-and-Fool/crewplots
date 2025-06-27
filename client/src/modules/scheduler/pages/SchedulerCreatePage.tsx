@@ -122,11 +122,11 @@ export default function SchedulerCreatePage() {
     mutationFn: (data: WeekScheduleCreationForm) => 
       apiRequest('POST', '/api/week-schedules', data),
     onSuccess: (data) => {
-      console.log('Week schedule created, setting current:', data);
+      console.log('Week schedule created, navigating to shifts:', data);
       toast({ description: 'Week schedule created successfully' });
-      setCurrentWeekSchedule(data);
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      weekScheduleForm.reset();
+      // Navigate to the shifts management page
+      navigate(`/scheduler/${data.id}/shifts`);
     },
     onError: (error) => {
       console.error('Week schedule creation failed:', error);
