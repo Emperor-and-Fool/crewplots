@@ -52,17 +52,13 @@ interface SchedulerEditPageProps {
 export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const permissions = useSchedulerPermissions();
-  
-  // Transforming page state management
+  const { canExecute } = useSchedulerPermissions();
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic-info');
+  const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
-  
 
-
-  // Form for week schedule editing
+  // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
     resolver: zodResolver(weekScheduleUpdateSchema),
     defaultValues: {
@@ -73,21 +69,20 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Form for shift creation
   const shiftForm = useForm<ShiftCreationForm>({
     resolver: zodResolver(shiftCreationSchema),
     defaultValues: {
       position: '',
+      daysOfWeek: [],
       startTime: '',
       endTime: '',
-      daysOfWeek: [],
       maxSlots: 1,
       subscriptionDeadline: '',
       competencyRequirements: []
     }
   });
 
-  // Use individual fetch pattern like CrewMemberProfile (proven working pattern)
+  // Fetch schedule data first (for initial form population)
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
@@ -98,37 +93,23 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       return response.json();
     },
     enabled: !!scheduleId,
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    staleTime: 2 * 60 * 1000,
   });
 
-  // Fetch locations with caching (sequential, not parallel)
-  const { data: locations = [], isLoading: locationsLoading } = useQuery<Location[]>({
+  // Fetch locations (always needed for form dropdown)
+  const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
-    queryFn: async () => {
-      const response = await fetch('/api/locations');
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-      return response.json();
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
+    enabled: canExecute
   });
 
-  // Fetch shifts for this schedule (only after schedule loads)
-  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/shifts', 'by-schedule', scheduleId],
-    queryFn: async () => {
-      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
-      }
-      return response.json();
-    },
-    enabled: !!scheduleId && !!existingSchedule,
-    staleTime: 1 * 60 * 1000, // 1 minute cache for shifts
-  });
+  // Determine if page should show tabbed interface (like create page)
+  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
 
-  const isLoading = scheduleLoading || locationsLoading || shiftsLoading;
+  // Fetch shifts ONLY when in tabbed interface (like create page pattern)
+  const { data: shifts = [] } = useQuery({
+    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    enabled: !!currentWeekSchedule?.id
+  });
 
   // Set up form with existing data from consolidated response
   useEffect(() => {
@@ -144,21 +125,21 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   }, [existingSchedule, currentWeekSchedule, hasBeenEdited, scheduleForm]);
 
+  // Mutations
   const updateWeekScheduleMutation = useMutation({
     mutationFn: async (data: WeekScheduleUpdateForm) => {
-      return apiRequest('PUT', `/api/week-schedules/${scheduleId}`, data);
+      return await apiRequest('PUT', `/api/week-schedules/${scheduleId}`, data);
     },
-    onSuccess: (updatedSchedule) => {
-      setCurrentWeekSchedule(updatedSchedule);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      setCurrentWeekSchedule(data);
       setHasBeenEdited(true);
-      // Invalidate consolidated cache
-      queryClient.invalidateQueries({ queryKey: ['scheduler-edit-data', scheduleId] });
       toast({
         title: "Schedule updated successfully",
-        description: "You can now manage shifts for this schedule."
+        description: "Your weekly schedule has been updated"
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to update schedule",
         description: error.message,
@@ -169,29 +150,35 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
 
   const createShiftMutation = useMutation({
     mutationFn: async (data: ShiftCreationForm) => {
-      const shiftsToCreate = data.daysOfWeek.map(day => ({
-        weekScheduleId: parseInt(scheduleId),
+      const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
+        scheduleId: parseInt(scheduleId),
         position: data.position,
-        dayOfWeek: day,
+        dayOfWeek,
         startTime: data.startTime,
         endTime: data.endTime,
         maxSlots: data.maxSlots,
-        subscriptionDeadline: data.subscriptionDeadline,
-        status: 'open'
+        subscriptionDeadline: data.subscriptionDeadline || null,
+        competencyRequirements: data.competencyRequirements || [],
+        status: 'active' as const
       }));
+
+      const promises = shiftsToCreate.map(shift => 
+        apiRequest('POST', '/api/shifts', shift)
+      );
       
-      return apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, { shifts: shiftsToCreate });
+      return await Promise.all(promises);
     },
-    onSuccess: () => {
-      // Invalidate consolidated cache to refresh all edit data
-      queryClient.invalidateQueries({ queryKey: ['scheduler-edit-data', scheduleId] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
       shiftForm.reset();
+      setEditingShift(null);
+      const shiftCount = data.length;
       toast({
-        title: "Shifts created successfully",
-        description: `Created ${shiftForm.getValues().daysOfWeek.length} shift(s)`
+        title: `${shiftCount} shift${shiftCount > 1 ? 's' : ''} created successfully`,
+        description: "Your shifts have been added to the schedule"
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to create shifts",
         description: error.message,
@@ -214,10 +201,10 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       position: shift.position || '',
       startTime: shift.startTime || '',
       endTime: shift.endTime || '',
-      daysOfWeek: [shift.dayOfWeek],
       maxSlots: shift.maxSlots || 1,
       subscriptionDeadline: shift.subscriptionDeadline || '',
-      competencyRequirements: []
+      daysOfWeek: [shift.dayOfWeek || ''],
+      competencyRequirements: shift.competencyRequirements || []
     });
     setActiveTab('basic-info');
     toast({
@@ -225,11 +212,6 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       description: `Editing ${shift.position} shift for ${shift.dayOfWeek}`
     });
   };
-
-  // Show tabbed interface if we have existing schedule or it has been edited
-  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
-
-
 
   const DAYS_OF_WEEK = [
     { value: 'monday', label: 'Monday' },
@@ -246,12 +228,12 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     'Staff',
     'Supervisor', 
     'Floor Staff',
-    'Crew Chief',
-    'Assistant Manager'
+    'Assistant Manager',
+    'Team Lead',
+    'Coordinator'
   ];
 
-  // Handle permission check like other working pages
-  if (!permissions.canEditSchedules && !isLoading) {
+  if (!canExecute) {
     return (
       <div className="container mx-auto p-6">
         <Card>
@@ -323,7 +305,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
             </CardHeader>
             <CardContent>
               <Form {...scheduleForm}>
-                <form onSubmit={scheduleForm.handleSubmit(handleScheduleSubmit)} className="space-y-4">
+                <form onSubmit={scheduleForm.handleSubmit(handleScheduleSubmit)} className="space-y-6">
                   <FormField
                     control={scheduleForm.control}
                     name="name"
@@ -331,36 +313,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                       <FormItem>
                         <FormLabel>Schedule Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Main Floor Week Schedule" {...field} />
+                          <Input placeholder="e.g., Week 1 Schedule" {...field} />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={scheduleForm.control}
-                    name="locationId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <Select
-                          value={field.value?.toString()}
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a location" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(locations as Location[]).map((location: Location) => (
-                              <SelectItem key={location.id} value={location.id.toString()}>
-                                {location.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -374,10 +328,36 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                         <FormLabel>Description (Optional)</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Brief description of this schedule template..."
+                            placeholder="Brief description of this schedule..."
+                            rows={3}
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={scheduleForm.control}
+                    name="locationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(locations as Location[]).map((location: Location) => (
+                              <SelectItem key={location.id} value={location.id.toString()}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -423,7 +403,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
               </p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
                 <TabsTrigger value="requirements">Requirements</TabsTrigger>
@@ -437,10 +417,13 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                       <Clock className="h-5 w-5" />
                       Shift Details
                     </CardTitle>
+                    <CardDescription>
+                      Configure the basic information for your shift
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Form {...shiftForm}>
-                      <form onSubmit={shiftForm.handleSubmit(handleShiftSubmit)} className="space-y-4">
+                      <form onSubmit={shiftForm.handleSubmit(handleShiftSubmit)} className="space-y-6">
                         <FormField
                           control={shiftForm.control}
                           name="position"
@@ -450,7 +433,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select a position" />
+                                    <SelectValue placeholder="Select or type a position" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -466,7 +449,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                           )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={shiftForm.control}
                             name="startTime"
@@ -498,45 +481,18 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
 
                         <FormField
                           control={shiftForm.control}
-                          name="daysOfWeek"
-                          render={() => (
+                          name="maxSlots"
+                          render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Days of Week</FormLabel>
-                              <div className="grid grid-cols-4 gap-2">
-                                {DAYS_OF_WEEK.map((day) => (
-                                  <FormField
-                                    key={day.value}
-                                    control={shiftForm.control}
-                                    name="daysOfWeek"
-                                    render={({ field }) => {
-                                      return (
-                                        <FormItem
-                                          key={day.value}
-                                          className="flex flex-row items-start space-x-3 space-y-0"
-                                        >
-                                          <FormControl>
-                                            <Checkbox
-                                              checked={field.value?.includes(day.value)}
-                                              onCheckedChange={(checked) => {
-                                                return checked
-                                                  ? field.onChange([...field.value, day.value])
-                                                  : field.onChange(
-                                                      field.value?.filter(
-                                                        (value) => value !== day.value
-                                                      )
-                                                    )
-                                              }}
-                                            />
-                                          </FormControl>
-                                          <FormLabel className="text-sm font-normal">
-                                            {day.label}
-                                          </FormLabel>
-                                        </FormItem>
-                                      )
-                                    }}
-                                  />
-                                ))}
-                              </div>
+                              <FormLabel>Maximum Slots</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="1" 
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -544,22 +500,50 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
 
                         <FormField
                           control={shiftForm.control}
-                          name="maxSlots"
+                          name="subscriptionDeadline"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Max Slots</FormLabel>
+                              <FormLabel>Subscription Deadline (Optional)</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  {...field} 
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                                />
+                                <Input type="datetime-local" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+
+                        <div className="space-y-3">
+                          <FormLabel>Days of Week</FormLabel>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {DAYS_OF_WEEK.map(({ value, label }) => (
+                              <FormField
+                                key={value}
+                                control={shiftForm.control}
+                                name="daysOfWeek"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(value)}
+                                        onCheckedChange={(checked) => {
+                                          const currentValue = field.value || [];
+                                          if (checked) {
+                                            field.onChange([...currentValue, value]);
+                                          } else {
+                                            field.onChange(currentValue.filter((item) => item !== value));
+                                          }
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">
+                                      {label}
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </div>
 
                         <Button 
                           type="submit" 
@@ -589,15 +573,13 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                       Competency Requirements
                     </CardTitle>
                     <CardDescription>
-                      Set required skills and competencies for this shift
+                      Define the skills and competencies needed for this shift
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Competency requirements will be available soon.</p>
-                      <p className="text-sm">For now, focus on creating your basic shift structure.</p>
-                    </div>
+                    <p className="text-muted-foreground">
+                      Competency requirements will be configured here. This feature is coming soon.
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -607,16 +589,15 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Schedule Preview
+                      Weekly Schedule
                     </CardTitle>
                     <CardDescription>
-                      View and manage your weekly schedule
+                      View and manage your weekly shift schedule
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <WeeklyCalendarPreview
-                      shifts={shifts as any[]}
-                      weekScheduleName={currentWeekSchedule?.name || ''}
+                    <WeeklyCalendarPreview 
+                      shifts={shifts}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
@@ -626,43 +607,47 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
           </div>
 
           <div className="lg:col-span-1">
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Schedule Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div>
-                    <p className="text-sm font-medium">{currentWeekSchedule?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(locations as Location[]).find((l: Location) => l.id === currentWeekSchedule?.locationId)?.name}
-                    </p>
-                  </div>
-                  {currentWeekSchedule?.description && (
-                    <p className="text-xs text-muted-foreground">
-                      {currentWeekSchedule.description}
-                    </p>
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Schedule Preview
+                </CardTitle>
+                <CardDescription>
+                  {(locations as Location[]).find((l: Location) => l.id === currentWeekSchedule?.locationId)?.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Current Shifts</h4>
+                  {shifts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No shifts created yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {shifts.map((shift: any, index: number) => (
+                        <div 
+                          key={index} 
+                          className="p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors"
+                          onClick={() => handleShiftClick(shift)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">{shift.position}</p>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {shift.dayOfWeek}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {shift.startTime} - {shift.endTime}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Schedule Preview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Total Shifts:</span>
-                      <Badge variant="secondary">{(shifts as any[]).length}</Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Click any shift in the Schedule tab to edit it
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
