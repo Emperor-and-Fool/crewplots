@@ -327,7 +327,7 @@ export default function SchedulerEditPage() {
               Back to Scheduler
             </Button>
             <h1 className="text-3xl font-bold">
-              Edit Week Schedule: {currentWeekSchedule?.name || 'Loading...'}
+              Edit Week Schedule: {existingSchedule?.name || 'Loading...'}
             </h1>
             <p className="text-muted-foreground mt-2">
               Update the details for your weekly schedule template
