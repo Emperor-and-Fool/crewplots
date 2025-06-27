@@ -91,12 +91,14 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const { data: consolidatedData, isLoading, error: consolidatedError } = useQuery({
     queryKey: ['scheduler-edit-data', scheduleId],
     queryFn: async () => {
-      console.log('🔄 EDIT PAGE: Using session consolidation endpoint');
+      console.log('🔄 EDIT PAGE: Using session consolidation endpoint for schedule', scheduleId);
+      console.log('🔄 EDIT PAGE: User permissions:', permissions);
       const response = await fetch(`/api/scheduler/edit-data/${scheduleId}`, {
         credentials: 'include'
       });
       
       if (!response.ok) {
+        console.error('❌ EDIT PAGE: Session consolidation failed:', response.status, response.statusText);
         throw new Error(`Failed to fetch scheduler edit data: ${response.status}`);
       }
       
@@ -104,7 +106,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       console.log('✅ EDIT PAGE: Session consolidation data loaded', data);
       return data;
     },
-    enabled: !!scheduleId && permissions.canEditSchedules
+    enabled: !!scheduleId && !!user,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Extract data from consolidated response
@@ -231,7 +235,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     'Assistant Manager'
   ];
 
-  if (!permissions.canEditSchedules) {
+  // Handle permission errors from the consolidated response
+  if (consolidatedError?.message?.includes('403') || consolidatedError?.message?.includes('Insufficient permissions')) {
     return (
       <div className="container mx-auto p-6">
         <Card>
