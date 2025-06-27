@@ -2282,6 +2282,16 @@ export class DatabaseStorage implements IStorage {
   async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
     return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
   }
+
+  // Session consolidation support methods
+  async getAllCompetencies(): Promise<Competency[]> {
+    try {
+      return await db.select().from(competencies);
+    } catch (error) {
+      console.error('Error fetching all competencies:', error);
+      return [];
+    }
+  }
 }
 
 // Use DatabaseStorage implementation by default
