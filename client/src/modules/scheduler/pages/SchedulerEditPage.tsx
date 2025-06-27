@@ -269,7 +269,6 @@ export default function SchedulerEditPage() {
       daysOfWeek: [shift.dayOfWeek || ''],
       competencyRequirements: shift.competencyRequirements || []
     });
-    setActiveTab('basic-info');
     toast({
       title: "Shift selected for editing",
       description: `Editing ${shift.position} shift for ${shift.dayOfWeek}`
