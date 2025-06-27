@@ -120,28 +120,30 @@ export default function SchedulerEditPage() {
     cacheTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
-  const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/week-schedules', scheduleId, 'shifts'],
+  // Use consolidated data endpoint following the established pattern
+  const { data: consolidatedData } = useQuery({
+    queryKey: ['/api/scheduler/creation-data', scheduleId],
     queryFn: async () => {
-      console.log('🔍 SHIFTS QUERY: Starting fetch for week schedule:', scheduleId);
-      console.log('🔍 SHIFTS QUERY: existingSchedule loaded:', !!existingSchedule);
+      console.log('🔍 CONSOLIDATED QUERY: Starting fetch for scheduler data with schedule:', scheduleId);
       
-      const response = await fetch(`/api/week-schedules/${scheduleId}/shifts`, {
+      const response = await fetch('/api/scheduler/creation-data', {
         credentials: 'include'
       });
-      console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
+      console.log('🔍 CONSOLIDATED QUERY: Response status:', response.status, response.statusText);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch shifts for week schedule ${scheduleId}`);
+        throw new Error('Failed to fetch consolidated scheduler data');
       }
       const data = await response.json();
-      console.log('🔍 SHIFTS QUERY: Week schedule shifts received:', data);
+      console.log('🔍 CONSOLIDATED QUERY: Consolidated data received:', data);
       return data;
     },
     enabled: !!(scheduleId && permissions.canEditSchedules && !scheduleLoading),
-    staleTime: 2 * 60 * 1000, // 2 minutes cache for shifts data
-    cacheTime: 15 * 60 * 1000, // 15 minutes in memory
+    staleTime: 2 * 60 * 1000, // 2 minutes cache for consolidated data
   });
+
+  // Extract shifts for the specific week schedule from consolidated data
+  const shifts = consolidatedData?.weekSchedules?.find((ws: any) => ws.id === parseInt(scheduleId || '0'))?.shifts || [];
 
   // Populate form when existing schedule loads
   useEffect(() => {

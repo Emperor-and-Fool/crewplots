@@ -52,8 +52,19 @@ export class SchedulerConsolidationService extends BaseConsolidationService<Shif
         throw new Error(`User ${userId} not found`);
       }
 
+      // Enhance week schedules with their shifts
+      const weekSchedulesWithShifts = await Promise.all(
+        (weekSchedules || []).map(async (schedule: any) => {
+          const shifts = await storage.getShiftsByWeekSchedule(schedule.id);
+          return {
+            ...schedule,
+            shifts: shifts || []
+          };
+        })
+      );
+
       const shiftCreationData: ShiftCreationData = {
-        weekSchedules: weekSchedules || [],
+        weekSchedules: weekSchedulesWithShifts,
         locations: locations || [],
         competencies: competencies || [],
         userPermissions: user.permissions || [],
@@ -64,7 +75,7 @@ export class SchedulerConsolidationService extends BaseConsolidationService<Shif
         }
       };
 
-      console.log(`[SchedulerConsolidation] Successfully compiled data: ${weekSchedules?.length} schedules, ${locations?.length} locations, ${competencies?.length} competencies`);
+      console.log(`[SchedulerConsolidation] Successfully compiled data: ${weekSchedulesWithShifts?.length} schedules with shifts, ${locations?.length} locations, ${competencies?.length} competencies`);
       return shiftCreationData;
     } catch (error) {
       console.error(`[SchedulerConsolidation] Error fetching data for user ${userId}:`, error);
