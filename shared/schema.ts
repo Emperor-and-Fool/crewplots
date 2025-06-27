@@ -240,6 +240,7 @@ export const weekSchedules = pgTable("week_schedules", {
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id),
+  shiftGroupId: text("shift_group_id"), // Groups shifts created together for multi-day template editing
   userId: integer("user_id").references(() => users.id),
   date: timestamp("date"),
   dayOfWeek: text("day_of_week", { 
@@ -255,6 +256,7 @@ export const shifts = pgTable("shifts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
+  shiftGroupIdx: index("idx_shifts_group").on(table.shiftGroupId),
   dayOfWeekIdx: index("idx_shifts_day_of_week").on(table.dayOfWeek),
   statusIdx: index("idx_shifts_status").on(table.status),
   subscriptionDeadlineIdx: index("idx_shifts_subscription_deadline").on(table.subscriptionDeadline),
