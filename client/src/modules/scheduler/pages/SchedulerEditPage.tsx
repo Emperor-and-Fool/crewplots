@@ -145,16 +145,37 @@ export default function SchedulerEditPage() {
   // Populate form when existing schedule loads
   useEffect(() => {
     if (existingSchedule) {
-      console.log('🔍 FRONTEND: Populating form with existing schedule:', existingSchedule);
       scheduleForm.reset({
-        name: existingSchedule?.name || '',
-        description: existingSchedule?.description || '',
-        locationId: existingSchedule?.locationId || 0,
-        isActive: existingSchedule?.isActive !== false
+        name: existingSchedule.name || '',
+        description: existingSchedule.description || '',
+        locationId: existingSchedule.locationId || 0,
+        isActive: existingSchedule.isActive !== false
       });
-      // Don't set currentWeekSchedule here - let it only be set when user submits
     }
   }, [existingSchedule, scheduleForm]);
+
+  // Create a basic info form that syncs with the existing schedule data for the tabbed interface
+  const basicInfoForm = useForm<WeekScheduleUpdateForm>({
+    resolver: zodResolver(weekScheduleUpdateSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      locationId: 0,
+      isActive: true
+    }
+  });
+
+  // Keep basicInfoForm in sync with existing schedule data
+  useEffect(() => {
+    if (existingSchedule) {
+      basicInfoForm.reset({
+        name: existingSchedule.name || '',
+        description: existingSchedule.description || '',
+        locationId: existingSchedule.locationId || 0,
+        isActive: existingSchedule.isActive !== false
+      });
+    }
+  }, [existingSchedule, basicInfoForm]);
 
   const isLoading = scheduleLoading && !existingSchedule;
   
@@ -173,11 +194,12 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      // Set currentWeekSchedule to the updated data for the tabbed interface
       setCurrentWeekSchedule(data);
       setHasBeenEdited(true);
       toast({
         title: "Schedule updated successfully",
-        description: "Your weekly schedule has been updated"
+        description: "You can now manage shifts for this schedule"
       });
     },
     onError: (error: any) => {
@@ -455,11 +477,153 @@ export default function SchedulerEditPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      Shift Details
+                      <Calendar className="h-5 w-5" />
+                      Schedule Information
                     </CardTitle>
                     <CardDescription>
-                      Configure the basic information for your shift
+                      Edit the basic details of your weekly schedule
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...basicInfoForm}>
+                      <form onSubmit={basicInfoForm.handleSubmit(handleScheduleSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={basicInfoForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Schedule Name</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="e.g., Weekend Service Schedule"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={basicInfoForm.control}
+                            name="locationId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <Select 
+                                  onValueChange={(value) => field.onChange(parseInt(value))}
+                                  value={field.value?.toString()}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a location" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {(locations as Location[]).map((location: Location) => (
+                                      <SelectItem key={location.id} value={location.id.toString()}>
+                                        {location.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={basicInfoForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description (Optional)</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Brief description of this schedule template..."
+                                  className="resize-none"
+                                  rows={3}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={basicInfoForm.control}
+                          name="isActive"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Active Schedule
+                                </FormLabel>
+                                <FormDescription>
+                                  Make this schedule available for shift creation
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={updateWeekScheduleMutation.isPending}
+                        >
+                          {updateWeekScheduleMutation.isPending ? (
+                            "Updating..."
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Update Schedule
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="requirements" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Competency Requirements
+                    </CardTitle>
+                    <CardDescription>
+                      Define the skills and competencies needed for this shift
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Competency requirements will be configured here. This feature is coming soon.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="schedule" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Create New Shifts
+                    </CardTitle>
+                    <CardDescription>
+                      Add new shifts to this weekly schedule
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
