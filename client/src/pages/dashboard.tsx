@@ -15,7 +15,7 @@ import LocationHeader from "@/modules/locations/components/LocationHeader";
 
 // Dashboard module components (sophisticated restoration)
 import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions } from "@/modules/dashboard";
-import { WeeklySchedule } from "@/components/dashboard/weekly-schedule";
+import { WeeklyCalendarPreview } from "@/components/scheduler/weekly-calendar-preview";
 import { ApplicantsSummary } from "@/modules/users/components/workflows/ApplicantsSummary";
 
 
@@ -28,18 +28,38 @@ export default function Dashboard() {
   // Admin actions from dashboard module
   const { clearAllSessions, isClearing } = useAdminActions();
 
-  // Preserve existing data queries
-  const { data: shiftsStats } = useQuery({
-    queryKey: ['/api/shifts'],
+  // Fetch week schedules
+  const { data: weekSchedules } = useQuery({
+    queryKey: ['/api/week-schedules'],
     queryFn: async () => {
-      const response = await fetch('/api/shifts', {
+      const response = await fetch('/api/week-schedules', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch week schedules');
+      }
+      return response.json();
+    }
+  });
+
+  // Get active week schedule for current location
+  const activeWeekSchedule = weekSchedules?.find((ws: any) => 
+    (!selectedLocationId || ws.locationId === selectedLocationId) && ws.isActive
+  );
+
+  // Fetch shifts for the active week schedule
+  const { data: shifts } = useQuery({
+    queryKey: ['/api/week-schedules', activeWeekSchedule?.id, 'shifts'],
+    queryFn: async () => {
+      const response = await fetch(`/api/week-schedules/${activeWeekSchedule.id}/shifts`, {
         credentials: 'include'
       });
       if (!response.ok) {
         throw new Error('Failed to fetch shifts');
       }
       return response.json();
-    }
+    },
+    enabled: !!activeWeekSchedule?.id,
   });
 
   const { data: profileData } = useQuery({
@@ -93,12 +113,15 @@ export default function Dashboard() {
   }
 
   const totalStaff = staffUsers.length;
-  const shiftsThisWeek = shiftsStats?.length || 0;
-  const hoursScheduled = shiftsStats?.reduce((total: number, shift: any) => {
-    const startHour = parseInt(shift.startTime.split(":")[0]);
-    const endHour = parseInt(shift.endTime.split(":")[0]);
-    const hours = endHour - startHour;
-    return total + hours;
+  const shiftsThisWeek = shifts?.length || 0;
+  const hoursScheduled = shifts?.reduce((total: number, shift: any) => {
+    if (shift.startTime && shift.endTime) {
+      const start = new Date(`1970-01-01T${shift.startTime}`);
+      const end = new Date(`1970-01-01T${shift.endTime}`);
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return total + hours;
+    }
+    return total;
   }, 0) || 0;
 
   // Calculate applicant stats from profile data (cherry-pick applicants only)
@@ -217,7 +240,29 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
               {/* Weekly schedule - main content area */}
               <div className="lg:col-span-8">
-                <WeeklySchedule locationId={selectedLocationId || undefined} />
+                {activeWeekSchedule && shifts ? (
+                  <WeeklyCalendarPreview 
+                    shifts={shifts} 
+                    weekScheduleName={activeWeekSchedule.name}
+                  />
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Weekly Schedule
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">
+                        No active schedule found for this location. 
+                        <Button variant="link" className="p-0 ml-1" onClick={() => navigate("/shift-creation")}>
+                          Create a schedule
+                        </Button>
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               
               {/* Right sidebar - summary components */}

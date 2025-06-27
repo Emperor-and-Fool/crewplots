@@ -45,41 +45,30 @@ const days = [
 export function WeeklySchedule({ locationId, weekStartDate = new Date() }: WeeklyScheduleProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
 
-  // Fetch the weekly schedule
-  const { data: weeklySchedule } = useQuery({
-    queryKey: ['/api/weekly-schedules/location', locationId],
+  // Fetch week schedules for this location
+  const { data: weekSchedules } = useQuery({
+    queryKey: ['/api/week-schedules'],
     queryFn: async () => {
-      const response = await fetch(`/api/weekly-schedules/location/${locationId}`, {
+      const response = await fetch('/api/week-schedules', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch weekly schedule');
+        throw new Error('Failed to fetch week schedules');
       }
       return response.json();
-    },
-    enabled: !!locationId,
+    }
   });
 
-  // Fetch schedule templates
-  const { data: templates } = useQuery({
-    queryKey: ['/api/schedule-templates/location', locationId],
-    queryFn: async () => {
-      const response = await fetch(`/api/schedule-templates/location/${locationId}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch schedule templates');
-      }
-      return response.json();
-    },
-    enabled: !!locationId,
-  });
+  // Get active week schedule for this location
+  const activeWeekSchedule = weekSchedules?.find((ws: any) => 
+    ws.locationId === locationId && ws.isActive
+  );
 
-  // Fetch shifts for the weekly schedule
+  // Fetch shifts for the active week schedule
   const { data: shifts } = useQuery<Shift[]>({
-    queryKey: ['/api/shifts/schedule', weeklySchedule?.id],
+    queryKey: ['/api/week-schedules', activeWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
-      const response = await fetch(`/api/shifts/schedule/${weeklySchedule?.id}`, {
+      const response = await fetch(`/api/week-schedules/${activeWeekSchedule.id}/shifts`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -87,7 +76,7 @@ export function WeeklySchedule({ locationId, weekStartDate = new Date() }: Weekl
       }
       return response.json();
     },
-    enabled: !!weeklySchedule?.id,
+    enabled: !!activeWeekSchedule?.id,
   });
 
   // Get shifts for a specific day and time slot
