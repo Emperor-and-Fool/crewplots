@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRouter } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth";
 import { useLocationContext } from "@/contexts/location-context";
