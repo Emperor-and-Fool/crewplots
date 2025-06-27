@@ -52,6 +52,13 @@ export default function SchedulerEditPage() {
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
+  
+  // Debug wrapper for setCurrentWeekSchedule to trace calls
+  const trackedSetCurrentWeekSchedule = (value: any) => {
+    console.log('🔍 SETTING currentWeekSchedule:', value);
+    console.trace('Call stack:');
+    setCurrentWeekSchedule(value);
+  };
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
@@ -123,13 +130,21 @@ export default function SchedulerEditPage() {
     queryKey: ['/api/week-schedules', (currentWeekSchedule?.id || existingSchedule?.id), 'shifts'],
     queryFn: async () => {
       const scheduleId = currentWeekSchedule?.id || existingSchedule?.id;
+      console.log('🔍 SHIFTS QUERY: Starting fetch with scheduleId:', scheduleId);
+      console.log('🔍 SHIFTS QUERY: currentWeekSchedule:', currentWeekSchedule);
+      console.log('🔍 SHIFTS QUERY: existingSchedule:', existingSchedule);
+      
       const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`, {
         credentials: 'include'
       });
+      console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         throw new Error('Failed to fetch shifts');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('🔍 SHIFTS QUERY: Data received:', data);
+      return data;
     },
     enabled: !!(currentWeekSchedule?.id || existingSchedule?.id),
     staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
@@ -164,9 +179,15 @@ export default function SchedulerEditPage() {
     'permissions.canEditSchedules': permissions.canEditSchedules,
     scheduleLoading,
     existingSchedule,
+    'existingSchedule?.id': existingSchedule?.id,
     scheduleError,
     isLoading,
-    showTabbedInterface
+    showTabbedInterface,
+    currentWeekSchedule,
+    'currentWeekSchedule type': typeof currentWeekSchedule,
+    'currentWeekSchedule keys': currentWeekSchedule ? Object.keys(currentWeekSchedule) : 'null',
+    'shifts query enabled': !!(currentWeekSchedule?.id || existingSchedule?.id),
+    'shifts length': shifts.length
   });
 
 
@@ -178,7 +199,7 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      setCurrentWeekSchedule(data);
+      trackedSetCurrentWeekSchedule(data);
       setHasBeenEdited(true);
       toast({
         title: "Schedule updated successfully",
