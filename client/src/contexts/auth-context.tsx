@@ -39,6 +39,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
+  // Manual auth refresh with enhanced debugging
+  const refreshAuth = async (): Promise<boolean> => {
+    console.log("🔄 AUTH REFRESH: Manual refresh triggered");
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`/api/auth/me?refresh=${Date.now()}`, {
+        credentials: "include",
+        cache: "no-cache"
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🔄 AUTH REFRESH: Response:", data);
+        
+        if (data?.authenticated && data?.user) {
+          console.log("🔄 AUTH SUCCESS: User authenticated:", data.user.username);
+          setUser(data.user);
+          setIsLoading(false);
+          return true;
+        }
+      }
+      
+      console.log("🔄 AUTH REFRESH: Authentication failed");
+      setUser(null);
+      setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.log("🔄 AUTH REFRESH: Error:", error);
+      setUser(null);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   // Single auth check on mount with timeout protection
   useEffect(() => {
     const checkAuth = async () => {
@@ -53,8 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }, 10000);
       
       try {
-        const response = await fetch('/api/auth/me', {
-          credentials: "include"
+        // Force session refresh by adding cache-busting parameter
+        const response = await fetch(`/api/auth/me?t=${Date.now()}`, {
+          credentials: "include",
+          cache: "no-cache"
         });
         
         clearTimeout(timeoutId);
@@ -303,41 +340,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Optimized refreshAuth function using React Query for deduplication
-  const refreshAuth = async (): Promise<boolean> => {
-    console.log("Refreshing authentication state");
-    setIsLoading(true);
-    
-    try {
-      // Use standard fetch without cache-busting to allow proper caching
-      const response = await fetch('/api/auth/me', {
-        credentials: "include"
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data && data.authenticated && data.user) {
-          setUser(data.user);
-          setIsLoading(false);
-          return true;
-        } else {
-          setUser(null);
-          setIsLoading(false);
-          return false;
-        }
-      } else {
-        setUser(null);
-        setIsLoading(false);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error refreshing authentication:", error);
-      setUser(null);
-      setIsLoading(false);
-      return false;
-    }
-  };
+
 
   return (
     <AuthContext.Provider
