@@ -1363,7 +1363,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session Consolidation API - Critical fix for shift-creation authentication
   app.get("/api/scheduler/creation-data", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || !req.user) {
+      console.log(`[SchedulerConsolidation] DEBUG - req.user:`, req.user);
+      console.log(`[SchedulerConsolidation] DEBUG - req.isAuthenticated():`, req.isAuthenticated?.());
+      console.log(`[SchedulerConsolidation] DEBUG - session:`, req.session);
+      
+      if (!req.user) {
+        console.log(`[SchedulerConsolidation] Authentication failed - no req.user`);
         return res.status(401).json({ error: "Authentication required" });
       }
 
