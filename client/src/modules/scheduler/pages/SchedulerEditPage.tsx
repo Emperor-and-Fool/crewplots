@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'wouter';
+import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Clock, Users, MapPin, Plus, Save, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, Plus, Save, ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -282,12 +282,14 @@ export default function SchedulerEditPage() {
     }
   });
 
+  const [, setLocation] = useLocation();
+  
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
       return apiRequest('DELETE', `/api/week-schedules/${scheduleId}`);
     },
     onSuccess: () => {
-      navigate('/scheduler');
+      setLocation('/scheduler');
       toast({
         title: "Schedule deleted successfully",
         description: "The schedule and all its shifts have been removed"

@@ -1365,6 +1365,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete week schedule endpoint
+  app.delete("/api/week-schedules/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteWeekSchedule(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting week schedule:", error);
+      res.status(500).json({ error: "Failed to delete week schedule" });
+    }
+  });
+
   app.put("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
     if (!req.user || !hasPermission(req.user.role, "schedule")) {
       return res.status(403).json({ error: "Insufficient permissions" });
