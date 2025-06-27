@@ -140,20 +140,20 @@ export default function SchedulerEditPage() {
     if (existingSchedule) {
       console.log('🔍 FRONTEND: Populating form with existing schedule:', existingSchedule);
       scheduleForm.reset({
-        name: existingSchedule.name || '',
-        description: existingSchedule.description || '',
-        locationId: existingSchedule.locationId || 0,
-        isActive: existingSchedule.isActive !== false
+        name: existingSchedule?.name || '',
+        description: existingSchedule?.description || '',
+        locationId: existingSchedule?.locationId || 0,
+        isActive: existingSchedule?.isActive !== false
       });
-      setCurrentWeekSchedule(existingSchedule);
+      // Don't set currentWeekSchedule here - let it only be set when user submits
     }
   }, [existingSchedule, scheduleForm]);
 
-  // Transform page when schedule loads (same as create page)
-  // For edit page: only show tabbed interface after user has made changes
-  const showTabbedInterface = !!(hasBeenEdited);
-
   const isLoading = scheduleLoading && !existingSchedule;
+  
+  // Transform page when schedule loads (same as create page)
+  // For edit page: only show tabbed interface after user has made changes or submitted
+  const showTabbedInterface = !!(currentWeekSchedule || hasBeenEdited);
 
   // Debug logging
   console.log('🔍 FRONTEND DEBUG:', {
@@ -168,19 +168,7 @@ export default function SchedulerEditPage() {
     showTabbedInterface
   });
 
-  // Set up form with existing data from consolidated response
-  useEffect(() => {
-    if (existingSchedule && !currentWeekSchedule && !hasBeenEdited) {
-      const schedule = existingSchedule as any; // Type assertion for now
-      scheduleForm.reset({
-        name: schedule?.name || '',
-        description: schedule?.description || '',
-        locationId: schedule?.locationId || 0,
-        isActive: schedule?.isActive ?? true
-      });
-      setCurrentWeekSchedule(schedule);
-    }
-  }, [existingSchedule, currentWeekSchedule, hasBeenEdited, scheduleForm]);
+
 
   // Mutations
   const updateWeekScheduleMutation = useMutation({
