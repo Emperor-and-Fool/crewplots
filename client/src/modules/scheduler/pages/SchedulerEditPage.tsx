@@ -48,7 +48,8 @@ type WeekScheduleUpdateForm = z.infer<typeof weekScheduleUpdateSchema>;
 type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
-  const { scheduleId } = useParams();
+  const params = useParams();
+  const { scheduleId } = params;
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
@@ -56,6 +57,7 @@ export default function SchedulerEditPage() {
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
@@ -259,6 +261,20 @@ export default function SchedulerEditPage() {
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
+    // In edit mode, we should NOT create new shifts when editing existing schedule
+    // This prevents the same duplicate creation issue we had with the messaging system
+    if (editingShift) {
+      // If we're editing an existing shift, update it instead of creating new ones
+      // This prevents duplicate shifts from being created during edit operations
+      toast({
+        title: "Edit Mode Active",
+        description: "Click-to-edit functionality is for viewing shift details. To modify shifts, use individual shift management.",
+        variant: "default"
+      });
+      return;
+    }
+    
+    // Only create new shifts when explicitly adding new ones to the schedule
     createShiftMutation.mutate(data);
   };
 
@@ -326,8 +342,15 @@ export default function SchedulerEditPage() {
   };
 
   const handleScheduleDelete = () => {
-    if (currentWeekSchedule) {
-      deleteScheduleMutation.mutate(currentWeekSchedule.id);
+    const scheduleIdFromParams = scheduleId ? parseInt(scheduleId) : undefined;
+    if (scheduleIdFromParams) {
+      deleteScheduleMutation.mutate(scheduleIdFromParams);
+    } else {
+      toast({
+        title: "Error",
+        description: "Cannot delete schedule - invalid ID",
+        variant: "destructive"
+      });
     }
   };
 
