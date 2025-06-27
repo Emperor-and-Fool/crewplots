@@ -628,19 +628,29 @@ export default function ShiftCreationPage() {
                           <h3 className="text-lg font-medium">Schedule Preview</h3>
                           <div className="border rounded-lg p-4">
                             <div className="text-sm text-muted-foreground mb-2">Week Schedule: {currentWeekSchedule.name}</div>
-                            {shifts.length === 0 ? (
+                            {existingShifts.length === 0 ? (
                               <p className="text-muted-foreground">No shifts added yet</p>
                             ) : (
                               <div className="space-y-2">
-                                {shifts.map((shift, index) => (
-                                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                                {existingShifts.map((shift) => (
+                                  <div key={shift.id} className="flex items-center justify-between p-2 bg-muted rounded">
                                     <div>
                                       <div className="font-medium">{shift.title}</div>
                                       <div className="text-sm text-muted-foreground">
                                         {shift.dayOfWeek} • {shift.startTime} - {shift.endTime}
                                       </div>
+                                      {shift.position && (
+                                        <div className="text-xs text-muted-foreground">
+                                          Position: {shift.position}
+                                        </div>
+                                      )}
                                     </div>
-                                    <Badge variant="outline">{shift.dayOfWeek}</Badge>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline">{shift.dayOfWeek}</Badge>
+                                      <Badge variant={shift.status === 'open' ? 'default' : 'secondary'}>
+                                        {shift.status}
+                                      </Badge>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
