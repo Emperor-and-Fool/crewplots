@@ -60,32 +60,164 @@ ALTER TABLE shifts ADD COLUMN day_of_week VARCHAR(10) CHECK (day_of_week IN ('mo
 - Update shift_requirements to link to shifts within week-schedules
 - Ensure existing competency and location relationships remain intact
 
-### Phase 2: Backend API Development
+### Phase 2: Session Consolidation Layer (Critical for Authentication Stability)
+
+**Problem:** Current shift-creation page makes multiple simultaneous frontend requests that trigger session isolation in browser contexts, causing authentication failures.
+
+**Solution:** Implement a Session Consolidation Layer similar to Profile Fetcher Service.
+
+#### 2A: Scheduler Data Fetcher Service
+
+**File:** `server/services/scheduler-data-fetcher-service.ts`
+
+```typescript
+export interface ShiftCreationData {
+  weekSchedules: WeekSchedule[];
+  locations: Location[];
+  competencies: Competency[];
+  userPermissions: string[];
+  authenticatedUser: User;
+}
+
+export class SchedulerDataFetcherService {
+  private cacheKeyPrefix = 'scheduler';
+  private cacheTTL = 1800; // 30 minutes
+
+  async getShiftCreationData(userId: number, locationId?: number): Promise<ShiftCreationData> {
+    const cacheKey = `${this.cacheKeyPrefix}:${userId}:creation-data:${locationId || 'all'}`;
+    
+    // Try Redis cache first
+    const cachedData = await hybridCacheService.get<ShiftCreationData>(cacheKey, {
+      category: 'scheduler-data',
+      connectionId: `scheduler-${userId}`,
+      ttl: this.cacheTTL
+    });
+
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // Fetch fresh data in parallel
+    const [weekSchedules, locations, competencies, user] = await Promise.all([
+      storage.getWeekSchedules(locationId),
+      storage.getLocations(),
+      storage.getCompetencies(locationId),
+      storage.getUserById(userId)
+    ]);
+
+    const shiftCreationData: ShiftCreationData = {
+      weekSchedules,
+      locations,
+      competencies,
+      userPermissions: user?.permissions || [],
+      authenticatedUser: user
+    };
+
+    // Cache the result
+    await hybridCacheService.set(cacheKey, shiftCreationData, {
+      ttl: this.cacheTTL,
+      category: 'scheduler-data',
+      connectionId: `scheduler-${userId}`
+    });
+
+    return shiftCreationData;
+  }
+}
+```
+
+#### 2B: Consolidated API Endpoint
+
+**New Endpoint:** `GET /api/scheduler/creation-data`
+
+**Purpose:** Single authenticated request that consolidates all data needed for shift-creation page.
+
+**Response:** Combined data object eliminating need for multiple frontend requests.
+
+### Phase 2C: Backend API Development
 
 **Required Endpoints:**
 
-1. **Week Schedule Management**
-   - `GET /api/week-schedules` - List all week-schedule templates
+1. **Session Consolidation (Priority 1)**
+   - `GET /api/scheduler/creation-data` - **Consolidated data fetcher** (prevents session isolation)
+   - `GET /api/scheduler/creation-data?locationId=5` - Location-filtered version
+
+2. **Week Schedule Management**
+   - `GET /api/week-schedules` - List all week-schedule templates  
    - `POST /api/week-schedules` - Create new week-schedule template
    - `GET /api/week-schedules/:id` - Get specific week-schedule with shifts
    - `PUT /api/week-schedules/:id` - Update week-schedule template
    - `DELETE /api/week-schedules/:id` - Delete week-schedule template
 
-2. **Shifts within Week-Schedule**
+3. **Shifts within Week-Schedule**
    - `POST /api/week-schedules/:id/shifts` - Add shift to week-schedule
    - `PUT /api/week-schedules/:scheduleId/shifts/:shiftId` - Update shift
    - `DELETE /api/week-schedules/:scheduleId/shifts/:shiftId` - Remove shift
 
-3. **Template Operations**
+4. **Template Operations**
    - `POST /api/week-schedules/:id/duplicate` - Duplicate week-schedule
    - `GET /api/week-schedules/templates` - Get template library
 
-### Phase 3: Frontend Component Architecture
+### Phase 3: Frontend Session Consolidation Integration
 
-**Page Structure: `/scheduling/create-week-schedule`**
+**Critical Change:** Replace multiple useQuery calls with single consolidated data fetch.
+
+#### 3A: Frontend Hook - useShiftCreationData
+
+**File:** `client/src/modules/scheduler/hooks/useShiftCreationData.tsx`
+
+```typescript
+export function useShiftCreationData(locationId?: number) {
+  return useQuery({
+    queryKey: ['/api/scheduler/creation-data', locationId],
+    queryFn: async () => {
+      const url = locationId 
+        ? `/api/scheduler/creation-data?locationId=${locationId}`
+        : '/api/scheduler/creation-data';
+      
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch creation data');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000,   // 30 minutes
+  });
+}
+```
+
+#### 3B: Page Structure Redesign
+
+**Current Issue:** Multiple useQuery calls causing session isolation:
+- `useQuery(['/api/auth/me'])` (auth context)
+- `useQuery(['/api/week-schedules'])` (dropdown)  
+- `useQuery(['/api/locations'])` (location data)
+
+**Solution:** Single consolidated data fetch in page component:
+
+```typescript
+// shift-creation.tsx - Replace multiple queries
+const { data: creationData, isLoading, error } = useShiftCreationData(selectedLocationId);
+
+// Extract data from consolidated response
+const weekSchedules = creationData?.weekSchedules || [];
+const locations = creationData?.locations || [];
+const competencies = creationData?.competencies || [];
+const userPermissions = creationData?.userPermissions || [];
+const authenticatedUser = creationData?.authenticatedUser;
+```
+
+**Eliminates:**
+- Separate auth context call during component mount
+- Independent week-schedules dropdown fetch
+- Separate locations API call
+- Permission checking through multiple requests
+
+### Phase 3C: Frontend Component Architecture
+
+**Page Structure: `/shift-creation` (Modified Current Page)**
 
 ```
-CreateWeekSchedulePage.tsx
+ShiftCreationPage.tsx (UPDATED)
+├── Single useShiftCreationData() call (replaces multiple queries)
 ├── WeekScheduleHeader (title, save actions)
 ├── WeekScheduleForm (name, description, location)
 ├── ShiftManagementPanel
