@@ -157,7 +157,7 @@ export default function Dashboard() {
                 <Button variant="outline" onClick={() => navigate("/reports")}>
                   Export
                 </Button>
-                <Button className="ml-3" onClick={() => navigate("/scheduling/new")}>
+                <Button className="ml-3" onClick={() => navigate("/shift-creation")}>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   New Shift
                 </Button>
