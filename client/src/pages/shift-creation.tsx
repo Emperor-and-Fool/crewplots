@@ -457,6 +457,29 @@ export default function ShiftCreationPage() {
                       )}
                     />
 
+                    <FormField
+                      control={weekScheduleForm.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Publish Schedule
+                            </FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              Make this week schedule visible and active for crew members
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
                     <Button 
                       type="submit" 
                       disabled={createWeekScheduleMutation.isPending || (!isCreatingNew && !currentWeekSchedule)}
