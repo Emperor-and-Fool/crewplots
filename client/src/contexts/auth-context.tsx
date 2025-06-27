@@ -107,6 +107,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(data.user);
           } else {
             console.log(`🔍 AUTH FAILURE: No authenticated user in response`);
+            // If session exists but not authenticated, force cookie refresh
+            if (data?.debug?.sessionExists && !data?.authenticated) {
+              console.log("🔍 AUTH SYNC: Session mismatch detected, forcing cookie refresh");
+              document.cookie = "connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              document.cookie = "connect.sid-refreshed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              setTimeout(() => window.location.reload(), 100);
+              return;
+            }
             setUser(null);
           }
         } else {

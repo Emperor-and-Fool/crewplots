@@ -57,7 +57,7 @@ const useSchedulerPermissions = () => {
 };
 
 export default function ShiftCreationPage() {
-  const { user } = useAuth();
+  const { user, refreshAuth } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
@@ -104,7 +104,7 @@ export default function ShiftCreationPage() {
     enabled: permissions.canCreateShifts
   });
 
-  // Week schedules query 
+  // Week schedules query  
   const { data: existingWeekSchedules = [], error: weekSchedulesError, isLoading: weekSchedulesLoading } = useQuery({
     queryKey: ['/api/week-schedules'],
     enabled: permissions.canCreateShifts && !!user
