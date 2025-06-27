@@ -1,21 +1,25 @@
-import React from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Save, ArrowLeft } from 'lucide-react';
+import { Calendar, Save, ArrowLeft, Plus, Star, Clock, Users, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
+import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
 
 // Schema for week schedule creation form
 const weekScheduleCreationSchema = z.object({
@@ -25,7 +29,22 @@ const weekScheduleCreationSchema = z.object({
   isActive: z.boolean().default(true)
 });
 
+// Schema for shift creation form
+const shiftCreationSchema = z.object({
+  position: z.string().min(1, 'Position is required'),
+  startTime: z.string().min(1, 'Start time is required'),
+  endTime: z.string().min(1, 'End time is required'),
+  daysOfWeek: z.array(z.string()).min(1, 'At least one day must be selected'),
+  maxSlots: z.number().min(1, 'Max slots must be at least 1'),
+  subscriptionDeadline: z.string().optional(),
+  competencyRequirements: z.array(z.object({
+    competencyId: z.string(),
+    priority: z.enum(['required', 'preferred', 'nice-to-have'])
+  })).optional()
+});
+
 type WeekScheduleCreationForm = z.infer<typeof weekScheduleCreationSchema>;
+type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerCreatePage() {
   const { user } = useAuth();
