@@ -113,9 +113,10 @@ export default function ShiftCreationPage() {
   // Debug logging for week schedules
   console.log("Week schedules debug:", {
     user: user?.username,
+    authenticated: !!user,
     canCreateShifts: permissions.canCreateShifts,
     existingWeekSchedules,
-    weekSchedulesError,
+    weekSchedulesError: weekSchedulesError?.message,
     weekSchedulesLoading
   });
 
