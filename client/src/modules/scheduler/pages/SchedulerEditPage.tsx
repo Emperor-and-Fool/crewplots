@@ -120,9 +120,10 @@ export default function SchedulerEditPage() {
   });
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    queryKey: ['/api/week-schedules', (currentWeekSchedule?.id || existingSchedule?.id), 'shifts'],
     queryFn: async () => {
-      const response = await fetch(`/api/shifts?scheduleId=${currentWeekSchedule?.id}`, {
+      const scheduleId = currentWeekSchedule?.id || existingSchedule?.id;
+      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -130,7 +131,7 @@ export default function SchedulerEditPage() {
       }
       return response.json();
     },
-    enabled: !!currentWeekSchedule?.id,
+    enabled: !!(currentWeekSchedule?.id || existingSchedule?.id),
     staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
     cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
