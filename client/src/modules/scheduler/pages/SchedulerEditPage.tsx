@@ -139,7 +139,8 @@ export default function SchedulerEditPage() {
       return data;
     },
     enabled: !!(scheduleId && permissions.canEditSchedules && !scheduleLoading),
-    staleTime: 2 * 60 * 1000, // 2 minutes cache for consolidated data
+    staleTime: 0, // Force fresh data to test consolidated approach
+    gcTime: 0, // Disable cache completely for testing (React Query v5)
   });
 
   // Extract shifts for the specific week schedule from consolidated data

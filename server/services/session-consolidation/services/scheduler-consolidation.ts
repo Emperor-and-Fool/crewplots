@@ -56,6 +56,7 @@ export class SchedulerConsolidationService extends BaseConsolidationService<Shif
       const weekSchedulesWithShifts = await Promise.all(
         (weekSchedules || []).map(async (schedule: any) => {
           const shifts = await storage.getShiftsByWeekSchedule(schedule.id);
+          console.log(`[SchedulerConsolidation] Schedule ${schedule.id} (${schedule.name}) has ${shifts?.length || 0} shifts`);
           return {
             ...schedule,
             shifts: shifts || []
