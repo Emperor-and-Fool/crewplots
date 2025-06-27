@@ -737,8 +737,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Shifts - Not yet implemented, return empty array
   app.get("/api/shifts", async (req, res) => {
-    // TODO: Implement shifts functionality
-    res.json([]);
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development.read")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const weekScheduleId = req.query.weekScheduleId ? parseInt(req.query.weekScheduleId as string) : undefined;
+      
+      if (weekScheduleId) {
+        console.log(`🔍 SHIFTS API: Fetching shifts for week schedule ID: ${weekScheduleId}`);
+        const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
+        console.log(`🔍 SHIFTS API: Found ${shifts.length} shifts for week schedule ${weekScheduleId}`);
+        res.json(shifts);
+      } else {
+        console.log(`🔍 SHIFTS API: Fetching all shifts`);
+        const shifts = await storage.getShifts();
+        console.log(`🔍 SHIFTS API: Found ${shifts.length} total shifts`);
+        res.json(shifts);
+      }
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ error: "Failed to fetch shifts" });
+    }
   });
 
   // Get users by status - needed for dashboard

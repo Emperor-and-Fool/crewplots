@@ -120,38 +120,27 @@ export default function SchedulerEditPage() {
     gcTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
-  // Use consolidated data endpoint following the established pattern
-  const { data: consolidatedData } = useQuery({
-    queryKey: ['/api/scheduler/creation-data', scheduleId],
+  // Individual fetch for shifts - following CrewMemberProfile pattern
+  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
+    queryKey: ['/api/shifts', 'week-schedule', scheduleId],
     queryFn: async () => {
-      console.log('🔍 CONSOLIDATED QUERY: Starting fetch for scheduler data with schedule:', scheduleId);
-      
-      const response = await fetch('/api/scheduler/creation-data', {
-        credentials: 'include'
-      });
-      console.log('🔍 CONSOLIDATED QUERY: Response status:', response.status, response.statusText);
-      
+      console.log('🔍 SHIFTS QUERY: Fetching shifts for week schedule:', scheduleId);
+      const response = await fetch(`/api/shifts?weekScheduleId=${scheduleId}`);
+      console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
       if (!response.ok) {
-        throw new Error('Failed to fetch consolidated scheduler data');
+        throw new Error('Failed to fetch shifts');
       }
       const data = await response.json();
-      console.log('🔍 CONSOLIDATED QUERY: Consolidated data received:', data);
+      console.log('🔍 SHIFTS QUERY: Shifts data received:', data);
       return data;
     },
-    enabled: !!(scheduleId && permissions.canEditSchedules && !scheduleLoading),
-    staleTime: 0, // Force fresh data to test consolidated approach
-    gcTime: 0, // Disable cache completely for testing (React Query v5)
+    enabled: !!scheduleId && permissions.canEditSchedules,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache like CrewMemberProfile
+    gcTime: 10 * 60 * 1000, // 10 minutes in memory
   });
 
-  // Extract shifts for the specific week schedule from consolidated data
-  const currentScheduleFromConsolidated = consolidatedData?.weekSchedules?.find((ws: any) => ws.id === parseInt(scheduleId || '0'));
-  const shifts = currentScheduleFromConsolidated?.shifts || [];
-  
-  console.log('🔍 CONSOLIDATED DEBUG: Current schedule from consolidated:', currentScheduleFromConsolidated);
-  console.log('🔍 CONSOLIDATED DEBUG: Shifts extracted:', shifts);
-
   // Use consolidated data as primary source (following the standard pattern)
-  const actualScheduleData = currentScheduleFromConsolidated || existingSchedule;
+  const actualScheduleData = existingSchedule;
 
   // Populate form when schedule data loads
   useEffect(() => {
