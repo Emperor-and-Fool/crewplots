@@ -82,7 +82,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Fetch schedule data first (for initial form population)
+  // HYBRID FETCHER-POSTER PATTERN:
+  
+  // Step 1: Fetch schedule data first (data fetcher behavior like CrewMemberProfile)
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
@@ -92,23 +94,39 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       }
       return response.json();
     },
-    enabled: !!scheduleId,
-    staleTime: 2 * 60 * 1000,
+    enabled: !!scheduleId && permissions.canEditSchedules,
+    staleTime: 5 * 60 * 1000, // Like CrewMemberProfile
   });
 
-  // Fetch locations (always needed for form dropdown)
+  // Step 2: Fetch locations (always needed for dropdown)
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
-    enabled: permissions.canEditSchedules
+    queryFn: async () => {
+      const response = await fetch('/api/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
+    enabled: permissions.canEditSchedules,
+    staleTime: 10 * 60 * 1000, // Like CrewMemberProfile
   });
 
-  // Determine if page should show tabbed interface (like create page)
+  // Step 3: Transform page when schedule data is loaded
   const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
 
-  // Fetch shifts ONLY when in tabbed interface (like create page pattern)
+  // Step 4: Fetch shifts ONLY after transformation (sequential, not parallel)
   const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
-    enabled: !!currentWeekSchedule?.id
+    queryKey: ['/api/shifts', 'by-schedule', scheduleId],
+    queryFn: async () => {
+      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    },
+    enabled: showTabbedInterface && !!scheduleId, // Sequential dependency
+    staleTime: 2 * 60 * 1000, // Like CrewMemberProfile
   });
 
   const isLoading = scheduleLoading;
@@ -623,11 +641,11 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-semibold mb-2">Current Shifts</h4>
-                  {shifts.length === 0 ? (
+                  {(shifts as any[]).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No shifts created yet</p>
                   ) : (
                     <div className="space-y-2">
-                      {shifts.map((shift: any, index: number) => (
+                      {(shifts as any[]).map((shift: any, index: number) => (
                         <div 
                           key={index} 
                           className="p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors"
