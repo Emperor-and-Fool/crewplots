@@ -22,12 +22,20 @@ const weekScheduleSchema = z.object({
 });
 
 interface WeekScheduleEditorProps {
-  weekSchedule: WeekScheduleWithShifts | null;
-  onWeekScheduleChange?: (weekSchedule: WeekScheduleWithShifts) => void;
+  initialData?: WeekScheduleWithShifts | null;
+  onSave: (data: WeekScheduleFormData) => Promise<void>;
+  onCancel: () => void;
+  isCreating?: boolean;
+  isLoading?: boolean;
 }
 
-export default function WeekScheduleEditor({ weekSchedule, onWeekScheduleChange }: WeekScheduleEditorProps) {
-  const { autoSaveState, handleFormChange, saveWeekSchedule, isLoading } = useSchedulerActions(weekSchedule);
+export default function WeekScheduleEditor({ 
+  initialData, 
+  onSave, 
+  onCancel, 
+  isCreating = false, 
+  isLoading = false 
+}: WeekScheduleEditorProps) {
 
   // Fetch locations for dropdown
   const { data: locations } = useQuery({
