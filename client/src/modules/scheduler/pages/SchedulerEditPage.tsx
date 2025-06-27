@@ -121,25 +121,25 @@ export default function SchedulerEditPage() {
   });
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/shifts', scheduleId],
+    queryKey: ['/api/week-schedules', scheduleId, 'shifts'],
     queryFn: async () => {
-      console.log('🔍 SHIFTS QUERY: Starting fetch with URL scheduleId:', scheduleId);
+      console.log('🔍 SHIFTS QUERY: Starting fetch for week schedule:', scheduleId);
       console.log('🔍 SHIFTS QUERY: existingSchedule loaded:', !!existingSchedule);
       
-      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`, {
+      const response = await fetch(`/api/week-schedules/${scheduleId}/shifts`, {
         credentials: 'include'
       });
       console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
+        throw new Error(`Failed to fetch shifts for week schedule ${scheduleId}`);
       }
       const data = await response.json();
-      console.log('🔍 SHIFTS QUERY: Data received:', data);
+      console.log('🔍 SHIFTS QUERY: Week schedule shifts received:', data);
       return data;
     },
     enabled: !!(scheduleId && permissions.canEditSchedules && !scheduleLoading),
-    staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
+    staleTime: 2 * 60 * 1000, // 2 minutes cache for shifts data
     cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
 
