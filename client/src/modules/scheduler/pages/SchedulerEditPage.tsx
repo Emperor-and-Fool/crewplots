@@ -87,45 +87,60 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Use session consolidation endpoint to prevent browser context session isolation
-  const { data: consolidatedData, isLoading, error: consolidatedError } = useQuery({
-    queryKey: ['scheduler-edit-data', scheduleId],
+  // Use individual fetch pattern like CrewMemberProfile (proven working pattern)
+  const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
+    queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
-      console.log('🔄 EDIT PAGE: Using session consolidation endpoint for schedule', scheduleId);
-      console.log('🔄 EDIT PAGE: User permissions:', permissions);
-      const response = await fetch(`/api/scheduler/edit-data/${scheduleId}`, {
-        credentials: 'include'
-      });
-      
+      const response = await fetch(`/api/week-schedules/${scheduleId}`);
       if (!response.ok) {
-        console.error('❌ EDIT PAGE: Session consolidation failed:', response.status, response.statusText);
-        throw new Error(`Failed to fetch scheduler edit data: ${response.status}`);
+        throw new Error('Failed to fetch schedule');
       }
-      
-      const data = await response.json();
-      console.log('✅ EDIT PAGE: Session consolidation data loaded', data);
-      return data;
+      return response.json();
     },
-    enabled: !!scheduleId && !!user,
-    retry: 3,
-    retryDelay: 1000
+    enabled: !!scheduleId,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
   });
 
-  // Extract data from consolidated response
-  const locations = consolidatedData?.locations || [];
-  const existingSchedule = consolidatedData?.schedule;
-  const shifts = consolidatedData?.shifts || [];
+  // Fetch locations with caching (sequential, not parallel)
+  const { data: locations = [], isLoading: locationsLoading } = useQuery<Location[]>({
+    queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
+  });
+
+  // Fetch shifts for this schedule (only after schedule loads)
+  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
+    queryKey: ['/api/shifts', 'by-schedule', scheduleId],
+    queryFn: async () => {
+      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch shifts');
+      }
+      return response.json();
+    },
+    enabled: !!scheduleId && !!existingSchedule,
+    staleTime: 1 * 60 * 1000, // 1 minute cache for shifts
+  });
+
+  const isLoading = scheduleLoading || locationsLoading || shiftsLoading;
 
   // Set up form with existing data from consolidated response
   useEffect(() => {
     if (existingSchedule && !currentWeekSchedule && !hasBeenEdited) {
+      const schedule = existingSchedule as any; // Type assertion for now
       scheduleForm.reset({
-        name: existingSchedule?.name || '',
-        description: existingSchedule?.description || '',
-        locationId: existingSchedule?.locationId || 0,
-        isActive: existingSchedule?.isActive ?? true
+        name: schedule?.name || '',
+        description: schedule?.description || '',
+        locationId: schedule?.locationId || 0,
+        isActive: schedule?.isActive ?? true
       });
-      setCurrentWeekSchedule(existingSchedule);
+      setCurrentWeekSchedule(schedule);
     }
   }, [existingSchedule, currentWeekSchedule, hasBeenEdited, scheduleForm]);
 
@@ -235,8 +250,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     'Assistant Manager'
   ];
 
-  // Handle permission errors from the consolidated response
-  if (consolidatedError?.message?.includes('403') || consolidatedError?.message?.includes('Insufficient permissions')) {
+  // Handle permission check like other working pages
+  if (!permissions.canEditSchedules && !isLoading) {
     return (
       <div className="container mx-auto p-6">
         <Card>
@@ -262,7 +277,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     );
   }
 
-  if (consolidatedError) {
+  if (scheduleError) {
     return (
       <div className="container mx-auto p-6">
         <Card>
