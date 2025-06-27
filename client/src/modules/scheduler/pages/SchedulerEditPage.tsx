@@ -213,8 +213,12 @@ export default function SchedulerEditPage() {
 
   const createShiftMutation = useMutation({
     mutationFn: async (data: ShiftCreationForm) => {
+      // Generate unique group ID for shifts created together
+      const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
         scheduleId: parseInt(scheduleId || '0'),
+        shiftGroupId,
         position: data.position,
         dayOfWeek,
         startTime: data.startTime,

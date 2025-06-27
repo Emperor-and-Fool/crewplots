@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Trash2 } from 'lucide-react';
 
 interface Shift {
   id: number;
@@ -11,12 +12,14 @@ interface Shift {
   endTime: string;
   position?: string;
   status: string;
+  shiftGroupId?: string;
 }
 
 interface WeeklyCalendarPreviewProps {
   shifts: Shift[];
   weekScheduleName: string;
   onShiftClick?: (shift: Shift) => void;
+  onShiftDelete?: (shift: Shift) => void;
 }
 
 const DAYS_OF_WEEK = [
@@ -39,7 +42,7 @@ const DAY_LABELS = {
   sunday: 'Sun'
 };
 
-export default function WeeklyCalendarPreview({ shifts, weekScheduleName, onShiftClick }: WeeklyCalendarPreviewProps) {
+export default function WeeklyCalendarPreview({ shifts, weekScheduleName, onShiftClick, onShiftDelete }: WeeklyCalendarPreviewProps) {
   const getShiftsForDay = (day: string) => {
     return shifts.filter(shift => shift.dayOfWeek === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -79,22 +82,37 @@ export default function WeeklyCalendarPreview({ shifts, weekScheduleName, onShif
                     dayShifts.map((shift) => (
                       <div
                         key={shift.id}
-                        onClick={() => onShiftClick?.(shift)}
-                        className={`p-2 rounded text-xs border cursor-pointer transition-colors hover:bg-muted ${
-                          onShiftClick ? 'hover:border-primary' : ''
-                        }`}
+                        className="relative group p-2 rounded text-xs border transition-colors hover:bg-muted"
                         title={`${shift.title}\n${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}${shift.position ? `\nPosition: ${shift.position}` : ''}`}
                       >
-                        <div className="font-medium truncate">
-                          {shift.title}
+                        <div 
+                          onClick={() => onShiftClick?.(shift)}
+                          className={`cursor-pointer ${onShiftClick ? 'hover:opacity-70' : ''}`}
+                        >
+                          <div className="font-medium truncate">
+                            {shift.title}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                          </div>
+                          {shift.position && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {shift.position}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-muted-foreground">
-                          {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                        </div>
-                        {shift.position && (
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {shift.position}
-                          </Badge>
+                        {onShiftDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onShiftDelete(shift);
+                            }}
+                            className="absolute -top-1 -right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
                     ))
