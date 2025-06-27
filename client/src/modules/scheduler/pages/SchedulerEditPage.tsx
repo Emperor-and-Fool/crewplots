@@ -238,7 +238,9 @@ export default function SchedulerEditPage() {
       return await Promise.all(promises);
     },
     onSuccess: (data) => {
+      // Invalidate both general shifts and the specific week schedule shifts query
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts', 'week-schedule', scheduleId] });
       shiftForm.reset();
       setEditingShift(null);
       const shiftCount = data.length;
@@ -283,7 +285,9 @@ export default function SchedulerEditPage() {
       return apiRequest('DELETE', `/api/shifts/${shiftId}`);
     },
     onSuccess: () => {
+      // Invalidate both general shifts and the specific week schedule shifts query
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts', 'week-schedule', scheduleId] });
       toast({
         title: "Shift deleted successfully",
         description: "The shift has been removed from the schedule"
