@@ -16,6 +16,7 @@ import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import type { Competency, Location } from '@shared/schema';
+import { WeeklyCalendarPreview } from '@/components/scheduler/weekly-calendar-preview';
 
 // Schema for week schedule creation form
 const weekScheduleCreationSchema = z.object({
@@ -632,7 +633,7 @@ export default function ShiftCreationPage() {
                               <p className="text-muted-foreground">No shifts added yet</p>
                             ) : (
                               <div className="space-y-2">
-                                {existingShifts.map((shift) => (
+                                {existingShifts.map((shift: any) => (
                                   <div key={shift.id} className="flex items-center justify-between p-2 bg-muted rounded">
                                     <div>
                                       <div className="font-medium">{shift.title}</div>
@@ -680,6 +681,16 @@ export default function ShiftCreationPage() {
                 </Form>
               </CardContent>
             </Card>
+
+            {/* Weekly Calendar Preview */}
+            {currentWeekSchedule && (
+              <div className="mt-6">
+                <WeeklyCalendarPreview 
+                  shifts={existingShifts}
+                  weekScheduleName={currentWeekSchedule.name}
+                />
+              </div>
+            )}
           </div>
         )}
 
