@@ -39,34 +39,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Initial auth check using React Query
-  const { data: authData, isLoading: authLoading } = useQuery({
-    queryKey: ['/api/auth/me'],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes  
-  });
-
-  // Update user state from auth query
+  // Single auth check on mount with timeout protection
   useEffect(() => {
-    if (authData?.authenticated && authData?.user) {
-      setUser(authData.user);
-    } else {
-      setUser(null);
-    }
-    setIsLoading(authLoading);
-  }, [authData, authLoading]);
+    const checkAuth = async () => {
+      const startTime = Date.now();
+      console.log(`🔍 AUTH TIMING: Single auth check starting at ${startTime}`);
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log("🚨 AUTH TIMEOUT: Setting loading to false after 10 seconds");
+        setIsLoading(false);
+        setUser(null);
+      }, 10000);
+      
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: "include"
+        });
+        
+        clearTimeout(timeoutId);
+        console.log(`🔍 AUTH TIMING: Single auth completed at ${Date.now() - startTime}ms, status: ${response.status}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`🔍 AUTH TIMING: Single auth parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
+          
+          if (data?.authenticated) {
+            setUser(data.user);
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
+        setUser(null);
+      } finally {
+        console.log(`🔍 AUTH TIMING: Single auth setting isLoading=false at ${Date.now() - startTime}ms`);
+        setIsLoading(false);
+      }
+    };
 
-  // Manual auth refresh using query client
-  const refreshAuth = async (): Promise<boolean> => {
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      const result = await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
-      return result?.authenticated || false;
-    } catch (error) {
-      console.error("Auth refresh error:", error);
-      return false;
-    }
-  }; // Empty deps - mount only
+    checkAuth();
+  }, []); // Empty deps - mount only
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -282,7 +299,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-
+  // Optimized refreshAuth function using React Query for deduplication
+  const refreshAuth = async (): Promise<boolean> => {
+    console.log("Refreshing authentication state");
+    setIsLoading(true);
+    
+    try {
+      // Use standard fetch without cache-busting to allow proper caching
+      const response = await fetch('/api/auth/me', {
+        credentials: "include"
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data && data.authenticated && data.user) {
+          setUser(data.user);
+          setIsLoading(false);
+          return true;
+        } else {
+          setUser(null);
+          setIsLoading(false);
+          return false;
+        }
+      } else {
+        setUser(null);
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error refreshing authentication:", error);
+      setUser(null);
+      setIsLoading(false);
+      return false;
+    }
+  };
 
   return (
     <AuthContext.Provider
