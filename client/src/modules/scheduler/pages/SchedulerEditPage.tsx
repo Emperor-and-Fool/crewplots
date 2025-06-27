@@ -146,6 +146,9 @@ export default function SchedulerEditPage() {
   // Extract shifts for the specific week schedule from consolidated data
   const currentScheduleFromConsolidated = consolidatedData?.weekSchedules?.find((ws: any) => ws.id === parseInt(scheduleId || '0'));
   const shifts = currentScheduleFromConsolidated?.shifts || [];
+  
+  console.log('🔍 CONSOLIDATED DEBUG: Current schedule from consolidated:', currentScheduleFromConsolidated);
+  console.log('🔍 CONSOLIDATED DEBUG: Shifts extracted:', shifts);
 
   // Use consolidated data as primary source (following the standard pattern)
   const actualScheduleData = currentScheduleFromConsolidated || existingSchedule;
