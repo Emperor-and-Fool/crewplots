@@ -44,7 +44,7 @@ export const workflowSections: NavigationSection[] = [
       },
       {
         id: 'scheduler',
-        label: 'Week Schedules',
+        label: 'Week Schedule Templates',
         path: '/scheduler',
         icon: Plus,
         permission: { workflow: 'crew_planning' }

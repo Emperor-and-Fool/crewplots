@@ -36,9 +36,14 @@ export default function SchedulerCreatePage() {
 
   const handleSaveSchedule = async (data: WeekScheduleFormData) => {
     try {
-      const newSchedule = await createWeekScheduleMutation.mutateAsync(data);
+      const response = await createWeekScheduleMutation.mutateAsync(data);
       toast({ description: 'Week schedule created successfully' });
-      navigate(`/scheduler/edit/${newSchedule.id}`);
+      // Navigate to the edit page with the new schedule ID
+      if (response && typeof response === 'object' && 'id' in response) {
+        navigate(`/scheduler/edit/${response.id}`);
+      } else {
+        navigate('/scheduler');
+      }
     } catch (error) {
       console.error('Failed to create week schedule:', error);
       toast({ 
