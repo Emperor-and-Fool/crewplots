@@ -63,13 +63,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
           console.log(`🔍 AUTH TIMING: Single auth parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
+          console.log(`🔍 AUTH DEBUG: Response data:`, data);
           
-          if (data?.authenticated) {
+          if (data?.authenticated && data?.user) {
+            console.log(`🔍 AUTH SUCCESS: Setting user:`, data.user.username);
             setUser(data.user);
           } else {
+            console.log(`🔍 AUTH FAILURE: No authenticated user in response`);
             setUser(null);
           }
         } else {
+          console.log(`🔍 AUTH ERROR: Response not ok, status: ${response.status}`);
           setUser(null);
         }
       } catch (error) {
