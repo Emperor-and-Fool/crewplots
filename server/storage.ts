@@ -2292,6 +2292,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
   }
 
+  async deleteShift(id: number): Promise<boolean> {
+    // First delete shift requirements that reference this shift
+    await db.delete(shiftRequirements).where(eq(shiftRequirements.shiftId, id));
+    // Then delete the shift itself
+    const results = await db.delete(shifts).where(eq(shifts.id, id)).returning();
+    return results.length > 0;
+  }
+
   // Session consolidation support methods
   async getAllCompetencies(): Promise<Competency[]> {
     try {

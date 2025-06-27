@@ -262,6 +262,46 @@ export default function SchedulerEditPage() {
     createShiftMutation.mutate(data);
   };
 
+  const deleteShiftMutation = useMutation({
+    mutationFn: async (shiftId: number) => {
+      return apiRequest('DELETE', `/api/shifts/${shiftId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      toast({
+        title: "Shift deleted successfully",
+        description: "The shift has been removed from the schedule"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete shift",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (scheduleId: number) => {
+      return apiRequest('DELETE', `/api/week-schedules/${scheduleId}`);
+    },
+    onSuccess: () => {
+      navigate('/scheduler');
+      toast({
+        title: "Schedule deleted successfully",
+        description: "The schedule and all its shifts have been removed"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete schedule",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleShiftClick = (shift: any) => {
     setEditingShift(shift);
     shiftForm.reset({
@@ -277,6 +317,16 @@ export default function SchedulerEditPage() {
       title: "Shift selected for editing",
       description: `Editing ${shift.position} shift for ${shift.dayOfWeek}`
     });
+  };
+
+  const handleShiftDelete = (shift: any) => {
+    deleteShiftMutation.mutate(shift.id);
+  };
+
+  const handleScheduleDelete = () => {
+    if (currentWeekSchedule) {
+      deleteScheduleMutation.mutate(currentWeekSchedule.id);
+    }
   };
 
   const DAYS_OF_WEEK = [
@@ -827,33 +877,38 @@ export default function SchedulerEditPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Current Shifts</h4>
-                  {(shifts as any[]).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No shifts created yet</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(shifts as any[]).map((shift: any, index: number) => (
-                        <div 
-                          key={index} 
-                          className="p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors"
-                          onClick={() => handleShiftClick(shift)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-sm">{shift.position}</p>
-                              <p className="text-xs text-muted-foreground capitalize">
-                                {shift.dayOfWeek}
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {shift.startTime} - {shift.endTime}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <WeeklyCalendarPreview
+                  shifts={(shifts as any[]).map((shift: any) => ({
+                    id: shift.id,
+                    title: shift.position,
+                    dayOfWeek: shift.dayOfWeek,
+                    startTime: shift.startTime,
+                    endTime: shift.endTime,
+                    position: shift.position,
+                    status: shift.status
+                  }))}
+                  weekScheduleName={currentWeekSchedule?.name || ''}
+                  onShiftClick={handleShiftClick}
+                  onShiftDelete={handleShiftDelete}
+                />
+                
+                <div className="pt-4 border-t">
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={handleScheduleDelete}
+                    disabled={deleteScheduleMutation.isPending}
+                  >
+                    {deleteScheduleMutation.isPending ? (
+                      "Deleting..."
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Entire Schedule
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
