@@ -16,6 +16,7 @@ interface Shift {
 interface WeeklyCalendarPreviewProps {
   shifts: Shift[];
   weekScheduleName: string;
+  onShiftClick?: (shift: Shift) => void;
 }
 
 const DAYS_OF_WEEK = [
@@ -38,7 +39,7 @@ const DAY_LABELS = {
   sunday: 'Sun'
 };
 
-export function WeeklyCalendarPreview({ shifts, weekScheduleName }: WeeklyCalendarPreviewProps) {
+export function WeeklyCalendarPreview({ shifts, weekScheduleName, onShiftClick }: WeeklyCalendarPreviewProps) {
   const getShiftsForDay = (day: string) => {
     return shifts.filter(shift => shift.dayOfWeek === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -72,7 +73,8 @@ export function WeeklyCalendarPreview({ shifts, weekScheduleName }: WeeklyCalend
                     dayShifts.map((shift) => (
                       <div
                         key={shift.id}
-                        className="bg-blue-50 border border-blue-200 rounded p-2 text-xs"
+                        className="bg-blue-50 border border-blue-200 rounded p-2 text-xs cursor-pointer hover:bg-blue-100 transition-colors"
+                        onClick={() => onShiftClick?.(shift)}
                       >
                         <div className="font-medium text-blue-900 truncate">
                           {shift.title}

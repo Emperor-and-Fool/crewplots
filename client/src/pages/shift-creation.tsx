@@ -282,6 +282,28 @@ export default function ShiftCreationPage() {
     });
   };
 
+  // Handle clicking on a shift in the calendar to edit it
+  const handleShiftClick = (shift: any) => {
+    console.log('Shift clicked for editing:', shift);
+    
+    // Populate the form with the clicked shift's data
+    shiftForm.reset({
+      title: shift.title,
+      daysOfWeek: [shift.dayOfWeek], // Convert single day back to array
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      position: shift.position || '',
+      description: shift.description || '',
+      competencyRequirements: []
+    });
+    
+    // Switch to the Basic Info tab to show the populated form
+    setActiveTab('basic');
+    
+    // Show feedback to user
+    toast({ description: `Editing "${shift.title}" shift` });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -734,6 +756,7 @@ export default function ShiftCreationPage() {
                 <WeeklyCalendarPreview 
                   shifts={existingShifts}
                   weekScheduleName={currentWeekSchedule.name}
+                  onShiftClick={handleShiftClick}
                 />
               </div>
             )}
