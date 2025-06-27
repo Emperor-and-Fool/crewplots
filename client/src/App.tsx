@@ -17,7 +17,7 @@ import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
-import { ShiftCreationPage } from "@/modules/scheduler";
+import ShiftCreation from "@/pages/shift-creation";
 import Applicants from "@/pages/applicants";
 import ApplicantDetail from "@/pages/applicant-detail";
 import { Profile } from "@/modules/users/pages";
@@ -239,7 +239,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={ShiftCreationPage} 
+                      component={ShiftCreation} 
                       requiredRoles={["owner", "app_manager", "administrator"]} 
                     />
                   </AppLayout> : 
