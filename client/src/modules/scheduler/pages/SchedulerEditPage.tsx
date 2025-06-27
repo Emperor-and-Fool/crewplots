@@ -162,24 +162,7 @@ export default function SchedulerEditPage() {
   // For edit page: only show tabbed interface after user has made changes or submitted
   const showTabbedInterface = !!(currentWeekSchedule || hasBeenEdited);
 
-  // Debug logging
-  console.log('🔍 FRONTEND DEBUG:', {
-    scheduleId,
-    'scheduleId type': typeof scheduleId,
-    'URL pathname': window.location.pathname,
-    'permissions.canEditSchedules': permissions.canEditSchedules,
-    scheduleLoading,
-    existingSchedule,
-    'existingSchedule?.id': existingSchedule?.id,
-    scheduleError,
-    isLoading,
-    showTabbedInterface,
-    currentWeekSchedule,
-    'currentWeekSchedule type': typeof currentWeekSchedule,
-    'currentWeekSchedule keys': currentWeekSchedule ? Object.keys(currentWeekSchedule) : 'null',
-    'shifts query enabled': !!(currentWeekSchedule?.id || existingSchedule?.id),
-    'shifts length': shifts.length
-  });
+
 
 
 
@@ -190,7 +173,7 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      trackedSetCurrentWeekSchedule(data);
+      setCurrentWeekSchedule(data);
       setHasBeenEdited(true);
       toast({
         title: "Schedule updated successfully",
@@ -427,11 +410,11 @@ export default function SchedulerEditPage() {
                     disabled={updateWeekScheduleMutation.isPending}
                   >
                     {updateWeekScheduleMutation.isPending ? (
-                      "Saving Changes..."
+                      "Updating..."
                     ) : (
                       <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Changes
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Edit Shifts
                       </>
                     )}
                   </Button>
