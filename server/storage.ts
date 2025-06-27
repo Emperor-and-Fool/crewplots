@@ -1764,8 +1764,35 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
+  async findExistingShift(weekScheduleId: number, day: string, position: string): Promise<Shift | undefined> {
+    // Check for existing shift with same week schedule, day, and position to prevent duplicates
+    const results = await db.select().from(shifts)
+      .where(
+        and(
+          eq(shifts.weekScheduleId, weekScheduleId),
+          eq(shifts.day, day),
+          eq(shifts.position, position)
+        )
+      );
+    return results[0];
+  }
+
   async createShift(shift: InsertShift): Promise<Shift> {
+    // Server-side upsert prevention - check for existing shift before creating
+    // This prevents the same race condition we fixed in the messaging system
+    const existingShift = await this.findExistingShift(
+      shift.weekScheduleId, 
+      shift.day, 
+      shift.position
+    );
+    
+    if (existingShift) {
+      console.log("🔍 SCHEDULER UPSERT: Found existing shift, returning instead of creating duplicate");
+      return existingShift;
+    }
+    
     const [createdShift] = await db.insert(shifts).values(shift).returning();
+    console.log("🔍 SCHEDULER UPSERT: Created new shift successfully");
     return createdShift;
   }
 
