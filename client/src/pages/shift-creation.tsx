@@ -125,6 +125,14 @@ export default function ShiftCreationPage() {
     staleTime: 2 * 60 * 1000, // 2 minutes cache for schedules
   });
 
+  // Query for shifts in the current week schedule
+  const { data: existingShifts = [] } = useQuery({
+    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    queryFn: () => fetchWithSession(`/api/week-schedules/${currentWeekSchedule.id}/shifts`),
+    enabled: !!currentWeekSchedule && permissions.canCreateShifts,
+    staleTime: 1 * 60 * 1000, // 1 minute cache for shifts
+  });
+
   // Debug logging for week schedules
   console.log("Week schedules debug:", {
     user: user?.username,
