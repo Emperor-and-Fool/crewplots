@@ -39,92 +39,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Manual auth refresh with enhanced debugging
+  // Initial auth check using React Query
+  const { data: authData, isLoading: authLoading } = useQuery({
+    queryKey: ['/api/auth/me'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes  
+  });
+
+  // Update user state from auth query
+  useEffect(() => {
+    if (authData?.authenticated && authData?.user) {
+      setUser(authData.user);
+    } else {
+      setUser(null);
+    }
+    setIsLoading(authLoading);
+  }, [authData, authLoading]);
+
+  // Manual auth refresh using query client
   const refreshAuth = async (): Promise<boolean> => {
-    console.log("🔄 AUTH REFRESH: Manual refresh triggered");
-    setIsLoading(true);
-    
     try {
-      const response = await fetch(`/api/auth/me?refresh=${Date.now()}`, {
-        credentials: "include",
-        cache: "no-cache"
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("🔄 AUTH REFRESH: Response:", data);
-        
-        if (data?.authenticated && data?.user) {
-          console.log("🔄 AUTH SUCCESS: User authenticated:", data.user.username);
-          setUser(data.user);
-          setIsLoading(false);
-          return true;
-        }
-      }
-      
-      console.log("🔄 AUTH REFRESH: Authentication failed");
-      setUser(null);
-      setIsLoading(false);
-      return false;
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      const result = await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+      return result?.authenticated || false;
     } catch (error) {
-      console.log("🔄 AUTH REFRESH: Error:", error);
-      setUser(null);
-      setIsLoading(false);
+      console.error("Auth refresh error:", error);
       return false;
     }
-  };
-
-  // Single auth check on mount with timeout protection
-  useEffect(() => {
-    const checkAuth = async () => {
-      const startTime = Date.now();
-      console.log(`🔍 AUTH TIMING: Single auth check starting at ${startTime}`);
-      
-      // Set a timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        console.log("🚨 AUTH TIMEOUT: Setting loading to false after 10 seconds");
-        setIsLoading(false);
-        setUser(null);
-      }, 10000);
-      
-      try {
-        // Force session refresh by adding cache-busting parameter
-        const response = await fetch(`/api/auth/me?t=${Date.now()}`, {
-          credentials: "include",
-          cache: "no-cache"
-        });
-        
-        clearTimeout(timeoutId);
-        console.log(`🔍 AUTH TIMING: Single auth completed at ${Date.now() - startTime}ms, status: ${response.status}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`🔍 AUTH TIMING: Single auth parsed at ${Date.now() - startTime}ms, authenticated: ${data?.authenticated}`);
-          console.log(`🔍 AUTH DEBUG: Response data:`, data);
-          
-          if (data?.authenticated && data?.user) {
-            console.log(`🔍 AUTH SUCCESS: Setting user:`, data.user.username);
-            setUser(data.user);
-          } else {
-            console.log(`🔍 AUTH FAILURE: No authenticated user in response`);
-            setUser(null);
-          }
-        } else {
-          console.log(`🔍 AUTH ERROR: Response not ok, status: ${response.status}`);
-          setUser(null);
-        }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        console.log(`🔍 AUTH TIMING: Single auth error at ${Date.now() - startTime}ms:`, error);
-        setUser(null);
-      } finally {
-        console.log(`🔍 AUTH TIMING: Single auth setting isLoading=false at ${Date.now() - startTime}ms`);
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []); // Empty deps - mount only
+  }; // Empty deps - mount only
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
