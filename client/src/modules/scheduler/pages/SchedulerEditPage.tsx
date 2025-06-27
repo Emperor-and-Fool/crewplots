@@ -101,7 +101,7 @@ export default function SchedulerEditPage() {
     },
     enabled: !!scheduleId && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
-    cacheTime: 30 * 60 * 1000, // 30 minutes in memory
+    gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
   const { data: locations = [] } = useQuery({
@@ -117,7 +117,7 @@ export default function SchedulerEditPage() {
     },
     enabled: permissions.canEditSchedules,
     staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
-    cacheTime: 60 * 60 * 1000, // 1 hour in memory
+    gcTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
   // Use consolidated data endpoint following the established pattern
@@ -143,21 +143,25 @@ export default function SchedulerEditPage() {
   });
 
   // Extract shifts for the specific week schedule from consolidated data
-  const shifts = consolidatedData?.weekSchedules?.find((ws: any) => ws.id === parseInt(scheduleId || '0'))?.shifts || [];
+  const currentScheduleFromConsolidated = consolidatedData?.weekSchedules?.find((ws: any) => ws.id === parseInt(scheduleId || '0'));
+  const shifts = currentScheduleFromConsolidated?.shifts || [];
 
-  // Populate form when existing schedule loads
+  // Use consolidated data as primary source (following the standard pattern)
+  const actualScheduleData = currentScheduleFromConsolidated || existingSchedule;
+
+  // Populate form when schedule data loads
   useEffect(() => {
-    if (existingSchedule) {
+    if (actualScheduleData && actualScheduleData.name) {
       scheduleForm.reset({
-        name: existingSchedule.name || '',
-        description: existingSchedule.description || '',
-        locationId: existingSchedule.locationId || 0,
-        isActive: existingSchedule.isActive !== false
+        name: actualScheduleData.name || '',
+        description: actualScheduleData.description || '',
+        locationId: actualScheduleData.locationId || 0,
+        isActive: actualScheduleData.isActive !== false
       });
     }
-  }, [existingSchedule, scheduleForm]);
+  }, [actualScheduleData, scheduleForm]);
 
-  // Create a basic info form that syncs with the existing schedule data for the tabbed interface
+  // Create a basic info form that syncs with the schedule data for the tabbed interface
   const basicInfoForm = useForm<WeekScheduleUpdateForm>({
     resolver: zodResolver(weekScheduleUpdateSchema),
     defaultValues: {
@@ -168,17 +172,17 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Keep basicInfoForm in sync with existing schedule data
+  // Keep basicInfoForm in sync with schedule data
   useEffect(() => {
-    if (existingSchedule) {
+    if (actualScheduleData && actualScheduleData.name) {
       basicInfoForm.reset({
-        name: existingSchedule.name || '',
-        description: existingSchedule.description || '',
-        locationId: existingSchedule.locationId || 0,
-        isActive: existingSchedule.isActive !== false
+        name: actualScheduleData.name || '',
+        description: actualScheduleData.description || '',
+        locationId: actualScheduleData.locationId || 0,
+        isActive: actualScheduleData.isActive !== false
       });
     }
-  }, [existingSchedule, basicInfoForm]);
+  }, [actualScheduleData, basicInfoForm]);
 
   const isLoading = scheduleLoading && !existingSchedule;
   
@@ -217,7 +221,7 @@ export default function SchedulerEditPage() {
   const createShiftMutation = useMutation({
     mutationFn: async (data: ShiftCreationForm) => {
       const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
-        scheduleId: parseInt(scheduleId),
+        scheduleId: parseInt(scheduleId || '0'),
         position: data.position,
         dayOfWeek,
         startTime: data.startTime,
