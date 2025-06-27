@@ -43,9 +43,9 @@ export const workflowSections: NavigationSection[] = [
         permission: { workflow: 'scheduling' }
       },
       {
-        id: 'shift-creation',
-        label: 'Create Shifts',
-        path: '/shift-creation',
+        id: 'scheduler',
+        label: 'Week Schedules',
+        path: '/scheduler',
         icon: Plus,
         permission: { workflow: 'crew_planning' }
       }

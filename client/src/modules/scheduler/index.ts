@@ -8,6 +8,9 @@ export { default as WeeklyCalendarPreview } from './components/WeeklyCalendarPre
 
 // Pages
 export { default as ShiftCreationPage } from './pages/ShiftCreationPage';
+export { default as SchedulerListPage } from './pages/SchedulerListPage';
+export { default as SchedulerCreatePage } from './pages/SchedulerCreatePage';
+export { default as SchedulerEditPage } from './pages/SchedulerEditPage';
 
 // Hooks
 export { 

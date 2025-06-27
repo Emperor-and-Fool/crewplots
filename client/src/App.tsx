@@ -17,7 +17,7 @@ import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
 import Scheduling from "@/pages/scheduling";
 import ViewCalendar from "@/pages/view-calendar";
-import ShiftCreation from "@/pages/shift-creation";
+import { SchedulerListPage, SchedulerCreatePage, SchedulerEditPage } from "@/modules/scheduler";
 import Applicants from "@/pages/applicants";
 import ApplicantDetail from "@/pages/applicant-detail";
 import { Profile } from "@/modules/users/pages";
@@ -235,11 +235,33 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/shift-creation">
+              <Route path="/scheduler">
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={ShiftCreation} 
+                      component={SchedulerListPage} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/scheduler/new">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SchedulerCreatePage} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/scheduler/edit/:scheduleId">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SchedulerEditPage} 
                       requiredRoles={["owner", "app_manager", "administrator"]} 
                     />
                   </AppLayout> : 
