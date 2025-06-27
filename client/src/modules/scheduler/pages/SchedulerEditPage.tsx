@@ -52,13 +52,6 @@ export default function SchedulerEditPage() {
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
-  
-  // Debug wrapper for setCurrentWeekSchedule to trace calls
-  const trackedSetCurrentWeekSchedule = (value: any) => {
-    console.log('🔍 SETTING currentWeekSchedule:', value);
-    console.trace('Call stack:');
-    setCurrentWeekSchedule(value);
-  };
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
