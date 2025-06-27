@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,11 +46,8 @@ const shiftCreationSchema = z.object({
 type WeekScheduleUpdateForm = z.infer<typeof weekScheduleUpdateSchema>;
 type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
-interface SchedulerEditPageProps {
-  scheduleId: string;
-}
-
-export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps) {
+export default function SchedulerEditPage() {
+  const { scheduleId } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
@@ -145,6 +143,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   // Debug logging
   console.log('🔍 FRONTEND DEBUG:', {
     scheduleId,
+    'scheduleId type': typeof scheduleId,
+    'URL pathname': window.location.pathname,
     'permissions.canEditSchedules': permissions.canEditSchedules,
     scheduleLoading,
     existingSchedule,
