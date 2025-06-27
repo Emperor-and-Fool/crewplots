@@ -329,7 +329,7 @@ export default function ShiftCreationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Week Schedule Creation */}
+        {/* Week Schedule Creation or Shift Creation */}
         {!currentWeekSchedule ? (
           <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -749,6 +749,18 @@ export default function ShiftCreationPage() {
                     </div>
                   </form>
                 </Form>
+
+                {/* Navigation Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentWeekSchedule(null)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Schedule Selection
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
