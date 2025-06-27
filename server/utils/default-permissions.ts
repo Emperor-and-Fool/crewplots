@@ -24,11 +24,11 @@ export const DEFAULT_WORKFLOW_PERMISSIONS = {
     location: ['view']
   },
   
-  // Crew member gets limited access
+  // Crew member gets limited access with enhanced scheduling
   crew_member: {
     application: ['view'],
     crew: ['view'],
-    scheduling: ['view'],
+    scheduling: ['view', 'subscribe'],
     location: ['view']
   },
   

@@ -3,6 +3,7 @@ import { useLocation, useRouter } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/modules/auth";
 import { useLocationContext } from "@/contexts/location-context";
+import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ export default function Dashboard() {
   const navigate = (to: string) => setLocation(to);
   const { user } = useAuth();
   const { selectedLocationId, isAllLocations } = useLocationContext();
+  const { hasWorkflowAccess } = useWorkflowPermissions();
   
   // Admin actions from dashboard module
   const { clearAllSessions, isClearing } = useAdminActions();
@@ -198,8 +200,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Stats cards - Show for administrators/managers or location-restricted users */}
-            {(isAllLocations || isLocationRestricted) && (
+            {/* Stats cards - Show based on workflow permissions and location context */}
+            {(isAllLocations || isLocationRestricted) && hasWorkflowAccess('application') && (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                 <StatsCard
                   title="Total Applicants"
@@ -236,10 +238,11 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Dashboard content grid - sophisticated layout restoration */}
+            {/* Dashboard content grid - permission-based layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-              {/* Weekly schedule - main content area */}
-              <div className="lg:col-span-8">
+              {/* Scheduling content - prioritized for crew members */}
+              {hasWorkflowAccess('scheduling') && (
+                <div className="lg:col-span-8">
                 {activeWeekSchedule && shifts ? (
                   <WeeklyCalendarPreview 
                     shifts={shifts} 
@@ -263,10 +266,12 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 )}
-              </div>
+                </div>
+              )}
               
-              {/* Right sidebar - summary components */}
-              <div className="lg:col-span-4 space-y-6">
+              {/* Right sidebar - permission-based content */}
+              {(hasWorkflowAccess('scheduling') || hasWorkflowAccess('application')) && (
+                <div className="lg:col-span-4 space-y-6">
                 {/* Quick actions */}
                 <Card>
                   <CardHeader>
