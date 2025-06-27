@@ -86,11 +86,19 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
-      const response = await fetch(`/api/week-schedules/${scheduleId}`);
+      console.log('🔍 FRONTEND: Fetching schedule with scheduleId:', scheduleId);
+      const response = await fetch(`/api/week-schedules/${scheduleId}`, {
+        credentials: 'include'
+      });
+      console.log('🔍 FRONTEND: Response status:', response.status, response.statusText);
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('🔍 FRONTEND: Error response:', errorText);
         throw new Error('Failed to fetch schedule');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('🔍 FRONTEND: Schedule data received:', data);
+      return data;
     },
     enabled: !!scheduleId && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
@@ -100,7 +108,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
     queryFn: async () => {
-      const response = await fetch('/api/locations');
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch locations');
       }
@@ -114,7 +124,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const { data: shifts = [] } = useQuery({
     queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
-      const response = await fetch(`/api/shifts?scheduleId=${currentWeekSchedule?.id}`);
+      const response = await fetch(`/api/shifts?scheduleId=${currentWeekSchedule?.id}`, {
+        credentials: 'include'
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch shifts');
       }
@@ -129,6 +141,17 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
 
   const isLoading = scheduleLoading && !existingSchedule;
+
+  // Debug logging
+  console.log('🔍 FRONTEND DEBUG:', {
+    scheduleId,
+    'permissions.canEditSchedules': permissions.canEditSchedules,
+    scheduleLoading,
+    existingSchedule,
+    scheduleError,
+    isLoading,
+    showTabbedInterface
+  });
 
   // Set up form with existing data from consolidated response
   useEffect(() => {
