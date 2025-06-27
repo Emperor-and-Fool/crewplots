@@ -28,7 +28,7 @@ const weekScheduleCreationSchema = z.object({
 // Schema for shift creation form with day-of-week
 const shiftCreationSchema = z.object({
   title: z.string().min(1, 'Shift title is required'),
-  dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+  daysOfWeek: z.array(z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])).min(1, 'Select at least one day'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
   position: z.string().optional(),
@@ -87,7 +87,7 @@ export default function ShiftCreationPage() {
     resolver: zodResolver(shiftCreationSchema),
     defaultValues: {
       title: '',
-      dayOfWeek: 'monday',
+      daysOfWeek: [],
       startTime: '',
       endTime: '',
       position: '',
@@ -167,19 +167,31 @@ export default function ShiftCreationPage() {
   });
 
   const addShiftToScheduleMutation = useMutation({
-    mutationFn: (data: ShiftCreationForm) => {
-      console.log('Shift creation attempt:', { data, currentWeekSchedule, selectedCompetencies });
+    mutationFn: async (data: ShiftCreationForm) => {
+      console.log('Multi-day shift creation attempt:', { data, currentWeekSchedule, selectedCompetencies });
       if (!currentWeekSchedule) throw new Error('No week schedule selected');
-      const requestData = {
-        ...data,
-        competencyRequirements: selectedCompetencies
-      };
-      console.log('Making API request to:', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, requestData);
-      return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, requestData);
+      
+      // Create a shift for each selected day
+      const shiftPromises = data.daysOfWeek.map(dayOfWeek => {
+        const requestData = {
+          title: data.title,
+          dayOfWeek,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          position: data.position,
+          description: data.description,
+          competencyRequirements: selectedCompetencies
+        };
+        console.log('Creating shift for:', dayOfWeek, requestData);
+        return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, requestData);
+      });
+      
+      return Promise.all(shiftPromises);
     },
-    onSuccess: (result) => {
-      console.log('Shift created successfully:', result);
-      toast({ description: 'Shift added successfully' });
+    onSuccess: (results) => {
+      console.log('Multi-day shifts created successfully:', results);
+      const dayCount = results.length;
+      toast({ description: `${dayCount} shift${dayCount > 1 ? 's' : ''} added successfully` });
       
       // Critical: Invalidate cache to refetch actual shifts from database
       queryClient.invalidateQueries({ 
@@ -190,9 +202,9 @@ export default function ShiftCreationPage() {
       setSelectedCompetencies([]);
     },
     onError: (error) => {
-      console.error('Shift creation failed:', error);
+      console.error('Multi-day shift creation failed:', error);
       toast({ 
-        description: 'Failed to add shift',
+        description: 'Failed to add shifts',
         variant: 'destructive'
       });
     }
@@ -471,26 +483,41 @@ export default function ShiftCreationPage() {
 
                         <FormField
                           control={shiftForm.control}
-                          name="dayOfWeek"
+                          name="daysOfWeek"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Day of Week</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select day" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="monday">Monday</SelectItem>
-                                  <SelectItem value="tuesday">Tuesday</SelectItem>
-                                  <SelectItem value="wednesday">Wednesday</SelectItem>
-                                  <SelectItem value="thursday">Thursday</SelectItem>
-                                  <SelectItem value="friday">Friday</SelectItem>
-                                  <SelectItem value="saturday">Saturday</SelectItem>
-                                  <SelectItem value="sunday">Sunday</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormLabel>Days of Week</FormLabel>
+                              <div className="grid grid-cols-2 gap-2">
+                                {[
+                                  { value: 'monday', label: 'Monday' },
+                                  { value: 'tuesday', label: 'Tuesday' },
+                                  { value: 'wednesday', label: 'Wednesday' },
+                                  { value: 'thursday', label: 'Thursday' },
+                                  { value: 'friday', label: 'Friday' },
+                                  { value: 'saturday', label: 'Saturday' },
+                                  { value: 'sunday', label: 'Sunday' }
+                                ].map((day) => (
+                                  <div key={day.value} className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id={day.value}
+                                      checked={field.value?.includes(day.value as any) || false}
+                                      onChange={(e) => {
+                                        const currentDays = field.value || [];
+                                        if (e.target.checked) {
+                                          field.onChange([...currentDays, day.value]);
+                                        } else {
+                                          field.onChange(currentDays.filter((d: string) => d !== day.value));
+                                        }
+                                      }}
+                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <label htmlFor={day.value} className="text-sm font-medium text-gray-700">
+                                      {day.label}
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
