@@ -31,6 +31,7 @@ const shiftCreationSchema = z.object({
   dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
+  position: z.string().optional(),
   description: z.string().optional(),
   competencyRequirements: z.array(z.object({
     competencyId: z.number(),
@@ -89,6 +90,7 @@ export default function ShiftCreationPage() {
       dayOfWeek: 'monday',
       startTime: '',
       endTime: '',
+      position: '',
       description: '',
       competencyRequirements: []
     }
@@ -455,7 +457,7 @@ export default function ShiftCreationPage() {
                             <FormItem>
                               <FormLabel>Shift Title</FormLabel>
                               <FormControl>
-                                <Input placeholder="e.g., Evening Service, Morning Prep" {...field} />
+                                <Input placeholder="e.g., Manager Shift, Staff Shift, Opening Shift" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -489,7 +491,19 @@ export default function ShiftCreationPage() {
                           )}
                         />
 
-
+                        <FormField
+                          control={shiftForm.control}
+                          name="position"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Position</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Manager, Staff, Supervisor, Floor Staff" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
