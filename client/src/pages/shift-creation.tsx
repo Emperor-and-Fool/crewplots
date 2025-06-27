@@ -71,6 +71,7 @@ export default function ShiftCreationPage() {
   }>>([]);
   const [isCreatingNew, setIsCreatingNew] = useState(true);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("CREATE_NEW");
+  const [activeTab, setActiveTab] = useState("basic");
 
   // Week Schedule Form setup
   const weekScheduleForm = useForm<WeekScheduleCreationForm>({
@@ -481,7 +482,7 @@ export default function ShiftCreationPage() {
               <CardContent>
                 <Form {...shiftForm}>
                   <form onSubmit={shiftForm.handleSubmit(onShiftSubmit)} className="space-y-6">
-                    <Tabs defaultValue="basic" className="w-full">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="basic">Basic Info</TabsTrigger>
                         <TabsTrigger value="competencies">Requirements</TabsTrigger>
