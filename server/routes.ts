@@ -1189,14 +1189,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/week-schedules/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    console.log("🔍 WEEK SCHEDULE FETCH - Single schedule request");
+    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("Schedule ID:", req.params.id);
+    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("❌ WEEK SCHEDULE FETCH - Permission denied");
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
     try {
       const id = parseInt(req.params.id);
+      console.log("✅ WEEK SCHEDULE FETCH - Fetching schedule with ID:", id);
       const weekSchedule = await storage.getWeekScheduleById(id);
+      console.log("✅ WEEK SCHEDULE FETCH - Found schedule:", weekSchedule ? "Yes" : "No");
+      
       if (!weekSchedule) {
+        console.log("❌ WEEK SCHEDULE FETCH - Schedule not found");
         return res.status(404).json({ error: "Week schedule not found" });
       }
       res.json(weekSchedule);
@@ -1207,17 +1217,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/week-schedules/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    console.log("🔄 WEEK SCHEDULE UPDATE - Start");
+    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("Schedule ID:", req.params.id);
+    console.log("Request body:", req.body);
+    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("❌ WEEK SCHEDULE UPDATE - Permission denied");
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertWeekScheduleSchema.parse(req.body);
+      console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
+      const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
+      console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
+      
       const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
+      console.log("✅ WEEK SCHEDULE UPDATE - Updated successfully:", weekSchedule);
       res.json(weekSchedule);
     } catch (error) {
-      console.error("Error updating week schedule:", error);
+      console.error("❌ WEEK SCHEDULE UPDATE - Error:", error);
       res.status(400).json({ error: "Failed to update week schedule" });
     }
   });
