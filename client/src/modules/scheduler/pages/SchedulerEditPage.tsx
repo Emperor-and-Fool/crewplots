@@ -82,51 +82,20 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // HYBRID FETCHER-POSTER PATTERN:
-  
-  // Step 1: Fetch schedule data first (data fetcher behavior like CrewMemberProfile)
+  // Queries - same pattern as create page
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
-    queryFn: async () => {
-      const response = await fetch(`/api/week-schedules/${scheduleId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch schedule');
-      }
-      return response.json();
-    },
-    enabled: !!scheduleId && permissions.canEditSchedules,
-    staleTime: 5 * 60 * 1000, // Like CrewMemberProfile
+    enabled: !!scheduleId && permissions.canEditSchedules
   });
 
-  // Step 2: Fetch locations (always needed for dropdown)
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
-    queryFn: async () => {
-      const response = await fetch('/api/locations');
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-      return response.json();
-    },
-    enabled: permissions.canEditSchedules,
-    staleTime: 10 * 60 * 1000, // Like CrewMemberProfile
+    enabled: permissions.canEditSchedules
   });
 
-  // Step 3: Transform page when schedule data is loaded
-  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
-
-  // Step 4: Fetch shifts ONLY after transformation (sequential, not parallel)
   const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/shifts', 'by-schedule', scheduleId],
-    queryFn: async () => {
-      const response = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
-      }
-      return response.json();
-    },
-    enabled: showTabbedInterface && !!scheduleId, // Sequential dependency
-    staleTime: 2 * 60 * 1000, // Like CrewMemberProfile
+    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    enabled: !!currentWeekSchedule?.id
   });
 
   const isLoading = scheduleLoading;
