@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -22,7 +23,8 @@ import { WeeklyCalendarPreview } from '@/components/scheduler/weekly-calendar-pr
 const weekScheduleCreationSchema = z.object({
   name: z.string().min(1, 'Schedule name is required'),
   description: z.string().optional(),
-  locationId: z.number().min(1, 'Location is required')
+  locationId: z.number().min(1, 'Location is required'),
+  isActive: z.boolean().default(true)
 });
 
 // Schema for shift creation form with day-of-week
@@ -80,7 +82,8 @@ export default function ShiftCreationPage() {
     defaultValues: {
       name: '',
       description: '',
-      locationId: 1  // Default to first location
+      locationId: 1,  // Default to first location
+      isActive: true  // Default to published/active
     }
   });
 
