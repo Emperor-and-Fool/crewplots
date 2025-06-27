@@ -54,7 +54,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         const response = await fetch('/api/auth/me', {
-          credentials: "include"
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+          mode: 'same-origin'
         });
         
         clearTimeout(timeoutId);
