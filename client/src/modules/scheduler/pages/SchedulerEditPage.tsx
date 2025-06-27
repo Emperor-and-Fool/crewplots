@@ -59,6 +59,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
+  
+
 
   // Form for week schedule editing
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
@@ -205,8 +207,10 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     });
   };
 
-  // Determine if we should show the initial form or the tabbed interface
-  const showTabbedInterface = hasBeenEdited || (currentWeekSchedule && existingSchedule);
+  // Show tabbed interface if we have existing schedule or it has been edited
+  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
+
+
 
   const DAYS_OF_WEEK = [
     { value: 'monday', label: 'Monday' },
@@ -239,12 +243,26 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     );
   }
 
-  if (!existingSchedule && !currentWeekSchedule) {
+  if (isLoading || (!existingSchedule && !currentWeekSchedule)) {
     return (
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="p-6">
-            <p className="text-muted-foreground">Loading schedule...</p>
+            <p className="text-muted-foreground">
+              {isLoading ? "Loading schedule data..." : "Loading schedule..."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (consolidatedError) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-destructive">Failed to load schedule data. Please try refreshing the page.</p>
           </CardContent>
         </Card>
       </div>
