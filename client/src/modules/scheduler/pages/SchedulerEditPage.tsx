@@ -82,23 +82,19 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Queries - restore missing queryFn functions with debugging
+  // Individual fetch pattern - exact match to working CrewMemberProfile pattern
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
-      console.log('🔍 SCHEDULER EDIT DEBUG: Fetching schedule with ID:', scheduleId);
       const response = await fetch(`/api/week-schedules/${scheduleId}`);
-      console.log('🔍 SCHEDULER EDIT DEBUG: Response status:', response.status, response.statusText);
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('🔍 SCHEDULER EDIT DEBUG: Error response:', errorText);
-        throw new Error(`Failed to fetch schedule: ${response.status} ${errorText}`);
+        throw new Error('Failed to fetch schedule');
       }
-      const data = await response.json();
-      console.log('🔍 SCHEDULER EDIT DEBUG: Schedule data received:', data);
-      return data;
+      return response.json();
     },
-    enabled: !!scheduleId && permissions.canEditSchedules
+    enabled: !!scheduleId && permissions.canEditSchedules,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    cacheTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
   const { data: locations = [] } = useQuery({
@@ -110,7 +106,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       }
       return response.json();
     },
-    enabled: permissions.canEditSchedules
+    enabled: permissions.canEditSchedules,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
+    cacheTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
   const { data: shifts = [] } = useQuery({
@@ -122,13 +120,15 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
       }
       return response.json();
     },
-    enabled: !!currentWeekSchedule?.id
+    enabled: !!currentWeekSchedule?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache for assignments
+    cacheTime: 15 * 60 * 1000, // 15 minutes in memory
   });
 
   // Transform page when schedule loads (same as create page)
   const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
 
-  const isLoading = scheduleLoading;
+  const isLoading = scheduleLoading && !existingSchedule;
 
   // Set up form with existing data from consolidated response
   useEffect(() => {
