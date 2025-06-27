@@ -32,6 +32,7 @@ export default function SchedulerCreatePage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
+  const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
 
   // Week Schedule Form setup
   const weekScheduleForm = useForm<WeekScheduleCreationForm>({
@@ -59,11 +60,11 @@ export default function SchedulerCreatePage() {
     mutationFn: (data: WeekScheduleCreationForm) => 
       apiRequest('POST', '/api/week-schedules', data),
     onSuccess: (scheduleData) => {
-      console.log('Week schedule created, navigating to shifts:', scheduleData);
+      console.log('Week schedule created, setting current:', scheduleData);
       toast({ description: 'Week schedule created successfully' });
+      setCurrentWeekSchedule(scheduleData);
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      // Navigate to the shifts management page
-      navigate(`/scheduler/${scheduleData.id}/shifts`);
+      weekScheduleForm.reset();
     },
     onError: (error) => {
       console.error('Week schedule creation failed:', error);
