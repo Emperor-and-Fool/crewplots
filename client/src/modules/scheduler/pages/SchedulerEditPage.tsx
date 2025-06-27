@@ -82,15 +82,21 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     }
   });
 
-  // Queries - restore missing queryFn functions
+  // Queries - restore missing queryFn functions with debugging
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
     queryKey: ['/api/week-schedules', scheduleId],
     queryFn: async () => {
+      console.log('🔍 SCHEDULER EDIT DEBUG: Fetching schedule with ID:', scheduleId);
       const response = await fetch(`/api/week-schedules/${scheduleId}`);
+      console.log('🔍 SCHEDULER EDIT DEBUG: Response status:', response.status, response.statusText);
       if (!response.ok) {
-        throw new Error('Failed to fetch schedule');
+        const errorText = await response.text();
+        console.log('🔍 SCHEDULER EDIT DEBUG: Error response:', errorText);
+        throw new Error(`Failed to fetch schedule: ${response.status} ${errorText}`);
       }
-      return response.json();
+      const data = await response.json();
+      console.log('🔍 SCHEDULER EDIT DEBUG: Schedule data received:', data);
+      return data;
     },
     enabled: !!scheduleId && permissions.canEditSchedules
   });

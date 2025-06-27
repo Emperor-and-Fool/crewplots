@@ -1234,16 +1234,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       console.log("✅ WEEK SCHEDULE FETCH - Fetching schedule with ID:", id);
+      console.log("✅ WEEK SCHEDULE FETCH - Calling storage.getWeekScheduleById...");
       const weekSchedule = await storage.getWeekScheduleById(id);
+      console.log("✅ WEEK SCHEDULE FETCH - Raw result from storage:", JSON.stringify(weekSchedule, null, 2));
       console.log("✅ WEEK SCHEDULE FETCH - Found schedule:", weekSchedule ? "Yes" : "No");
       
       if (!weekSchedule) {
-        console.log("❌ WEEK SCHEDULE FETCH - Schedule not found");
+        console.log("❌ WEEK SCHEDULE FETCH - Schedule not found in database");
         return res.status(404).json({ error: "Week schedule not found" });
       }
+      
+      console.log("✅ WEEK SCHEDULE FETCH - Returning schedule data to frontend");
       res.json(weekSchedule);
     } catch (error) {
-      console.error("Error fetching week schedule:", error);
+      console.error("❌ WEEK SCHEDULE FETCH - Database error:", error);
       res.status(500).json({ error: "Failed to fetch week schedule" });
     }
   });
