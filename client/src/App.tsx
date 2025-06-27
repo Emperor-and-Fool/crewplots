@@ -239,7 +239,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={ShiftCreation} 
+                      component={ShiftCreationPage} 
                       requiredRoles={["owner", "app_manager", "administrator"]} 
                     />
                   </AppLayout> : 
