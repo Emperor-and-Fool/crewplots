@@ -9,16 +9,16 @@ export const useSchedulerPermissions = (): SchedulerPermissions => {
     return ['administrator', 'owner', 'app_manager'].includes(user.role);
   };
 
-  const checkSchedulerDevelopmentPermission = () => {
+  const checkSchedulerWorkflowPermission = () => {
     if (!user?.workflowPermissions?.scheduling) return false;
     const schedulingPerms = user.workflowPermissions.scheduling;
     return schedulingPerms.includes('create') || schedulingPerms.includes('edit');
   };
 
   return {
-    canCreateShifts: checkSchedulerPermission(),
-    canViewDevelopment: checkSchedulerPermission() || checkSchedulerDevelopmentPermission(),
-    canEditSchedules: checkSchedulerPermission(),
+    canCreateShifts: checkSchedulerPermission() || checkSchedulerWorkflowPermission(),
+    canViewDevelopment: checkSchedulerPermission() || checkSchedulerWorkflowPermission(),
+    canEditSchedules: checkSchedulerPermission() || checkSchedulerWorkflowPermission(),
     canDeleteSchedules: checkSchedulerPermission()
   };
 };
