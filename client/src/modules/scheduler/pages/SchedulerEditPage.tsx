@@ -52,7 +52,7 @@ interface SchedulerEditPageProps {
 export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canExecute } = useSchedulerPermissions();
+  const permissions = useSchedulerPermissions();
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
@@ -99,7 +99,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
   // Fetch locations (always needed for form dropdown)
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
-    enabled: canExecute
+    enabled: permissions.canEditSchedules
   });
 
   // Determine if page should show tabbed interface (like create page)
@@ -110,6 +110,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
     enabled: !!currentWeekSchedule?.id
   });
+
+  const isLoading = scheduleLoading;
 
   // Set up form with existing data from consolidated response
   useEffect(() => {
@@ -233,7 +235,7 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     'Coordinator'
   ];
 
-  if (!canExecute) {
+  if (!permissions.canEditSchedules) {
     return (
       <div className="container mx-auto p-6">
         <Card>
@@ -597,7 +599,8 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
                   </CardHeader>
                   <CardContent>
                     <WeeklyCalendarPreview 
-                      shifts={shifts}
+                      shifts={shifts as any[]}
+                      weekScheduleName={currentWeekSchedule?.name || ''}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
