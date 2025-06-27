@@ -98,6 +98,9 @@ export default function SchedulerEditPage({ scheduleId }: SchedulerEditPageProps
     enabled: !!currentWeekSchedule?.id
   });
 
+  // Transform page when schedule loads (same as create page)
+  const showTabbedInterface = !!(existingSchedule || currentWeekSchedule || hasBeenEdited);
+
   const isLoading = scheduleLoading;
 
   // Set up form with existing data from consolidated response
