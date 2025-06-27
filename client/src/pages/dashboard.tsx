@@ -314,11 +314,12 @@ export default function Dashboard() {
                 {selectedLocationId && (
                   <CashManagementSummary locationId={selectedLocationId} />
                 )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Recent applicants - sophisticated component replacement */}
-            {effectiveIsAllLocations && (
+            {/* Recent applicants - permission-based display */}
+            {effectiveIsAllLocations && hasWorkflowAccess('application') && (
               <ApplicantsSummary limit={6} />
             )}
           </div>
