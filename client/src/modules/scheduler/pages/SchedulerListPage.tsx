@@ -1,20 +1,38 @@
 import React from 'react';
-import { Plus, Calendar, MapPin } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Plus, Calendar, MapPin, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
-import { useWeekSchedules } from '../hooks/useSchedulerData';
 import type { Location } from '@shared/schema';
 
 export default function SchedulerListPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
-  
-  const { data: weekSchedules = [], isLoading } = useWeekSchedules();
+
+  // Fetch existing week schedules
+  const { data: weekSchedules, isLoading } = useQuery({
+    queryKey: ['/api/week-schedules'],
+    queryFn: async () => {
+      const response = await fetch('/api/week-schedules');
+      if (!response.ok) throw new Error('Failed to fetch week schedules');
+      return response.json();
+    }
+  });
+
+  // Fetch locations for display
+  const { data: locations } = useQuery({
+    queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations');
+      if (!response.ok) throw new Error('Failed to fetch locations');
+      return response.json();
+    }
+  });
 
   // Permission check
   if (!permissions.canCreateShifts) {
@@ -36,84 +54,100 @@ export default function SchedulerListPage() {
     navigate(`/scheduler/edit/${scheduleId}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Week Schedules</h1>
-          <p className="text-gray-600">Loading schedules...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Week Schedules</h1>
-          <p className="text-gray-600 mt-2">Manage your weekly scheduling templates</p>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <Calendar className="h-8 w-8" />
+            Week Schedule Templates
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Manage reusable week schedules with multiple shifts and competency requirements
+          </p>
         </div>
+        
         <Button onClick={handleCreateNew} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Create New Schedule
         </Button>
       </div>
 
-      {weekSchedules.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No schedules yet</h3>
-            <p className="text-gray-600 mb-6">Create your first week schedule to get started</p>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-8">
+          <p className="text-gray-600">Loading schedules...</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && (!weekSchedules || weekSchedules.length === 0) && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <Calendar className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Week Schedules</h3>
+            <p className="text-gray-600 mb-6">
+              Create your first week schedule template to get started with shift planning.
+            </p>
             <Button onClick={handleCreateNew} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Create New Schedule
+              Create Your First Schedule
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-6">
-          {weekSchedules.map((schedule: any) => (
-            <Card key={schedule.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{schedule.name}</h3>
-                      <Badge variant={schedule.isActive ? "default" : "secondary"}>
-                        {schedule.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                    
-                    {schedule.description && (
-                      <p className="text-gray-600 mb-3">{schedule.description}</p>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        Location ID: {schedule.locationId}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Created: {new Date(schedule.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
+      )}
+
+      {/* Schedule Grid */}
+      {!isLoading && weekSchedules && weekSchedules.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {weekSchedules.map((schedule: any) => {
+            const location = (locations as Location[])?.find(l => l.id === schedule.locationId);
+            
+            return (
+              <Card key={schedule.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{schedule.name}</CardTitle>
+                    <Badge variant={schedule.isActive ? "default" : "secondary"}>
+                      {schedule.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  {schedule.description && (
+                    <p className="text-sm text-gray-600 mt-2">{schedule.description}</p>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    <span>{location?.name || 'Unknown Location'}</span>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>Created {new Date(schedule.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Users className="h-4 w-4" />
+                    <span>{schedule.shiftsCount || 0} shifts</span>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
                     <Button 
-                      variant="outline"
+                      variant="outline" 
+                      size="sm"
                       onClick={() => handleEditSchedule(schedule.id)}
+                      className="flex-1"
                     >
-                      Edit & Add Shifts
+                      Edit Schedule
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
