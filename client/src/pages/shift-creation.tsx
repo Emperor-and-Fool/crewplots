@@ -780,7 +780,16 @@ export default function ShiftCreationPage() {
                 <div className="flex gap-3 pt-4 border-t">
                   <Button 
                     variant="outline" 
-                    onClick={() => setCurrentWeekSchedule(null)}
+                    onClick={() => {
+                      // Set edit mode with current schedule data
+                      setIsCreatingNew(false);
+                      setSelectedScheduleId(currentWeekSchedule.id.toString());
+                      weekScheduleForm.setValue('name', currentWeekSchedule.name);
+                      weekScheduleForm.setValue('description', currentWeekSchedule.description || '');
+                      weekScheduleForm.setValue('locationId', currentWeekSchedule.locationId);
+                      weekScheduleForm.setValue('isActive', currentWeekSchedule.isActive);
+                      setCurrentWeekSchedule(null);
+                    }}
                     className="flex items-center gap-2"
                   >
                     <ArrowLeft className="h-4 w-4" />
