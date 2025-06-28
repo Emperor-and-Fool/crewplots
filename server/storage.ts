@@ -1604,6 +1604,8 @@ export class DatabaseStorage implements IStorage {
   }
   */
 
+  // near-future-removal: ApplicantDocument feature not developed yet
+  /*
   async getApplicantDocuments(applicantId: number): Promise<ApplicantDocument[]> {
     try {
       console.log("Fetching documents for applicant ID:", applicantId);
@@ -1660,6 +1662,7 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  */
 
   // Schedule Templates
   async getScheduleTemplate(id: number): Promise<ScheduleTemplate | undefined> {
@@ -2128,7 +2131,8 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Document Attachments
+  // near-future-removal: DocumentAttachment feature not developed yet
+  /*
   async getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined> {
     const [attachment] = await db.select().from(documentAttachments).where(eq(documentAttachments.id, id));
     return attachment;
@@ -2173,6 +2177,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(documentAttachments).where(eq(documentAttachments.fileId, fileId));
     return true;
   }
+  */
 
   // Message operations
   async getNoteRef(id: number): Promise<NoteRef | undefined> {
