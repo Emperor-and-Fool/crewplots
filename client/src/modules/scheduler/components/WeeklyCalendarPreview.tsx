@@ -31,13 +31,13 @@ const DAYS_OF_WEEK = [
 ];
 
 const DAY_LABELS = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun'
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday',
+  sunday: 'Sunday'
 };
 
 // Helper function to get current week number
@@ -79,43 +79,37 @@ export default function WeeklyCalendarPreview({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {DAYS_OF_WEEK.map((day) => {
             const dayShifts = getShiftsForDay(day);
             return (
-              <div key={day} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-medium">
-                    {DAY_LABELS[day as keyof typeof DAY_LABELS]}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
-                  </div>
+              <div key={day} className="flex items-center min-h-[60px] border-b last:border-b-0 py-2">
+                {/* Day label - fixed width */}
+                <div className="w-24 flex-shrink-0 text-sm font-medium">
+                  {DAY_LABELS[day as keyof typeof DAY_LABELS]}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                
+                {/* Shifts for this day */}
+                <div className="flex-1 flex flex-wrap gap-2">
                   {dayShifts.length > 0 ? (
                     dayShifts.map((shift) => (
                       <div
                         key={shift.id}
-                        className="relative group flex-1 min-w-[200px] p-3 rounded border transition-colors hover:bg-muted"
+                        className="relative group bg-blue-50 border border-blue-200 rounded px-3 py-2 hover:bg-blue-100 transition-colors cursor-pointer"
+                        onClick={() => onShiftClick?.(shift)}
                         title={`${shift.title}\n${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}${shift.position ? `\nPosition: ${shift.position}` : ''}`}
                       >
-                        <div 
-                          onClick={() => onShiftClick?.(shift)}
-                          className={`cursor-pointer ${onShiftClick ? 'hover:opacity-70' : ''}`}
-                        >
-                          <div className="font-medium text-sm mb-1">
-                            {shift.title}
-                          </div>
-                          <div className="text-muted-foreground text-xs mb-2">
-                            {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                          </div>
-                          {shift.position && (
-                            <Badge variant="secondary" className="text-xs">
-                              {shift.position}
-                            </Badge>
-                          )}
+                        <div className="text-sm font-medium text-blue-900">
+                          {shift.title}
                         </div>
+                        <div className="text-xs text-blue-700">
+                          {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                        </div>
+                        {shift.position && (
+                          <Badge variant="secondary" className="text-xs mt-1">
+                            {shift.position}
+                          </Badge>
+                        )}
                         {onShiftDelete && (
                           <Button
                             variant="ghost"
@@ -124,7 +118,7 @@ export default function WeeklyCalendarPreview({
                               e.stopPropagation();
                               onShiftDelete(shift);
                             }}
-                            className="absolute -top-1 -right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                            className="absolute -top-1 -right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -132,10 +126,15 @@ export default function WeeklyCalendarPreview({
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-muted-foreground py-2 flex-1 text-center">
+                    <div className="text-sm text-muted-foreground py-2">
                       No shifts scheduled
                     </div>
                   )}
+                </div>
+                
+                {/* Shift count */}
+                <div className="w-16 flex-shrink-0 text-right text-xs text-muted-foreground">
+                  {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
                 </div>
               </div>
             );
