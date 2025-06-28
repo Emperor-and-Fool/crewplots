@@ -2,19 +2,19 @@ import {
   users, locations, competencies, userLocations, userCompetencies,
   scheduleTemplates, templateShifts, multiWeekFrames, weekSchedules, shifts, shiftRequirements,
   shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, documentAttachments, noteRefs, hybridCache,
+  kbCategories, kbArticles, uploadedFiles, noteRefs, hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
   type ScheduleTemplate, type TemplateShift, type MultiWeekFrame,
   type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
   type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
-  type UploadedFile, type DocumentAttachment, type HybridCache,
+  type UploadedFile, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertMultiWeekFrame, type InsertWeekSchedule, type InsertShift,
   type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
   type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
   type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
-  type InsertDocumentAttachment, generatePublicId
+  generatePublicId
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
@@ -102,10 +102,12 @@ export interface IStorage {
   createApplicant(applicant: InsertUser): Promise<User>;
   updateApplicant(id: number, applicant: Partial<InsertUser>): Promise<User | undefined>;
   deleteApplicant(id: number): Promise<boolean>;
-  createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any>;
-  getApplicantDocuments(applicantId: number): Promise<any[]>;
-  getApplicantDocument(id: number): Promise<any | undefined>;
-  deleteApplicantDocument(id: number): Promise<boolean>;
+  // Document management - Feature not implemented yet
+  // TODO: Add document methods when implementing file management
+  // createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<any>;
+  // getApplicantDocuments(applicantId: number): Promise<any[]>;
+  // getApplicantDocument(id: number): Promise<any | undefined>;
+  // deleteApplicantDocument(id: number): Promise<boolean>;
 
   // Schedule Templates
   getScheduleTemplate(id: number): Promise<ScheduleTemplate | undefined>;
@@ -223,15 +225,8 @@ export interface IStorage {
   updateUploadedFile(id: number, file: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined>;
   deleteUploadedFile(id: number): Promise<boolean>;
 
-  // Document Attachments
-  getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined>;
-  getDocumentAttachments(): Promise<DocumentAttachment[]>;
-  getDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<DocumentAttachment[]>;
-  getDocumentAttachmentsByFile(fileId: number): Promise<DocumentAttachment[]>;
-  createDocumentAttachment(attachment: InsertDocumentAttachment): Promise<DocumentAttachment>;
-  deleteDocumentAttachment(id: number): Promise<boolean>;
-  deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean>;
-  deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean>;
+  // Document Attachments - Feature not implemented yet
+  // TODO: Add document attachment methods when implementing file management
 
   // Note References
   getNoteRef(id: number): Promise<NoteRef | undefined>;
@@ -270,7 +265,7 @@ export class MemStorage implements IStorage {
   private kbCategories: Map<number, KbCategory>;
   private kbArticles: Map<number, KbArticle>;
   private uploadedFiles: Map<number, UploadedFile>;
-  private documentAttachments: Map<number, DocumentAttachment>;
+  // private documentAttachments: Map<number, DocumentAttachment>; // near-future-removal: Feature not implemented yet
   private _userDocuments: Map<number, any>;
 
   private currentUserId: number;
@@ -304,7 +299,7 @@ export class MemStorage implements IStorage {
     this.kbCategories = new Map();
     this.kbArticles = new Map();
     this.uploadedFiles = new Map();
-    this.documentAttachments = new Map();
+    // this.documentAttachments = new Map(); // near-future-removal: Feature not implemented yet
     this._userDocuments = new Map();
 
     this.currentUserId = 1;

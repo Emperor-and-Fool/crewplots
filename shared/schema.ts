@@ -394,7 +394,9 @@ export const uploadedFiles = pgTable("uploaded_files", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Document Attachments - for linking files to different entities
+// Document Attachments - Feature not implemented yet
+// TODO: Implement document attachment system when adding file management
+/*
 export const documentAttachments = pgTable("document_attachments", {
   id: serial("id").primaryKey(),
   fileId: integer("file_id").references(() => uploadedFiles.id).notNull(),
@@ -404,6 +406,7 @@ export const documentAttachments = pgTable("document_attachments", {
   entityId: integer("entity_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+*/
 
 // Note References - Main note metadata and references
 export const noteRefs = pgTable("note_refs", {
@@ -525,7 +528,7 @@ export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: tru
 export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
 export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
-export const insertNoteAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true });
+// export const insertNoteAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true }); // near-future-removal: Feature not implemented yet
 
 // Login schema
 export const loginSchema = z.object({
@@ -612,8 +615,8 @@ export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
-export type DocumentAttachment = typeof documentAttachments.$inferSelect;
-export type NoteAttachment = typeof documentAttachments.$inferSelect;
+// Document attachment types - Feature not implemented yet
+// TODO: Add DocumentAttachment and related types when implementing file management
 export type Message = typeof noteRefs.$inferSelect;
 export type NoteRef = typeof noteRefs.$inferSelect;
 export type NoteFile = typeof noteFiles.$inferSelect;
