@@ -21,8 +21,8 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 
-// Permission checking utility function
-function hasPermission(userRole: string, permission: string): boolean {
+// Permission checking utility function - now properly typed with schema
+function hasPermission(userRole: User['role'], permission: string): boolean {
   const rolePermissions: Record<string, string[]> = {
     'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin', 'crew_planning', 'scheduler_development', 'scheduler_development.read', 'scheduler_development.write', 'scheduler_development.execute'],
     'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'crew_planning', 'scheduler_development', 'scheduler_development.read', 'scheduler_development.write', 'scheduler_development.execute'],
@@ -1212,9 +1212,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session Consolidation Endpoint for Scheduler Edit Page
   app.get("/api/scheduler/edit-data/:id", async (req, res) => {
     console.log("🔄 SCHEDULER CONSOLIDATION - Edit data request");
-    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    // near-future-removal: Optional chaining workaround for missing auth middleware typing
+    // console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("User:", req.user.username, "Role:", req.user.role);
     console.log("Schedule ID:", req.params.id);
-    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    // near-future-removal: Optional chaining workaround for permission check
+    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
     
     if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       console.log("❌ SCHEDULER CONSOLIDATION - Permission denied");
@@ -1243,9 +1247,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/week-schedules/:id", async (req, res) => {
     console.log("🔍 WEEK SCHEDULE FETCH - Single schedule request");
-    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    // near-future-removal: Optional chaining workaround for missing auth middleware typing
+    // console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("User:", req.user.username, "Role:", req.user.role);
     console.log("Schedule ID:", req.params.id);
-    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    // near-future-removal: Optional chaining workaround for permission check
+    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
     
     if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       console.log("❌ WEEK SCHEDULE FETCH - Permission denied");
@@ -1275,10 +1283,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/week-schedules/:id", async (req, res) => {
     console.log("🔄 WEEK SCHEDULE UPDATE - Start");
-    console.log("User:", req.user?.username, "Role:", req.user?.role);
+    // near-future-removal: Optional chaining workaround for missing auth middleware typing
+    // console.log("User:", req.user?.username, "Role:", req.user?.role);
+    console.log("User:", req.user.username, "Role:", req.user.role);
     console.log("Schedule ID:", req.params.id);
     console.log("Request body:", req.body);
-    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    // near-future-removal: Optional chaining workaround for permission check
+    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
     
     if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       console.log("❌ WEEK SCHEDULE UPDATE - Permission denied");
