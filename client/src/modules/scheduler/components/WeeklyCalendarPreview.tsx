@@ -65,6 +65,37 @@ export default function WeeklyCalendarPreview({
     return shifts.filter(shift => shift.dayOfWeek === day);
   };
 
+  // Generate time slots from 10h to 22h
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 10; hour <= 22; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+  const totalHours = 12; // 10h to 22h
+  const pixelsPerHour = 80;
+  const gridWidth = totalHours * pixelsPerHour;
+
+  // Calculate shift position on timeline
+  const getShiftPosition = (startTime: string, endTime: string) => {
+    const parseTime = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours + minutes / 60;
+    };
+
+    const startHour = parseTime(startTime);
+    const endHour = parseTime(endTime);
+    const gridStartHour = 10;
+
+    const left = Math.max(0, (startHour - gridStartHour) * pixelsPerHour);
+    const width = Math.max(40, (endHour - startHour) * pixelsPerHour);
+
+    return { left, width };
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -79,62 +110,101 @@ export default function WeeklyCalendarPreview({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {DAYS_OF_WEEK.map((day) => {
             const dayShifts = getShiftsForDay(day);
             return (
-              <div key={day} className="flex items-center min-h-[60px] border-b last:border-b-0 py-2">
-                {/* Day label - fixed width */}
-                <div className="w-24 flex-shrink-0 text-sm font-medium">
-                  {DAY_LABELS[day as keyof typeof DAY_LABELS]}
-                </div>
-                
-                {/* Shifts for this day */}
-                <div className="flex-1 flex flex-wrap gap-2">
-                  {dayShifts.length > 0 ? (
-                    dayShifts.map((shift) => (
-                      <div
-                        key={shift.id}
-                        className="relative group bg-blue-50 border border-blue-200 rounded px-3 py-2 hover:bg-blue-100 transition-colors cursor-pointer"
-                        onClick={() => onShiftClick?.(shift)}
-                        title={`${shift.title}\n${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}${shift.position ? `\nPosition: ${shift.position}` : ''}`}
-                      >
-                        <div className="text-sm font-medium text-blue-900">
-                          {shift.title}
-                        </div>
-                        <div className="text-xs text-blue-700">
-                          {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                        </div>
-                        {shift.position && (
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {shift.position}
-                          </Badge>
-                        )}
-                        {onShiftDelete && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onShiftDelete(shift);
-                            }}
-                            className="absolute -top-1 -right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-muted-foreground py-2">
-                      No shifts scheduled
+              <div key={day} className="border rounded-lg overflow-hidden">
+                {/* Day header */}
+                <div className="bg-muted/30 px-4 py-2 border-b">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">
+                      {DAY_LABELS[day as keyof typeof DAY_LABELS]}
                     </div>
-                  )}
+                    <div className="text-xs text-muted-foreground">
+                      {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Shift count */}
-                <div className="w-16 flex-shrink-0 text-right text-xs text-muted-foreground">
-                  {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
+
+                {/* Timeline container */}
+                <div className="relative">
+                  {/* Time header */}
+                  <div className="overflow-x-auto">
+                    <div className="flex border-b bg-muted/10" style={{ width: gridWidth }}>
+                      {timeSlots.map((time) => (
+                        <div 
+                          key={time}
+                          className="text-xs text-center py-2 border-r border-gray-200 flex-shrink-0"
+                          style={{ width: pixelsPerHour }}
+                        >
+                          {time}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Shifts timeline */}
+                  <div className="overflow-x-auto">
+                    <div 
+                      className="relative h-16" 
+                      style={{ width: gridWidth }}
+                    >
+                      {/* Grid lines */}
+                      {timeSlots.map((time, index) => (
+                        <div 
+                          key={time}
+                          className="absolute top-0 bottom-0 border-r border-gray-100"
+                          style={{ left: index * pixelsPerHour }}
+                        />
+                      ))}
+
+                      {/* Shifts */}
+                      {dayShifts.map((shift) => {
+                        const position = getShiftPosition(shift.startTime, shift.endTime);
+                        return (
+                          <div
+                            key={shift.id}
+                            className="absolute top-2 bottom-2 bg-blue-100 border border-blue-300 rounded px-2 cursor-pointer hover:bg-blue-200 transition-colors group overflow-hidden"
+                            style={{
+                              left: position.left,
+                              width: position.width,
+                              minWidth: '60px'
+                            }}
+                            onClick={() => onShiftClick?.(shift)}
+                            title={`${shift.title}\n${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}${shift.position ? `\nPosition: ${shift.position}` : ''}`}
+                          >
+                            <div className="text-xs font-medium truncate text-blue-800">
+                              {shift.title}
+                            </div>
+                            <div className="text-xs text-blue-600 truncate">
+                              {formatTime(shift.startTime)}-{formatTime(shift.endTime)}
+                            </div>
+                            {onShiftDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onShiftDelete(shift);
+                                }}
+                                className="absolute -top-1 -right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Empty day indicator */}
+                      {dayShifts.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                          No shifts scheduled
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
