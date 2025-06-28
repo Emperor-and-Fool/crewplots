@@ -12,6 +12,7 @@ import {
   decimal,
   index,
   uniqueIndex,
+  unique,
   primaryKey
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -219,40 +220,40 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Schedules - Main production planning container (formerly multi_week_frames)
-export const schedules = pgTable("schedules", {
+// Schedule Blocks - Multi-week containers for production planning
+export const scheduleBlocks = pgTable("schedule_blocks", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(), // e.g. "Production Season 1", "Tourist Season"
+  name: varchar("name", { length: 255 }).notNull(), // e.g. "Production Season 1", "Festival Block 2024"
   description: text("description"),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  maxWeeks: integer("max_weeks").default(8).notNull(), // Maximum episodes/weeks allowed
+  maxWeeks: integer("max_weeks").default(8).notNull(), // Maximum weeks allowed in this block
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  locationIdx: index("idx_schedules_location").on(table.locationId),
-  nameIdx: index("idx_schedules_name").on(table.name),
+  locationIdx: index("idx_schedule_blocks_location").on(table.locationId),
+  nameIdx: index("idx_schedule_blocks_name").on(table.name),
 }));
 
-// Weeks - Individual weeks within a schedule (formerly week_schedules)
+// Weeks - Individual weeks within a schedule block (formerly week_schedules)
 export const weeks = pgTable("weeks", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(), // e.g. "Episode 3", "Week 1: Opening"
   description: text("description"),
   templateId: integer("template_id").references(() => scheduleTemplates.id),
-  scheduleId: integer("schedule_id").references(() => schedules.id).notNull(), // Must belong to a schedule
-  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8 within schedule
+  scheduleBlockId: integer("schedule_block_id").references(() => scheduleBlocks.id).notNull(), // Must belong to a schedule block
+  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8 within schedule block
   isActive: boolean("is_active").default(true).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  scheduleIdx: index("idx_weeks_schedule").on(table.scheduleId),
+  scheduleBlockIdx: index("idx_weeks_schedule_block").on(table.scheduleBlockId),
   weekNumberIdx: index("idx_weeks_week_number").on(table.weekNumber),
   nameIdx: index("idx_weeks_name").on(table.name),
   templateIdx: index("idx_weeks_template").on(table.templateId),
-  uniqueWeekInSchedule: unique("unique_week_in_schedule").on(table.scheduleId, table.weekNumber), // Ensure unique week numbers per schedule
+  uniqueWeekInBlock: unique("unique_week_in_block").on(table.scheduleBlockId, table.weekNumber), // Ensure unique week numbers per schedule block
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
@@ -511,8 +512,8 @@ export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: tru
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 
-export const insertMultiWeekFrameSchema = createInsertSchema(multiWeekFrames).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertScheduleBlockSchema = createInsertSchema(scheduleBlocks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
 export const insertShiftSubscriptionSchema = createInsertSchema(shiftSubscriptions).omit({ id: true, subscribedAt: true });
@@ -570,8 +571,8 @@ export type InsertUserNote = z.infer<typeof insertUserNoteSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 
-export type InsertMultiWeekFrame = z.infer<typeof insertMultiWeekFrameSchema>;
-export type InsertWeekSchedule = z.infer<typeof insertWeekScheduleSchema>;
+export type InsertScheduleBlock = z.infer<typeof insertScheduleBlockSchema>;
+export type InsertWeek = z.infer<typeof insertWeekSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
 export type InsertShiftSubscription = z.infer<typeof insertShiftSubscriptionSchema>;
@@ -602,7 +603,7 @@ export type UserCompetency = typeof userCompetencies.$inferSelect;
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 
-export type Schedule = typeof schedules.$inferSelect;
+export type ScheduleBlock = typeof scheduleBlocks.$inferSelect;
 export type Week = typeof weeks.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
