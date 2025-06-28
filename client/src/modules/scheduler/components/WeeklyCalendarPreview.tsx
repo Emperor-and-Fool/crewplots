@@ -92,6 +92,13 @@ export default function WeeklyCalendarPreview({
     });
   }, [shifts, pixelsPerHour]);
 
+  // Handle mouse wheel scrolling for horizontal timeline navigation
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const container = e.currentTarget;
+    container.scrollLeft += e.deltaY;
+  };
+
   // Calculate shift position on timeline
   const getShiftPosition = (startTime: string, endTime: string) => {
     const parseTime = (time: string) => {
@@ -146,6 +153,7 @@ export default function WeeklyCalendarPreview({
                   ref={(el) => {
                     scrollContainerRefs.current[day] = el;
                   }}
+                  onWheel={handleWheel}
                 >
                   <div style={{ width: gridWidth }}>
                     {/* Time header */}
