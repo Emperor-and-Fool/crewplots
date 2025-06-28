@@ -220,6 +220,7 @@ Changelog:
 - June 28, 2025. ENHANCED: Default timeline view position - Added automatic scroll to 8:00 AM on load, providing practical default starting position for viewing work schedules while maintaining full 24-hour timeline access
 - June 28, 2025. ADDED: Mouse wheel timeline navigation - Implemented horizontal scrolling with mouse wheel hover, allowing quick navigation through 24-hour timeline using scroll up/down for left/right movement
 - June 28, 2025. IMPLEMENTED: Click and drag timeline navigation - Added mouse click+hold+drag functionality with visual cursor feedback, enabling finger-like timeline interaction for desktop users alongside existing touch and wheel navigation
+- June 28, 2025. ENHANCED: Timeline synchronization with toggle control - Added default timeline sync behavior across all days with checkbox toggle in header, enabling coordinated viewing of "what's happening when" across the week or independent day-by-day timeline positioning
 ```
 
 ## User Preferences

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Trash2 } from 'lucide-react';
 
 interface Shift {
@@ -59,6 +60,8 @@ export default function WeeklyCalendarPreview({
   const scrollContainerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [isDragging, setIsDragging] = useState<{ [key: string]: boolean }>({});
   const [dragStart, setDragStart] = useState<{ [key: string]: { x: number; scrollLeft: number } }>({});
+  const [isSynced, setIsSynced] = useState(true);
+  const syncRef = useRef(false);
 
   const formatTime = (time: string) => {
     return time.slice(0, 5); // Remove seconds if present
@@ -94,11 +97,29 @@ export default function WeeklyCalendarPreview({
     });
   }, [shifts, pixelsPerHour]);
 
+  // Synchronize scroll across all days
+  const syncScrollPosition = (scrollLeft: number, excludeDay?: string) => {
+    if (!isSynced || syncRef.current) return;
+    syncRef.current = true;
+    
+    Object.entries(scrollContainerRefs.current).forEach(([day, container]) => {
+      if (container && day !== excludeDay) {
+        container.scrollLeft = scrollLeft;
+      }
+    });
+    
+    setTimeout(() => {
+      syncRef.current = false;
+    }, 0);
+  };
+
   // Handle mouse wheel scrolling for horizontal timeline navigation
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>, day: string) => {
     e.preventDefault();
     const container = e.currentTarget;
-    container.scrollLeft += e.deltaY;
+    const newScrollLeft = container.scrollLeft + e.deltaY;
+    container.scrollLeft = newScrollLeft;
+    syncScrollPosition(newScrollLeft, day);
   };
 
   // Handle mouse drag scrolling
@@ -121,7 +142,9 @@ export default function WeeklyCalendarPreview({
     const container = e.currentTarget;
     const x = e.pageX - container.offsetLeft;
     const walk = (x - dragStart[day]?.x) * 2; // Scroll speed multiplier
-    container.scrollLeft = dragStart[day]?.scrollLeft - walk;
+    const newScrollLeft = dragStart[day]?.scrollLeft - walk;
+    container.scrollLeft = newScrollLeft;
+    syncScrollPosition(newScrollLeft, day);
   };
 
   const handleMouseUp = (day: string) => {
@@ -130,6 +153,12 @@ export default function WeeklyCalendarPreview({
 
   const handleMouseLeave = (day: string) => {
     setIsDragging(prev => ({ ...prev, [day]: false }));
+  };
+
+  // Handle regular scroll events
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>, day: string) => {
+    const container = e.currentTarget;
+    syncScrollPosition(container.scrollLeft, day);
   };
 
   // Calculate shift position on timeline
@@ -157,8 +186,23 @@ export default function WeeklyCalendarPreview({
             <Calendar className="h-5 w-5" />
             Schedule Preview: {weekScheduleName}
           </div>
-          <div className="text-sm font-normal text-muted-foreground">
-            Week {currentWeek}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="sync-timeline" 
+                checked={isSynced}
+                onCheckedChange={setIsSynced}
+              />
+              <label 
+                htmlFor="sync-timeline" 
+                className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Sync Timeline
+              </label>
+            </div>
+            <div className="text-sm font-normal text-muted-foreground">
+              Week {currentWeek}
+            </div>
           </div>
         </CardTitle>
       </CardHeader>
@@ -186,11 +230,12 @@ export default function WeeklyCalendarPreview({
                   ref={(el) => {
                     scrollContainerRefs.current[day] = el;
                   }}
-                  onWheel={handleWheel}
+                  onWheel={(e) => handleWheel(e, day)}
                   onMouseDown={(e) => handleMouseDown(e, day)}
                   onMouseMove={(e) => handleMouseMove(e, day)}
                   onMouseUp={() => handleMouseUp(day)}
                   onMouseLeave={() => handleMouseLeave(day)}
+                  onScroll={(e) => handleScroll(e, day)}
                   style={{ userSelect: 'none' }}
                 >
                   <div style={{ width: gridWidth }}>
