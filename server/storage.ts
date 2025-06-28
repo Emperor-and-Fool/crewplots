@@ -251,6 +251,10 @@ export interface IStorage {
   cleanExpiredCache(): Promise<number>;
 }
 
+// near-future-removal: MemStorage class - dead code, never used in production
+// Application uses DatabaseStorage exclusively, MemStorage missing 52+ IStorage methods
+// This was intended for development phase but app went directly to database storage
+/*
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private locations: Map<number, Location>;
@@ -1058,6 +1062,7 @@ export class MemStorage implements IStorage {
     return true;
   }
 }
+*/
 
 export class DatabaseStorage implements IStorage {
   private redisService: OnDemandRedisService;
@@ -2422,5 +2427,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use DatabaseStorage implementation by default
 export const storage = new DatabaseStorage();
