@@ -532,19 +532,28 @@ export default function SchedulerEditPage() {
                     <Button 
                       type="button"
                       variant="ghost"
-                      onClick={() => window.location.href = '/scheduler'}
+                      onClick={async () => {
+                        const formData = scheduleForm.getValues();
+                        await updateWeekScheduleMutation.mutateAsync(formData);
+                        window.location.href = '/scheduler';
+                      }}
+                      disabled={updateWeekScheduleMutation.isPending}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      To Templates
+                      {updateWeekScheduleMutation.isPending ? "Saving..." : "To Templates"}
                     </Button>
                     
                     <Button 
                       type="button"
                       variant="ghost"
-                      onClick={() => setShowTabbedInterface(true)}
+                      onClick={async () => {
+                        const formData = scheduleForm.getValues();
+                        await updateWeekScheduleMutation.mutateAsync(formData);
+                        setShowTabbedInterface(true);
+                      }}
                       disabled={updateWeekScheduleMutation.isPending}
                     >
-                      To Shifts
+                      {updateWeekScheduleMutation.isPending ? "Saving..." : "To Shifts"}
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
