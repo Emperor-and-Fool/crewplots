@@ -215,6 +215,7 @@ Changelog:
 - June 28, 2025. FIXED: Schedule status badges - Updated Active/Inactive badges on scheduler list page to use green and red colors instead of default theme colors, ensuring consistent visual feedback across all schedule activation interfaces
 - June 28, 2025. FIXED: Activation toggle save functionality - Resolved issue where Switch component changes weren't being saved to database due to form state mismatch between basicInfoForm (Switch) and scheduleForm (save operation). Now properly merges isActive value from Switch into save request
 - June 28, 2025. ENHANCED: Schedule preview with week number - Added current week number display in the header of the schedule preview component while preserving the working vertical day layout with shift visibility
+- June 28, 2025. IMPLEMENTED: Timeline grid scheduler preview - Enhanced vertical day layout with distinct day containers, 24-hour scrollable timeline grid (10h-22h default), positioned shifts on time scale, and mobile swipe functionality for viewing "who is working when"
 ```
 
 ## User Preferences
