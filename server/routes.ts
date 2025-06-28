@@ -35,6 +35,7 @@ function hasPermission(userRole: string, permission: string): boolean {
   return rolePermissions[userRole]?.includes(permission) || false;
 }
 import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
+import { authenticateUser } from './middleware/auth';
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
