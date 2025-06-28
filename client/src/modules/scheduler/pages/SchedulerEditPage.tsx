@@ -58,6 +58,7 @@ export default function SchedulerEditPage() {
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showTabbedInterface, setShowTabbedInterface] = useState(false);
 
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
@@ -184,8 +185,7 @@ export default function SchedulerEditPage() {
   const isLoading = scheduleLoading && !existingSchedule;
   
   // Transform page when schedule loads (same as create page)
-  // For edit page: only show tabbed interface after user has made changes or submitted
-  const showTabbedInterface = !!(currentWeekSchedule || hasBeenEdited);
+  // For edit page: use state-controlled transition
 
 
 
