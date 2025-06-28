@@ -253,8 +253,12 @@ export default function SchedulerEditPage() {
       return results;
     },
     onSuccess: (data) => {
-      // Invalidate the week schedule shifts query
+      console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
+      // Force refresh the shifts query using the exact same key structure
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
+      queryClient.refetchQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
+      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered');
+      
       shiftForm.reset();
       setEditingShift(null);
       const shiftCount = data.length;
