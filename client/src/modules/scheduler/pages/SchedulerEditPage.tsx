@@ -183,8 +183,13 @@ export default function SchedulerEditPage() {
 
   const isLoading = scheduleLoading && !existingSchedule;
   
-  // Always show tabbed interface for edit page
-  const showTabbedInterface = true;
+  // State for controlling view transition
+  const [showTabbedInterface, setShowTabbedInterface] = useState(true);
+
+  // Function to go back to initial schedule form
+  const handleBackToSchedule = () => {
+    setShowTabbedInterface(false);
+  };
 
 
 
@@ -557,11 +562,11 @@ export default function SchedulerEditPage() {
             <div className="mb-6">
               <Button
                 variant="ghost"
-                onClick={() => window.history.back()}
+                onClick={handleBackToSchedule}
                 className="mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Scheduler
+                Back to Schedule
               </Button>
               <h1 className="text-3xl font-bold">
                 Add Shifts to {currentWeekSchedule?.name}
