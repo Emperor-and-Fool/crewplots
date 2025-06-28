@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Clock, Users, MapPin, Plus, Save, ArrowLeft, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, Plus, Save, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -531,20 +531,21 @@ export default function SchedulerEditPage() {
                   <div className="flex justify-between gap-4">
                     <Button 
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => window.location.href = '/scheduler'}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to Templates
+                      To Templates
                     </Button>
                     
                     <Button 
                       type="button"
+                      variant="ghost"
                       onClick={() => setShowTabbedInterface(true)}
                       disabled={updateWeekScheduleMutation.isPending}
                     >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Edit Shifts
+                      To Shifts
+                      <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 </form>
