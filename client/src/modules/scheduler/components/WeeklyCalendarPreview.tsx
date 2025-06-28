@@ -65,17 +65,17 @@ export default function WeeklyCalendarPreview({
     return shifts.filter(shift => shift.dayOfWeek === day);
   };
 
-  // Generate time slots from 10h to 22h
+  // Generate time slots from 6h to 24h (full day view)
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 10; hour <= 22; hour++) {
+    for (let hour = 6; hour <= 23; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
     }
     return slots;
   };
 
   const timeSlots = generateTimeSlots();
-  const totalHours = 12; // 10h to 22h
+  const totalHours = 18; // 6h to 23h
   const pixelsPerHour = 80;
   const gridWidth = totalHours * pixelsPerHour;
 
@@ -88,7 +88,7 @@ export default function WeeklyCalendarPreview({
 
     const startHour = parseTime(startTime);
     const endHour = parseTime(endTime);
-    const gridStartHour = 10;
+    const gridStartHour = 6;
 
     const left = Math.max(0, (startHour - gridStartHour) * pixelsPerHour);
     const width = Math.max(40, (endHour - startHour) * pixelsPerHour);
