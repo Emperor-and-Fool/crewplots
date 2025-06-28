@@ -49,16 +49,21 @@ type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
   const params = useParams();
-  const { scheduleId } = params;
+  const { scheduleId, frameId } = params;
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   
+  // Determine if this is frame-based or legacy schedule-based URL
+  const isFrameMode = !!frameId;
+  const currentId = frameId || scheduleId;
+  
   // Debug URL parameters
   console.log('🔍 URL DEBUG: params =', params);
   console.log('🔍 URL DEBUG: scheduleId =', scheduleId);
-  console.log('🔍 URL DEBUG: typeof scheduleId =', typeof scheduleId);
-  console.log('🔍 URL DEBUG: isNaN(parseInt(scheduleId)) =', isNaN(parseInt(scheduleId || '')));
+  console.log('🔍 URL DEBUG: frameId =', frameId);
+  console.log('🔍 URL DEBUG: isFrameMode =', isFrameMode);
+  console.log('🔍 URL DEBUG: currentId =', currentId);
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
@@ -94,25 +99,37 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Individual fetch pattern - exact match to working CrewMemberProfile pattern
+  // Frame-based or legacy schedule fetch
   const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
-    queryKey: ['/api/week-schedules', scheduleId],
+    queryKey: isFrameMode ? ['/api/frames', frameId] : ['/api/week-schedules', scheduleId],
     queryFn: async () => {
-      console.log('🔍 FRONTEND: Fetching schedule with scheduleId:', scheduleId);
-      const response = await fetch(`/api/week-schedules/${scheduleId}`, {
-        credentials: 'include'
-      });
-      console.log('🔍 FRONTEND: Response status:', response.status, response.statusText);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('🔍 FRONTEND: Error response:', errorText);
-        throw new Error('Failed to fetch schedule');
+      if (isFrameMode) {
+        console.log('🔍 FRONTEND: Fetching frame with frameId:', frameId);
+        const response = await fetch(`/api/frames/${frameId}`, {
+          credentials: 'include'
+        });
+        console.log('🔍 FRONTEND: Frame response status:', response.status, response.statusText);
+        if (!response.ok) {
+          throw new Error('Failed to fetch frame');
+        }
+        const data = await response.json();
+        console.log('🔍 FRONTEND: Frame data received:', data);
+        return data;
+      } else {
+        console.log('🔍 FRONTEND: Fetching schedule with scheduleId:', scheduleId);
+        const response = await fetch(`/api/week-schedules/${scheduleId}`, {
+          credentials: 'include'
+        });
+        console.log('🔍 FRONTEND: Response status:', response.status, response.statusText);
+        if (!response.ok) {
+          throw new Error('Failed to fetch schedule');
+        }
+        const data = await response.json();
+        console.log('🔍 FRONTEND: Schedule data received:', data);
+        return data;
       }
-      const data = await response.json();
-      console.log('🔍 FRONTEND: Schedule data received:', data);
-      return data;
     },
-    enabled: !!scheduleId && permissions.canEditSchedules,
+    enabled: !!currentId && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
