@@ -124,10 +124,12 @@ export default function SchedulerEditPage() {
 
   // Individual fetch for shifts - following CrewMemberProfile pattern
   const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
-    queryKey: ['/api/shifts', 'week-schedule', scheduleId],
+    queryKey: ['/api/week-schedules', scheduleId, 'shifts'],
     queryFn: async () => {
       console.log('🔍 SHIFTS QUERY: Fetching shifts for week schedule:', scheduleId);
-      const response = await fetch(`/api/shifts?weekScheduleId=${scheduleId}`);
+      const response = await fetch(`/api/week-schedules/${scheduleId}/shifts`, {
+        credentials: 'include'
+      });
       console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
       if (!response.ok) {
         throw new Error('Failed to fetch shifts');
@@ -232,15 +234,14 @@ export default function SchedulerEditPage() {
       }));
 
       const promises = shiftsToCreate.map(shift => 
-        apiRequest('POST', '/api/shifts', shift)
+        apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, shift)
       );
       
       return await Promise.all(promises);
     },
     onSuccess: (data) => {
-      // Invalidate both general shifts and the specific week schedule shifts query
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts', 'week-schedule', scheduleId] });
+      // Invalidate the week schedule shifts query
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
       shiftForm.reset();
       setEditingShift(null);
       const shiftCount = data.length;
@@ -285,9 +286,8 @@ export default function SchedulerEditPage() {
       return apiRequest('DELETE', `/api/shifts/${shiftId}`);
     },
     onSuccess: () => {
-      // Invalidate both general shifts and the specific week schedule shifts query
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts', 'week-schedule', scheduleId] });
+      // Invalidate the week schedule shifts query
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
       toast({
         title: "Shift deleted successfully",
         description: "The shift has been removed from the schedule"
