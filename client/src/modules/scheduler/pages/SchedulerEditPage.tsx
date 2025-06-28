@@ -58,6 +58,11 @@ export default function SchedulerEditPage() {
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Multi-week frame state
+  const [multiWeekFrame, setMultiWeekFrame] = useState<any>(null);
+  const [currentWeekNumber, setCurrentWeekNumber] = useState<number>(1);
+  const [showAddWeekDialog, setShowAddWeekDialog] = useState(false);
 
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
@@ -358,6 +363,54 @@ export default function SchedulerEditPage() {
     }
   });
 
+  // Multi-week frame mutations
+  const createMultiWeekFrameMutation = useMutation({
+    mutationFn: async (frameData: { name: string; description?: string; locationId: number; maxWeeks: number }) => {
+      return await apiRequest('POST', '/api/multi-week-frames', frameData);
+    },
+    onSuccess: (frame) => {
+      setMultiWeekFrame(frame);
+      toast({
+        title: "Multi-week frame created",
+        description: `Frame "${frame.name}" is ready for additional weeks`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create multi-week frame",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const copyWeekToFrameMutation = useMutation({
+    mutationFn: async ({ frameId, weekNumber }: { frameId: number; weekNumber: number }) => {
+      return await apiRequest('POST', `/api/week-schedules/${scheduleId}/copy`, {
+        multiWeekFrameId: frameId,
+        weekNumber
+      });
+    },
+    onSuccess: (copiedWeek) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/multi-week-frames', multiWeekFrame?.id, 'weeks'] });
+      toast({
+        title: "Week copied successfully",
+        description: `Week ${copiedWeek.weekNumber} created in multi-week frame`
+      });
+      setCurrentWeekNumber(copiedWeek.weekNumber);
+      // Navigate to the new copied week
+      setLocation(`/scheduler/edit/${copiedWeek.id}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to copy week",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleShiftClick = (shift: any) => {
     setEditingShift(shift);
     shiftForm.reset({
@@ -389,6 +442,57 @@ export default function SchedulerEditPage() {
         description: "Cannot delete schedule - invalid ID",
         variant: "destructive"
       });
+    }
+  };
+
+  // Multi-week frame handlers
+  const handleAddWeek = async () => {
+    if (!actualScheduleData) return;
+
+    // If this schedule doesn't have a multi-week frame yet, create one
+    if (!actualScheduleData.multiWeekFrameId) {
+      // Create a new multi-week frame
+      const frameData = {
+        name: `${actualScheduleData.name} - Multi-Week Frame`,
+        description: `Multi-week frame for ${actualScheduleData.name}`,
+        locationId: actualScheduleData.locationId,
+        maxWeeks: 8
+      };
+
+      try {
+        const frame = await createMultiWeekFrameMutation.mutateAsync(frameData);
+        
+        // Update the current schedule to be part of this frame as week 1
+        await updateWeekScheduleMutation.mutateAsync({
+          ...actualScheduleData,
+          multiWeekFrameId: frame.id,
+          weekNumber: 1,
+          name: `${actualScheduleData.name} (Week 1)`
+        });
+
+        // Now copy this week to create week 2
+        await copyWeekToFrameMutation.mutateAsync({
+          frameId: frame.id,
+          weekNumber: 2
+        });
+      } catch (error) {
+        console.error('Error creating multi-week frame:', error);
+      }
+    } else {
+      // Frame already exists, just copy the current week
+      const nextWeekNumber = currentWeekNumber + 1;
+      if (nextWeekNumber <= 8) {
+        await copyWeekToFrameMutation.mutateAsync({
+          frameId: actualScheduleData.multiWeekFrameId,
+          weekNumber: nextWeekNumber
+        });
+      } else {
+        toast({
+          title: "Maximum weeks reached",
+          description: "Cannot add more than 8 weeks to a frame",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -573,20 +677,50 @@ export default function SchedulerEditPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <div className="mb-6">
-              <Button
-                variant="ghost"
-                onClick={handleBackToSchedule}
-                className="mb-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Schedule
-              </Button>
-              <h1 className="text-3xl font-bold">
-                Add Shifts to {currentWeekSchedule?.name}
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Create and manage shifts for your weekly schedule
-              </p>
+              <div className="flex justify-between items-start mb-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackToSchedule}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Schedule
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleAddWeek}
+                  disabled={createMultiWeekFrameMutation.isPending || copyWeekToFrameMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  {createMultiWeekFrameMutation.isPending || copyWeekToFrameMutation.isPending 
+                    ? "Adding Week..." 
+                    : "Add Week"
+                  }
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">
+                    Add Shifts to {actualScheduleData?.name}
+                    {actualScheduleData?.weekNumber && (
+                      <span className="text-muted-foreground text-xl ml-2">
+                        (Week {actualScheduleData.weekNumber})
+                      </span>
+                    )}
+                  </h1>
+                  <p className="text-muted-foreground mt-2">
+                    Create and manage shifts for your weekly schedule
+                  </p>
+                </div>
+                
+                {actualScheduleData?.multiWeekFrameId && (
+                  <div className="text-sm text-muted-foreground">
+                    Multi-week schedule
+                  </div>
+                )}
+              </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
