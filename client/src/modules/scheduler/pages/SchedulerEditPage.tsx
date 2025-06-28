@@ -228,6 +228,7 @@ export default function SchedulerEditPage() {
       const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
         scheduleId: parseInt(scheduleId || '0'),
         shiftGroupId,
+        title: `${data.position} - ${dayOfWeek}`, // Generate title from position and day
         position: data.position,
         dayOfWeek,
         startTime: data.startTime,
@@ -235,7 +236,7 @@ export default function SchedulerEditPage() {
         maxSlots: data.maxSlots,
         subscriptionDeadline: data.subscriptionDeadline || null,
         competencyRequirements: data.competencyRequirements || [],
-        status: 'active' as const
+        status: 'open' as const // Changed from 'active' to 'open'
       }));
 
       console.log('🚀 FRONTEND: Shifts to create:', shiftsToCreate);
