@@ -59,7 +59,7 @@ export default function SchedulerEditPage() {
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showTabbedInterface, setShowTabbedInterface] = useState(false);
-
+  
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
     resolver: zodResolver(weekScheduleUpdateSchema),
@@ -186,6 +186,10 @@ export default function SchedulerEditPage() {
   
   // Transform page when schedule loads (same as create page)
   // For edit page: use state-controlled transition
+  const handleScheduleSubmitAndTransition = async (data: WeekScheduleUpdateForm) => {
+    updateWeekScheduleMutation.mutate(data);
+    setShowTabbedInterface(true); // Transform to tabbed interface after submission
+  };
 
 
 
