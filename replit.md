@@ -214,6 +214,7 @@ Changelog:
 - June 28, 2025. ENHANCED: Complete activation visual feedback - Updated both switch colors and text labels to dynamically change between green (active) and red (inactive) states, providing consistent visual indicators throughout the activation toggle interface
 - June 28, 2025. FIXED: Schedule status badges - Updated Active/Inactive badges on scheduler list page to use green and red colors instead of default theme colors, ensuring consistent visual feedback across all schedule activation interfaces
 - June 28, 2025. FIXED: Activation toggle save functionality - Resolved issue where Switch component changes weren't being saved to database due to form state mismatch between basicInfoForm (Switch) and scheduleForm (save operation). Now properly merges isActive value from Switch into save request
+- June 28, 2025. ENHANCED: Schedule preview with week number - Added current week number display in the header of the schedule preview component while preserving the working vertical day layout with shift visibility
 ```
 
 ## User Preferences
