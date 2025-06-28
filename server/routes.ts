@@ -1041,45 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Multi-Week Frame Management
-  app.get("/api/frames/:frameId", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
 
-    try {
-      const frameId = parseInt(req.params.frameId);
-      if (isNaN(frameId)) {
-        return res.status(400).json({ error: "Invalid frame ID" });
-      }
-
-      // Check permissions
-      if (!hasPermission(req.user.role, 'scheduler_development')) {
-        return res.status(403).json({ error: "Insufficient permissions" });
-      }
-
-      console.log(`🔍 FRAME FETCH - Fetching frame with ID: ${frameId}`);
-      
-      // Get frame data with all associated weeks
-      const frame = await storage.getMultiWeekFrame(frameId);
-      if (!frame) {
-        return res.status(404).json({ error: "Frame not found" });
-      }
-
-      // Get all week schedules in this frame
-      const weekSchedules = await storage.getWeekSchedulesByFrame(frameId);
-      
-      console.log(`🔍 FRAME FETCH - Found frame with ${weekSchedules.length} weeks`);
-      
-      res.json({
-        frame,
-        weekSchedules
-      });
-    } catch (error) {
-      console.error("Error fetching frame:", error);
-      res.status(500).json({ error: "Failed to fetch frame" });
-    }
-  });
 
   // Shift Assignments Management
   app.get("/api/shift-assignments", async (req, res) => {
