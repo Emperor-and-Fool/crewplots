@@ -558,11 +558,11 @@ export default function SchedulerEditPage() {
             <div className="mb-6">
               <Button
                 variant="ghost"
-                onClick={() => window.history.back()}
+                onClick={() => setShowTabbedInterface(false)}
                 className="mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Scheduler
+                Back to Schedule
               </Button>
               <h1 className="text-3xl font-bold">
                 Add Shifts to {currentWeekSchedule?.name}
