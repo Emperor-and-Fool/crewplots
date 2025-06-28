@@ -281,7 +281,13 @@ export default function SchedulerEditPage() {
   });
 
   const handleScheduleSubmit = async (data: WeekScheduleUpdateForm) => {
-    updateWeekScheduleMutation.mutate(data);
+    // Get the latest isActive value from basicInfoForm since that's where the Switch is connected
+    const basicInfoValues = basicInfoForm.getValues();
+    const mergedData = {
+      ...data,
+      isActive: basicInfoValues.isActive // Use the Switch value from basicInfoForm
+    };
+    updateWeekScheduleMutation.mutate(mergedData);
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
