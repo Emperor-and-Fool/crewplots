@@ -53,6 +53,12 @@ export default function SchedulerEditPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
+  
+  // Debug URL parameters
+  console.log('🔍 URL DEBUG: params =', params);
+  console.log('🔍 URL DEBUG: scheduleId =', scheduleId);
+  console.log('🔍 URL DEBUG: typeof scheduleId =', typeof scheduleId);
+  console.log('🔍 URL DEBUG: isNaN(parseInt(scheduleId)) =', isNaN(parseInt(scheduleId || '')));
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
@@ -394,13 +400,13 @@ export default function SchedulerEditPage() {
     onSuccess: (copiedWeek) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
       queryClient.invalidateQueries({ queryKey: ['/api/multi-week-frames', multiWeekFrame?.id, 'weeks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
-        description: `Week ${copiedWeek.weekNumber} created in multi-week frame`
+        description: `Week ${copiedWeek.weekNumber} added to multi-week frame`
       });
-      setCurrentWeekNumber(copiedWeek.weekNumber);
-      // Navigate to the new copied week
-      setLocation(`/scheduler/edit/${copiedWeek.id}`);
+      // Stay on current editor - don't navigate away
+      // The user wants to see unified multi-week editing
     },
     onError: (error: any) => {
       toast({
@@ -469,6 +475,9 @@ export default function SchedulerEditPage() {
           weekNumber: 1,
           name: `${actualScheduleData.name} (Week 1)`
         });
+
+        // Refresh data to get updated schedule
+        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
 
         // Now copy this week to create week 2
         await copyWeekToFrameMutation.mutateAsync({
