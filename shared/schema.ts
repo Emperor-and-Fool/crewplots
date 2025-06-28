@@ -219,48 +219,46 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Multi-Week Frames - Grouping container for multiple week schedules
-export const multiWeekFrames = pgTable("multi_week_frames", {
+// Schedules - Main production planning container (formerly multi_week_frames)
+export const schedules = pgTable("schedules", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // e.g. "Production Season 1", "Tourist Season"
   description: text("description"),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  maxWeeks: integer("max_weeks").default(8).notNull(),
+  maxWeeks: integer("max_weeks").default(8).notNull(), // Maximum episodes/weeks allowed
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  locationIdx: index("idx_multi_week_frames_location").on(table.locationId),
-  nameIdx: index("idx_multi_week_frames_name").on(table.name),
+  locationIdx: index("idx_schedules_location").on(table.locationId),
+  nameIdx: index("idx_schedules_name").on(table.name),
 }));
 
-// Week Schedule Templates - Reusable week-schedule templates
-export const weekSchedules = pgTable("week_schedules", {
+// Weeks - Individual weeks within a schedule (formerly week_schedules)
+export const weeks = pgTable("weeks", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // e.g. "Episode 3", "Week 1: Opening"
   description: text("description"),
   templateId: integer("template_id").references(() => scheduleTemplates.id),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  scheduleId: integer("schedule_id").references(() => schedules.id).notNull(), // Must belong to a schedule
+  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8 within schedule
   isActive: boolean("is_active").default(true).notNull(),
-  // Multi-week frame support (nullable for backward compatibility)
-  multiWeekFrameId: integer("multi_week_frame_id").references(() => multiWeekFrames.id),
-  weekNumber: integer("week_number"), // 1, 2, 3... up to 8 within a frame
+  createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  locationIdx: index("idx_week_schedules_location").on(table.locationId),
-  nameIdx: index("idx_week_schedules_name").on(table.name),
-  templateIdx: index("idx_week_schedules_template").on(table.templateId),
-  multiWeekFrameIdx: index("idx_week_schedules_frame").on(table.multiWeekFrameId),
-  weekNumberIdx: index("idx_week_schedules_week_number").on(table.weekNumber),
+  scheduleIdx: index("idx_weeks_schedule").on(table.scheduleId),
+  weekNumberIdx: index("idx_weeks_week_number").on(table.weekNumber),
+  nameIdx: index("idx_weeks_name").on(table.name),
+  templateIdx: index("idx_weeks_template").on(table.templateId),
+  uniqueWeekInSchedule: unique("unique_week_in_schedule").on(table.scheduleId, table.weekNumber), // Ensure unique week numbers per schedule
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id),
+  weekId: integer("week_id").references(() => weeks.id).notNull(), // Must belong to a week
   shiftGroupId: text("shift_group_id"), // Groups shifts created together for multi-day template editing
   userId: integer("user_id").references(() => users.id),
   date: timestamp("date"),
@@ -276,7 +274,7 @@ export const shifts = pgTable("shifts", {
   status: text("status", { enum: ["open", "filled", "cancelled"] }).default("open").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
-  weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
+  weekIdx: index("idx_shifts_week").on(table.weekId),
   shiftGroupIdx: index("idx_shifts_group").on(table.shiftGroupId),
   dayOfWeekIdx: index("idx_shifts_day_of_week").on(table.dayOfWeek),
   statusIdx: index("idx_shifts_status").on(table.status),
@@ -604,8 +602,8 @@ export type UserCompetency = typeof userCompetencies.$inferSelect;
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 
-export type MultiWeekFrame = typeof multiWeekFrames.$inferSelect;
-export type WeekSchedule = typeof weekSchedules.$inferSelect;
+export type Schedule = typeof schedules.$inferSelect;
+export type Week = typeof weeks.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
 export type ShiftSubscription = typeof shiftSubscriptions.$inferSelect;
