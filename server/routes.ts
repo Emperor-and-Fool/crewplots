@@ -1175,8 +1175,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
-      const weekSchedules = await storage.getWeekSchedules(locationId);
-      res.json(weekSchedules);
+      const frameId = req.query.frameId ? parseInt(req.query.frameId as string) : undefined;
+      
+      if (frameId) {
+        console.log(`🔍 FRAME QUERY - Fetching schedules for frame: ${frameId}`);
+        // Get frame data and all week schedules in this frame
+        const frame = await storage.getMultiWeekFrame(frameId);
+        if (!frame) {
+          return res.status(404).json({ error: "Frame not found" });
+        }
+        
+        const weekSchedules = await storage.getWeekSchedulesByFrame(frameId);
+        console.log(`🔍 FRAME QUERY - Found ${weekSchedules.length} schedules in frame`);
+        
+        res.json({
+          frame,
+          weekSchedules,
+          isFrameMode: true
+        });
+      } else {
+        // Standard location-based query
+        const weekSchedules = await storage.getWeekSchedules(locationId);
+        res.json(weekSchedules);
+      }
     } catch (error) {
       console.error("Error fetching week schedules:", error);
       res.status(500).json({ error: "Failed to fetch week schedules" });

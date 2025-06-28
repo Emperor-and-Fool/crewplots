@@ -99,13 +99,13 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Frame-based or legacy schedule fetch
-  const { data: existingSchedule, isLoading: scheduleLoading, error: scheduleError } = useQuery({
-    queryKey: isFrameMode ? ['/api/frames', frameId] : ['/api/week-schedules', scheduleId],
+  // Frame-based or legacy schedule fetch using query parameters
+  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery({
+    queryKey: isFrameMode ? ['/api/week-schedules', 'frame', frameId] : ['/api/week-schedules', scheduleId],
     queryFn: async () => {
       if (isFrameMode) {
         console.log('🔍 FRONTEND: Fetching frame with frameId:', frameId);
-        const response = await fetch(`/api/frames/${frameId}`, {
+        const response = await fetch(`/api/week-schedules?frameId=${frameId}`, {
           credentials: 'include'
         });
         console.log('🔍 FRONTEND: Frame response status:', response.status, response.statusText);
@@ -133,6 +133,9 @@ export default function SchedulerEditPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
+
+  // Extract the appropriate schedule data based on mode
+  const existingSchedule = isFrameMode ? scheduleData?.weekSchedules?.[0] : scheduleData;
 
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
