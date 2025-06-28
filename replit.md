@@ -210,6 +210,7 @@ Changelog:
 - June 28, 2025. COMPLETED: Scheduler edit page navigation enhancement - Added intuitive two-button layout for initial schedule form state: "To Templates" (left, ghost button) navigates to scheduler list, "To Shifts" (right, ghost button) transitions to tabbed interface. Maintained "Back to Schedule" button in tabbed state for reverse transition. Clean navigation flow: templates → schedule details → shift management
 - June 28, 2025. ENHANCED: Auto-save navigation buttons - Both "To Templates" and "To Shifts" buttons now save form data before navigation using mutateAsync(), preventing data loss. Buttons show "Saving..." feedback during save operations and are disabled to prevent double-clicks. Seamless save-then-navigate user experience implemented
 - June 28, 2025. RESOLVED: Schedule inactivation toggle issue - Clarified that activation toggle is located in Basic Info tab (tab 1), not Schedule tab (tab 3). Updated Switch component with intuitive colors: green for active, red for inactive. Successfully deactivated schedule ID 3 and confirmed proper visual feedback
+- June 28, 2025. FIXED: Switch color override issue - Added !important modifier to green/red colors in Switch component to override default blue styling, ensuring proper visual feedback for schedule activation state
 ```
 
 ## User Preferences
