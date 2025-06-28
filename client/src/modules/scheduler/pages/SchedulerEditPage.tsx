@@ -58,8 +58,7 @@ export default function SchedulerEditPage() {
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showTabbedInterface, setShowTabbedInterface] = useState(false);
-  
+
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
     resolver: zodResolver(weekScheduleUpdateSchema),
@@ -184,12 +183,8 @@ export default function SchedulerEditPage() {
 
   const isLoading = scheduleLoading && !existingSchedule;
   
-  // Transform page when schedule loads (same as create page)
-  // For edit page: use state-controlled transition
-  const handleScheduleSubmitAndTransition = async (data: WeekScheduleUpdateForm) => {
-    updateWeekScheduleMutation.mutate(data);
-    setShowTabbedInterface(true); // Transform to tabbed interface after submission
-  };
+  // Always show tabbed interface for edit page
+  const showTabbedInterface = true;
 
 
 
@@ -562,11 +557,11 @@ export default function SchedulerEditPage() {
             <div className="mb-6">
               <Button
                 variant="ghost"
-                onClick={() => setShowTabbedInterface(false)}
+                onClick={() => window.history.back()}
                 className="mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Schedule
+                Back to Scheduler
               </Button>
               <h1 className="text-3xl font-bold">
                 Add Shifts to {currentWeekSchedule?.name}
