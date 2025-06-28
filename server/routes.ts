@@ -1217,7 +1217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
-      const validatedData = insertWeekScheduleSchema.parse({
+      const validatedData = insertWeekSchema.parse({
         ...req.body,
         createdBy: req.user.id
       });
@@ -1323,7 +1323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
-      const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
+      const validatedData = insertWeekSchema.omit({ createdBy: true }).parse(req.body);
       console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
       
       const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
@@ -1337,46 +1337,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Multi-Week Frame API Routes ===
 
-  // Create multi-week frame
-  app.post("/api/multi-week-frames", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // near-future-removal: Multi-week frame routes temporarily disabled during schema migration
+  // app.post("/api/multi-week-frames", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
+  //   try {
+  //     const validatedData = insertScheduleBlockSchema.parse({
+  //       ...req.body,
+  //       createdBy: req.user.id
+  //     });
+  //     const frame = await storage.createScheduleBlock(validatedData);
+  //     res.status(201).json(frame);
+  //   } catch (error) {
+  //     console.error("Error creating schedule block:", error);
+  //     res.status(400).json({ error: "Failed to create schedule block" });
+  //   }
+  // });
 
-    try {
-      const validatedData = insertMultiWeekFrameSchema.parse({
-        ...req.body,
-        createdBy: req.user.id
-      });
-      const frame = await storage.createMultiWeekFrame(validatedData);
-      res.status(201).json(frame);
-    } catch (error) {
-      console.error("Error creating multi-week frame:", error);
-      res.status(400).json({ error: "Failed to create multi-week frame" });
-    }
-  });
-
-  // Copy week schedule to multi-week frame
-  app.post("/api/week-schedules/:id/copy", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
-
-    try {
-      const sourceWeekScheduleId = parseInt(req.params.id);
-      const { multiWeekFrameId, weekNumber } = req.body;
-      
-      const copiedWeekSchedule = await storage.copyWeekScheduleToFrame(
-        sourceWeekScheduleId, 
-        multiWeekFrameId, 
-        weekNumber
-      );
-      res.status(201).json(copiedWeekSchedule);
-    } catch (error) {
-      console.error("Error copying week schedule:", error);
-      res.status(400).json({ error: "Failed to copy week schedule" });
-    }
-  });
+  // near-future-removal: Copy route disabled during schema migration
+  // app.post("/api/week-schedules/:id/copy", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
+  //   try {
+  //     const sourceWeekScheduleId = parseInt(req.params.id);
+  //     const { scheduleBlockId, weekNumber } = req.body;
+  //     const copiedWeek = await storage.copyWeekToBlock(sourceWeekScheduleId, scheduleBlockId, weekNumber);
+  //     res.status(201).json(copiedWeek);
+  //   } catch (error) {
+  //     console.error("Error copying week schedule:", error);
+  //     res.status(400).json({ error: "Failed to copy week schedule" });
+  //   }
+  // });
 
   // Get all weeks in a multi-week frame
   app.get("/api/multi-week-frames/:id/weeks", async (req, res) => {
@@ -1402,7 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const frameId = parseInt(req.params.id);
-      const validatedData = insertMultiWeekFrameSchema.omit({ createdBy: true }).partial().parse(req.body);
+      const validatedData = insertScheduleBlockSchema.omit({ createdBy: true }).partial().parse(req.body);
       const frame = await storage.updateMultiWeekFrame(frameId, validatedData);
       res.json(frame);
     } catch (error) {
