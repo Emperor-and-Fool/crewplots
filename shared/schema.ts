@@ -219,40 +219,23 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Schedule Frames - Main schedule containers (can contain multiple weeks)
-export const scheduleFrames = pgTable("schedule_frames", {
+// Multi-Week Frames - Grouping container for multiple week schedules
+export const multiWeekFrames = pgTable("multi_week_frames", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  templateId: integer("template_id").references(() => scheduleTemplates.id),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
+  maxWeeks: integer("max_weeks").default(8).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  locationIdx: index("idx_schedule_frames_location").on(table.locationId),
-  nameIdx: index("idx_schedule_frames_name").on(table.name),
-  templateIdx: index("idx_schedule_frames_template").on(table.templateId),
+  locationIdx: index("idx_multi_week_frames_location").on(table.locationId),
+  nameIdx: index("idx_multi_week_frames_name").on(table.name),
 }));
 
-// Schedule Weeks - Individual weeks within a schedule frame
-export const scheduleWeeks = pgTable("schedule_weeks", {
-  id: serial("id").primaryKey(),
-  scheduleFrameId: integer("schedule_frame_id").references(() => scheduleFrames.id, { onDelete: "cascade" }).notNull(),
-  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8
-  weekStartDate: timestamp("week_start_date"), // Actual start date of this week
-  name: varchar("name", { length: 255 }), // Optional custom name for this week
-  notes: text("notes"), // Week-specific notes
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  scheduleFrameIdx: index("idx_schedule_weeks_frame").on(table.scheduleFrameId),
-  weekNumberIdx: index("idx_schedule_weeks_number").on(table.weekNumber),
-  frameWeekUnique: uniqueIndex("unique_frame_week").on(table.scheduleFrameId, table.weekNumber),
-}));
-
-// Week Schedule Templates - Reusable week-schedule templates (legacy - keeping for backward compatibility)
+// Week Schedule Templates - Reusable week-schedule templates
 export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -261,12 +244,17 @@ export const weekSchedules = pgTable("week_schedules", {
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  // Multi-week frame support (nullable for backward compatibility)
+  multiWeekFrameId: integer("multi_week_frame_id").references(() => multiWeekFrames.id),
+  weekNumber: integer("week_number"), // 1, 2, 3... up to 8 within a frame
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   locationIdx: index("idx_week_schedules_location").on(table.locationId),
   nameIdx: index("idx_week_schedules_name").on(table.name),
   templateIdx: index("idx_week_schedules_template").on(table.templateId),
+  multiWeekFrameIdx: index("idx_week_schedules_frame").on(table.multiWeekFrameId),
+  weekNumberIdx: index("idx_week_schedules_week_number").on(table.weekNumber),
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
@@ -522,6 +510,7 @@ export const insertUserNoteSchema = createInsertSchema(userNotes).omit({ id: tru
 export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates).omit({ id: true, createdAt: true });
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 
+export const insertMultiWeekFrameSchema = createInsertSchema(multiWeekFrames).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
@@ -580,6 +569,7 @@ export type InsertUserNote = z.infer<typeof insertUserNoteSchema>;
 export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema>;
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 
+export type InsertMultiWeekFrame = z.infer<typeof insertMultiWeekFrameSchema>;
 export type InsertWeekSchedule = z.infer<typeof insertWeekScheduleSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
@@ -611,6 +601,7 @@ export type UserCompetency = typeof userCompetencies.$inferSelect;
 export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 
+export type MultiWeekFrame = typeof multiWeekFrames.$inferSelect;
 export type WeekSchedule = typeof weekSchedules.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
