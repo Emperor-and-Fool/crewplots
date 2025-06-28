@@ -676,11 +676,11 @@ export default function SchedulerEditPage() {
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  Active Schedule
+                                <FormLabel className={`text-base font-medium ${field.value ? 'text-green-600' : 'text-red-600'}`}>
+                                  {field.value ? 'Active Schedule' : 'Inactive Schedule'}
                                 </FormLabel>
-                                <FormDescription>
-                                  Make this schedule available for shift creation
+                                <FormDescription className={field.value ? 'text-green-500' : 'text-red-500'}>
+                                  {field.value ? 'Available for shift creation' : 'Not available for shift creation'}
                                 </FormDescription>
                               </div>
                               <FormControl>

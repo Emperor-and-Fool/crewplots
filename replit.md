@@ -211,6 +211,7 @@ Changelog:
 - June 28, 2025. ENHANCED: Auto-save navigation buttons - Both "To Templates" and "To Shifts" buttons now save form data before navigation using mutateAsync(), preventing data loss. Buttons show "Saving..." feedback during save operations and are disabled to prevent double-clicks. Seamless save-then-navigate user experience implemented
 - June 28, 2025. RESOLVED: Schedule inactivation toggle issue - Clarified that activation toggle is located in Basic Info tab (tab 1), not Schedule tab (tab 3). Updated Switch component with intuitive colors: green for active, red for inactive. Successfully deactivated schedule ID 3 and confirmed proper visual feedback
 - June 28, 2025. FIXED: Switch color override issue - Added !important modifier to green/red colors in Switch component to override default blue styling, ensuring proper visual feedback for schedule activation state
+- June 28, 2025. ENHANCED: Complete activation visual feedback - Updated both switch colors and text labels to dynamically change between green (active) and red (inactive) states, providing consistent visual indicators throughout the activation toggle interface
 ```
 
 ## User Preferences
