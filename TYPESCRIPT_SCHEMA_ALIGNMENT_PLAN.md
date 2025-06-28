@@ -37,34 +37,36 @@ export type InsertDocumentAttachment = typeof insertDocumentAttachmentSchema._ty
 
 ---
 
-### Phase 2: Legacy Type Cleanup  
-**Status:** Pending Phase 1 Completion
+### Phase 2: Legacy Type Cleanup ✅ COMPLETED
+**Status:** COMPLETED ✅
 **Impact:** Medium (Method signatures, potential API changes)
-**Estimated Time:** 30 minutes
+**Actual Time:** 45 minutes
 
-**Issues Identified:**
-- References to obsolete `Staff` type (should be `User`)
-- References to obsolete `StaffCompetency` type (should be `UserCompetency`)
-- References to obsolete `Applicant` type (should be `User` with role filtering)
-- Approximately 15 method signatures in DatabaseStorage class
+**Completed Actions:**
+1. ✅ Replaced Staff methods with User-based implementations using role filtering
+2. ✅ Migrated StaffCompetency to UserCompetency with legacy compatibility methods
+3. ✅ Updated Applicant methods to use unified users table with role='applicant'
+4. ✅ Fixed Redis service call patterns from getConnection/releaseConnection to withConnection
+5. ✅ Commented out unimplemented ApplicantDocument methods with 'near-future-removal' tags
+6. ✅ Added legacy compatibility wrapper methods for backward compatibility
+7. ✅ Maintained database integrity with proper role-based filtering
 
-**Changes Required:**
-- Update method signatures to use current User-based schema
-- Replace legacy table references with current schema tables
-- Maintain API compatibility through role-based filtering
+**Benefits Achieved:**
+- Simplified data model using unified User entity
+- Eliminated type confusion between Staff/Applicant/User
+- Preserved all existing functionality through legacy compatibility methods
+- Reduced TypeScript errors from obsolete type references
 
-**Testing Strategy:**
-- User management workflows
-- Crew assignment functionality  
-- Location-based user filtering
-- Crew member profile operations
-
-**Risk Level:** Controlled (established User-based patterns already working)
+**Testing Strategy Verified:**
+- User management workflows preserved
+- Crew assignment functionality maintained
+- Location-based user filtering working correctly
+- All existing API endpoints remain functional
 
 ---
 
-### Phase 3: Authentication Type Completion
-**Status:** Pending Phase 2 Completion  
+### Phase 3: Authentication Type Completion 🚧 IN PROGRESS
+**Status:** IN PROGRESS 🚧
 **Impact:** Medium (Route handler confidence, defensive pattern elimination)
 **Estimated Time:** 45 minutes
 

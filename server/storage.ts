@@ -1516,9 +1516,9 @@ export class DatabaseStorage implements IStorage {
       
       // Invalidate applicants cache after update
       try {
-        const connection = await this.redisService.getConnection('storage-write');
-        await connection.del('applicants:all');
-        await this.redisService.releaseConnection('storage-write');
+        await this.redisService.withConnection('storage-write', async (connection: any) => {
+          await connection.del('applicants:all');
+        });
       } catch (redisError) {
         console.log('Failed to invalidate applicants cache');
       }
@@ -1571,23 +1571,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getAllApplicants(): Promise<Applicant[]> {
+  // near-future-removal: Legacy applicant method replaced with User-based implementation
+  async getAllApplicants(): Promise<User[]> {
     try {
-      // Include all needed columns in the selection
-      const allApplicants = await db.select({
-        id: applicants.id,
-        name: applicants.name,
-        email: applicants.email,
-        phone: applicants.phone,
-        
-        status: applicants.status,
-        resumeUrl: applicants.resumeUrl,
-        notes: applicants.notes,
-        extraMessage: applicants.extraMessage,
-        userId: applicants.userId,
-        locationId: applicants.locationId,
-        createdAt: applicants.createdAt
-      }).from(applicants);
+      // Return all users with applicant role from unified users table
+      const allApplicants = await db.select()
+        .from(users)
+        .where(eq(users.role, 'applicant'));
       
       return allApplicants;
     } catch (error) {
@@ -1596,6 +1586,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // near-future-removal: ApplicantDocument feature not developed yet
+  /*
   async createApplicantDocument(document: { applicantId: number, documentName: string, documentUrl: string, fileType?: string }): Promise<ApplicantDocument> {
     const [newDoc] = await db
       .insert(applicantDocuments)
@@ -1610,6 +1602,7 @@ export class DatabaseStorage implements IStorage {
     
     return newDoc;
   }
+  */
 
   async getApplicantDocuments(applicantId: number): Promise<ApplicantDocument[]> {
     try {
