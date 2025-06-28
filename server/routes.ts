@@ -1299,6 +1299,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === Multi-Week Frame API Routes ===
+
+  // Create multi-week frame
+  app.post("/api/multi-week-frames", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const validatedData = insertMultiWeekFrameSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
+      });
+      const frame = await storage.createMultiWeekFrame(validatedData);
+      res.status(201).json(frame);
+    } catch (error) {
+      console.error("Error creating multi-week frame:", error);
+      res.status(400).json({ error: "Failed to create multi-week frame" });
+    }
+  });
+
+  // Copy week schedule to multi-week frame
+  app.post("/api/week-schedules/:id/copy", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const sourceWeekScheduleId = parseInt(req.params.id);
+      const { multiWeekFrameId, weekNumber } = req.body;
+      
+      const copiedWeekSchedule = await storage.copyWeekScheduleToFrame(
+        sourceWeekScheduleId, 
+        multiWeekFrameId, 
+        weekNumber
+      );
+      res.status(201).json(copiedWeekSchedule);
+    } catch (error) {
+      console.error("Error copying week schedule:", error);
+      res.status(400).json({ error: "Failed to copy week schedule" });
+    }
+  });
+
+  // Get all weeks in a multi-week frame
+  app.get("/api/multi-week-frames/:id/weeks", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const frameId = parseInt(req.params.id);
+      const weeks = await storage.getWeekSchedulesByFrame(frameId);
+      res.json(weeks);
+    } catch (error) {
+      console.error("Error fetching frame weeks:", error);
+      res.status(500).json({ error: "Failed to fetch weeks in frame" });
+    }
+  });
+
+  // Update multi-week frame metadata
+  app.patch("/api/multi-week-frames/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const frameId = parseInt(req.params.id);
+      const validatedData = insertMultiWeekFrameSchema.omit({ createdBy: true }).partial().parse(req.body);
+      const frame = await storage.updateMultiWeekFrame(frameId, validatedData);
+      res.json(frame);
+    } catch (error) {
+      console.error("Error updating multi-week frame:", error);
+      res.status(400).json({ error: "Failed to update multi-week frame" });
+    }
+  });
+
   app.delete("/api/week-schedules/:id", async (req, res) => {
     if (!req.user || !hasPermission(req.user.role, "schedule")) {
       return res.status(403).json({ error: "Insufficient permissions" });
