@@ -889,6 +889,9 @@ class DatabaseStorage {
       phoneNumber: users.phoneNumber,
       status: users.status,
       resumeUrl: users.resumeUrl,
+      notes: users.notes,
+      workflowPermissions: users.workflowPermissions,
+      blockedPermissions: users.blockedPermissions,
       createdAt: users.createdAt
     }).from(users).where(eq(users.username, username));
     return user;
