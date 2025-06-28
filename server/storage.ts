@@ -10,7 +10,7 @@ import {
   type UploadedFile, type HybridCache,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertScheduleTemplate,
-  type InsertTemplateShift, type InsertMultiWeekFrame, type InsertWeekSchedule, type InsertShift,
+  type InsertTemplateShift, type InsertScheduleBlock, type InsertWeek, type InsertShift,
   type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
   type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
   type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
@@ -129,22 +129,22 @@ export interface IStorage {
   // Weekly Schedules
 
 
-  // Multi-Week Frames
-  createMultiWeekFrame(frame: InsertMultiWeekFrame): Promise<MultiWeekFrame>;
-  getMultiWeekFrame(id: number): Promise<MultiWeekFrame | undefined>;
-  getMultiWeekFrames(locationId?: number): Promise<MultiWeekFrame[]>;
-  updateMultiWeekFrame(id: number, frame: Partial<InsertMultiWeekFrame>): Promise<MultiWeekFrame | undefined>;
-  deleteMultiWeekFrame(id: number): Promise<boolean>;
-  copyWeekScheduleToFrame(sourceWeekScheduleId: number, multiWeekFrameId: number, weekNumber: number): Promise<WeekSchedule>;
-  getWeekSchedulesByFrame(frameId: number): Promise<WeekSchedule[]>;
+  // Schedule Blocks (Multi-Week Containers)
+  createScheduleBlock(block: InsertScheduleBlock): Promise<ScheduleBlock>;
+  getScheduleBlock(id: number): Promise<ScheduleBlock | undefined>;
+  getScheduleBlocks(locationId?: number): Promise<ScheduleBlock[]>;
+  updateScheduleBlock(id: number, block: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined>;
+  deleteScheduleBlock(id: number): Promise<boolean>;
+  copyWeekToBlock(sourceWeekId: number, scheduleBlockId: number, weekNumber: number): Promise<Week>;
+  getWeeksByBlock(blockId: number): Promise<Week[]>;
 
   // Week Schedules (Templates)
-  getWeekSchedule(id: number): Promise<WeekSchedule | undefined>;
-  getWeekSchedules(locationId?: number): Promise<WeekSchedule[]>;
-  getWeekScheduleById(id: number): Promise<WeekSchedule | undefined>;
-  createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule>;
-  updateWeekSchedule(id: number, schedule: Partial<InsertWeekSchedule>): Promise<WeekSchedule | undefined>;
-  deleteWeekSchedule(id: number): Promise<boolean>;
+  getWeek(id: number): Promise<Week | undefined>;
+  getWeeks(locationId?: number): Promise<Week[]>;
+  getWeekById(id: number): Promise<Week | undefined>;
+  createWeek(week: InsertWeek): Promise<Week>;
+  updateWeek(id: number, week: Partial<InsertWeek>): Promise<Week | undefined>;
+  deleteWeek(id: number): Promise<boolean>;
   createShiftForWeekSchedule(shift: InsertShift): Promise<Shift>;
   getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]>;
 
@@ -1738,82 +1738,82 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Multi-Week Frames
-  async createMultiWeekFrame(frame: InsertMultiWeekFrame): Promise<MultiWeekFrame> {
-    const [createdFrame] = await db.insert(multiWeekFrames).values(frame).returning();
-    return createdFrame;
+  // Schedule Blocks (Multi-Week Containers)
+  async createScheduleBlock(block: InsertScheduleBlock): Promise<ScheduleBlock> {
+    const [createdBlock] = await db.insert(scheduleBlocks).values(block).returning();
+    return createdBlock;
   }
 
-  async getMultiWeekFrame(id: number): Promise<MultiWeekFrame | undefined> {
-    const [frame] = await db.select().from(multiWeekFrames).where(eq(multiWeekFrames.id, id));
-    return frame;
+  async getScheduleBlock(id: number): Promise<ScheduleBlock | undefined> {
+    const [block] = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id));
+    return block;
   }
 
-  async getMultiWeekFrames(locationId?: number): Promise<MultiWeekFrame[]> {
+  async getScheduleBlocks(locationId?: number): Promise<ScheduleBlock[]> {
     if (locationId) {
-      return await db.select().from(multiWeekFrames).where(eq(multiWeekFrames.locationId, locationId));
+      return await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.locationId, locationId));
     }
-    return await db.select().from(multiWeekFrames);
+    return await db.select().from(scheduleBlocks);
   }
 
-  async updateMultiWeekFrame(id: number, frame: Partial<InsertMultiWeekFrame>): Promise<MultiWeekFrame | undefined> {
-    const [updatedFrame] = await db
-      .update(multiWeekFrames)
-      .set(frame)
-      .where(eq(multiWeekFrames.id, id))
+  async updateScheduleBlock(id: number, block: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined> {
+    const [updatedBlock] = await db
+      .update(scheduleBlocks)
+      .set(block)
+      .where(eq(scheduleBlocks.id, id))
       .returning();
-    return updatedFrame;
+    return updatedBlock;
   }
 
-  async deleteMultiWeekFrame(id: number): Promise<boolean> {
-    await db.delete(multiWeekFrames).where(eq(multiWeekFrames.id, id));
+  async deleteScheduleBlock(id: number): Promise<boolean> {
+    await db.delete(scheduleBlocks).where(eq(scheduleBlocks.id, id));
     return true;
   }
 
-  async copyWeekScheduleToFrame(sourceWeekScheduleId: number, multiWeekFrameId: number, weekNumber: number): Promise<WeekSchedule> {
-    // Get the source week schedule
-    const [sourceSchedule] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, sourceWeekScheduleId));
-    if (!sourceSchedule) {
-      throw new Error("Source week schedule not found");
+  async copyWeekToBlock(sourceWeekId: number, scheduleBlockId: number, weekNumber: number): Promise<Week> {
+    // Get the source week
+    const [sourceWeek] = await db.select().from(weeks).where(eq(weeks.id, sourceWeekId));
+    if (!sourceWeek) {
+      throw new Error("Source week not found");
     }
 
-    // Get all shifts from the source schedule
-    const sourceShifts = await db.select().from(shifts).where(eq(shifts.weekScheduleId, sourceWeekScheduleId));
+    // Get all shifts from the source week
+    const sourceShifts = await db.select().from(shifts).where(eq(shifts.weekId, sourceWeekId));
 
-    // Create the new week schedule linked to the frame
-    const newScheduleData = {
-      ...sourceSchedule,
-      multiWeekFrameId,
+    // Create the new week linked to the block
+    const newWeekData = {
+      ...sourceWeek,
+      scheduleBlockId,
       weekNumber,
-      name: `${sourceSchedule.name} (Week ${weekNumber})`,
+      name: `${sourceWeek.name} (Week ${weekNumber})`,
     };
-    delete (newScheduleData as any).id;
-    delete (newScheduleData as any).createdAt;
-    delete (newScheduleData as any).updatedAt;
+    delete (newWeekData as any).id;
+    delete (newWeekData as any).createdAt;
+    delete (newWeekData as any).updatedAt;
 
-    const [newSchedule] = await db.insert(weekSchedules).values(newScheduleData).returning();
+    const [newWeek] = await db.insert(weeks).values(newWeekData).returning();
 
-    // Copy all shifts to the new schedule
+    // Copy all shifts to the new week
     if (sourceShifts.length > 0) {
       const newShiftsData = sourceShifts.map(shift => {
         const newShift = { ...shift };
         delete (newShift as any).id;
         delete (newShift as any).createdAt;
-        newShift.weekScheduleId = newSchedule.id;
+        newShift.weekId = newWeek.id;
         return newShift;
       });
 
       await db.insert(shifts).values(newShiftsData);
     }
 
-    return newSchedule;
+    return newWeek;
   }
 
-  async getWeekSchedulesByFrame(frameId: number): Promise<WeekSchedule[]> {
+  async getWeeksByBlock(blockId: number): Promise<Week[]> {
     return await db.select()
-      .from(weekSchedules)
-      .where(eq(weekSchedules.multiWeekFrameId, frameId))
-      .orderBy(weekSchedules.weekNumber);
+      .from(weeks)
+      .where(eq(weeks.scheduleBlockId, blockId))
+      .orderBy(weeks.weekNumber);
   }
 
   // Week Schedules (Templates)

@@ -585,7 +585,7 @@ export type InsertMessage = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteRef = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteFile = z.infer<typeof insertNoteFileSchema>;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
-export type InsertNoteAttachment = z.infer<typeof insertNoteAttachmentSchema>;
+// export type InsertNoteAttachment = z.infer<typeof insertNoteAttachmentSchema>; // near-future-removal
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
