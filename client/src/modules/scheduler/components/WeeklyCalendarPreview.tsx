@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ export default function WeeklyCalendarPreview({
   onShiftDelete 
 }: WeeklyCalendarPreviewProps) {
   const currentWeek = getWeekNumber();
+  const scrollContainerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const formatTime = (time: string) => {
     return time.slice(0, 5); // Remove seconds if present
@@ -78,6 +79,18 @@ export default function WeeklyCalendarPreview({
   const totalHours = 24; // Full 24-hour day
   const pixelsPerHour = 80;
   const gridWidth = totalHours * pixelsPerHour;
+  const defaultStartHour = 8; // Default view starts at 8:00 AM
+
+  // Auto-scroll to default start time on load
+  useEffect(() => {
+    DAYS_OF_WEEK.forEach((day) => {
+      const scrollContainer = scrollContainerRefs.current[day];
+      if (scrollContainer) {
+        const scrollPosition = defaultStartHour * pixelsPerHour;
+        scrollContainer.scrollLeft = scrollPosition;
+      }
+    });
+  }, [shifts, pixelsPerHour]);
 
   // Calculate shift position on timeline
   const getShiftPosition = (startTime: string, endTime: string) => {
@@ -128,7 +141,12 @@ export default function WeeklyCalendarPreview({
                 </div>
 
                 {/* Timeline container - single scroll area */}
-                <div className="overflow-x-auto">
+                <div 
+                  className="overflow-x-auto"
+                  ref={(el) => {
+                    scrollContainerRefs.current[day] = el;
+                  }}
+                >
                   <div style={{ width: gridWidth }}>
                     {/* Time header */}
                     <div className="flex border-b bg-muted/10">

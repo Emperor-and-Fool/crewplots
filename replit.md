@@ -217,6 +217,7 @@ Changelog:
 - June 28, 2025. ENHANCED: Schedule preview with week number - Added current week number display in the header of the schedule preview component while preserving the working vertical day layout with shift visibility
 - June 28, 2025. IMPLEMENTED: Timeline grid scheduler preview - Enhanced vertical day layout with distinct day containers, 24-hour scrollable timeline grid (0h-23h full day), positioned shifts on time scale, and mobile swipe functionality for viewing "who is working when"
 - June 28, 2025. FIXED: Timeline synchronization - Connected shifts and time header in single scroll container ensuring shifts stay positioned correctly at their times when scrolling horizontally through the 24-hour timeline
+- June 28, 2025. ENHANCED: Default timeline view position - Added automatic scroll to 8:00 AM on load, providing practical default starting position for viewing work schedules while maintaining full 24-hour timeline access
 ```
 
 ## User Preferences
