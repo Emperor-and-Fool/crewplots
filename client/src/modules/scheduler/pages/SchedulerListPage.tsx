@@ -109,7 +109,9 @@ export default function SchedulerListPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{schedule.name}</CardTitle>
-                    <Badge variant={schedule.isActive ? "default" : "secondary"}>
+                    <Badge 
+                      className={`${schedule.isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                    >
                       {schedule.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
