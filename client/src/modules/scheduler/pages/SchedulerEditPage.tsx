@@ -217,8 +217,13 @@ export default function SchedulerEditPage() {
 
   const createShiftMutation = useMutation({
     mutationFn: async (data: ShiftCreationForm) => {
+      console.log('🚀 FRONTEND: Starting shift creation mutation');
+      console.log('🚀 FRONTEND: Form data received:', data);
+      console.log('🚀 FRONTEND: Current scheduleId:', scheduleId);
+      
       // Generate unique group ID for shifts created together
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('🚀 FRONTEND: Generated shiftGroupId:', shiftGroupId);
       
       const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
         scheduleId: parseInt(scheduleId || '0'),
@@ -233,11 +238,18 @@ export default function SchedulerEditPage() {
         status: 'active' as const
       }));
 
-      const promises = shiftsToCreate.map(shift => 
-        apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, shift)
-      );
+      console.log('🚀 FRONTEND: Shifts to create:', shiftsToCreate);
+      console.log('🚀 FRONTEND: Making API requests to:', `/api/week-schedules/${scheduleId}/shifts`);
+
+      const promises = shiftsToCreate.map((shift, index) => {
+        console.log(`🚀 FRONTEND: Creating shift ${index + 1}:`, shift);
+        return apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, shift);
+      });
       
-      return await Promise.all(promises);
+      console.log('🚀 FRONTEND: Executing', promises.length, 'API requests');
+      const results = await Promise.all(promises);
+      console.log('🚀 FRONTEND: All API requests completed, results:', results);
+      return results;
     },
     onSuccess: (data) => {
       // Invalidate the week schedule shifts query
@@ -264,9 +276,14 @@ export default function SchedulerEditPage() {
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
+    console.log('🎯 FRONTEND: handleShiftSubmit called with data:', data);
+    console.log('🎯 FRONTEND: editingShift state:', editingShift);
+    console.log('🎯 FRONTEND: createShiftMutation.isPending:', createShiftMutation.isPending);
+    
     // In edit mode, we should NOT create new shifts when editing existing schedule
     // This prevents the same duplicate creation issue we had with the messaging system
     if (editingShift) {
+      console.log('🎯 FRONTEND: In edit mode - showing toast and returning');
       // If we're editing an existing shift, update it instead of creating new ones
       // This prevents duplicate shifts from being created during edit operations
       toast({
@@ -277,6 +294,8 @@ export default function SchedulerEditPage() {
       return;
     }
     
+    console.log('🎯 FRONTEND: Not in edit mode - proceeding with shift creation');
+    console.log('🎯 FRONTEND: Calling createShiftMutation.mutate with data:', data);
     // Only create new shifts when explicitly adding new ones to the schedule
     createShiftMutation.mutate(data);
   };
