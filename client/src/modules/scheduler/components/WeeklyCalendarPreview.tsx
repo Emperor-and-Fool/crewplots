@@ -191,7 +191,7 @@ export default function WeeklyCalendarPreview({
               <Checkbox 
                 id="sync-timeline" 
                 checked={isSynced}
-                onCheckedChange={setIsSynced}
+                onCheckedChange={(checked) => setIsSynced(checked === true)}
               />
               <label 
                 htmlFor="sync-timeline" 
