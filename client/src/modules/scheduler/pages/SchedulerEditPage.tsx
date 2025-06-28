@@ -450,14 +450,6 @@ export default function SchedulerEditPage() {
         // Initial state: Schedule editing form (pre-populated)
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => window.location.href = '/scheduler'}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Schedule Templates
-            </Button>
             <h1 className="text-3xl font-bold">
               Edit Week Schedule: {existingSchedule?.name || 'Loading...'}
             </h1>
@@ -536,20 +528,25 @@ export default function SchedulerEditPage() {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={updateWeekScheduleMutation.isPending}
-                  >
-                    {updateWeekScheduleMutation.isPending ? (
-                      "Updating..."
-                    ) : (
-                      <>
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Edit Shifts
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex justify-between gap-4">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.location.href = '/scheduler'}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Templates
+                    </Button>
+                    
+                    <Button 
+                      type="button"
+                      onClick={() => setShowTabbedInterface(true)}
+                      disabled={updateWeekScheduleMutation.isPending}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Edit Shifts
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
