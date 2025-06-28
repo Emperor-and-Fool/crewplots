@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,8 @@ export default function WeeklyCalendarPreview({
 }: WeeklyCalendarPreviewProps) {
   const currentWeek = getWeekNumber();
   const scrollContainerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [isDragging, setIsDragging] = useState<{ [key: string]: boolean }>({});
+  const [dragStart, setDragStart] = useState<{ [key: string]: { x: number; scrollLeft: number } }>({});
 
   const formatTime = (time: string) => {
     return time.slice(0, 5); // Remove seconds if present
@@ -97,6 +99,37 @@ export default function WeeklyCalendarPreview({
     e.preventDefault();
     const container = e.currentTarget;
     container.scrollLeft += e.deltaY;
+  };
+
+  // Handle mouse drag scrolling
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, day: string) => {
+    const container = e.currentTarget;
+    setIsDragging(prev => ({ ...prev, [day]: true }));
+    setDragStart(prev => ({
+      ...prev,
+      [day]: {
+        x: e.pageX - container.offsetLeft,
+        scrollLeft: container.scrollLeft,
+      }
+    }));
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, day: string) => {
+    if (!isDragging[day]) return;
+    e.preventDefault();
+    const container = e.currentTarget;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - dragStart[day]?.x) * 2; // Scroll speed multiplier
+    container.scrollLeft = dragStart[day]?.scrollLeft - walk;
+  };
+
+  const handleMouseUp = (day: string) => {
+    setIsDragging(prev => ({ ...prev, [day]: false }));
+  };
+
+  const handleMouseLeave = (day: string) => {
+    setIsDragging(prev => ({ ...prev, [day]: false }));
   };
 
   // Calculate shift position on timeline
@@ -149,11 +182,16 @@ export default function WeeklyCalendarPreview({
 
                 {/* Timeline container - single scroll area */}
                 <div 
-                  className="overflow-x-auto"
+                  className={`overflow-x-auto ${isDragging[day] ? 'cursor-grabbing' : 'cursor-grab'}`}
                   ref={(el) => {
                     scrollContainerRefs.current[day] = el;
                   }}
                   onWheel={handleWheel}
+                  onMouseDown={(e) => handleMouseDown(e, day)}
+                  onMouseMove={(e) => handleMouseMove(e, day)}
+                  onMouseUp={() => handleMouseUp(day)}
+                  onMouseLeave={() => handleMouseLeave(day)}
+                  style={{ userSelect: 'none' }}
                 >
                   <div style={{ width: gridWidth }}>
                     {/* Time header */}
