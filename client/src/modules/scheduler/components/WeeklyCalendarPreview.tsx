@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Trash2 } from 'lucide-react';
+import { Calendar, Trash2, Plus, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Shift {
   id: number;
@@ -17,8 +19,10 @@ interface Shift {
 interface WeeklyCalendarPreviewProps {
   shifts: Shift[];
   weekScheduleName: string;
+  weekScheduleId?: number;
   onShiftClick?: (shift: Shift) => void;
   onShiftDelete?: (shift: Shift) => void;
+  onWeekAdded?: () => void;
 }
 
 const DAYS_OF_WEEK = [
@@ -53,15 +57,20 @@ const getWeekNumber = (date: Date = new Date()): number => {
 export default function WeeklyCalendarPreview({ 
   shifts, 
   weekScheduleName,
+  weekScheduleId,
   onShiftClick,
-  onShiftDelete 
+  onShiftDelete,
+  onWeekAdded
 }: WeeklyCalendarPreviewProps) {
   const currentWeek = getWeekNumber();
   const scrollContainerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [isDragging, setIsDragging] = useState<{ [key: string]: boolean }>({});
   const [dragStart, setDragStart] = useState<{ [key: string]: { x: number; scrollLeft: number } }>({});
   const [isSynced, setIsSynced] = useState(true);
+  const [isAddingWeek, setIsAddingWeek] = useState(false);
+  const [weekCount, setWeekCount] = useState(1);
   const syncRef = useRef(false);
+  const { toast } = useToast();
 
   const formatTime = (time: string) => {
     return time.slice(0, 5); // Remove seconds if present
@@ -161,6 +170,36 @@ export default function WeeklyCalendarPreview({
     syncScrollPosition(container.scrollLeft, day);
   };
 
+  // Handle adding a new week by copying the current week schedule
+  const handleAddWeek = async () => {
+    if (!weekScheduleId || weekCount >= 8) return;
+    
+    setIsAddingWeek(true);
+    try {
+      // Create a new week schedule based on the current one
+      const response = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/copy`, {
+        weekNumber: weekCount + 1
+      });
+      
+      if (response.ok) {
+        setWeekCount(prev => prev + 1);
+        toast({
+          title: "Week Added",
+          description: `Week ${weekCount + 1} created successfully by copying the current schedule.`,
+        });
+        onWeekAdded?.();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add new week. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingWeek(false);
+    }
+  };
+
   // Calculate shift position on timeline
   const getShiftPosition = (startTime: string, endTime: string) => {
     const parseTime = (time: string) => {
@@ -200,8 +239,20 @@ export default function WeeklyCalendarPreview({
                 Sync Timeline
               </label>
             </div>
+            {weekScheduleId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddWeek}
+                disabled={isAddingWeek || weekCount >= 8}
+                className="h-8"
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                {isAddingWeek ? "Adding..." : `Add Week ${weekCount + 1}`}
+              </Button>
+            )}
             <div className="text-sm font-normal text-muted-foreground">
-              Week {currentWeek}
+              Week {currentWeek} {weekCount > 1 && `(${weekCount} weeks)`}
             </div>
           </div>
         </CardTitle>

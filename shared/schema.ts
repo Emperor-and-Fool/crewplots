@@ -219,7 +219,40 @@ export const templateShifts = pgTable("template_shifts", {
   notes: text("notes"),
 });
 
-// Week Schedule Templates - Reusable week-schedule templates
+// Schedule Frames - Main schedule containers (can contain multiple weeks)
+export const scheduleFrames = pgTable("schedule_frames", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  templateId: integer("template_id").references(() => scheduleTemplates.id),
+  locationId: integer("location_id").references(() => locations.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  locationIdx: index("idx_schedule_frames_location").on(table.locationId),
+  nameIdx: index("idx_schedule_frames_name").on(table.name),
+  templateIdx: index("idx_schedule_frames_template").on(table.templateId),
+}));
+
+// Schedule Weeks - Individual weeks within a schedule frame
+export const scheduleWeeks = pgTable("schedule_weeks", {
+  id: serial("id").primaryKey(),
+  scheduleFrameId: integer("schedule_frame_id").references(() => scheduleFrames.id, { onDelete: "cascade" }).notNull(),
+  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8
+  weekStartDate: timestamp("week_start_date"), // Actual start date of this week
+  name: varchar("name", { length: 255 }), // Optional custom name for this week
+  notes: text("notes"), // Week-specific notes
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  scheduleFrameIdx: index("idx_schedule_weeks_frame").on(table.scheduleFrameId),
+  weekNumberIdx: index("idx_schedule_weeks_number").on(table.weekNumber),
+  frameWeekUnique: uniqueIndex("unique_frame_week").on(table.scheduleFrameId, table.weekNumber),
+}));
+
+// Week Schedule Templates - Reusable week-schedule templates (legacy - keeping for backward compatibility)
 export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
