@@ -127,11 +127,11 @@ export default function WeeklyCalendarPreview({
                   </div>
                 </div>
 
-                {/* Timeline container */}
-                <div className="relative">
-                  {/* Time header */}
-                  <div className="overflow-x-auto">
-                    <div className="flex border-b bg-muted/10" style={{ width: gridWidth }}>
+                {/* Timeline container - single scroll area */}
+                <div className="overflow-x-auto">
+                  <div style={{ width: gridWidth }}>
+                    {/* Time header */}
+                    <div className="flex border-b bg-muted/10">
                       {timeSlots.map((time) => (
                         <div 
                           key={time}
@@ -142,14 +142,9 @@ export default function WeeklyCalendarPreview({
                         </div>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Shifts timeline */}
-                  <div className="overflow-x-auto">
-                    <div 
-                      className="relative h-16" 
-                      style={{ width: gridWidth }}
-                    >
+                    {/* Shifts timeline */}
+                    <div className="relative h-16">
                       {/* Grid lines */}
                       {timeSlots.map((time, index) => (
                         <div 
