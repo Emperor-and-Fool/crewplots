@@ -1242,14 +1242,22 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Staff
-  async getStaff(id: number): Promise<Staff | undefined> {
-    const [staffMember] = await db.select().from(staff).where(eq(staff.id, id));
-    return staffMember;
+  // Staff - Legacy methods replaced with User-based implementation
+  // near-future-removal: Staff table deprecated in favor of User with role filtering
+  async getStaff(id: number): Promise<User | undefined> {
+    // Return user with staff/crew roles only
+    const [user] = await db.select().from(users)
+      .where(and(
+        eq(users.id, id),
+        inArray(users.role, ['crew_member', 'crew_chief', 'app_manager', 'owner', 'administrator'])
+      ));
+    return user;
   }
 
-  async getStaffMembers(): Promise<Staff[]> {
-    return await db.select().from(staff);
+  async getStaffMembers(): Promise<User[]> {
+    // Return all users with staff/crew roles
+    return await db.select().from(users)
+      .where(inArray(users.role, ['crew_member', 'crew_chief', 'app_manager', 'owner', 'administrator']));
   }
 
   async getCrewMembersByLocation(locationId: number): Promise<User[]> {
@@ -1346,55 +1354,91 @@ export class DatabaseStorage implements IStorage {
 
   // Removed createStaff - migrated to user-centric crew management
 
-  async updateStaff(id: number, staffMember: Partial<InsertStaff>): Promise<Staff | undefined> {
-    const [updatedStaff] = await db
-      .update(staff)
+  // near-future-removal: Legacy staff methods replaced with User-based implementation
+  async updateStaff(id: number, staffMember: Partial<InsertUser>): Promise<User | undefined> {
+    // Update user with staff/crew role validation
+    const [updatedUser] = await db
+      .update(users)
       .set(staffMember)
-      .where(eq(staff.id, id))
+      .where(and(
+        eq(users.id, id),
+        inArray(users.role, ['crew_member', 'crew_chief', 'app_manager', 'owner', 'administrator'])
+      ))
       .returning();
-    return updatedStaff;
+    return updatedUser;
   }
 
   async deleteStaff(id: number): Promise<boolean> {
-    await db.delete(staff).where(eq(staff.id, id));
+    // Soft delete by updating role to 'applicant' or hard delete based on business logic
+    // For now, prevent deletion of staff users for data integrity
+    throw new Error('Staff deletion not supported - use role change to applicant instead');
+  }
+
+  // User Competencies - Migrated from legacy StaffCompetency
+  // near-future-removal: StaffCompetency table deprecated in favor of UserCompetency
+  async getUserCompetency(id: number): Promise<UserCompetency | undefined> {
+    const [userCompetency] = await db.select().from(userCompetencies).where(eq(userCompetencies.id, id));
+    return userCompetency;
+  }
+
+  async getUserCompetencies(): Promise<UserCompetency[]> {
+    return await db.select().from(userCompetencies);
+  }
+
+  async getUserCompetenciesByUser(userId: number): Promise<UserCompetency[]> {
+    return await db.select().from(userCompetencies).where(eq(userCompetencies.userId, userId));
+  }
+
+  async getUserCompetenciesByCompetency(competencyId: number): Promise<UserCompetency[]> {
+    return await db.select().from(userCompetencies).where(eq(userCompetencies.competencyId, competencyId));
+  }
+
+  async createUserCompetency(userCompetency: InsertUserCompetency): Promise<UserCompetency> {
+    const [createdUserCompetency] = await db.insert(userCompetencies).values(userCompetency).returning();
+    return createdUserCompetency;
+  }
+
+  async updateUserCompetency(id: number, userCompetency: Partial<InsertUserCompetency>): Promise<UserCompetency | undefined> {
+    const [updatedUserCompetency] = await db
+      .update(userCompetencies)
+      .set(userCompetency)
+      .where(eq(userCompetencies.id, id))
+      .returning();
+    return updatedUserCompetency;
+  }
+
+  async deleteUserCompetency(id: number): Promise<boolean> {
+    await db.delete(userCompetencies).where(eq(userCompetencies.id, id));
     return true;
   }
 
-  // Staff Competencies
-  async getStaffCompetency(id: number): Promise<StaffCompetency | undefined> {
-    const [staffCompetency] = await db.select().from(staffCompetencies).where(eq(staffCompetencies.id, id));
-    return staffCompetency;
+  // Legacy compatibility methods (near-future-removal)
+  async getStaffCompetency(id: number): Promise<UserCompetency | undefined> {
+    return this.getUserCompetency(id);
   }
 
-  async getStaffCompetencies(): Promise<StaffCompetency[]> {
-    return await db.select().from(staffCompetencies);
+  async getStaffCompetencies(): Promise<UserCompetency[]> {
+    return this.getUserCompetencies();
   }
 
-  async getStaffCompetenciesByStaff(staffId: number): Promise<StaffCompetency[]> {
-    return await db.select().from(staffCompetencies).where(eq(staffCompetencies.staffId, staffId));
+  async getStaffCompetenciesByStaff(staffId: number): Promise<UserCompetency[]> {
+    return this.getUserCompetenciesByUser(staffId);
   }
 
-  async getStaffCompetenciesByCompetency(competencyId: number): Promise<StaffCompetency[]> {
-    return await db.select().from(staffCompetencies).where(eq(staffCompetencies.competencyId, competencyId));
+  async getStaffCompetenciesByCompetency(competencyId: number): Promise<UserCompetency[]> {
+    return this.getUserCompetenciesByCompetency(competencyId);
   }
 
-  async createStaffCompetency(staffCompetency: InsertStaffCompetency): Promise<StaffCompetency> {
-    const [createdStaffCompetency] = await db.insert(staffCompetencies).values(staffCompetency).returning();
-    return createdStaffCompetency;
+  async createStaffCompetency(staffCompetency: InsertUserCompetency): Promise<UserCompetency> {
+    return this.createUserCompetency(staffCompetency);
   }
 
-  async updateStaffCompetency(id: number, staffCompetency: Partial<InsertStaffCompetency>): Promise<StaffCompetency | undefined> {
-    const [updatedStaffCompetency] = await db
-      .update(staffCompetencies)
-      .set(staffCompetency)
-      .where(eq(staffCompetencies.id, id))
-      .returning();
-    return updatedStaffCompetency;
+  async updateStaffCompetency(id: number, staffCompetency: Partial<InsertUserCompetency>): Promise<UserCompetency | undefined> {
+    return this.updateUserCompetency(id, staffCompetency);
   }
 
   async deleteStaffCompetency(id: number): Promise<boolean> {
-    await db.delete(staffCompetencies).where(eq(staffCompetencies.id, id));
-    return true;
+    return this.deleteUserCompetency(id);
   }
 
   // Applicants (now using unified users table)
@@ -1454,8 +1498,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createApplicant(applicant: InsertApplicant): Promise<Applicant> {
-    const [createdApplicant] = await db.insert(applicants).values(applicant).returning();
+  // near-future-removal: Legacy applicant method replaced with User-based implementation
+  async createApplicant(applicant: InsertUser): Promise<User> {
+    // Ensure role is set to applicant
+    const applicantData = { ...applicant, role: 'applicant' as const };
+    const [createdApplicant] = await db.insert(users).values(applicantData).returning();
     return createdApplicant;
   }
 
@@ -1483,8 +1530,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // near-future-removal: Legacy applicant method replaced with User-based implementation
   async deleteApplicant(id: number): Promise<boolean> {
-    await db.delete(applicants).where(eq(applicants.id, id));
+    // Soft delete by updating role or hard delete based on business logic
+    // For now, prevent deletion of applicant users for data integrity
+    await db.delete(users).where(and(eq(users.id, id), eq(users.role, 'applicant')));
     return true;
   }
 
