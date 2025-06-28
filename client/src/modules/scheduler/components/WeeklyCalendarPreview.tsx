@@ -69,34 +69,39 @@ export default function WeeklyCalendarPreview({ shifts, weekScheduleName, onShif
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+        <div className="space-y-3">
           {DAYS_OF_WEEK.map((day) => {
             const dayShifts = getShiftsForDay(day);
             return (
-              <div key={day} className="border rounded-lg p-3 min-h-[120px]">
-                <div className="text-sm font-medium text-center mb-2 pb-2 border-b">
-                  {DAY_LABELS[day as keyof typeof DAY_LABELS]}
+              <div key={day} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium">
+                    {DAY_LABELS[day as keyof typeof DAY_LABELS]}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                   {dayShifts.length > 0 ? (
                     dayShifts.map((shift) => (
                       <div
                         key={shift.id}
-                        className="relative group p-2 rounded text-xs border transition-colors hover:bg-muted"
+                        className="relative group flex-1 min-w-[200px] p-3 rounded border transition-colors hover:bg-muted"
                         title={`${shift.title}\n${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}${shift.position ? `\nPosition: ${shift.position}` : ''}`}
                       >
                         <div 
                           onClick={() => onShiftClick?.(shift)}
                           className={`cursor-pointer ${onShiftClick ? 'hover:opacity-70' : ''}`}
                         >
-                          <div className="font-medium truncate">
+                          <div className="font-medium text-sm mb-1">
                             {shift.title}
                           </div>
-                          <div className="text-muted-foreground">
+                          <div className="text-muted-foreground text-xs mb-2">
                             {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
                           </div>
                           {shift.position && (
-                            <Badge variant="secondary" className="text-xs mt-1">
+                            <Badge variant="secondary" className="text-xs">
                               {shift.position}
                             </Badge>
                           )}
@@ -117,8 +122,8 @@ export default function WeeklyCalendarPreview({ shifts, weekScheduleName, onShif
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-muted-foreground text-center py-4">
-                      No shifts
+                    <div className="text-xs text-muted-foreground py-2 flex-1 text-center">
+                      No shifts scheduled
                     </div>
                   )}
                 </div>
