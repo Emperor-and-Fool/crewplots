@@ -20,6 +20,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import multer from "multer";
+import "./middleware/auth"; // Import auth middleware for TypeScript declarations
 
 // Permission checking utility function - now properly typed with schema
 function hasPermission(userRole: User['role'], permission: string): boolean {
