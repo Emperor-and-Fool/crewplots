@@ -12,7 +12,7 @@ import {
   insertUserSchema, insertLocationSchema, insertCompetencySchema, 
   insertUserLocationSchema, insertUserCompetencySchema,
   insertScheduleTemplateSchema, insertTemplateShiftSchema,
-  insertWeekScheduleSchema, insertShiftSchema, insertShiftRequirementSchema, insertShiftSubscriptionSchema,
+  insertMultiWeekFrameSchema, insertWeekScheduleSchema, insertShiftSchema, insertShiftRequirementSchema, insertShiftSubscriptionSchema,
   insertShiftAssignmentSchema, insertSchedulingWindowSchema,
   insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
   loginSchema, registerSchema
