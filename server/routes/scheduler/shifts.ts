@@ -19,7 +19,11 @@ function hasPermission(userRole: string, permission: string): boolean {
 }
 
 // Get all shifts or shifts by week schedule
-router.get("/", async (req, res) => {
+router.get("/", authenticateUser, async (req: any, res) => {
+  if (!hasPermission(req.user.role, "scheduler_development.read")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
+
   try {
     const weekScheduleId = req.query.weekScheduleId ? parseInt(req.query.weekScheduleId as string) : undefined;
     
