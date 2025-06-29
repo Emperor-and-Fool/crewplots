@@ -1029,7 +1029,7 @@ export default function SchedulerEditPage() {
                       onClick={async () => {
                         const formData = scheduleForm.getValues();
                         
-                        // For now, use validation framework approach
+                        // Use validation framework - NO FALLBACKS
                         const packageData = {
                           operation: 'update',
                           scheduleBlock: {
@@ -1039,12 +1039,7 @@ export default function SchedulerEditPage() {
                         };
                         console.log('🔗 VALIDATION FRAMEWORK: Saving complete schedule chain', packageData);
                         
-                        try {
-                          await saveSchedulePackageMutation.mutateAsync(packageData);
-                        } catch (error) {
-                          console.log('🔗 FALLBACK: Using legacy save method', error);
-                          await updateWeekScheduleMutation.mutateAsync(formData);
-                        }
+                        await saveSchedulePackageMutation.mutateAsync(packageData);
                         
                         window.location.href = '/scheduler';
                       }}
