@@ -1551,7 +1551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Schedule Blocks API
   app.get("/api/schedule-blocks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1566,7 +1566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/schedule-blocks/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1584,7 +1584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/schedule-blocks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1598,7 +1598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/schedule-blocks/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
