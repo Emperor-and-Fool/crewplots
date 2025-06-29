@@ -254,7 +254,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         xhr.withCredentials = true;
         
         xhr.onreadystatechange = function() {
-          console.log(`Registration XHR state change: readyState=${xhr.readyState}, status=${xhr.status}`);
+
           
           if (xhr.readyState === 4) {
             setIsLoading(false);
