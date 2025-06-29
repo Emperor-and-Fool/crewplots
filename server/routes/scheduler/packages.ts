@@ -1,174 +1,32 @@
-import { Router } from 'express';
-import { authenticateUser } from '../../middleware/auth';
+import express from 'express';
 import { validationPackageService } from '../../services/validation-package-service';
-import type { User } from '@shared/schema';
 
-const router = Router();
+const router = express.Router();
 
-// All routes use the new authentication middleware
-router.use(authenticateUser);
+// Simple authentication middleware for packages routes
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.session?.passport?.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  req.user = req.session.passport.user;
+  next();
+};
 
-// POST /api/scheduler/packages - Create new schedule package
-router.post('/', async (req, res) => {
-  console.log('🎁 PACKAGE API: Creating new schedule package');
-  
+// POST /api/scheduler/packages/validate - Validate schedule package
+router.post('/validate', requireAuth, async (req: any, res) => {
   try {
-    const user = req.user as User;
-    
+    console.log('🔍 PACKAGE VALIDATION: Starting validation request');
+
     // Thread 1: Package Assembly
     const packageData = await validationPackageService.assemblePackageFromRequest(
       req.body,
-      user,
-      'create'
-    );
-
-    // Thread 2: Integrity Validation
-    const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
-    if (!integrityResult.isValid) {
-      console.log('🎁 PACKAGE API: Integrity validation failed:', integrityResult.errors);
-      return res.status(400).json({ 
-        error: 'Package validation failed',
-        details: integrityResult.errors,
-        warnings: integrityResult.warnings
-      });
-    }
-
-    // Thread 3: Permission Authorization
-    const authResult = await validationPackageService.validatePackagePermissions(packageData);
-    if (!authResult.isAuthorized) {
-      console.log('🎁 PACKAGE API: Permission authorization failed:', authResult.deniedPermissions);
-      return res.status(403).json({ 
-        error: 'Access denied',
-        deniedPermissions: authResult.deniedPermissions,
-        securityViolations: authResult.securityViolations
-      });
-    }
-
-    // Thread 4: Storage Transaction
-    const saveResult = await validationPackageService.savePackageTransaction(packageData);
-    if (!saveResult.success) {
-      console.log('🎁 PACKAGE API: Storage transaction failed:', saveResult.errors);
-      return res.status(500).json({ 
-        error: 'Failed to save schedule package',
-        details: saveResult.errors
-      });
-    }
-
-    console.log('🎁 PACKAGE API: Package created successfully:', saveResult.createdEntities);
-    res.status(201).json({
-      success: true,
-      package: {
-        scheduleBlockId: saveResult.createdEntities.scheduleBlockId,
-        weekScheduleIds: saveResult.createdEntities.weekScheduleIds,
-        shiftIds: saveResult.createdEntities.shiftIds
-      },
-      metadata: packageData.metadata,
-      warnings: integrityResult.warnings
-    });
-
-  } catch (error) {
-    console.error('🎁 PACKAGE API: Package creation failed:', error);
-    res.status(500).json({ 
-      error: 'Internal server error during package creation',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// PUT /api/scheduler/packages/:id - Update existing schedule package
-router.put('/:id', async (req, res) => {
-  console.log('🎁 PACKAGE API: Updating schedule package:', req.params.id);
-  
-  try {
-    const user = req.user as User;
-    const scheduleBlockId = parseInt(req.params.id);
-    
-    // Add the schedule block ID to the request body for validation
-    const requestData = {
-      ...req.body,
-      scheduleBlock: {
-        ...req.body.scheduleBlock,
-        id: scheduleBlockId
-      }
-    };
-
-    // Thread 1: Package Assembly
-    const packageData = await validationPackageService.assemblePackageFromRequest(
-      requestData,
-      user,
-      'update'
-    );
-
-    // Thread 2: Integrity Validation
-    const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
-    if (!integrityResult.isValid) {
-      console.log('🎁 PACKAGE API: Integrity validation failed:', integrityResult.errors);
-      return res.status(400).json({ 
-        error: 'Package validation failed',
-        details: integrityResult.errors,
-        warnings: integrityResult.warnings
-      });
-    }
-
-    // Thread 3: Permission Authorization
-    const authResult = await validationPackageService.validatePackagePermissions(packageData);
-    if (!authResult.isAuthorized) {
-      console.log('🎁 PACKAGE API: Permission authorization failed:', authResult.deniedPermissions);
-      return res.status(403).json({ 
-        error: 'Access denied',
-        deniedPermissions: authResult.deniedPermissions,
-        securityViolations: authResult.securityViolations
-      });
-    }
-
-    // Thread 4: Storage Transaction
-    const saveResult = await validationPackageService.savePackageTransaction(packageData);
-    if (!saveResult.success) {
-      console.log('🎁 PACKAGE API: Storage transaction failed:', saveResult.errors);
-      return res.status(500).json({ 
-        error: 'Failed to update schedule package',
-        details: saveResult.errors
-      });
-    }
-
-    console.log('🎁 PACKAGE API: Package updated successfully:', saveResult.createdEntities);
-    res.json({
-      success: true,
-      package: {
-        scheduleBlockId: saveResult.createdEntities.scheduleBlockId,
-        weekScheduleIds: saveResult.createdEntities.weekScheduleIds,
-        shiftIds: saveResult.createdEntities.shiftIds
-      },
-      metadata: packageData.metadata,
-      warnings: integrityResult.warnings
-    });
-
-  } catch (error) {
-    console.error('🎁 PACKAGE API: Package update failed:', error);
-    res.status(500).json({ 
-      error: 'Internal server error during package update',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// POST /api/scheduler/packages/validate - Validate schedule package (Phase 1 Verification)
-router.post('/validate', async (req, res) => {
-  console.log('🔍 PACKAGE VALIDATION: Starting validation request');
-  
-  try {
-    const user = req.user as User;
-    
-    // Thread 1: Package Assembly
-    const packageData = await validationPackageService.assemblePackageFromRequest(
-      req.body,
-      user,
+      req.user,
       req.body.packageType || 'create'
     );
 
     // Thread 2: Integrity Validation
     const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
-    
+
     // Thread 3: Permission Authorization
     const authResult = await validationPackageService.validatePackagePermissions(packageData);
 
@@ -179,18 +37,10 @@ router.post('/validate', async (req, res) => {
       warnings: integrityResult.warnings.length
     });
 
-    res.json({
+    res.status(200).json({
       isValid: integrityResult.isValid && authResult.isAuthorized,
-      integrity: {
-        isValid: integrityResult.isValid,
-        errors: integrityResult.errors,
-        warnings: integrityResult.warnings
-      },
-      permissions: {
-        isAuthorized: authResult.isAuthorized,
-        deniedPermissions: authResult.deniedPermissions,
-        securityViolations: authResult.securityViolations
-      },
+      integrity: integrityResult,
+      permissions: authResult,
       packageData: {
         type: packageData.packageType,
         scheduleBlock: packageData.scheduleBlock.name,
@@ -200,127 +50,70 @@ router.post('/validate', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('🔍 PACKAGE VALIDATION: Validation failed:', error);
-    res.status(400).json({ 
-      error: 'Validation request failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// DELETE /api/scheduler/packages/:id - Delete schedule package
-router.delete('/:id', async (req, res) => {
-  console.log('🎁 PACKAGE API: Deleting schedule package:', req.params.id);
-  
-  try {
-    const user = req.user as User;
-    const scheduleBlockId = parseInt(req.params.id);
-    
-    // Create minimal package for deletion validation
-    const requestData = {
-      scheduleBlock: { id: scheduleBlockId },
-      weekSchedules: [],
-      shifts: []
-    };
-
-    // Thread 1: Package Assembly
-    const packageData = await validationPackageService.assemblePackageFromRequest(
-      requestData,
-      user,
-      'delete'
-    );
-
-    // Thread 3: Permission Authorization (skip integrity for deletion)
-    const authResult = await validationPackageService.validatePackagePermissions(packageData);
-    if (!authResult.isAuthorized) {
-      console.log('🎁 PACKAGE API: Permission authorization failed:', authResult.deniedPermissions);
-      return res.status(403).json({ 
-        error: 'Access denied',
-        deniedPermissions: authResult.deniedPermissions,
-        securityViolations: authResult.securityViolations
-      });
-    }
-
-    // Delete in reverse Russian doll order: shifts -> week schedules -> schedule block
-    // TODO: Implement deletion logic when needed
-    
-    console.log('🎁 PACKAGE API: Package deletion authorized');
-    res.json({
-      success: true,
-      message: 'Package deletion authorized',
-      metadata: packageData.metadata
-    });
-
-  } catch (error) {
-    console.error('🎁 PACKAGE API: Package deletion failed:', error);
+    console.error('🔍 PACKAGE VALIDATION: Error:', error);
     res.status(500).json({ 
-      error: 'Internal server error during package deletion',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Validation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
-// POST /api/scheduler/packages/:id/duplicate - Duplicate schedule package
-router.post('/:id/duplicate', async (req, res) => {
-  console.log('🎁 PACKAGE API: Duplicating schedule package:', req.params.id);
-  
+// POST /api/scheduler/packages/create - Create schedule package
+router.post('/create', requireAuth, async (req: any, res) => {
   try {
-    const user = req.user as User;
-    const sourceScheduleBlockId = parseInt(req.params.id);
-    
-    // TODO: Implement package duplication logic
-    // This would fetch existing package, modify IDs, and create new package
-    
-    res.json({
-      success: true,
-      message: 'Package duplication endpoint ready for implementation',
-      sourceId: sourceScheduleBlockId
-    });
+    console.log('🎁 PACKAGE API: Starting package creation');
 
-  } catch (error) {
-    console.error('🎁 PACKAGE API: Package duplication failed:', error);
-    res.status(500).json({ 
-      error: 'Internal server error during package duplication',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// POST /api/scheduler/packages/validate - Validate package without saving
-router.post('/validate', async (req, res) => {
-  console.log('🎁 PACKAGE API: Validating schedule package (dry run)');
-  
-  try {
-    const user = req.user as User;
-    
     // Thread 1: Package Assembly
     const packageData = await validationPackageService.assemblePackageFromRequest(
       req.body,
-      user,
-      req.body.packageType || 'create'
+      req.user,
+      'create'
     );
 
     // Thread 2: Integrity Validation
     const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
+    if (!integrityResult.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Package validation failed',
+        details: integrityResult.errors,
+        warnings: integrityResult.warnings
+      });
+    }
 
     // Thread 3: Permission Authorization
     const authResult = await validationPackageService.validatePackagePermissions(packageData);
+    if (!authResult.isAuthorized) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        deniedPermissions: authResult.deniedPermissions
+      });
+    }
 
-    console.log('🎁 PACKAGE API: Validation completed (dry run)');
-    res.json({
-      validation: {
-        integrity: integrityResult,
-        authorization: authResult,
-        overallValid: integrityResult.isValid && authResult.isAuthorized
-      },
-      metadata: packageData.metadata
+    // Thread 4: Storage Transaction
+    const saveResult = await validationPackageService.executeStorageTransaction(packageData);
+    if (!saveResult.success) {
+      return res.status(500).json({ 
+        error: 'Failed to save schedule package',
+        details: saveResult.errors
+      });
+    }
+
+    console.log('🎁 PACKAGE API: Package created successfully:', saveResult.createdEntities);
+    res.status(201).json({
+      success: true,
+      package: {
+        id: saveResult.createdEntities.scheduleBlockId,
+        type: packageData.packageType,
+        createdEntities: saveResult.createdEntities
+      }
     });
 
   } catch (error) {
-    console.error('🎁 PACKAGE API: Package validation failed:', error);
+    console.error('🎁 PACKAGE API: Creation failed:', error);
     res.status(500).json({ 
-      error: 'Internal server error during package validation',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Package creation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
