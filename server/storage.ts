@@ -1582,6 +1582,11 @@ class DatabaseStorage {
     return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
   }
 
+  async updateShift(id: number, updates: Partial<InsertShift>): Promise<Shift | undefined> {
+    const results = await db.update(shifts).set(updates).where(eq(shifts.id, id)).returning();
+    return results[0];
+  }
+
   async deleteShift(id: number): Promise<boolean> {
     // First delete shift requirements that reference this shift
     await db.delete(shiftRequirements).where(eq(shiftRequirements.shiftId, id));

@@ -1494,8 +1494,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PUT endpoint for updating shifts (used by auto-save)
+  app.put("/api/shifts/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("🔄 AUTO-SAVE UPDATE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const shiftId = parseInt(req.params.id);
+      console.log("🔄 AUTO-SAVE UPDATE: Updating shift:", shiftId);
+      console.log("🔄 AUTO-SAVE UPDATE: Request body:", req.body);
+      
+      const validatedData = insertShiftSchema.parse(req.body);
+      console.log("🔄 AUTO-SAVE UPDATE: Validated data:", validatedData);
+      
+      const shift = await storage.updateShift(shiftId, validatedData);
+      console.log("🔄 AUTO-SAVE UPDATE: Updated shift successfully:", shift);
+      res.json(shift);
+    } catch (error) {
+      console.error("🔄 AUTO-SAVE UPDATE: Error updating shift:", error);
+      res.status(400).json({ error: "Failed to update shift" });
+    }
+  });
+
   app.put("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
