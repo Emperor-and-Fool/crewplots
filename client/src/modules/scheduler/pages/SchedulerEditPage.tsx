@@ -303,26 +303,32 @@ export default function SchedulerEditPage() {
         createdShifts.push(createdShift);
       }
       
-      console.log('🚀 FRONTEND: Executing', promises.length, 'API requests');
-      const results = await Promise.all(promises);
-      console.log('🚀 FRONTEND: All API requests completed, results:', results);
-      return results;
+      console.log('🚀 FRONTEND: All shifts created successfully:', createdShifts);
+      return createdShifts;
     },
     onSuccess: (data) => {
       console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
-      // Use the selected week schedule ID for cache invalidation, with fallback
-      const targetWeekScheduleId = selectedWeekScheduleId || (allWeekSchedules.length > 0 ? allWeekSchedules[0].id : parseInt(scheduleId || '0'));
-      // Force refresh the shifts query using the exact same key structure
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', targetWeekScheduleId, 'shifts'] });
-      queryClient.refetchQueries({ queryKey: ['/api/week-schedules', targetWeekScheduleId, 'shifts'] });
-      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for week schedule ID:', targetWeekScheduleId);
+      // Invalidate cache for all week schedules where shifts were created
+      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
+      
+      // Force refresh the shifts query for each affected week schedule
+      targetWeekScheduleIds.forEach(weekScheduleId => {
+        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'] });
+        queryClient.refetchQueries({ queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'] });
+      });
+      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for week schedule IDs:', targetWeekScheduleIds);
       
       shiftForm.reset();
       setEditingShift(null);
       const shiftCount = data.length;
+      const weekCount = targetWeekScheduleIds.length;
+      const dayCount = shiftForm.getValues('daysOfWeek').length;
+      
       toast({
         title: `${shiftCount} shift${shiftCount > 1 ? 's' : ''} created successfully`,
-        description: "Your shifts have been added to the schedule"
+        description: weekCount > 1 
+          ? `Created identical shifts across ${weekCount} weeks (${dayCount} day${dayCount > 1 ? 's' : ''} each)`
+          : "Your shifts have been added to the schedule"
       });
     },
     onError: (error: any) => {
@@ -1027,25 +1033,36 @@ export default function SchedulerEditPage() {
                           )}
                         />
 
-                        {/* Week Selector - only show if multiple weeks */}
+                        {/* Week Selector - checkbox selection for multi-week creation */}
                         {allWeekSchedules.length > 1 && (
                           <div className="space-y-3">
-                            <FormLabel>Select Week</FormLabel>
-                            <Select 
-                              value={selectedWeekScheduleId?.toString() || ''} 
-                              onValueChange={(value) => setSelectedWeekScheduleId(parseInt(value))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose which week to add shifts to" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {allWeekSchedules.map((weekSchedule) => (
-                                  <SelectItem key={weekSchedule.id} value={weekSchedule.id.toString()}>
+                            <FormLabel>Select Weeks</FormLabel>
+                            <div className="grid grid-cols-2 gap-2">
+                              {allWeekSchedules.map((weekSchedule) => (
+                                <div key={weekSchedule.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`week-${weekSchedule.id}`}
+                                    checked={selectedWeekScheduleIds.includes(weekSchedule.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedWeekScheduleIds([...selectedWeekScheduleIds, weekSchedule.id]);
+                                      } else {
+                                        setSelectedWeekScheduleIds(selectedWeekScheduleIds.filter(id => id !== weekSchedule.id));
+                                      }
+                                    }}
+                                  />
+                                  <label 
+                                    htmlFor={`week-${weekSchedule.id}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
                                     Week {weekSchedule.weekNumber}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Select multiple weeks to create identical shifts across them
+                            </p>
                           </div>
                         )}
 
