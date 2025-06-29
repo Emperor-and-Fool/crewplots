@@ -151,6 +151,24 @@ export default function SchedulerEditPage() {
     gcTime: 10 * 60 * 1000, // 10 minutes in memory
   });
 
+  // Fetch all week schedules in the same schedule block for multi-week preview
+  const { data: allWeekSchedules = [] } = useQuery({
+    queryKey: ['/api/week-schedules', 'frameId', scheduleBlockData?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/week-schedules?frameId=${scheduleBlockData.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch week schedules');
+      }
+      const data = await response.json();
+      return data.weekSchedules || [];
+    },
+    enabled: !!scheduleBlockData?.id && permissions.canEditSchedules,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
   // Use consolidated data as primary source (following the standard pattern)
   const actualScheduleData = existingSchedule;
 
