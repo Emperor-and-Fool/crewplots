@@ -406,8 +406,10 @@ export default function SchedulerEditPage() {
         };
         
         console.log(`🔄 AUTO-SAVE: Creating draft shift for week ${weekId}:`, draftShift);
+        console.log(`🔄 AUTO-SAVE: Making request to URL: /api/scheduler/week-schedules/${weekId}/shifts`);
         
         const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekId}/shifts`, draftShift);
+        console.log(`🔄 AUTO-SAVE: Response received:`, response);
         createdShifts.push(response);
       }
       
@@ -489,8 +491,11 @@ export default function SchedulerEditPage() {
       for (const shift of shiftsToCreate) {
         const weekScheduleId = shift.weekScheduleId;
         console.log(`💾 FINAL SAVE: Creating final shift for week ${weekScheduleId}:`, shift);
+        console.log(`💾 FINAL SAVE: Making request to URL: /api/scheduler/week-schedules/${weekScheduleId}/shifts`);
         const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekScheduleId}/shifts`, shift);
+        console.log(`💾 FINAL SAVE: Response received:`, response);
         const createdShift = await response.json();
+        console.log(`💾 FINAL SAVE: Parsed response:`, createdShift);
         createdShifts.push(createdShift);
       }
       
