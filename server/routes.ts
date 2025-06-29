@@ -1,3 +1,45 @@
+/*
+ * ===================================================================================================
+ * 🚨 MODULAR ROUTE ARCHITECTURE - NO FALLBACKS ALLOWED 🚨
+ * ===================================================================================================
+ * 
+ * ALL SCHEDULER FUNCTIONALITY HAS BEEN MIGRATED TO MODULAR ROUTES:
+ * 
+ * Location: server/routes/scheduler/
+ * Structure:
+ *   ├── index.ts           - Main scheduler router (mounts all sub-routes)
+ *   ├── schedule-blocks.ts - Schedule block CRUD operations
+ *   ├── week-schedules.ts  - Week schedule management
+ *   ├── shifts.ts          - Individual shift operations
+ *   ├── requirements.ts    - Shift requirement management
+ *   └── assignments.ts     - Crew assignment operations
+ * 
+ * URL Structure: All scheduler endpoints are now prefixed with /api/scheduler/
+ * Examples:
+ *   - GET    /api/scheduler/schedule-blocks
+ *   - POST   /api/scheduler/schedule-blocks
+ *   - GET    /api/scheduler/week-schedules/:id/shifts
+ *   - POST   /api/scheduler/week-schedules/:id/shifts
+ * 
+ * ⛔ STRICT PROHIBITION: NO FALLBACKS OR BACKWARD COMPATIBILITY ⛔
+ * 
+ * - Do NOT uncomment any legacy scheduler endpoints in this file
+ * - Do NOT add fallback routes that duplicate modular functionality
+ * - Do NOT create "temporary" inline endpoints for "quick fixes"
+ * - All new scheduler features MUST be added to the modular structure
+ * 
+ * If you need to modify scheduler functionality, go to server/routes/scheduler/
+ * If you find commented scheduler code below, it stays commented - PERMANENTLY
+ * 
+ * This architectural decision ensures:
+ * ✓ Clean separation of concerns
+ * ✓ Maintainable codebase
+ * ✓ No code duplication
+ * ✓ Clear developer expectations
+ * 
+ * ===================================================================================================
+ */
+
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
