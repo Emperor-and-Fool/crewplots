@@ -171,8 +171,8 @@ export default function SchedulerEditPage() {
       return allShifts;
     },
     enabled: !!scheduleId && permissions.canEditSchedules,
-    staleTime: 30 * 1000, // 30 seconds for live updates
-    gcTime: 5 * 60 * 1000, // 5 minutes in memory
+    staleTime: 0, // Always fresh for live updates
+    gcTime: 30 * 1000, // 30 seconds in memory
   });
 
   // Fetch all week schedules in the same schedule block for multi-week preview
@@ -333,8 +333,14 @@ export default function SchedulerEditPage() {
     onSuccess: (data) => {
       console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
       
-      // Invalidate the all-shifts query for live updates
+      // Invalidate both the all-shifts query and individual week schedules
       queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      
+      // Also invalidate individual week schedule shifts
+      selectedWeekScheduleIds.forEach(weekId => {
+        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+      });
       
       // Force immediate refetch for real-time data updates
       refetchShifts();
@@ -1235,13 +1241,22 @@ export default function SchedulerEditPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {/* Debug live data flow */}
+                    <div className="mb-2 text-xs text-muted-foreground">
+                      Debug: {allShiftsData.length} shifts loaded, {allWeekSchedules.length} weeks
+                    </div>
+                    
                     <MultiWeekCalendarPreview 
                       scheduleBlockId={scheduleBlockData?.id || 0}
                       scheduleBlockName={scheduleBlockData?.name || ''}
-                      weekSchedules={allWeekSchedules.map(ws => ({
-                        ...ws,
-                        shifts: allShiftsData.filter(shift => shift.weekScheduleId === ws.id)
-                      }))}
+                      weekSchedules={allWeekSchedules.map(ws => {
+                        const weekShifts = allShiftsData.filter(shift => shift.weekScheduleId === ws.id);
+                        console.log(`🔍 PREVIEW: Week ${ws.id} has ${weekShifts.length} shifts`);
+                        return {
+                          ...ws,
+                          shifts: weekShifts
+                        };
+                      })}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
