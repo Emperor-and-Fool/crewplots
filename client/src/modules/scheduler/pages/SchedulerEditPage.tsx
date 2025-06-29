@@ -57,7 +57,7 @@ export default function SchedulerEditPage() {
   const permissions = useSchedulerPermissions();
   
   // Schedule block-based state
-  const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
+  const [selectedWeekScheduleIds, setSelectedWeekScheduleIds] = useState<number[]>([]);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
