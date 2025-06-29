@@ -104,20 +104,51 @@ export default function SchedulerCreatePage() {
     enabled: !!currentWeekSchedule?.id
   });
 
-  const createWeekScheduleMutation = useMutation({
-    mutationFn: async (data: WeekScheduleCreationForm) => {
-      return apiRequest('POST', '/api/scheduler/week-schedules', data);
-    },
-    onSuccess: (newSchedule) => {
-      setCurrentWeekSchedule(newSchedule);
-      toast({
-        title: "Week schedule created",
-        description: "You can now add shifts to your schedule."
+  const createSchedulePackageMutation = useMutation({
+    mutationFn: async (data: SchedulePackageForm) => {
+      // Convert frontend shifts format to package format
+      const packageShifts = data.shifts.flatMap(shift => 
+        shift.daysOfWeek.map(day => ({
+          title: `${shift.position} Shift`,
+          position: shift.position,
+          dayOfWeek: day,
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          maxSlots: shift.maxSlots,
+          subscriptionDeadline: shift.subscriptionDeadline
+        }))
+      );
+
+      return apiRequest('POST', '/api/scheduler/packages/create', {
+        packageType: 'create',
+        scheduleBlock: {
+          name: data.name,
+          description: data.description,
+          locationId: data.locationId,
+          isActive: data.isActive
+        },
+        weekSchedules: [{
+          weekNumber: 1
+        }],
+        shifts: packageShifts
       });
+    },
+    onSuccess: (response: any) => {
+      if (response.success && response.package?.createdEntities) {
+        const weekScheduleId = response.package.createdEntities.weekScheduleIds?.[0];
+        if (weekScheduleId) {
+          setCurrentWeekSchedule({ id: weekScheduleId, weekNumber: 1 });
+        }
+        setActiveTab('shifts');
+        toast({
+          title: "Schedule created successfully",
+          description: `Created schedule with ${response.package.createdEntities.shiftIds?.length || 0} shifts using validation framework.`
+        });
+      }
     },
     onError: (error) => {
       toast({
-        title: "Failed to create schedule",
+        title: "Schedule validation failed",
         description: error.message,
         variant: "destructive"
       });
@@ -156,8 +187,8 @@ export default function SchedulerCreatePage() {
     }
   });
 
-  const handleScheduleSubmit = async (data: WeekScheduleCreationForm) => {
-    createWeekScheduleMutation.mutate(data);
+  const handleScheduleSubmit = async (data: SchedulePackageForm) => {
+    createSchedulePackageMutation.mutate(data);
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
@@ -310,14 +341,14 @@ export default function SchedulerCreatePage() {
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={createWeekScheduleMutation.isPending}
+                    disabled={createSchedulePackageMutation.isPending}
                   >
-                    {createWeekScheduleMutation.isPending ? (
-                      "Creating Schedule..."
+                    {createSchedulePackageMutation.isPending ? (
+                      "Creating Schedule Package..."
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Create Week Schedule
+                        Create Schedule with Validation Framework
                       </>
                     )}
                   </Button>
