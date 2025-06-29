@@ -442,27 +442,24 @@ export default function SchedulerEditPage() {
 
   // Auto-save effect with debouncing (following notes system pattern)
   React.useEffect(() => {
-    const subscription = shiftForm.watch((formData) => {
-      const formDataString = JSON.stringify(formData);
-      
-      // Skip if form data hasn't changed or is empty
-      if (formDataString === lastSavedFormData || !formData.position || !formData.startTime || !formData.endTime || !formData.daysOfWeek || formData.daysOfWeek.length === 0) {
-        return;
+    const formData = shiftForm.getValues();
+    const formDataString = JSON.stringify(formData);
+    
+    // Skip if form data hasn't changed or is empty
+    if (formDataString === lastSavedFormData || !formData.position || !formData.startTime || !formData.endTime || !formData.daysOfWeek || formData.daysOfWeek.length === 0) {
+      return;
+    }
+
+    const autoSaveTimer = setTimeout(() => {
+      if (formDataString !== lastSavedFormData && formData.position && formData.startTime && formData.endTime && formData.daysOfWeek && formData.daysOfWeek.length > 0) {
+        console.log('🔄 AUTO-SAVE: Form changed, triggering auto-save');
+        setLastSavedFormData(formDataString);
+        autoSaveDraftMutation.mutate(formData as ShiftCreationForm);
       }
+    }, 2000); // Auto-save after 2 seconds of inactivity
 
-      const autoSaveTimer = setTimeout(() => {
-        if (formDataString !== lastSavedFormData) {
-          console.log('🔄 AUTO-SAVE: Form changed, triggering auto-save');
-          setLastSavedFormData(formDataString);
-          autoSaveDraftMutation.mutate(formData);
-        }
-      }, 2000); // Auto-save after 2 seconds of inactivity
-
-      return () => clearTimeout(autoSaveTimer);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [lastSavedFormData, autoSaveDraftMutation]);
+    return () => clearTimeout(autoSaveTimer);
+  }, [shiftForm.watch(), lastSavedFormData]);
 
   // Cleanup draft on unmount
   React.useEffect(() => {
