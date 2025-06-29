@@ -44,6 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Debug: Log current cookies before auth check
+        console.log('🔍 CLIENT AUTH DEBUG: Starting auth check');
+        console.log('🔍 CLIENT COOKIES:', document.cookie);
+        
         // Primary: Try auth consolidation endpoint that uses working session
         const response = await fetch('/api/auth-consolidation', {
           method: 'GET',
@@ -52,6 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
           }
+        });
+        
+        console.log('🔍 CLIENT AUTH RESPONSE:', {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries())
         });
         
         if (response.ok) {
@@ -97,7 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Attempting to log in with URLSearchParams approach:", username);
+      console.log("🔍 CLIENT LOGIN DEBUG: Starting login for:", username);
+      console.log("🔍 CLIENT COOKIES BEFORE LOGIN:", document.cookie);
       
       // Use URLSearchParams for reliable form data submission
       const urlencoded = new URLSearchParams();
@@ -115,7 +125,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           credentials: 'include' // Important for cookies
         });
         
-        console.log("Login response status:", response.status);
+        console.log("🔍 CLIENT LOGIN RESPONSE:", {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        console.log("🔍 CLIENT COOKIES AFTER LOGIN:", document.cookie);
         
         if (response.ok) {
           const data = await response.json();
