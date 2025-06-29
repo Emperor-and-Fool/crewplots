@@ -23,7 +23,7 @@ import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
 import MultiWeekCalendarPreview from '../components/MultiWeekCalendarPreview';
-import FinalizeShiftsComponent from '../components/FinalizeShiftsComponent';
+
 
 // Schema for week schedule update form
 const weekScheduleUpdateSchema = z.object({
@@ -1459,19 +1459,7 @@ export default function SchedulerEditPage() {
                       Debug: {allShiftsData.length} shifts loaded, {allWeekSchedules.length} weeks
                     </div>
 
-                    {/* Finalize Draft Shifts Component */}
-                    <FinalizeShiftsComponent 
-                      allShifts={allShiftsData}
-                      weekSchedules={allWeekSchedules}
-                      onFinalized={() => {
-                        // Refresh shifts data after finalization
-                        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'] });
-                        allWeekSchedules.forEach(ws => {
-                          queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', ws.id, 'shifts'] });
-                        });
-                        refetchShifts();
-                      }}
-                    />
+
                     
                     <MultiWeekCalendarPreview 
                       scheduleBlockId={scheduleBlockData?.id || 0}
