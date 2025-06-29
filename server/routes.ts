@@ -1697,49 +1697,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Session Consolidation API - Critical fix for shift-creation authentication
-  app.get("/api/scheduler/creation-data", async (req, res) => {
-    try {
-      console.log(`[SchedulerConsolidation] DEBUG - req.user:`, req.user);
-      console.log(`[SchedulerConsolidation] DEBUG - req.isAuthenticated():`, req.isAuthenticated?.());
-      console.log(`[SchedulerConsolidation] DEBUG - session:`, req.session);
+  // MOVED TO MODULAR: Session Consolidation API - now in /api/scheduler/creation-data
+  // app.get("/api/scheduler/creation-data", async (req, res) => {
+  //   try {
+  //     console.log(`[SchedulerConsolidation] DEBUG - req.user:`, req.user);
+  //     console.log(`[SchedulerConsolidation] DEBUG - req.isAuthenticated():`, req.isAuthenticated?.());
+  //     console.log(`[SchedulerConsolidation] DEBUG - session:`, req.session);
       
-      if (!req.user) {
-        console.log(`[SchedulerConsolidation] Authentication failed - no req.user`);
-        return res.status(401).json({ error: "Authentication required" });
-      }
+  //     if (!req.user) {
+  //       console.log(`[SchedulerConsolidation] Authentication failed - no req.user`);
+  //       return res.status(401).json({ error: "Authentication required" });
+  //     }
 
-      const user = req.user as any;
-      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+  //     const user = req.user as any;
+  //     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
       
-      console.log(`[SchedulerConsolidation] Fetching creation data for user ${user.id}, location: ${locationId || 'all'}`);
+  //     console.log(`[SchedulerConsolidation] Fetching creation data for user ${user.id}, location: ${locationId || 'all'}`);
 
-      // Fetch all required data in parallel for performance
-      const [weekSchedules, locations, competencies] = await Promise.all([
-        storage.getWeekSchedules(locationId),
-        storage.getLocations(),
-        locationId ? storage.getCompetencies(locationId) : storage.getAllCompetencies()
-      ]);
+  //     // Fetch all required data in parallel for performance
+  //     const [weekSchedules, locations, competencies] = await Promise.all([
+  //       storage.getWeekSchedules(locationId),
+  //       storage.getLocations(),
+  //       locationId ? storage.getCompetencies(locationId) : storage.getAllCompetencies()
+  //     ]);
 
-      const consolidatedData = {
-        weekSchedules: weekSchedules || [],
-        locations: locations || [],
-        competencies: competencies || [],
-        userPermissions: user.permissions || [],
-        authenticatedUser: {
-          id: user.id,
-          username: user.username,
-          role: user.role
-        }
-      };
+  //     const consolidatedData = {
+  //       weekSchedules: weekSchedules || [],
+  //       locations: locations || [],
+  //       competencies: competencies || [],
+  //       userPermissions: user.permissions || [],
+  //       authenticatedUser: {
+  //         id: user.id,
+  //         username: user.username,
+  //         role: user.role
+  //       }
+  //     };
 
-      console.log(`[SchedulerConsolidation] Successfully consolidated data: ${weekSchedules?.length} schedules, ${locations?.length} locations, ${competencies?.length} competencies`);
-      res.json(consolidatedData);
-    } catch (error) {
-      console.error('Error fetching scheduler creation data:', error);
-      res.status(500).json({ error: 'Failed to fetch scheduler data' });
-    }
-  });
+  //     console.log(`[SchedulerConsolidation] Successfully consolidated data: ${weekSchedules?.length} schedules, ${locations?.length} locations, ${competencies?.length} competencies`);
+  //     res.json(consolidatedData);
+  //   } catch (error) {
+  //     console.error('Error fetching scheduler creation data:', error);
+  //     res.status(500).json({ error: 'Failed to fetch scheduler data' });
+  //   }
+  // });
 
   // Create HTTP server
   const httpServer = createServer(app);
