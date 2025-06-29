@@ -145,7 +145,7 @@ export default function SchedulerEditPage() {
       console.log('🔍 ALL SHIFTS: Fetching shifts for schedule block:', scheduleId);
       
       // First get all week schedules for this block
-      const weekSchedulesResponse = await fetch('/api/week-schedules', {
+      const weekSchedulesResponse = await fetch('/api/scheduler/week-schedules', {
         credentials: 'include'
       });
       if (!weekSchedulesResponse.ok) {
@@ -158,7 +158,7 @@ export default function SchedulerEditPage() {
       const allShifts: any[] = [];
       for (const week of scheduleBlockWeeks) {
         try {
-          const shiftsResponse = await fetch(`/api/week-schedules/${week.id}/shifts`, {
+          const shiftsResponse = await fetch(`/api/scheduler/week-schedules/${week.id}/shifts`, {
             credentials: 'include'
           });
           if (shiftsResponse.ok) {
@@ -182,9 +182,9 @@ export default function SchedulerEditPage() {
 
   // Fetch all week schedules in the same schedule block for multi-week preview
   const { data: allWeekSchedules = [] } = useQuery({
-    queryKey: ['/api/week-schedules', 'frameId', scheduleBlockData?.id],
+    queryKey: ['/api/scheduler/week-schedules', 'frameId', scheduleBlockData?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/week-schedules?frameId=${scheduleBlockData.id}`, {
+      const response = await fetch(`/api/scheduler/week-schedules?frameId=${scheduleBlockData.id}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -265,10 +265,10 @@ export default function SchedulerEditPage() {
   // Mutations
   const updateWeekScheduleMutation = useMutation({
     mutationFn: async (data: WeekScheduleUpdateForm) => {
-      return await apiRequest('PUT', `/api/week-schedules/${scheduleId}`, data);
+      return await apiRequest('PUT', `/api/scheduler/week-schedules/${scheduleId}`, data);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
       // Update selectedWeekScheduleId for schedule block architecture
       // Schedule block architecture - no week schedule ID needed
       setHasBeenEdited(true);
