@@ -118,20 +118,17 @@ export class ValidationPackageService {
         }
       }
 
-      // Validate week schedules using creation-specific logic
+      // Validate week schedules - skip ID validation for creation (IDs assigned during transaction)
       if (packageData.weekSchedules && packageData.weekSchedules.length > 0) {
         packageData.weekSchedules.forEach((weekSchedule, index) => {
           if (packageData.packageType === 'create') {
-            // For creation, only validate required fields - scheduleBlockId will be set during transaction
+            // For creation, validate required fields but skip scheduleBlockId (assigned during transaction)
             if (!weekSchedule.weekNumber) {
               errors.push(`Week Schedule ${index + 1}: weekNumber: Required`);
             }
-            if (!weekSchedule.createdBy) {
-              errors.push(`Week Schedule ${index + 1}: createdBy: Required`);
-            }
-            // scheduleBlockId is optional during creation
+            // createdBy is set from package metadata during transaction
           } else {
-            // For updates, use full schema validation
+            // For updates, validate all fields including IDs
             const result = insertWeekScheduleSchema.partial().safeParse(weekSchedule);
             if (!result.success) {
               errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.path.join('.')}: ${e.message}`));
@@ -140,14 +137,29 @@ export class ValidationPackageService {
         });
       }
 
-      // Validate shifts using creation-specific schemas
+      // Validate shifts - skip ID validation for creation (IDs assigned during transaction)
       if (packageData.shifts && packageData.shifts.length > 0) {
         packageData.shifts.forEach((shift, index) => {
-          const result = packageData.packageType === 'create'
-            ? createShiftSchema.safeParse(shift)
-            : updateShiftSchema.safeParse(shift);
-          if (!result.success) {
-            errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+          if (packageData.packageType === 'create') {
+            // For creation, validate required fields but skip weekScheduleId (assigned during transaction)
+            if (!shift.title) {
+              errors.push(`Shift ${index + 1}: title: Required`);
+            }
+            if (!shift.dayOfWeek) {
+              errors.push(`Shift ${index + 1}: dayOfWeek: Required`);
+            }
+            if (!shift.startTime) {
+              errors.push(`Shift ${index + 1}: startTime: Required`);
+            }
+            if (!shift.endTime) {
+              errors.push(`Shift ${index + 1}: endTime: Required`);
+            }
+          } else {
+            // For updates, validate all fields including IDs
+            const result = updateShiftSchema.safeParse(shift);
+            if (!result.success) {
+              errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+            }
           }
 
           // Time validation
