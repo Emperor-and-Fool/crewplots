@@ -183,7 +183,7 @@ router.put('/notes/:noteId', async (req, res) => {
     // First, verify the note belongs to the authenticated user
     const existingNote = await collection.findOne({ 
       _id: new ObjectId(noteId),
-      userId: (req.user as any).id 
+      userId: req.user.id 
     });
     
     if (!existingNote) {
@@ -247,7 +247,7 @@ router.delete('/notes/user/:userId', async (req, res) => {
     }
 
     // Only allow users to delete their own notes
-    if ((req.user as any).id !== userId) {
+    if (req.user.id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
@@ -289,7 +289,7 @@ router.delete('/notes/:noteId', async (req, res) => {
         throw new Error('Note not found');
       }
       
-      if (note.userId !== (req.user as any).id) {
+      if (note.userId !== req.user.id) {
         throw new Error('Unauthorized - note belongs to another user');
       }
       
