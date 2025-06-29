@@ -20,7 +20,7 @@ function hasPermission(userRole: string, permission: string): boolean {
 
 // Get all shifts or shifts by week schedule
 router.get("/", authenticateUser, async (req: any, res) => {
-  if (!req.user || !hasPermission(req.user.role, "scheduler_development.read")) {
+  if (!hasPermission(req.user.role, "scheduler_development.read")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
@@ -46,7 +46,7 @@ router.get("/", authenticateUser, async (req: any, res) => {
 
 // Create shift
 router.post("/", authenticateUser, async (req: any, res) => {
-  if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
@@ -69,8 +69,8 @@ router.post("/", authenticateUser, async (req: any, res) => {
 
 // Update shift
 router.put("/:id", authenticateUser, async (req: any, res) => {
-  if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-    console.log("🔄 AUTO-SAVE UPDATE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
+  if (!hasPermission(req.user.role, "scheduler_development")) {
+    console.log("🔄 AUTO-SAVE UPDATE: Permission denied for user:", req.user.username, "role:", req.user.role);
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
@@ -93,7 +93,7 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
 
 // Delete shift
 router.delete("/:id", authenticateUser, async (req: any, res) => {
-  if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
