@@ -1783,6 +1783,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
+  /*
+   * ===================================================================================================
+   * 🔗 MODULAR ROUTE MOUNTING SECTION
+   * ===================================================================================================
+   * 
+   * This section mounts all modular route handlers to their appropriate API prefixes.
+   * Each modular route system is imported at the top of this file and connected here.
+   * 
+   * Pattern: app.use('/api/{module}', {module}Routes);
+   * 
+   * Active Modular Routes:
+   * - /api/auth         → Authentication endpoints (login, logout, register)
+   * - /api/uploads      → File upload handling
+   * - /api/applicant    → Applicant portal functionality  
+   * - /api/dashboard    → Dashboard data aggregation
+   * - /api/mongodb      → MongoDB messaging operations
+   * - /api/notes        → Notes and messaging
+   * - /api/email        → Email configuration
+   * - /api/scheduler    → Multi-week scheduling system (NEW)
+   * - /api/security     → Security settings
+   * 
+   * Development/Monitoring Routes:
+   * - /api/redis-monitor       → Redis connection status
+   * - /api/mongo-monitor       → MongoDB connection status  
+   * - /api/cache-monitor       → Hybrid cache status
+   * - /api/session-monitor     → Session store status
+   * ===================================================================================================
+   */
+
+  // Mount modular route handlers
+  app.use('/api/auth', authRoutes);
+  app.use('/api/uploads', uploadRoutes);
+  app.use('/api/applicant', applicantPortalRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/mongodb', mongodbMessagesRoutes);
+  app.use('/api/notes', notesRoutes);
+  app.use('/api/email', emailRoutes);
+  app.use('/api/scheduler', schedulerRoutes);  // 🆕 NEW: Multi-week scheduling system
+  app.use('/api/security', securityRoutes);
+
+  // Development and monitoring routes
+  app.use('/api/redis-monitor', redisMonitorRoutes);
+  app.use('/api/mongo-monitor', mongoMonitorRoutes);
+  app.use('/api/cache-monitor', hybridCacheMonitorRoutes);
+  app.use('/api/session-monitor', sessionMonitorRoutes);
+
   // Create HTTP server
   const httpServer = createServer(app);
 
