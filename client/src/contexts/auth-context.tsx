@@ -44,18 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Log cookie status but don't exit early - backend may still have valid session
-        const currentCookies = document.cookie;
-        console.log('🍪 AUTH DEBUG: Current cookies check:', {
-          cookiesExist: !!currentCookies,
-          cookiesLength: currentCookies?.length || 0,
-          hasConnectSid: currentCookies?.includes('connect.sid'),
-          fullCookieString: currentCookies,
-          timestamp: new Date().toISOString()
-        });
-        
-        // Always try backend authentication check first
-        // Don't rely solely on cookie presence due to hot reload clearing cookies
+        // Try backend authentication check to verify session validity
         
         // Primary: Try backend authentication check using /me endpoint
         // This uses the working backend session authentication
@@ -73,11 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         clearTimeout(timeoutId);
-        
-        console.log('🔍 CLIENT AUTH RESPONSE:', {
-          status: response.status,
-          headers: Object.fromEntries(response.headers.entries())
-        });
         
         if (response.ok) {
           const authData = await response.json();
@@ -122,8 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("🔍 CLIENT LOGIN DEBUG: Starting login for:", username);
-      console.log("🔍 CLIENT COOKIES BEFORE LOGIN:", document.cookie);
+
       
       // Use URLSearchParams for reliable form data submission
       const urlencoded = new URLSearchParams();
@@ -141,11 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           credentials: 'include' // Important for cookies
         });
         
-        console.log("🔍 CLIENT LOGIN RESPONSE:", {
-          status: response.status,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-        console.log("🔍 CLIENT COOKIES AFTER LOGIN:", document.cookie);
+
         
         if (response.ok) {
           const data = await response.json();

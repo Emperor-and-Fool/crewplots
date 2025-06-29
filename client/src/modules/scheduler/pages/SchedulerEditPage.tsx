@@ -278,33 +278,15 @@ export default function SchedulerEditPage() {
       return result;
     },
     onSuccess: (data) => {
-      console.log('🎉 SAVE DEBUG: onSuccess handler started', {
-        data,
-        userAuthenticated: !!user,
-        timestamp: new Date().toISOString()
-      });
-      
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
-      console.log('🔄 SAVE DEBUG: Cache invalidated for schedule-blocks');
-      console.log('🍪 SAVE DEBUG: Cookies AFTER cache invalidation:', document.cookie);
       
       // Update selectedWeekScheduleId for schedule block architecture
       // Schedule block architecture - no week schedule ID needed
       setHasBeenEdited(true);
-      console.log('✏️ SAVE DEBUG: Set hasBeenEdited to true');
-      console.log('🍪 SAVE DEBUG: Cookies AFTER state update:', document.cookie);
       
       toast({
         title: "Schedule updated successfully",
         description: "You can now manage shifts for this schedule"
-      });
-      console.log('🔔 SAVE DEBUG: Toast notification triggered');
-      console.log('🍪 SAVE DEBUG: Cookies AFTER toast:', document.cookie);
-      
-      console.log('✅ SAVE DEBUG: onSuccess handler completed', {
-        userStillAuthenticated: !!user,
-        cookieStatus: document.cookie ? 'present' : 'missing',
-        timestamp: new Date().toISOString()
       });
     },
     onError: (error: any) => {
@@ -585,20 +567,13 @@ export default function SchedulerEditPage() {
   }, [draftShiftId]);
 
   const handleScheduleSubmit = async (data: WeekScheduleUpdateForm) => {
-    console.log('🎯 SAVE DEBUG: Starting schedule submit handler');
-    console.log('🍪 SAVE DEBUG: Cookies BEFORE save:', document.cookie);
-    
     // Get the latest isActive value from basicInfoForm since that's where the Switch is connected
     const basicInfoValues = basicInfoForm.getValues();
     const mergedData = {
       ...data,
       isActive: basicInfoValues.isActive // Use the Switch value from basicInfoForm
     };
-    
-    console.log('🎯 SAVE DEBUG: About to trigger mutation with data:', mergedData);
     updateWeekScheduleMutation.mutate(mergedData);
-    
-    console.log('🍪 SAVE DEBUG: Cookies AFTER mutation triggered:', document.cookie);
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
