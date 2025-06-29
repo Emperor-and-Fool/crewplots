@@ -337,11 +337,20 @@ export default function SchedulerEditPage() {
       // Generate unique group ID for shifts created together
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Use selected week schedule IDs for shift creation, fallback to first week if none selected
-      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
+      // Use selected week schedule IDs for shift creation, ensure we have valid IDs
+      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : allWeekSchedules.map(ws => ws.id);
       
+      console.log('🔄 AUTO-SAVE: Schedule block ID:', scheduleId);
+      console.log('🔄 AUTO-SAVE: Available week schedules:', allWeekSchedules);
+      console.log('🔄 AUTO-SAVE: Selected week IDs:', selectedWeekScheduleIds);
       console.log('🔄 AUTO-SAVE: Target weeks for draft:', targetWeekScheduleIds);
       console.log('🔄 AUTO-SAVE: Days selected:', formData.daysOfWeek);
+      
+      // Validation - ensure we have valid data
+      if (!targetWeekScheduleIds.length || !formData.daysOfWeek.length) {
+        console.warn('🔄 AUTO-SAVE: Missing required data - weeks or days');
+        return { error: 'Missing week schedules or days' };
+      }
       
       // Clear existing drafts first to prevent duplicates
       if (draftShiftId) {
