@@ -573,7 +573,7 @@ export type InsertScheduleTemplate = z.infer<typeof insertScheduleTemplateSchema
 export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 
 export type InsertScheduleBlock = z.infer<typeof insertScheduleBlockSchema>;
-export type InsertWeek = z.infer<typeof insertWeekSchema>;
+// export type InsertWeek = z.infer<typeof insertWeekSchema>; // near-future-removal: Legacy table replaced with weekSchedules
 export type InsertWeekSchedule = z.infer<typeof insertWeekScheduleSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
@@ -606,7 +606,7 @@ export type ScheduleTemplate = typeof scheduleTemplates.$inferSelect;
 export type TemplateShift = typeof templateShifts.$inferSelect;
 
 export type ScheduleBlock = typeof scheduleBlocks.$inferSelect;
-export type Week = typeof weeks.$inferSelect;
+// export type Week = typeof weeks.$inferSelect; // near-future-removal: Legacy table replaced with weekSchedules
 export type WeekSchedule = typeof weekSchedules.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;

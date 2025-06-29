@@ -17,10 +17,10 @@ import {
   generatePublicId
 } from "@shared/schema";
 
-// Aliases for backward compatibility
-const weekSchedules = weeks;
-type WeekSchedule = Week;
-type InsertWeekSchedule = InsertWeek;
+// Aliases for backward compatibility - using correct weekSchedules table
+// const weekSchedules = weeks; // near-future-removal: Legacy alias removed
+// type WeekSchedule = Week; // near-future-removal: Legacy alias removed  
+// type InsertWeekSchedule = InsertWeek; // near-future-removal: Legacy alias removed
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
@@ -1023,15 +1023,15 @@ class DatabaseStorage {
     return true;
   }
 
-  async copyWeekToBlock(sourceWeekId: number, scheduleBlockId: number, weekNumber: number): Promise<Week> {
-    // Get the source week
-    const [sourceWeek] = await db.select().from(weeks).where(eq(weeks.id, sourceWeekId));
+  async copyWeekToBlock(sourceWeekId: number, scheduleBlockId: number, weekNumber: number): Promise<WeekSchedule> {
+    // Get the source week schedule
+    const [sourceWeek] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, sourceWeekId));
     if (!sourceWeek) {
-      throw new Error("Source week not found");
+      throw new Error("Source week schedule not found");
     }
 
-    // Get all shifts from the source week
-    const sourceShifts = await db.select().from(shifts).where(eq(shifts.weekId, sourceWeekId));
+    // Get all shifts from the source week schedule
+    const sourceShifts = await db.select().from(shifts).where(eq(shifts.weekScheduleId, sourceWeekId));
 
     // Create the new week linked to the block
     const newWeekData = {
@@ -1044,15 +1044,15 @@ class DatabaseStorage {
     delete (newWeekData as any).createdAt;
     delete (newWeekData as any).updatedAt;
 
-    const [newWeek] = await db.insert(weeks).values(newWeekData).returning();
+    const [newWeek] = await db.insert(weekSchedules).values(newWeekData).returning();
 
-    // Copy all shifts to the new week
+    // Copy all shifts to the new week schedule
     if (sourceShifts.length > 0) {
       const newShiftsData = sourceShifts.map(shift => {
         const newShift = { ...shift };
         delete (newShift as any).id;
         delete (newShift as any).createdAt;
-        newShift.weekId = newWeek.id;
+        newShift.weekScheduleId = newWeek.id;
         return newShift;
       });
 
@@ -1062,11 +1062,11 @@ class DatabaseStorage {
     return newWeek;
   }
 
-  async getWeeksByBlock(blockId: number): Promise<Week[]> {
+  async getWeeksByBlock(blockId: number): Promise<WeekSchedule[]> {
     return await db.select()
-      .from(weeks)
-      .where(eq(weeks.scheduleBlockId, blockId))
-      .orderBy(weeks.weekNumber);
+      .from(weekSchedules)
+      .where(eq(weekSchedules.scheduleBlockId, blockId))
+      .orderBy(weekSchedules.weekNumber);
   }
 
   // near-future-removal: Legacy duplicate week schedule methods removed - keeping only the working database implementation
