@@ -941,98 +941,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-  app.post("/api/shift-requirements", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/shift-requirements", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const validatedData = insertShiftRequirementSchema.parse(req.body);
-      const requirement = await storage.createShiftRequirement(validatedData);
-      res.status(201).json(requirement);
-    } catch (error) {
-      console.error("Error creating shift requirement:", error);
-      res.status(400).json({ error: "Failed to create shift requirement" });
-    }
-  });
+  //   try {
+  //     const validatedData = insertShiftRequirementSchema.parse(req.body);
+  //     const requirement = await storage.createShiftRequirement(validatedData);
+  //     res.status(201).json(requirement);
+  //   } catch (error) {
+  //     console.error("Error creating shift requirement:", error);
+  //     res.status(400).json({ error: "Failed to create shift requirement" });
+  //   }
+  // });
 
-  app.put("/api/shift-requirements/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.put("/api/shift-requirements/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertShiftRequirementSchema.parse(req.body);
-      const requirement = await storage.updateShiftRequirement(id, validatedData);
-      res.json(requirement);
-    } catch (error) {
-      console.error("Error updating shift requirement:", error);
-      res.status(400).json({ error: "Failed to update shift requirement" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const validatedData = insertShiftRequirementSchema.parse(req.body);
+  //     const requirement = await storage.updateShiftRequirement(id, validatedData);
+  //     res.json(requirement);
+  //   } catch (error) {
+  //     console.error("Error updating shift requirement:", error);
+  //     res.status(400).json({ error: "Failed to update shift requirement" });
+  //   }
+  // });
 
-  app.delete("/api/shift-requirements/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/shift-requirements/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteShiftRequirement(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting shift requirement:", error);
-      res.status(500).json({ error: "Failed to delete shift requirement" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteShiftRequirement(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting shift requirement:", error);
+  //     res.status(500).json({ error: "Failed to delete shift requirement" });
+  //   }
+  // });
 
-  // Shift Subscriptions Management
-  app.get("/api/shift-subscriptions", async (req, res) => {
-    try {
-      const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
-      const subscriptions = await storage.getShiftSubscriptions(shiftId, userId);
-      res.json(subscriptions);
-    } catch (error) {
-      console.error("Error fetching shift subscriptions:", error);
-      res.status(500).json({ error: "Failed to fetch shift subscriptions" });
-    }
-  });
+  // MOVED TO MODULAR: Shift Subscriptions Management - now in /api/scheduler/subscriptions
+  // app.get("/api/shift-subscriptions", async (req, res) => {
+  //   try {
+  //     const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
+  //     const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+  //     const subscriptions = await storage.getShiftSubscriptions(shiftId, userId);
+  //     res.json(subscriptions);
+  //   } catch (error) {
+  //     console.error("Error fetching shift subscriptions:", error);
+  //     res.status(500).json({ error: "Failed to fetch shift subscriptions" });
+  //   }
+  // });
 
-  app.post("/api/shift-subscriptions", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+  // app.post("/api/shift-subscriptions", async (req, res) => {
+  //   if (!req.user) {
+  //     return res.status(401).json({ error: "Not authenticated" });
+  //   }
 
-    try {
-      const validatedData = insertShiftSubscriptionSchema.parse({
-        ...req.body,
-        userId: req.user.id
-      });
-      const subscription = await storage.createShiftSubscription(validatedData);
-      res.status(201).json(subscription);
-    } catch (error) {
-      console.error("Error creating shift subscription:", error);
-      res.status(400).json({ error: "Failed to create shift subscription" });
-    }
-  });
+  //   try {
+  //     const validatedData = insertShiftSubscriptionSchema.parse({
+  //       ...req.body,
+  //       userId: req.user.id
+  //     });
+  //     const subscription = await storage.createShiftSubscription(validatedData);
+  //     res.status(201).json(subscription);
+  //   } catch (error) {
+  //     console.error("Error creating shift subscription:", error);
+  //     res.status(400).json({ error: "Failed to create shift subscription" });
+  //   }
+  // });
 
-  app.put("/api/shift-subscriptions/:id", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+  // app.put("/api/shift-subscriptions/:id", async (req, res) => {
+  //   if (!req.user) {
+  //     return res.status(401).json({ error: "Not authenticated" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertShiftSubscriptionSchema.parse(req.body);
-      const subscription = await storage.updateShiftSubscription(id, validatedData);
-      res.json(subscription);
-    } catch (error) {
-      console.error("Error updating shift subscription:", error);
-      res.status(400).json({ error: "Failed to update shift subscription" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const validatedData = insertShiftSubscriptionSchema.parse(req.body);
+  //     const subscription = await storage.updateShiftSubscription(id, validatedData);
+  //     res.json(subscription);
+  //   } catch (error) {
+  //     console.error("Error updating shift subscription:", error);
+  //     res.status(400).json({ error: "Failed to update shift subscription" });
+  //   }
+  // });
 
   app.delete("/api/shift-subscriptions/:id", async (req, res) => {
     if (!req.user) {
