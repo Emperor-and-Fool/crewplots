@@ -57,7 +57,7 @@ export default function SchedulerEditPage() {
   const permissions = useSchedulerPermissions();
   
   // Schedule block-based state
-  const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
+  const [selectedWeekScheduleIds, setSelectedWeekScheduleIds] = useState<number[]>([]);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
@@ -214,11 +214,11 @@ export default function SchedulerEditPage() {
 
   // Set default selected week when allWeekSchedules loads
   useEffect(() => {
-    if (allWeekSchedules.length > 0 && selectedWeekScheduleId === null) {
+    if (allWeekSchedules.length > 0 && selectedWeekScheduleIds.length === 0) {
       // Default to the first week schedule
-      setSelectedWeekScheduleId(allWeekSchedules[0].id);
+      setSelectedWeekScheduleIds([allWeekSchedules[0].id]);
     }
-  }, [allWeekSchedules, selectedWeekScheduleId]);
+  }, [allWeekSchedules, selectedWeekScheduleIds]);
 
   // Function to go back to initial schedule form
   const handleBackToSchedule = () => {
@@ -263,31 +263,45 @@ export default function SchedulerEditPage() {
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('🚀 FRONTEND: Generated shiftGroupId:', shiftGroupId);
       
-      // Use selected week schedule ID for shift creation, fallback to first week if none selected
-      const targetWeekScheduleId = selectedWeekScheduleId || (allWeekSchedules.length > 0 ? allWeekSchedules[0].id : parseInt(scheduleId || '0'));
-      console.log('🚀 FRONTEND: Target week schedule ID:', targetWeekScheduleId);
+      // Use selected week schedule IDs for shift creation, fallback to first week if none selected
+      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
+      console.log('🚀 FRONTEND: Target week schedule IDs:', targetWeekScheduleIds);
       
-      const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
-        scheduleId: targetWeekScheduleId,
-        shiftGroupId,
-        title: `${data.position} - ${dayOfWeek}`, // Generate title from position and day
-        position: data.position,
-        dayOfWeek,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        maxSlots: data.maxSlots,
-        subscriptionDeadline: data.subscriptionDeadline || null,
-        competencyRequirements: data.competencyRequirements || [],
-        status: 'open' as const // Changed from 'active' to 'open'
-      }));
+      // Generate unique batch ID for shifts created across multiple weeks
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('🚀 FRONTEND: Generated batchId:', batchId);
+
+      // Create shifts for each selected week and each selected day
+      const shiftsToCreate = [];
+      for (const weekScheduleId of targetWeekScheduleIds) {
+        for (const dayOfWeek of data.daysOfWeek) {
+          shiftsToCreate.push({
+            scheduleId: weekScheduleId,
+            shiftGroupId,
+            batchId,
+            title: `${data.position} - ${dayOfWeek}`,
+            position: data.position,
+            dayOfWeek,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            maxSlots: data.maxSlots,
+            subscriptionDeadline: data.subscriptionDeadline || null,
+            competencyRequirements: data.competencyRequirements || [],
+            status: 'open' as const
+          });
+        }
+      }
 
       console.log('🚀 FRONTEND: Shifts to create:', shiftsToCreate);
-      console.log('🚀 FRONTEND: Making API requests to:', `/api/week-schedules/${targetWeekScheduleId}/shifts`);
 
-      const promises = shiftsToCreate.map((shift, index) => {
-        console.log(`🚀 FRONTEND: Creating shift ${index + 1}:`, shift);
-        return apiRequest('POST', `/api/week-schedules/${targetWeekScheduleId}/shifts`, shift);
-      });
+      // Serial processing: create shifts one by one to avoid session conflicts
+      const createdShifts = [];
+      for (const shift of shiftsToCreate) {
+        const weekScheduleId = shift.scheduleId;
+        console.log(`🚀 FRONTEND: Creating shift for week ${weekScheduleId}:`, shift);
+        const createdShift = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/shifts`, shift);
+        createdShifts.push(createdShift);
+      }
       
       console.log('🚀 FRONTEND: Executing', promises.length, 'API requests');
       const results = await Promise.all(promises);
