@@ -36,7 +36,7 @@ function hasPermission(userRole: User['role'], permission: string): boolean {
   return rolePermissions[userRole]?.includes(permission) || false;
 }
 import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
-import { authenticateUser } from './middleware/auth';
+import { authenticateUser, detectLegacyAuth } from './middleware/auth';
 import path from "path";
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/uploads';
@@ -95,6 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Legacy authentication detection middleware - monitors all API routes
+  app.use(detectLegacyAuth);
 
   // Authentication middleware logging handled directly in middleware functions
 

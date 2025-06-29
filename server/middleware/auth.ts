@@ -32,6 +32,9 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             console.log(`✅ INFO: authenticateUser middleware entered for ${req.method} ${req.path}`);
         }
         
+        // Mark this request as using centralized authentication
+        (req as any).usedCentralizedAuth = true;
+        
         console.log("Auth middleware - Checking session authentication");
         console.log("Auth middleware - Session ID:", req.sessionID || 'none');
         console.log("Auth middleware - Session data:", req.session);
@@ -78,6 +81,33 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         console.error("Authentication error:", error);
         res.status(500).json({ message: "Authentication error" });
     }
+};
+
+// Legacy authentication detection middleware - runs on ALL routes
+export const detectLegacyAuth = (req: Request, res: Response, next: NextFunction): void => {
+    // Only monitor API routes
+    if (!req.path.startsWith('/api/')) {
+        return next();
+    }
+
+    // Track route execution to detect legacy patterns
+    const originalEnd = res.end;
+    res.end = function(chunk?: any, encoding?: any) {
+        // Check if this was a successful API response that accessed user data
+        if (res.statusCode === 200 || res.statusCode === 304) {
+            // If route succeeded but didn't use centralized auth, it's legacy
+            if (!(req as any).usedCentralizedAuth && req.user) {
+                console.log(`⚠️ LEGACY AUTH: Route ${req.method} ${req.path} using direct req.user check`);
+                console.log(`⚠️ LEGACY AUTH: Missing authenticateUser middleware on protected route`);
+            }
+        }
+        
+        // Restore original end function and call it
+        res.end = originalEnd;
+        return originalEnd.call(this, chunk, encoding);
+    };
+
+    next();
 };
 
 export const checkRole = (allowedRoles: string[]) => {
