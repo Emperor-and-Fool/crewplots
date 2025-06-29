@@ -90,10 +90,10 @@ export const useUpdateShift = () => {
 export const useDeleteShift = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/shifts/${id}`);
+      return apiRequest('DELETE', `/api/scheduler/shifts/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
     }
   });
 };
