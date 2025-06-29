@@ -1029,16 +1029,17 @@ export default function SchedulerEditPage() {
                       onClick={async () => {
                         const formData = scheduleForm.getValues();
                         
-                        // Try validation framework first, fallback to legacy save
+                        // For now, use validation framework approach
+                        const packageData = {
+                          operation: 'update',
+                          scheduleBlock: {
+                            id: parseInt(scheduleId!),
+                            ...formData
+                          }
+                        };
+                        console.log('🔗 VALIDATION FRAMEWORK: Saving complete schedule chain', packageData);
+                        
                         try {
-                          const packageData = {
-                            operation: 'update',
-                            scheduleBlock: {
-                              id: parseInt(scheduleId!),
-                              ...formData
-                            }
-                          };
-                          console.log('🔗 VALIDATION FRAMEWORK: Saving complete schedule chain', packageData);
                           await saveSchedulePackageMutation.mutateAsync(packageData);
                         } catch (error) {
                           console.log('🔗 FALLBACK: Using legacy save method', error);
