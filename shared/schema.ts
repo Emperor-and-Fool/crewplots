@@ -240,8 +240,9 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
 export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
   scheduleBlockId: integer("schedule_block_id").references(() => scheduleBlocks.id).notNull(),
-  weekNumber: integer("week_number").default(1).notNull(), // Week position within schedule block
+  weekNumber: integer("week_number").notNull(), // Week position within schedule block
   templateId: integer("template_id").references(() => scheduleTemplates.id),
+  createdBy: integer("created_by").references(() => users.id).notNull(), // Database has this field
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -253,22 +254,23 @@ export const weekSchedules = pgTable("week_schedules", {
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id).notNull(), // Must belong to a week schedule
+  scheduleId: integer("schedule_id"), // Legacy field - still in database
+  weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id), // Current field
   shiftGroupId: text("shift_group_id"), // Groups shifts created together for multi-day template editing
   batchId: text("batch_id"), // Groups shifts created together across multiple weeks
   userId: integer("user_id").references(() => users.id),
-  date: timestamp("date"),
+  date: timestamp("date", { mode: 'date' }), // Database uses date type
   dayOfWeek: text("day_of_week", { 
     enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] 
   }),
-  startTime: text("start_time").notNull(),
-  endTime: text("end_time").notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  position: text("position"),
+  startTime: text("start_time"), // Database uses time type but stored as text
+  endTime: text("end_time"), // Database uses time type but stored as text
+  title: varchar("title", { length: 255 }).notNull().default("Untitled Shift"),
+  position: varchar("position"),
   maxSlots: integer("max_slots").default(1).notNull(),
   subscriptionDeadline: timestamp("subscription_deadline"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
   shiftGroupIdx: index("idx_shifts_group").on(table.shiftGroupId),

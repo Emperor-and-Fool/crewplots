@@ -14,7 +14,7 @@ import {
 import { eq, and, inArray } from 'drizzle-orm';
 import type { User } from '@shared/schema';
 
-// Validation Package Types
+// Validation Package Types - Aligned with actual database schema
 export interface ScheduleValidationPackage {
   packageType: 'create' | 'update' | 'duplicate' | 'delete';
   scheduleBlock: {
@@ -34,19 +34,12 @@ export interface ScheduleValidationPackage {
     id?: number;
     weekScheduleId?: number;
     title: string;
-    position: string;
+    position?: string;
     dayOfWeek: string;
     startTime: string;
     endTime: string;
     maxSlots: number;
     subscriptionDeadline?: string;
-  }>;
-  shiftRequirements?: Array<{
-    shiftId?: number;
-    competencyId: number;
-    minimumLevel: number;
-    requiredCount: number;
-    weight: number;
   }>;
   metadata: {
     userId: number;
@@ -96,13 +89,7 @@ export class ValidationPackageService {
       }
     };
 
-    console.log('🎁 PACKAGE ASSEMBLY: Package assembled with metadata:', {
-      packageType,
-      userId: user.id,
-      userRole: user.role,
-      locationAccess: userLocationAccess.length,
-      permissionsRequested: packageData.metadata.requestedPermissions.length
-    });
+    console.log('🎁 PACKAGE ASSEMBLY: Package assembled successfully');
 
     return packageData;
   }
@@ -177,8 +164,7 @@ export class ValidationPackageService {
       console.log('🔍 INTEGRITY VALIDATION: Validation completed:', {
         isValid,
         errorsCount: errors.length,
-        warningsCount: warnings.length,
-        errors: errors.slice(0, 3) // Show first 3 errors for debugging
+        warningsCount: warnings.length
       });
 
       return { isValid, errors, warnings };
@@ -210,12 +196,7 @@ export class ValidationPackageService {
     
     const isAuthorized = deniedPermissions.length === 0;
     
-    console.log('🔐 PERMISSION VALIDATION: Authorization completed:', {
-      isAuthorized,
-      requiredPermissions: requiredPermissions.length,
-      grantedPermissions: grantedPermissions.length,
-      deniedPermissions: deniedPermissions.length
-    });
+    console.log('🔐 PERMISSION VALIDATION: Authorization completed:', { isAuthorized });
     
     return {
       isAuthorized,
@@ -268,9 +249,10 @@ export class ValidationPackageService {
             const [createdWeekSchedule] = await tx
               .insert(weekSchedules)
               .values({
-                scheduleBlockId,
+                scheduleBlockId: scheduleBlockId,
                 weekNumber: weekSchedule.weekNumber,
-                templateId: weekSchedule.templateId || null
+                templateId: weekSchedule.templateId || null,
+                createdBy: packageData.metadata.userId
               })
               .returning({ id: weekSchedules.id });
 
@@ -279,25 +261,23 @@ export class ValidationPackageService {
           console.log('💾 STORAGE TRANSACTION: Week schedules created:', weekScheduleIds.length);
         }
 
-        // Create shifts
+        // Create shifts with correct field mapping
         if (packageData.shifts.length > 0 && weekScheduleIds.length > 0) {
           for (const shift of packageData.shifts) {
             const weekScheduleId = weekScheduleIds[0]; // Use first week schedule for now
             
-            const shiftData = {
-              weekScheduleId: weekScheduleId,
-              title: shift.title,
-              position: shift.position || null,
-              dayOfWeek: shift.dayOfWeek,
-              startTime: shift.startTime,
-              endTime: shift.endTime,
-              maxSlots: shift.maxSlots,
-              subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
-            };
-
             const [createdShift] = await tx
               .insert(shifts)
-              .values(shiftData)
+              .values({
+                weekScheduleId: weekScheduleId,
+                title: shift.title,
+                position: shift.position || null,
+                dayOfWeek: shift.dayOfWeek,
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                maxSlots: shift.maxSlots,
+                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
+              })
               .returning({ id: shifts.id });
 
             shiftIds.push(createdShift.id);
@@ -305,11 +285,7 @@ export class ValidationPackageService {
           console.log('💾 STORAGE TRANSACTION: Shifts created:', shiftIds.length);
         }
 
-        console.log('💾 STORAGE TRANSACTION: Transaction completed successfully:', {
-          scheduleBlockId,
-          weekSchedulesCreated: weekScheduleIds.length,
-          shiftsCreated: shiftIds.length
-        });
+        console.log('💾 STORAGE TRANSACTION: Transaction completed successfully');
 
         return {
           success: true,
@@ -338,7 +314,7 @@ export class ValidationPackageService {
     }
   }
 
-  // Helper Methods for Security and Validation
+  // Helper Methods
 
   private async getUserLocationAccess(userId: number): Promise<number[]> {
     const userLocationsData = await db
@@ -431,7 +407,6 @@ export class ValidationPackageService {
   }
 
   private getRequiredPermissions(packageType: string): string[] {
-    // NEW PERMISSION MAPPING - matches the clean permission system
     const basePermissions = ['schedule.read'];
     
     switch (packageType) {
@@ -449,11 +424,8 @@ export class ValidationPackageService {
   }
 
   private async getUserPermissions(userId: number, userRole: string): Promise<string[]> {
-    // NEW PERMISSION SYSTEM - Clean implementation for flexible scheduler
-    // This replaces the legacy permission patterns with unified approach
-    
-    // Base permissions by role - this is the new security context
-    const newRolePermissions: Record<string, string[]> = {
+    // Clean permission system based on roles
+    const rolePermissions: Record<string, string[]> = {
       administrator: [
         'schedule.create',
         'schedule.read', 
@@ -488,7 +460,7 @@ export class ValidationPackageService {
       ]
     };
 
-    return newRolePermissions[userRole] || ['schedule.read'];
+    return rolePermissions[userRole] || ['schedule.read'];
   }
 }
 
