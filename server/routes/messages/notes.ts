@@ -61,16 +61,10 @@ async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: numb
 
 const router = express.Router();
 
-// Middleware to ensure user is authenticated
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
+// Using centralized authenticateUser middleware instead of local requireAuth
 
 // Get all notes for authenticated user
-router.get('/', requireAuth, async (req: any, res) => {
+router.get('/', authenticateUser, async (req: any, res) => {
   try {
     const userId = req.user.id;
     console.log(`✅ NOTES ROUTE HIT: GET /api/messaging/notes for user ${userId}`);
@@ -227,7 +221,7 @@ router.post('/', authenticateUser, async (req: any, res) => {
 });
 
 // Update note for authenticated user
-router.put('/:id', requireAuth, async (req: any, res) => {
+router.put('/:id', authenticateUser, async (req: any, res) => {
   console.log('✅ NOTES ROUTE HIT: PUT /api/messaging/notes/:id started');
   console.log('- Route params:', req.params);
   console.log('- Request body:', req.body);
@@ -280,7 +274,7 @@ router.put('/:id', requireAuth, async (req: any, res) => {
 });
 
 // Delete note for authenticated user
-router.delete('/:id', requireAuth, async (req: any, res) => {
+router.delete('/:id', authenticateUser, async (req: any, res) => {
   try {
     const messageId = parseInt(req.params.id);
     const userId = req.user.id;
@@ -318,7 +312,7 @@ router.delete('/:id', requireAuth, async (req: any, res) => {
 });
 
 // Get notes for a specific applicant (for managers/hiring team)
-router.get('/applicant/:applicantId', requireAuth, async (req: any, res) => {
+router.get('/applicant/:applicantId', authenticateUser, async (req: any, res) => {
   try {
     const applicantId = parseInt(req.params.applicantId);
     const currentUserId = req.user.id;
