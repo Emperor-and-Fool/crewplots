@@ -1550,8 +1550,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Schedule Blocks API
-  app.get("/api/schedule-blocks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  app.get("/api/schedule-blocks", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1565,8 +1565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/schedule-blocks/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  app.get("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1583,8 +1583,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/schedule-blocks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  app.post("/api/schedule-blocks", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1598,7 +1598,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/schedule-blocks/:id", async (req, res) => {
+    console.log("🔧 SCHEDULE BLOCK UPDATE: User object:", req.user);
+    console.log("🔧 SCHEDULE BLOCK UPDATE: User role:", req.user?.role);
+    console.log("🔧 SCHEDULE BLOCK UPDATE: Permission check result:", req.user ? hasPermission(req.user.role, "scheduler_development") : false);
+    
     if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("🔧 SCHEDULE BLOCK UPDATE: Permission denied");
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
