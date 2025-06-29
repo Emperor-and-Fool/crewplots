@@ -27,12 +27,12 @@ declare module 'express-session' {
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        console.log("Auth middleware - Checking session authentication");
-        
-        // Log authentication method usage for API routes
+        // Log authentication method usage for API routes - at entry point
         if (req.path.startsWith('/api/')) {
-            console.log(`✅ INFO: authenticateUser used for ${req.method} ${req.path}`);
+            console.log(`✅ INFO: authenticateUser middleware entered for ${req.method} ${req.path}`);
         }
+        
+        console.log("Auth middleware - Checking session authentication");
         console.log("Auth middleware - Session ID:", req.sessionID || 'none');
         console.log("Auth middleware - Session data:", req.session);
         
@@ -67,6 +67,12 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         // Attach user to request for use in route handlers
         req.user = user;
         console.log("User authenticated successfully:", user.username, "Role:", user.role);
+        
+        // Log successful session validation for API routes
+        if (req.path.startsWith('/api/')) {
+            console.log(`✅ SUCCESS: Session validated for ${req.method} ${req.path} - User: ${user.username} (${user.role})`);
+        }
+        
         next();
     } catch (error) {
         console.error("Authentication error:", error);
