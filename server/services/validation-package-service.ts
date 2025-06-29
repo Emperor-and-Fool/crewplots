@@ -87,14 +87,51 @@ export class ValidationPackageService {
     // Get user's location access
     const userLocationAccess = await this.getUserLocationAccess(user.id);
     
+    // Handle createdBy field based on operation type
+    let scheduleBlockData = { ...requestData.scheduleBlock };
+    let weekSchedulesData = requestData.weekSchedules || [];
+
+    if (packageType === 'create') {
+      // For creation, use current authenticated user as creator
+      scheduleBlockData.createdBy = user.id;
+      weekSchedulesData = weekSchedulesData.map(ws => ({
+        ...ws,
+        createdBy: user.id
+      }));
+    } else if (packageType === 'update' && requestData.scheduleBlock?.id) {
+      // For updates, fetch existing data to preserve original createdBy
+      const existingScheduleBlock = await db
+        .select()
+        .from(scheduleBlocks)
+        .where(eq(scheduleBlocks.id, requestData.scheduleBlock.id));
+      
+      if (existingScheduleBlock.length > 0) {
+        scheduleBlockData.createdBy = existingScheduleBlock[0].createdBy;
+      }
+      
+      // Also fetch existing week schedules
+      const existingWeekSchedules = await db
+        .select()
+        .from(weekSchedules)
+        .where(eq(weekSchedules.scheduleBlockId, requestData.scheduleBlock.id));
+      
+      weekSchedulesData = weekSchedulesData.map(ws => {
+        const existing = existingWeekSchedules.find(ews => ews.id === ws.id);
+        return {
+          ...ws,
+          createdBy: existing?.createdBy || user.id
+        };
+      });
+    }
+
     // Assemble package with security metadata
     const packageData: ScheduleValidationPackage = {
       packageType,
       scheduleBlock: {
-        ...requestData.scheduleBlock,
-        id: requestData.scheduleBlock?.id || undefined
+        ...scheduleBlockData,
+        id: scheduleBlockData?.id || undefined
       },
-      weekSchedules: requestData.weekSchedules || [],
+      weekSchedules: weekSchedulesData,
       shifts: requestData.shifts || [],
       metadata: {
         userId: user.id,
