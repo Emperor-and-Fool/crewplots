@@ -265,10 +265,10 @@ export default function SchedulerEditPage() {
   // Mutations
   const updateWeekScheduleMutation = useMutation({
     mutationFn: async (data: WeekScheduleUpdateForm) => {
-      return await apiRequest('PUT', `/api/scheduler/week-schedules/${scheduleId}`, data);
+      return await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, data);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
       // Update selectedWeekScheduleId for schedule block architecture
       // Schedule block architecture - no week schedule ID needed
       setHasBeenEdited(true);
