@@ -991,32 +991,7 @@ class DatabaseStorage {
     return true;
   }
 
-  // Schedule Blocks (Multi-Week Containers)
-  async createScheduleBlock(block: InsertScheduleBlock): Promise<ScheduleBlock> {
-    const [createdBlock] = await db.insert(scheduleBlocks).values(block).returning();
-    return createdBlock;
-  }
 
-  async getScheduleBlock(id: number): Promise<ScheduleBlock | undefined> {
-    const [block] = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id));
-    return block;
-  }
-
-  async getScheduleBlocks(locationId?: number): Promise<ScheduleBlock[]> {
-    if (locationId) {
-      return await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.locationId, locationId));
-    }
-    return await db.select().from(scheduleBlocks);
-  }
-
-  async updateScheduleBlock(id: number, block: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined> {
-    const [updatedBlock] = await db
-      .update(scheduleBlocks)
-      .set(block)
-      .where(eq(scheduleBlocks.id, id))
-      .returning();
-    return updatedBlock;
-  }
 
   async deleteScheduleBlock(id: number): Promise<boolean> {
     await db.delete(scheduleBlocks).where(eq(scheduleBlocks.id, id));
