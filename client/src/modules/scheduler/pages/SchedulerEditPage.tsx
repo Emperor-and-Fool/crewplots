@@ -331,6 +331,11 @@ export default function SchedulerEditPage() {
   const [hasSaveError, setHasSaveError] = React.useState(false);
   const [lastSavedFormData, setLastSavedFormData] = React.useState<string>('');
   const [draftShiftId, setDraftShiftId] = React.useState<number | null>(null);
+  
+  // Check if form is complete for auto-save
+  const isFormComplete = (formData: any) => {
+    return formData.position && formData.startTime && formData.endTime && formData.daysOfWeek && formData.daysOfWeek.length > 0;
+  };
 
   // Auto-save mutation using notes system pattern
   const autoSaveDraftMutation = useMutation({
@@ -515,18 +520,21 @@ export default function SchedulerEditPage() {
     }
   });
 
+  // Watch form values for auto-save trigger
+  const watchedFormData = shiftForm.watch();
+
   // Auto-save effect with debouncing (following notes system pattern)
   React.useEffect(() => {
     const formData = shiftForm.getValues();
     const formDataString = JSON.stringify(formData);
     
-    // Skip if form data hasn't changed or is empty
-    if (formDataString === lastSavedFormData || !formData.position || !formData.startTime || !formData.endTime || !formData.daysOfWeek || formData.daysOfWeek.length === 0) {
+    // Skip if form data hasn't changed or form is incomplete
+    if (formDataString === lastSavedFormData || !isFormComplete(formData)) {
       return;
     }
 
     const autoSaveTimer = setTimeout(() => {
-      if (formDataString !== lastSavedFormData && formData.position && formData.startTime && formData.endTime && formData.daysOfWeek && formData.daysOfWeek.length > 0) {
+      if (formDataString !== lastSavedFormData && isFormComplete(formData)) {
         console.log('🔄 AUTO-SAVE: Form changed, triggering auto-save');
         setLastSavedFormData(formDataString);
         autoSaveDraftMutation.mutate(formData as ShiftCreationForm);
@@ -534,7 +542,7 @@ export default function SchedulerEditPage() {
     }, 2000); // Auto-save after 2 seconds of inactivity
 
     return () => clearTimeout(autoSaveTimer);
-  }, [shiftForm.watch(), lastSavedFormData]);
+  }, [watchedFormData, lastSavedFormData, autoSaveDraftMutation]);
 
   // Cleanup draft on unmount
   React.useEffect(() => {
@@ -1365,7 +1373,7 @@ export default function SchedulerEditPage() {
                         {/* Auto-save status indicator */}
                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                           <div className="flex items-center gap-2">
-                            {isAutoSaving ? (
+                            {isAutoSaving || autoSaveDraftMutation.isPending ? (
                               <>
                                 <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
                                 <span>Auto-saving...</span>
@@ -1380,6 +1388,8 @@ export default function SchedulerEditPage() {
                                 <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                                 <span>Draft saved</span>
                               </>
+                            ) : isFormComplete(watchedFormData) ? (
+                              <span>Ready to auto-save</span>
                             ) : (
                               <span>Fill form to auto-save</span>
                             )}
