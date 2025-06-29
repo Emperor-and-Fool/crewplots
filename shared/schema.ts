@@ -521,7 +521,7 @@ export const updateShiftSchema = insertShiftSchema.partial();
 export const createWeekScheduleSchema = z.object({
   weekNumber: z.number(),
   templateId: z.number().optional(),
-  createdBy: z.number(),
+  createdBy: z.number().optional(), // Optional during creation, set from package metadata
   scheduleBlockId: z.number().optional() // Optional during creation, will be set by transaction
 });
 
