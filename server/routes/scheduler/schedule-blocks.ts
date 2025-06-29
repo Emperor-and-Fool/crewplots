@@ -41,7 +41,7 @@ router.get("/:id", authenticateUser, async (req: any, res) => {
 
   try {
     const id = parseInt(req.params.id);
-    const scheduleBlock = await storage.getScheduleBlockById(id);
+    const scheduleBlock = await storage.getScheduleBlock(id);
     
     if (!scheduleBlock) {
       return res.status(404).json({ error: "Schedule block not found" });

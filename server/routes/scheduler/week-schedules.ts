@@ -53,7 +53,7 @@ router.get("/:id", authenticateUser, async (req: any, res) => {
     const id = parseInt(req.params.id);
     console.log("✅ WEEK SCHEDULE FETCH - Fetching schedule with ID:", id);
     console.log("✅ WEEK SCHEDULE FETCH - Calling storage.getWeekScheduleById...");
-    const weekSchedule = await storage.getWeekScheduleById(id);
+    const weekSchedule = await storage.getWeekSchedule(id);
     console.log("✅ WEEK SCHEDULE FETCH - Raw result from storage:", JSON.stringify(weekSchedule, null, 2));
     console.log("✅ WEEK SCHEDULE FETCH - Found schedule:", weekSchedule ? "Yes" : "No");
     
