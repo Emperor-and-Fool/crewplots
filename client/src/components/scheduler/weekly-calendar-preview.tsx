@@ -10,7 +10,6 @@ interface Shift {
   startTime: string;
   endTime: string;
   position?: string;
-  status: string;
 }
 
 interface WeeklyCalendarPreviewProps {

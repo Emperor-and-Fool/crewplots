@@ -105,7 +105,7 @@ export default function MultiWeekCalendarPreview({
       const allShiftsArrays = await Promise.all(shiftsPromises);
       const flattenedShifts = allShiftsArrays.flat();
       console.log('🔍 MULTI-WEEK SHIFTS: Total shifts loaded:', flattenedShifts.length);
-      console.log('🔍 MULTI-WEEK SHIFTS: Draft shifts found:', flattenedShifts.filter(s => s.status === 'draft'));
+      console.log('🔍 MULTI-WEEK SHIFTS: Shifts loaded for multi-week view:', flattenedShifts.length);
       console.log('🔍 MULTI-WEEK SHIFTS: All shifts:', flattenedShifts);
       return flattenedShifts;
     },

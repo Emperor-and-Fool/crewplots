@@ -121,7 +121,7 @@ export default function SchedulerCreatePage() {
         endTime: data.endTime,
         maxSlots: data.maxSlots,
         subscriptionDeadline: data.subscriptionDeadline,
-        status: 'open'
+
       }));
       
       return apiRequest('POST', `/api/scheduler/week-schedules/${currentWeekSchedule.id}/shifts`, { shifts: shiftsToCreate });

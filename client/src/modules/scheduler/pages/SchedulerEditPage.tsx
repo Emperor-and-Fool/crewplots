@@ -470,7 +470,7 @@ export default function SchedulerEditPage() {
             maxSlots: data.maxSlots,
             subscriptionDeadline: data.subscriptionDeadline || null,
             competencyRequirements: data.competencyRequirements || [],
-            status: 'open' as const
+
           });
         }
       }
