@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -62,6 +63,10 @@ export default function SchedulerEditPage() {
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Group editing dialog state
+  const [showGroupEditDialog, setShowGroupEditDialog] = useState(false);
+  const [groupEditDialogShift, setGroupEditDialogShift] = useState<any>(null);
 
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
@@ -467,6 +472,18 @@ export default function SchedulerEditPage() {
   });
 
   const handleShiftClick = (shift: any) => {
+    // Check if this shift belongs to a group
+    if (shift.shiftGroupId) {
+      // Show group editing dialog
+      setGroupEditDialogShift(shift);
+      setShowGroupEditDialog(true);
+    } else {
+      // Edit single shift directly
+      editSingleShift(shift);
+    }
+  };
+
+  const editSingleShift = (shift: any) => {
     setEditingShift(shift);
     
     // Find the week schedule that contains this shift
@@ -492,6 +509,47 @@ export default function SchedulerEditPage() {
     toast({
       title: "Shift selected for editing",
       description: `Editing ${shift.position} shift for ${shift.dayOfWeek}`
+    });
+  };
+
+  const editShiftGroup = (shift: any) => {
+    // Collect all shifts from all weeks to find group members
+    const allShifts: any[] = [];
+    allWeekSchedules.forEach((weekSchedule: any) => {
+      if (weekSchedule.shifts) {
+        allShifts.push(...weekSchedule.shifts);
+      }
+    });
+    
+    // Find all shifts in the same group
+    const groupShifts = allShifts.filter((s: any) => s.shiftGroupId === shift.shiftGroupId);
+    const groupDays = groupShifts.map((s: any) => s.dayOfWeek);
+    
+    setEditingShift(shift);
+    
+    // Find the week schedule that contains this shift
+    const shiftWeekScheduleId = shift.weekScheduleId || shift.scheduleId;
+    if (shiftWeekScheduleId) {
+      // Auto-select the week that contains this shift
+      setSelectedWeekScheduleIds([shiftWeekScheduleId]);
+    }
+    
+    shiftForm.reset({
+      position: shift.position || '',
+      startTime: shift.startTime || '',
+      endTime: shift.endTime || '',
+      maxSlots: shift.maxSlots || 1,
+      subscriptionDeadline: shift.subscriptionDeadline || '',
+      daysOfWeek: groupDays, // Set all days from the group
+      competencyRequirements: shift.competencyRequirements || []
+    });
+    
+    // Switch to Basic Info tab for editing
+    setActiveTab('basic-info');
+    
+    toast({
+      title: "Group selected for editing",
+      description: `Editing ${shift.position} shift group (${groupDays.length} days)`
     });
   };
 
@@ -1177,6 +1235,53 @@ export default function SchedulerEditPage() {
 
         </div>
       )}
+
+      {/* Group Edit Dialog */}
+      <Dialog open={showGroupEditDialog} onOpenChange={setShowGroupEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Shift Group</DialogTitle>
+            <DialogDescription>
+              This shift belongs to a group created together. Would you like to edit the entire group or just this individual shift?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {groupEditDialogShift && (
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                Shift: <span className="font-medium">{groupEditDialogShift.position}</span> on <span className="font-medium">{groupEditDialogShift.dayOfWeek}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Group ID: <span className="font-mono text-xs">{groupEditDialogShift.shiftGroupId}</span>
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowGroupEditDialog(false);
+                if (groupEditDialogShift) {
+                  editSingleShift(groupEditDialogShift);
+                }
+              }}
+            >
+              Edit Just This Shift
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowGroupEditDialog(false);
+                if (groupEditDialogShift) {
+                  editShiftGroup(groupEditDialogShift);
+                }
+              }}
+            >
+              Edit Entire Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
