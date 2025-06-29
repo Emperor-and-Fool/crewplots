@@ -117,63 +117,76 @@ export class ValidationPackageService {
 
     try {
       // Validate schedule block using existing schemas
-      const scheduleBlockResult = packageData.packageType === 'create' 
-        ? insertScheduleBlockSchema.safeParse(packageData.scheduleBlock)
-        : insertScheduleBlockSchema.partial().safeParse(packageData.scheduleBlock);
-      if (!scheduleBlockResult.success) {
-        errors.push(...scheduleBlockResult.error.errors.map(e => `Schedule Block: ${e.message}`));
+      if (packageData.scheduleBlock) {
+        const scheduleBlockResult = packageData.packageType === 'create' 
+          ? insertScheduleBlockSchema.safeParse(packageData.scheduleBlock)
+          : insertScheduleBlockSchema.partial().safeParse(packageData.scheduleBlock);
+        if (!scheduleBlockResult.success) {
+          errors.push(...scheduleBlockResult.error.errors.map(e => `Schedule Block: ${e.path.join('.')}: ${e.message}`));
+        }
       }
 
       // Validate week schedules using existing schemas
-      for (const [index, weekSchedule] of packageData.weekSchedules.entries()) {
-        const result = packageData.packageType === 'create'
-          ? insertWeekScheduleSchema.safeParse(weekSchedule)
-          : insertWeekScheduleSchema.partial().safeParse(weekSchedule);
-        if (!result.success) {
-          errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.message}`));
+      if (packageData.weekSchedules && packageData.weekSchedules.length > 0) {
+        for (const [index, weekSchedule] of packageData.weekSchedules.entries()) {
+          const result = packageData.packageType === 'create'
+            ? insertWeekScheduleSchema.safeParse(weekSchedule)
+            : insertWeekScheduleSchema.partial().safeParse(weekSchedule);
+          if (!result.success) {
+            errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+          }
         }
       }
 
       // Validate shifts using existing schemas
-      for (const [index, shift] of packageData.shifts.entries()) {
-        const result = packageData.packageType === 'create'
-          ? insertShiftSchema.safeParse(shift)
-          : updateShiftSchema.safeParse(shift);
-        if (!result.success) {
-          errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.message}`));
-        }
+      if (packageData.shifts && packageData.shifts.length > 0) {
+        for (const [index, shift] of packageData.shifts.entries()) {
+          const result = packageData.packageType === 'create'
+            ? insertShiftSchema.safeParse(shift)
+            : updateShiftSchema.safeParse(shift);
+          if (!result.success) {
+            errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+          }
 
-        // Time validation
-        if (shift.startTime && shift.endTime && shift.startTime >= shift.endTime) {
-          errors.push(`Shift ${index + 1}: End time must be after start time`);
+          // Time validation
+          if (shift.startTime && shift.endTime && shift.startTime >= shift.endTime) {
+            errors.push(`Shift ${index + 1}: End time must be after start time`);
+          }
         }
       }
 
-      // Validate metadata
-      const metadataResult = packageMetadataSchema.safeParse(packageData.metadata);
-      if (!metadataResult.success) {
-        errors.push(...metadataResult.error.errors.map(e => `Metadata: ${e.message}`));
+      // Validate metadata if present
+      if (packageData.metadata) {
+        const metadataResult = packageMetadataSchema.safeParse(packageData.metadata);
+        if (!metadataResult.success) {
+          errors.push(...metadataResult.error.errors.map(e => `Metadata: ${e.path.join('.')}: ${e.message}`));
+        }
       }
 
-      // Russian Doll integrity checks
-      await this.validateRussianDollIntegrity(packageData, errors, warnings);
+      // Russian Doll integrity checks - only if methods exist
+      if (this.validateRussianDollIntegrity) {
+        await this.validateRussianDollIntegrity(packageData, errors, warnings);
+      }
 
-      // Business logic validation
-      await this.validateBusinessRules(packageData, errors, warnings);
+      // Business logic validation - only if methods exist
+      if (this.validateBusinessRules) {
+        await this.validateBusinessRules(packageData, errors, warnings);
+      }
 
       const isValid = errors.length === 0;
       
       console.log('🔍 INTEGRITY VALIDATION: Validation completed:', {
         isValid,
         errorsCount: errors.length,
-        warningsCount: warnings.length
+        warningsCount: warnings.length,
+        errors: errors.slice(0, 3) // Show first 3 errors for debugging
       });
 
       return { isValid, errors, warnings };
 
     } catch (error) {
       console.error('🔍 INTEGRITY VALIDATION: Validation failed:', error);
-      errors.push('Critical validation error occurred');
+      errors.push(`Critical validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return { isValid: false, errors, warnings };
     }
   }
@@ -393,6 +406,82 @@ export class ValidationPackageService {
     }
 
     return permissions;
+  }
+
+  // Russian Doll Architecture Validation
+  private async validateRussianDollIntegrity(
+    packageData: ScheduleValidationPackage,
+    errors: string[],
+    warnings: string[]
+  ): Promise<void> {
+    console.log('🏗️ RUSSIAN DOLL VALIDATION: Checking architectural integrity');
+    
+    // Validate Schedule Block → Week Schedules → Shifts hierarchy
+    if (packageData.weekSchedules.length > 0 && !packageData.scheduleBlock.name) {
+      errors.push('Russian Doll: Week schedules require a parent schedule block');
+    }
+    
+    if (packageData.shifts.length > 0 && packageData.weekSchedules.length === 0) {
+      errors.push('Russian Doll: Shifts require parent week schedules');
+    }
+    
+    // Validate consistency between levels
+    for (const weekSchedule of packageData.weekSchedules) {
+      const shiftsInWeek = packageData.shifts.filter(shift => 
+        shift.weekScheduleId === weekSchedule.id || shift.weekNumber === weekSchedule.weekNumber
+      );
+      
+      if (shiftsInWeek.length === 0) {
+        warnings.push(`Week ${weekSchedule.weekNumber}: No shifts defined`);
+      }
+    }
+  }
+
+  // Business Rules Validation
+  private async validateBusinessRules(
+    packageData: ScheduleValidationPackage,
+    errors: string[],
+    warnings: string[]
+  ): Promise<void> {
+    console.log('📋 BUSINESS RULES: Validating scheduler business logic');
+    
+    // Location consistency
+    if (packageData.scheduleBlock.locationId) {
+      const locationShifts = packageData.shifts.filter(shift => 
+        shift.locationId && shift.locationId !== packageData.scheduleBlock.locationId
+      );
+      
+      if (locationShifts.length > 0) {
+        warnings.push('Location mismatch: Some shifts have different locations than schedule block');
+      }
+    }
+    
+    // Schedule timing conflicts
+    const shiftsByDay = new Map<string, typeof packageData.shifts>();
+    packageData.shifts.forEach(shift => {
+      const day = shift.dayOfWeek || 'unknown';
+      if (!shiftsByDay.has(day)) {
+        shiftsByDay.set(day, []);
+      }
+      shiftsByDay.get(day)!.push(shift);
+    });
+    
+    // Check for overlapping shifts on same day
+    shiftsByDay.forEach((shifts, day) => {
+      for (let i = 0; i < shifts.length; i++) {
+        for (let j = i + 1; j < shifts.length; j++) {
+          const shift1 = shifts[i];
+          const shift2 = shifts[j];
+          
+          if (shift1.startTime && shift1.endTime && shift2.startTime && shift2.endTime) {
+            const overlap = (shift1.startTime < shift2.endTime && shift2.startTime < shift1.endTime);
+            if (overlap) {
+              warnings.push(`${day}: Potential shift overlap between "${shift1.title}" and "${shift2.title}"`);
+            }
+          }
+        }
+      }
+    });
   }
 
   private getRequiredPermissions(packageType: string): string[] {
