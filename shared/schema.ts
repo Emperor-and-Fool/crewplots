@@ -267,7 +267,7 @@ export const shifts = pgTable("shifts", {
   position: text("position"),
   maxSlots: integer("max_slots").default(1).notNull(),
   subscriptionDeadline: timestamp("subscription_deadline"),
-  status: text("status", { enum: ["open", "filled", "cancelled"] }).default("open").notNull(),
+  status: text("status", { enum: ["draft", "open", "filled", "cancelled"] }).default("open").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
