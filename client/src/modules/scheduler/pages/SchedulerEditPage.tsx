@@ -1029,7 +1029,7 @@ export default function SchedulerEditPage() {
                       onClick={async () => {
                         const formData = scheduleForm.getValues();
                         
-                        // Use validation framework - NO FALLBACKS
+                        // Use validation framework with individual fetch pattern for session consistency
                         const packageData = {
                           packageType: 'update',
                           scheduleBlock: {
@@ -1039,14 +1039,48 @@ export default function SchedulerEditPage() {
                         };
                         console.log('🔗 VALIDATION FRAMEWORK: Saving complete schedule chain', packageData);
                         
-                        await saveSchedulePackageMutation.mutateAsync(packageData);
-                        
-                        window.location.href = '/scheduler';
+                        try {
+                          // Individual fetch pattern to maintain session consistency
+                          const response = await fetch('/api/scheduler/packages/create', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include', // Critical for session consistency
+                            body: JSON.stringify(packageData)
+                          });
+                          
+                          if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Failed to save schedule');
+                          }
+                          
+                          const result = await response.json();
+                          console.log('✅ VALIDATION FRAMEWORK: Complete schedule chain saved successfully', result);
+                          
+                          // Invalidate caches
+                          queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/scheduler/shifts'] });
+                          
+                          toast({
+                            title: "Schedule saved successfully",
+                            description: "All schedule data has been saved using the validation framework"
+                          });
+                          
+                          window.location.href = '/scheduler';
+                        } catch (error: any) {
+                          console.error('❌ VALIDATION FRAMEWORK: Save failed:', error);
+                          toast({
+                            title: "Failed to save schedule",
+                            description: error.message,
+                            variant: "destructive"
+                          });
+                        }
                       }}
-                      disabled={updateWeekScheduleMutation.isPending || saveSchedulePackageMutation.isPending}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      {(updateWeekScheduleMutation.isPending || saveSchedulePackageMutation.isPending) ? "Saving..." : "To Templates"}
+                      To Templates
                     </Button>
                     
                     <Button 
