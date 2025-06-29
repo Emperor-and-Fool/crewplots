@@ -20,6 +20,22 @@ import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
 
+// Validation package response types
+interface PackageValidationResponse {
+  success: boolean;
+  package?: {
+    id: number;
+    type: string;
+    createdEntities: {
+      scheduleBlockId: number;
+      weekScheduleIds: number[];
+      shiftIds: number[];
+    };
+  };
+  error?: string;
+  details?: string[];
+}
+
 // Schema for package-based schedule creation
 const schedulePackageSchema = z.object({
   name: z.string().min(1, 'Schedule name is required'),
@@ -105,7 +121,7 @@ export default function SchedulerCreatePage() {
   });
 
   const createSchedulePackageMutation = useMutation({
-    mutationFn: async (data: SchedulePackageForm) => {
+    mutationFn: async (data: SchedulePackageForm): Promise<PackageValidationResponse> => {
       // Convert frontend shifts format to package format
       const packageShifts = data.shifts.flatMap(shift => 
         shift.daysOfWeek.map(day => ({
@@ -119,7 +135,7 @@ export default function SchedulerCreatePage() {
         }))
       );
 
-      return apiRequest('POST', '/api/scheduler/packages/create', {
+      const response = await apiRequest('POST', '/api/scheduler/packages/create', {
         packageType: 'create',
         scheduleBlock: {
           name: data.name,
@@ -132,8 +148,10 @@ export default function SchedulerCreatePage() {
         }],
         shifts: packageShifts
       });
+
+      return await response.json();
     },
-    onSuccess: (response: any) => {
+    onSuccess: (response: PackageValidationResponse) => {
       if (response.success && response.package?.createdEntities) {
         const weekScheduleId = response.package.createdEntities.weekScheduleIds?.[0];
         if (weekScheduleId) {
@@ -143,6 +161,13 @@ export default function SchedulerCreatePage() {
         toast({
           title: "Schedule created successfully",
           description: `Created schedule with ${response.package.createdEntities.shiftIds?.length || 0} shifts using validation framework.`
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      } else {
+        toast({
+          title: "Validation failed",
+          description: response.error || 'Package validation failed',
+          variant: "destructive"
         });
       }
     },
