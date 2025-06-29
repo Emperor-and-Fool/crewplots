@@ -927,19 +927,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ url: registerUrl });
   });
 
-  // === Scheduler API Routes ===
+  // MOVED TO MODULAR: === Scheduler API Routes === - now in /api/scheduler
 
-  // Shift Requirements Management
-  app.get("/api/shift-requirements", async (req, res) => {
-    try {
-      const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
-      const requirements = await storage.getShiftRequirements(shiftId);
-      res.json(requirements);
-    } catch (error) {
-      console.error("Error fetching shift requirements:", error);
-      res.status(500).json({ error: "Failed to fetch shift requirements" });
-    }
-  });
+  // MOVED TO MODULAR: Shift Requirements Management - now in /api/scheduler/requirements
+  // app.get("/api/shift-requirements", async (req, res) => {
+  //   try {
+  //     const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
+  //     const requirements = await storage.getShiftRequirements(shiftId);
+  //     res.json(requirements);
+  //   } catch (error) {
+  //     console.error("Error fetching shift requirements:", error);
+  //     res.status(500).json({ error: "Failed to fetch shift requirements" });
+  //   }
+  // });
 
   app.post("/api/shift-requirements", async (req, res) => {
     if (!req.user || !hasPermission(req.user.role, "schedule")) {
@@ -1343,8 +1343,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //     res.status(400).json({ error: "Failed to update week schedule" });
   //   }
   // });
-
-  // === Multi-Week Frame API Routes ===
 
   // near-future-removal: Multi-week frame routes temporarily disabled during schema migration
   // app.post("/api/multi-week-frames", async (req, res) => {
