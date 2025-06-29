@@ -63,10 +63,10 @@ export default function SchedulerListPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="h-8 w-8" />
-            Schedule Blocks
+            Schedules
           </h1>
           <p className="text-gray-600 mt-2">
-            Manage multi-week schedule blocks containing week schedules and shift planning
+            Manage multi-week schedules containing week schedules and shift planning
           </p>
         </div>
         
@@ -88,9 +88,9 @@ export default function SchedulerListPage() {
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Schedule Blocks</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Schedules</h3>
             <p className="text-gray-600 mb-6">
-              Create your first schedule block to get started with multi-week planning.
+              Create your first schedule to get started with multi-week planning.
             </p>
             <Button onClick={handleCreateNew} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
