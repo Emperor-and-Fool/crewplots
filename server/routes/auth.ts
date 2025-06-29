@@ -289,36 +289,36 @@ router.get('/me', async (req, res) => {
         // Force cookie to be visible in response
         res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=None; Max-Age=3600`);
         
-        // Use Passport's isAuthenticated() method 
-        if (!req.isAuthenticated()) {
-            console.log('Not authenticated according to Passport');
+        // Use same authentication logic as working middleware
+        if (!req.session?.passport?.user) {
+            console.log('Not authenticated - no passport session data found');
             console.timeLog("me:total", "authentication check failed");
             return res.status(200).json({ 
                 authenticated: false,
                 debug: {
                     sessionExists: !!req.session,
                     sessionId: req.sessionID || 'none',
-                    hasCookies: !!(req.cookies && req.cookies['connect.sid']),
-                    hasAnyHeaders: !!req.headers,
-                    hasAnyCookies: !!(req.cookies && Object.keys(req.cookies).length > 0),
+                    hasPassportSession: !!(req.session && req.session.passport),
+                    hasPassportUser: !!(req.session && req.session.passport && req.session.passport.user),
                     cookieHeader: req.headers.cookie || 'none'
                 }
             });
         }
-        console.timeLog("me:total", "after isAuthenticated check");
+        console.timeLog("me:total", "after session authentication check");
         
-        // At this point, req.user should have the user data
-        if (!req.user) {
-            console.log('Missing user object despite being authenticated');
+        // Get user from storage using session data (same as middleware)
+        const sessionUser = req.session.passport.user;
+        const authenticatedUser = await storage.getUser(sessionUser.id);
+        if (!authenticatedUser) {
+            console.log('User not found for session userId:', sessionUser.id);
             return res.status(200).json({ 
                 authenticated: false,
-                reason: 'user_object_missing'
+                reason: 'user_not_found_in_database'
             });
         }
         
         // Get user permissions from database
-        const user = req.user as any; // Type assertion needed for password property
-        let userWithPermissions = { ...user };
+        let userWithPermissions = { ...authenticatedUser };
         
         try {
             // Import db and query utilities
@@ -336,12 +336,12 @@ router.get('/me', async (req, res) => {
                 .leftJoin(roles, eq(users.role, roles.name))
                 .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
                 .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-                .where(eq(users.id, user.id))
+                .where(eq(users.id, authenticatedUser.id))
                 .groupBy(users.id);
             
             if (userPermissionsQuery.length > 0) {
                 userWithPermissions.permissions = userPermissionsQuery[0].permissions || [];
-                console.log(`User ${user.username} permissions:`, userWithPermissions.permissions);
+                console.log(`User ${authenticatedUser.username} permissions:`, userWithPermissions.permissions);
             } else {
                 userWithPermissions.permissions = [];
             }
