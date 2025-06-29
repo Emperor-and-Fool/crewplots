@@ -67,22 +67,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log('🔍 AUTH: Auth check failed');
         }
       } catch (error) {
-        // Session isolation in iframe - don't treat as error
-        console.log('🔍 AUTH: Session isolation detected, continuing');
-        
-        // For development: assume admin user when backend is working
-        // This handles iframe session isolation gracefully
-        setUser({
-          id: 1,
-          username: 'admin',
-          role: 'administrator',
-          email: 'admin@crewplots.com',
-          firstName: 'Alessandro',
-          lastName: 'Rossi',
-          name: 'Admin User',
-          phoneNumber: '+31 6 12345678',
-          permissions: ['crew_planning', 'scheduler_development', 'scheduler_development.execute', 'scheduler_development.read', 'scheduler_development.write']
-        } as any);
+        // Session isolation in iframe - backend is working but frontend can't access session
+        console.log('🔍 AUTH: Session isolation detected - backend working but frontend isolated');
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
