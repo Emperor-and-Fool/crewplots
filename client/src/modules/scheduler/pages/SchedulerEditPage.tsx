@@ -1031,7 +1031,7 @@ export default function SchedulerEditPage() {
                         
                         // Use validation framework - NO FALLBACKS
                         const packageData = {
-                          operation: 'update',
+                          packageType: 'update',
                           scheduleBlock: {
                             id: parseInt(scheduleId!),
                             ...formData
