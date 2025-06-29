@@ -152,6 +152,62 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// POST /api/scheduler/packages/validate - Validate schedule package (Phase 1 Verification)
+router.post('/validate', async (req, res) => {
+  console.log('🔍 PACKAGE VALIDATION: Starting validation request');
+  
+  try {
+    const user = req.user as User;
+    
+    // Thread 1: Package Assembly
+    const packageData = await validationPackageService.assemblePackageFromRequest(
+      req.body,
+      user,
+      req.body.packageType || 'create'
+    );
+
+    // Thread 2: Integrity Validation
+    const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
+    
+    // Thread 3: Permission Authorization
+    const authResult = await validationPackageService.validatePackagePermissions(packageData);
+
+    console.log('🔍 PACKAGE VALIDATION: Validation completed:', {
+      integrity: integrityResult.isValid,
+      permissions: authResult.isAuthorized,
+      errors: integrityResult.errors.length,
+      warnings: integrityResult.warnings.length
+    });
+
+    res.json({
+      isValid: integrityResult.isValid && authResult.isAuthorized,
+      integrity: {
+        isValid: integrityResult.isValid,
+        errors: integrityResult.errors,
+        warnings: integrityResult.warnings
+      },
+      permissions: {
+        isAuthorized: authResult.isAuthorized,
+        deniedPermissions: authResult.deniedPermissions,
+        securityViolations: authResult.securityViolations
+      },
+      packageData: {
+        type: packageData.packageType,
+        scheduleBlock: packageData.scheduleBlock.name,
+        weekSchedules: packageData.weekSchedules.length,
+        shifts: packageData.shifts.length
+      }
+    });
+
+  } catch (error) {
+    console.error('🔍 PACKAGE VALIDATION: Validation failed:', error);
+    res.status(400).json({ 
+      error: 'Validation request failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // DELETE /api/scheduler/packages/:id - Delete schedule package
 router.delete('/:id', async (req, res) => {
   console.log('🎁 PACKAGE API: Deleting schedule package:', req.params.id);
