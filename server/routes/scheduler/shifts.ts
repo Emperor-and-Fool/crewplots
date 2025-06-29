@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../storage';
 import { authenticateUser } from '../../middleware/auth';
-import { insertShiftSchema } from '@shared/schema';
+import { insertShiftSchema, updateShiftSchema } from '@shared/schema';
 
 const router = express.Router();
 
@@ -79,7 +79,7 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
     console.log("🔄 AUTO-SAVE UPDATE: Updating shift:", shiftId);
     console.log("🔄 AUTO-SAVE UPDATE: Request body:", req.body);
     
-    const validatedData = insertShiftSchema.parse(req.body);
+    const validatedData = updateShiftSchema.parse(req.body);
     console.log("🔄 AUTO-SAVE UPDATE: Validated data:", validatedData);
     
     const shift = await storage.updateShift(shiftId, validatedData);
