@@ -16,9 +16,9 @@ export default function SchedulerListPage() {
 
   // Fetch existing schedule blocks
   const { data: scheduleBlocks, isLoading } = useQuery({
-    queryKey: ['/api/scheduler/schedule-blocks'],
+    queryKey: ['/api/schedule-blocks'],
     queryFn: async () => {
-      const response = await fetch('/api/scheduler/schedule-blocks', {
+      const response = await fetch('/api/schedule-blocks', {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch schedule blocks');
