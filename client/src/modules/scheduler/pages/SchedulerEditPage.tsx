@@ -392,11 +392,11 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (copiedWeek) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/multi-week-frames', multiWeekFrame?.id, 'weeks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
-        description: `Week ${copiedWeek.weekNumber} added to schedule`
+        description: `Week ${copiedWeek.weekNumber} added to multi-week frame`
       });
       // Stay on current editor - don't navigate away
       // The user wants to see unified multi-week editing
@@ -459,8 +459,15 @@ export default function SchedulerEditPage() {
       };
 
       try {
-        // Update the schedule block with the new data
-        await updateScheduleBlockMutation.mutateAsync(frameData);
+        const frame = await createMultiWeekFrameMutation.mutateAsync(frameData);
+        
+        // Update the current schedule to be part of this frame as week 1
+        await updateWeekScheduleMutation.mutateAsync({
+          ...actualScheduleData,
+          multiWeekFrameId: frame.id,
+          weekNumber: 1,
+          name: `${actualScheduleData.name} (Week 1)`
+        });
 
         // Refresh data to get updated schedule
         queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
@@ -475,7 +482,7 @@ export default function SchedulerEditPage() {
       }
     } else {
       // Frame already exists, just copy the current week
-      const nextWeekNumber = currentWeekNumber + 1;
+      const nextWeekNumber = 2; // Default to week 2 for schedule blocks
       if (nextWeekNumber <= 8) {
         await copyWeekToFrameMutation.mutateAsync({
           frameId: actualScheduleData.multiWeekFrameId,
@@ -684,7 +691,7 @@ export default function SchedulerEditPage() {
                 <Button
                   variant="outline"
                   onClick={handleAddWeek}
-                  disabled={createMultiWeekFrameMutation.isPending || copyWeekToFrameMutation.isPending}
+                  disabled={updateScheduleBlockMutation.isPending || copyWeekToFrameMutation.isPending}
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -1055,7 +1062,7 @@ export default function SchedulerEditPage() {
                   <CardContent>
                     <WeeklyCalendarPreview 
                       shifts={shifts as any[]}
-                      weekScheduleName={currentWeekSchedule?.name || ''}
+                      weekScheduleName={existingSchedule?.name || ''}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
@@ -1072,7 +1079,7 @@ export default function SchedulerEditPage() {
                   Schedule Preview
                 </CardTitle>
                 <CardDescription>
-                  {(locations as Location[]).find((l: Location) => l.id === currentWeekSchedule?.locationId)?.name}
+                  {(locations as Location[]).find((l: Location) => l.id === existingSchedule?.locationId)?.name}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1086,7 +1093,7 @@ export default function SchedulerEditPage() {
                     position: shift.position,
                     status: shift.status
                   }))}
-                  weekScheduleName={currentWeekSchedule?.name || ''}
+                  weekScheduleName={existingSchedule?.name || ''}
                   onShiftClick={handleShiftClick}
                   onShiftDelete={handleShiftDelete}
                 />
