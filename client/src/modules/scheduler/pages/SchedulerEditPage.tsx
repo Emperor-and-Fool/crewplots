@@ -290,7 +290,7 @@ export default function SchedulerEditPage() {
   const updateShiftMutation = useMutation({
     mutationFn: async ({ shiftId, shiftData }: { shiftId: number; shiftData: ShiftCreationForm }) => {
       console.log('💾 FRONTEND: Updating existing shift', shiftId, 'with data:', shiftData);
-      return apiRequest('PUT', `/api/shifts/${shiftId}`, {
+      return apiRequest('PUT', `/api/scheduler/shifts/${shiftId}`, {
         position: shiftData.position,
         startTime: shiftData.startTime,
         endTime: shiftData.endTime,
@@ -301,10 +301,10 @@ export default function SchedulerEditPage() {
     },
     onSuccess: () => {
       // Invalidate cache and refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
       selectedWeekScheduleIds.forEach(weekId => {
-        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', weekId, 'shifts'] });
       });
       refetchShifts();
       
@@ -359,7 +359,7 @@ export default function SchedulerEditPage() {
       if (draftShiftId) {
         console.log('🔄 AUTO-SAVE: Clearing previous draft:', draftShiftId);
         try {
-          await apiRequest('DELETE', `/api/shifts/${draftShiftId}`);
+          await apiRequest('DELETE', `/api/scheduler/shifts/${draftShiftId}`);
         } catch (error) {
           console.warn('🔄 AUTO-SAVE: Could not delete previous draft:', error);
         }
@@ -390,7 +390,7 @@ export default function SchedulerEditPage() {
         
         console.log(`🔄 AUTO-SAVE: Creating draft shift for week ${weekId}:`, draftShift);
         
-        const response = await apiRequest('POST', `/api/week-schedules/${weekId}/shifts`, draftShift);
+        const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekId}/shifts`, draftShift);
         createdShifts.push(response);
       }
       
@@ -460,7 +460,7 @@ export default function SchedulerEditPage() {
       // Delete draft if exists
       if (draftShiftId) {
         try {
-          await apiRequest('DELETE', `/api/shifts/${draftShiftId}`);
+          await apiRequest('DELETE', `/api/scheduler/shifts/${draftShiftId}`);
           console.log('💾 FINAL SAVE: Draft deleted');
         } catch (error) {
           console.warn('💾 FINAL SAVE: Failed to delete draft', error);
