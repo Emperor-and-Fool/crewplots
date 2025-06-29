@@ -1597,12 +1597,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/schedule-blocks/:id", async (req, res) => {
+  app.put("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
     console.log("🔧 SCHEDULE BLOCK UPDATE: User object:", req.user);
     console.log("🔧 SCHEDULE BLOCK UPDATE: User role:", req.user?.role);
     console.log("🔧 SCHEDULE BLOCK UPDATE: Permission check result:", req.user ? hasPermission(req.user.role, "scheduler_development") : false);
     
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       console.log("🔧 SCHEDULE BLOCK UPDATE: Permission denied");
       return res.status(403).json({ error: "Insufficient permissions" });
     }
