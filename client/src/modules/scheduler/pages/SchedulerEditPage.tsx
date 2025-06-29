@@ -49,8 +49,8 @@ type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
   const params = useParams();
-  const { scheduleId } = params; // Schedule block ID from URL parameter
-  const id = scheduleId; // For backward compatibility with existing code
+  const { id } = params; // Schedule block ID from URL parameter
+  const scheduleId = id; // For backward compatibility with existing code
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
@@ -207,7 +207,7 @@ export default function SchedulerEditPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
       // Update selectedWeekScheduleId for schedule block architecture
-      setSelectedWeekScheduleId(data.id);
+      // Schedule block architecture - no week schedule ID needed
       setHasBeenEdited(true);
       toast({
         title: "Schedule updated successfully",
@@ -367,11 +367,11 @@ export default function SchedulerEditPage() {
     mutationFn: async (blockData: { name: string; description?: string; locationId: number; isActive: boolean }) => {
       return await apiRequest('PUT', `/api/schedule-blocks/${id}`, blockData);
     },
-    onSuccess: (block) => {
+    onSuccess: (block: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks'] });
       toast({
         title: "Schedule updated successfully",
-        description: `Schedule "${block.name}" has been updated`
+        description: `Schedule "${block?.name || 'block'}" has been updated`
       });
     },
     onError: (error: any) => {
@@ -390,13 +390,13 @@ export default function SchedulerEditPage() {
         weekNumber
       });
     },
-    onSuccess: (copiedWeek) => {
+    onSuccess: (copiedWeek: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
       queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
-        description: `Week ${copiedWeek.weekNumber} added to multi-week frame`
+        description: `Week ${copiedWeek?.weekNumber || 'new'} added to multi-week frame`
       });
       // Stay on current editor - don't navigate away
       // The user wants to see unified multi-week editing

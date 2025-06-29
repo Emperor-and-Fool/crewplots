@@ -257,6 +257,17 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
+              <Route path="/scheduler/:id">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SchedulerEditPage} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
               <Route path="/scheduler/:scheduleId/shifts">
                 {isAuthenticated ? 
                   <AppLayout>
