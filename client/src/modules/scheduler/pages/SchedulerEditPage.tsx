@@ -92,6 +92,9 @@ export default function SchedulerEditPage() {
     }
   });
 
+  // Watch form values for auto-save trigger
+  const watchedValues = shiftForm.watch();
+
   // Fetch schedule block data
   const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
     queryKey: ['/api/schedule-blocks', id],
