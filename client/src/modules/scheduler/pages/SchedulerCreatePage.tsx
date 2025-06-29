@@ -20,15 +20,27 @@ import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
 
-// Schema for week schedule creation form
-const weekScheduleCreationSchema = z.object({
+// Schema for package-based schedule creation
+const schedulePackageSchema = z.object({
   name: z.string().min(1, 'Schedule name is required'),
   description: z.string().optional(),
   locationId: z.number().min(1, 'Location is required'),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  shifts: z.array(z.object({
+    position: z.string().min(1, 'Position is required'),
+    daysOfWeek: z.array(z.string()).min(1, 'Select at least one day'),
+    startTime: z.string().min(1, 'Start time is required'),
+    endTime: z.string().min(1, 'End time is required'),
+    maxSlots: z.number().min(1, 'Max slots must be at least 1'),
+    subscriptionDeadline: z.string().optional(),
+    competencyRequirements: z.array(z.object({
+      competencyId: z.string(),
+      priority: z.enum(['required', 'preferred', 'nice-to-have'])
+    })).optional()
+  })).default([])
 });
 
-// Schema for shift creation form
+// Individual shift form schema for adding shifts
 const shiftCreationSchema = z.object({
   position: z.string().min(1, 'Position is required'),
   daysOfWeek: z.array(z.string()).min(1, 'Select at least one day'),
@@ -42,7 +54,7 @@ const shiftCreationSchema = z.object({
   })).optional()
 });
 
-type WeekScheduleCreationForm = z.infer<typeof weekScheduleCreationSchema>;
+type SchedulePackageForm = z.infer<typeof schedulePackageSchema>;
 type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerCreatePage() {
@@ -56,13 +68,14 @@ export default function SchedulerCreatePage() {
   const [editingShift, setEditingShift] = useState<any>(null);
 
   // Form for week schedule creation
-  const scheduleForm = useForm<WeekScheduleCreationForm>({
-    resolver: zodResolver(weekScheduleCreationSchema),
+  const scheduleForm = useForm<SchedulePackageForm>({
+    resolver: zodResolver(schedulePackageSchema),
     defaultValues: {
       name: '',
       description: '',
       locationId: 0,
-      isActive: true
+      isActive: true,
+      shifts: []
     }
   });
 
