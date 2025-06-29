@@ -329,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all profile data (unified data endpoint) - optimized for messaging system
-  app.get("/api/profile-data", async (req, res) => {
+  app.get("/api/profile-data", authenticateUser, async (req, res) => {
     try {
       console.log(`🔍 API DEBUG: /api/profile-data request received`);
       // Use getUserWithProfile for each user to ensure proper role/location data

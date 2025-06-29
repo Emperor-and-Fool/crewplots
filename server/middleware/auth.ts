@@ -69,6 +69,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
         // Attach user to request for use in route handlers
         req.user = user;
+        (req as any).usedCentralizedAuth = true; // Mark route as using centralized auth
         console.log("User authenticated successfully:", user.username, "Role:", user.role);
         
         // Log successful session validation for API routes
