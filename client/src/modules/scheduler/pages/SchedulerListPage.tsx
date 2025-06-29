@@ -133,9 +133,16 @@ export default function SchedulerListPage() {
                     <span>Created {new Date(schedule.createdAt).toLocaleDateString()}</span>
                   </div>
                   
+                  {schedule.creatorName && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span>created by: {schedule.creatorName}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>{schedule.weekCount || 0} week schedules</span>
+                    <Calendar className="h-4 w-4" />
+                    <span>Max {schedule.maxWeeks} weeks</span>
                   </div>
                   
                   <div className="flex gap-2 pt-2">
