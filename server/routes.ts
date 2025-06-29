@@ -1218,7 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
-      const validatedData = insertWeekSchema.parse({
+      const validatedData = insertWeekScheduleSchema.parse({
         ...req.body,
         createdBy: req.user.id
       });
