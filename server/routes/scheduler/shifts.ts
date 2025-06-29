@@ -2,6 +2,7 @@ import express from 'express';
 import { storage } from '../../storage';
 import { authenticateUser } from '../../middleware/auth';
 import { insertShiftSchema, updateShiftSchema } from '@shared/schema';
+import { ValidationPackageService } from '../../services/validation-package-service';
 
 const router = express.Router();
 
