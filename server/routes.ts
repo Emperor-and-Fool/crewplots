@@ -15,7 +15,7 @@ import {
   insertScheduleBlockSchema, insertWeekScheduleSchema, insertShiftSchema, insertShiftRequirementSchema, insertShiftSubscriptionSchema,
   insertShiftAssignmentSchema, insertSchedulingWindowSchema,
   insertCashCountSchema, insertKbCategorySchema, insertKbArticleSchema,
-  loginSchema, registerSchema
+  loginSchema, registerSchema, type User
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -1324,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
-      const validatedData = insertWeekSchema.omit({ createdBy: true }).parse(req.body);
+      const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
       console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
       
       const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
