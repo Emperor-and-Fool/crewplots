@@ -87,26 +87,56 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Fetch schedule block data
-  const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
-    queryKey: ['/api/schedule-blocks', id],
+  // Fetch week schedule data first to get the schedule_block_id
+  const { data: weekScheduleData, isLoading: weekScheduleLoading } = useQuery({
+    queryKey: ['/api/week-schedules', id],
     queryFn: async () => {
-      console.log('🔍 FRONTEND: Fetching schedule block with ID:', id);
-      console.log('🔍 FRONTEND: Permissions check - canEditSchedules:', permissions.canEditSchedules);
-      const response = await fetch(`/api/schedule-blocks/${id}`, {
+      const response = await fetch(`/api/week-schedules/${id}`, {
         credentials: 'include'
       });
-      console.log('🔍 FRONTEND: Schedule block response status:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error('Failed to fetch week schedule');
+      }
+      return response.json();
+    },
+    enabled: !!id && permissions.canEditSchedules,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Then fetch the schedule block data using the schedule_block_id
+  const { data: scheduleBlockData, isLoading: scheduleBlockLoading } = useQuery({
+    queryKey: ['/api/schedule-blocks', weekScheduleData?.scheduleBlockId],
+    queryFn: async () => {
+      const response = await fetch(`/api/schedule-blocks/${weekScheduleData.scheduleBlockId}`, {
+        credentials: 'include'
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch schedule block');
       }
-      const data = await response.json();
-      console.log('🔍 FRONTEND: Schedule block data received:', data);
-      return data;
+      return response.json();
     },
-    enabled: !!id && permissions.canEditSchedules,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    gcTime: 30 * 60 * 1000, // 30 minutes in memory
+    enabled: !!weekScheduleData?.scheduleBlockId && permissions.canEditSchedules,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Fetch all week schedules in the same schedule block
+  const { data: allWeekSchedules = [], isLoading: allWeekSchedulesLoading } = useQuery({
+    queryKey: ['/api/week-schedules', 'frameId', weekScheduleData?.scheduleBlockId],
+    queryFn: async () => {
+      const response = await fetch(`/api/week-schedules?frameId=${weekScheduleData.scheduleBlockId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch week schedules');
+      }
+      const data = await response.json();
+      return data.weekSchedules || [];
+    },
+    enabled: !!weekScheduleData?.scheduleBlockId && permissions.canEditSchedules,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Use schedule block data as the primary source
@@ -128,26 +158,7 @@ export default function SchedulerEditPage() {
     gcTime: 60 * 60 * 1000, // 1 hour in memory
   });
 
-  // Fetch all week schedules for this schedule block
-  const { data: allWeekSchedules = [], isLoading: weekSchedulesLoading } = useQuery({
-    queryKey: ['/api/week-schedules', 'frameId', scheduleId],
-    queryFn: async () => {
-      console.log('🔍 WEEK SCHEDULES QUERY: Fetching all weeks for schedule block:', scheduleId);
-      const response = await fetch(`/api/week-schedules?frameId=${scheduleId}`, {
-        credentials: 'include'
-      });
-      console.log('🔍 WEEK SCHEDULES QUERY: Response status:', response.status, response.statusText);
-      if (!response.ok) {
-        throw new Error('Failed to fetch week schedules');
-      }
-      const data = await response.json();
-      console.log('🔍 WEEK SCHEDULES QUERY: Week schedules data received:', data);
-      return data.weekSchedules || [];
-    },
-    enabled: !!scheduleId && permissions.canEditSchedules,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+
 
   // Individual fetch for shifts - following CrewMemberProfile pattern
   const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
@@ -1085,8 +1096,8 @@ export default function SchedulerEditPage() {
                   </CardHeader>
                   <CardContent>
                     <MultiWeekCalendarPreview 
-                      scheduleBlockId={parseInt(scheduleId)}
-                      scheduleBlockName={existingSchedule?.name || ''}
+                      scheduleBlockId={weekScheduleData?.scheduleBlockId || 0}
+                      scheduleBlockName={scheduleBlockData?.name || ''}
                       weekSchedules={allWeekSchedules}
                       onShiftClick={handleShiftClick}
                     />
