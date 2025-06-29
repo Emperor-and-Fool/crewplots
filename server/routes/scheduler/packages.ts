@@ -1,15 +1,37 @@
 import express from 'express';
 import { validationPackageService } from '../../services/validation-package-service';
+import { storage } from '../../storage';
 
 const router = express.Router();
 
-// Simple authentication middleware for packages routes
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.session?.passport?.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+// Authentication middleware for packages routes
+const requireAuth = async (req: any, res: any, next: any) => {
+  try {
+    console.log('🔐 PACKAGES AUTH: Checking session authentication');
+    console.log('🔐 PACKAGES AUTH: Session ID:', req.sessionID || 'none');
+    console.log('🔐 PACKAGES AUTH: Session data:', req.session);
+    
+    if (!req.session?.passport?.user) {
+      console.log('🔐 PACKAGES AUTH: No passport session found');
+      return res.status(401).json({ error: 'Unauthorized - Please log in' });
+    }
+
+    const sessionUser = req.session.passport.user;
+    console.log('🔐 PACKAGES AUTH: Found session user:', sessionUser);
+    
+    const user = await storage.getUser(sessionUser.id);
+    if (!user) {
+      console.log('🔐 PACKAGES AUTH: User not found for session userId:', sessionUser.id);
+      return res.status(401).json({ error: 'Invalid session - Please log in again' });
+    }
+
+    req.user = user;
+    console.log('🔐 PACKAGES AUTH: User authenticated successfully:', user.username, 'Role:', user.role);
+    next();
+  } catch (error) {
+    console.error('🔐 PACKAGES AUTH: Authentication error:', error);
+    res.status(500).json({ error: 'Authentication error' });
   }
-  req.user = req.session.passport.user;
-  next();
 };
 
 // POST /api/scheduler/packages/validate - Validate schedule package
