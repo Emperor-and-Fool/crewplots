@@ -524,6 +524,9 @@ export default function SchedulerEditPage() {
     const groupShifts = allShifts.filter((s: any) => s.shiftGroupId === shift.shiftGroupId);
     const groupDays = groupShifts.map((s: any) => s.dayOfWeek);
     
+    console.log('🔍 GROUP EDIT: Found group shifts:', groupShifts.length);
+    console.log('🔍 GROUP EDIT: Group days:', groupDays);
+    
     setEditingShift(shift);
     
     // Find the week schedule that contains this shift
@@ -533,15 +536,19 @@ export default function SchedulerEditPage() {
       setSelectedWeekScheduleIds([shiftWeekScheduleId]);
     }
     
-    shiftForm.reset({
-      position: shift.position || '',
-      startTime: shift.startTime || '',
-      endTime: shift.endTime || '',
-      maxSlots: shift.maxSlots || 1,
-      subscriptionDeadline: shift.subscriptionDeadline || '',
-      daysOfWeek: groupDays, // Set all days from the group
-      competencyRequirements: shift.competencyRequirements || []
-    });
+    // Reset form with group days - use setTimeout to ensure state update
+    setTimeout(() => {
+      shiftForm.reset({
+        position: shift.position || '',
+        startTime: shift.startTime || '',
+        endTime: shift.endTime || '',
+        maxSlots: shift.maxSlots || 1,
+        subscriptionDeadline: shift.subscriptionDeadline || '',
+        daysOfWeek: groupDays, // Set all days from the group
+        competencyRequirements: shift.competencyRequirements || []
+      });
+      console.log('🔍 GROUP EDIT: Form reset with days:', groupDays);
+    }, 100);
     
     // Don't change tabs when editing - stay where the user is
     
