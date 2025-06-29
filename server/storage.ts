@@ -1553,7 +1553,7 @@ class DatabaseStorage {
 
   async deleteWeekSchedule(id: number): Promise<boolean> {
     // First delete all shifts that belong to this week schedule
-    await db.delete(shifts).where(eq(shifts.weekId, id));
+    await db.delete(shifts).where(eq(shifts.weekScheduleId, id));
     // Then delete the week schedule itself
     const results = await db.delete(weekSchedules).where(eq(weekSchedules.id, id)).returning();
     return results.length > 0;
