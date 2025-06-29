@@ -257,7 +257,7 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/scheduler/:scheduleId/shifts">
+              <Route path="/scheduler/edit/:id">
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
