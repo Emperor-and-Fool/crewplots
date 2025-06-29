@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateUser } from '../../middleware/auth';
-import { validationPackageService } from '../../services/validation-package-service';
+import { phase1ValidationPackageService } from '../../services/validation-package-service-phase1';
 import type { User } from '@shared/schema';
 
 const router = Router();
@@ -16,14 +16,14 @@ router.post('/', async (req, res) => {
     const user = req.user as User;
     
     // Thread 1: Package Assembly
-    const packageData = await validationPackageService.assemblePackageFromRequest(
+    const packageData = await phase1ValidationPackageService.assemblePackageFromRequest(
       req.body,
       user,
       'create'
     );
 
     // Thread 2: Integrity Validation
-    const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
+    const integrityResult = await phase1ValidationPackageService.validatePackageIntegrity(packageData);
     if (!integrityResult.isValid) {
       console.log('🎁 PACKAGE API: Integrity validation failed:', integrityResult.errors);
       return res.status(400).json({ 
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
     }
 
     // Thread 3: Permission Authorization
-    const authResult = await validationPackageService.validatePackagePermissions(packageData);
+    const authResult = await phase1ValidationPackageService.validatePackagePermissions(packageData);
     if (!authResult.isAuthorized) {
       console.log('🎁 PACKAGE API: Permission authorization failed:', authResult.deniedPermissions);
       return res.status(403).json({ 
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     }
 
     // Thread 4: Storage Transaction
-    const saveResult = await validationPackageService.savePackageTransaction(packageData);
+    const saveResult = await phase1ValidationPackageService.savePackageTransaction(packageData);
     if (!saveResult.success) {
       console.log('🎁 PACKAGE API: Storage transaction failed:', saveResult.errors);
       return res.status(500).json({ 
