@@ -49,7 +49,8 @@ type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
   const params = useParams();
-  const { id } = params; // Now points to schedule block ID
+  const { scheduleId } = params; // Schedule block ID from URL parameter
+  const id = scheduleId; // For backward compatibility with existing code
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
