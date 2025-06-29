@@ -96,6 +96,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Authentication middleware logging - track which auth method is used
+  app.use((req, res, next) => {
+    const originalEnd = res.end;
+    res.end = function(...args) {
+      // Check if this request used authentication middleware
+      if (req.route && req.route.stack) {
+        const authMiddleware = req.route.stack.find((layer: any) => {
+          const middlewareName = layer.handle?.name;
+          return middlewareName === 'authenticateUser' || middlewareName === 'requireAuth' || 
+                 (layer.handle && layer.handle.toString().includes('isAuthenticated'));
+        });
+        
+        if (authMiddleware) {
+          const middlewareName = authMiddleware.handle?.name || 'unnamed-auth-function';
+          const method = req.method;
+          const path = req.route.path || req.path;
+          
+          if (middlewareName === 'authenticateUser') {
+            console.log(`✅ INFO: authenticateUser used for ${method} ${path}`);
+          } else if (middlewareName === 'requireAuth') {
+            console.log(`❌ ERROR: requireAuth used for ${method} ${path}`);
+          } else {
+            console.log(`⚠️ WARN: ${middlewareName} used for ${method} ${path}`);
+          }
+        }
+      }
+      originalEnd.apply(this, args);
+    };
+    next();
+  });
+
   // Configure passport local strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
