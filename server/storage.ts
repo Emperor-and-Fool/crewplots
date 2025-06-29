@@ -1098,42 +1098,7 @@ class DatabaseStorage {
       .orderBy(weeks.weekNumber);
   }
 
-  // Week Schedules (Templates)
-  async getWeekSchedule(id: number): Promise<WeekSchedule | undefined> {
-    const [weekSchedule] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
-    return weekSchedule;
-  }
-
-  async getWeekSchedules(locationId?: number): Promise<WeekSchedule[]> {
-    if (locationId) {
-      return await db.select().from(weekSchedules).where(eq(weekSchedules.locationId, locationId));
-    }
-    return await db.select().from(weekSchedules);
-  }
-
-  async getWeekScheduleById(id: number): Promise<WeekSchedule | undefined> {
-    const [weekSchedule] = await db.select().from(weekSchedules).where(eq(weekSchedules.id, id));
-    return weekSchedule;
-  }
-
-  async createWeekSchedule(schedule: InsertWeekSchedule): Promise<WeekSchedule> {
-    const [createdSchedule] = await db.insert(weekSchedules).values(schedule).returning();
-    return createdSchedule;
-  }
-
-  async updateWeekSchedule(id: number, schedule: Partial<InsertWeekSchedule>): Promise<WeekSchedule | undefined> {
-    const [updatedSchedule] = await db
-      .update(weekSchedules)
-      .set(schedule)
-      .where(eq(weekSchedules.id, id))
-      .returning();
-    return updatedSchedule;
-  }
-
-  async deleteWeekSchedule(id: number): Promise<boolean> {
-    await db.delete(weekSchedules).where(eq(weekSchedules.id, id));
-    return true;
-  }
+  // near-future-removal: Legacy duplicate week schedule methods removed - keeping only the working database implementation
 
   async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
     const [createdShift] = await db.insert(shifts).values(shift).returning();
