@@ -16,6 +16,9 @@ import {
   type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
   generatePublicId
 } from "@shared/schema";
+
+// Alias for backward compatibility
+const weekSchedules = weeks;
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
@@ -1073,7 +1076,7 @@ class DatabaseStorage {
     try {
       const result = await db.select()
         .from(users)
-        .where(and(eq(users.role, 'applicant'), eq(users.location_id, locationId)));
+        .where(and(eq(users.role, 'applicant'), eq(users.locationId, locationId)));
       
       return result;
     } catch (error) {
