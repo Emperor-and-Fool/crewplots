@@ -51,9 +51,6 @@ export interface ScheduleValidationPackage {
   };
 }
 
-// Use existing validation schemas from shared/schema.ts instead of duplicating
-// This leverages the existing schema-first architecture
-
 const packageMetadataSchema = z.object({
   userId: z.number().min(1),
   userRole: z.string().min(1),
@@ -128,19 +125,19 @@ export class ValidationPackageService {
 
       // Validate week schedules using existing schemas
       if (packageData.weekSchedules && packageData.weekSchedules.length > 0) {
-        for (const [index, weekSchedule] of packageData.weekSchedules.entries()) {
+        packageData.weekSchedules.forEach((weekSchedule, index) => {
           const result = packageData.packageType === 'create'
             ? insertWeekScheduleSchema.safeParse(weekSchedule)
             : insertWeekScheduleSchema.partial().safeParse(weekSchedule);
           if (!result.success) {
             errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.path.join('.')}: ${e.message}`));
           }
-        }
+        });
       }
 
       // Validate shifts using existing schemas
       if (packageData.shifts && packageData.shifts.length > 0) {
-        for (const [index, shift] of packageData.shifts.entries()) {
+        packageData.shifts.forEach((shift, index) => {
           const result = packageData.packageType === 'create'
             ? insertShiftSchema.safeParse(shift)
             : updateShiftSchema.safeParse(shift);
@@ -152,7 +149,7 @@ export class ValidationPackageService {
           if (shift.startTime && shift.endTime && shift.startTime >= shift.endTime) {
             errors.push(`Shift ${index + 1}: End time must be after start time`);
           }
-        }
+        });
       }
 
       // Validate metadata if present
@@ -163,15 +160,11 @@ export class ValidationPackageService {
         }
       }
 
-      // Russian Doll integrity checks - only if methods exist
-      if (this.validateRussianDollIntegrity) {
-        await this.validateRussianDollIntegrity(packageData, errors, warnings);
-      }
+      // Russian Doll integrity checks
+      await this.validateRussianDollIntegrity(packageData, errors, warnings);
 
-      // Business logic validation - only if methods exist
-      if (this.validateBusinessRules) {
-        await this.validateBusinessRules(packageData, errors, warnings);
-      }
+      // Business logic validation
+      await this.validateBusinessRules(packageData, errors, warnings);
 
       const isValid = errors.length === 0;
       
@@ -195,159 +188,113 @@ export class ValidationPackageService {
   async validatePackagePermissions(packageData: ScheduleValidationPackage): Promise<{
     isAuthorized: boolean;
     deniedPermissions: string[];
-    securityViolations: string[];
+    grantedPermissions: string[];
   }> {
-    console.log('🔐 PERMISSION AUTHORIZATION: Starting authorization for user:', packageData.metadata.userId);
+    console.log('🔐 PERMISSION VALIDATION: Starting authorization check');
     
-    const deniedPermissions: string[] = [];
-    const securityViolations: string[] = [];
-
-    try {
-      // Location access validation
-      const locationId = packageData.scheduleBlock.locationId;
-      if (!packageData.metadata.locationAccess.includes(locationId)) {
-        securityViolations.push(`User does not have access to location ${locationId}`);
-      }
-
-      // Role-based permission validation
-      const requiredPermissions = this.getRequiredPermissions(packageData.packageType);
-      const userPermissions = await this.getUserPermissions(packageData.metadata.userId, packageData.metadata.userRole);
-
-      for (const permission of requiredPermissions) {
-        if (!userPermissions.includes(permission)) {
-          deniedPermissions.push(permission);
-        }
-      }
-
-      // Package-specific security checks
-      await this.validatePackageSpecificSecurity(packageData, securityViolations);
-
-      const isAuthorized = deniedPermissions.length === 0 && securityViolations.length === 0;
-
-      console.log('🔐 PERMISSION AUTHORIZATION: Authorization completed:', {
-        isAuthorized,
-        deniedCount: deniedPermissions.length,
-        violationsCount: securityViolations.length
-      });
-
-      return { isAuthorized, deniedPermissions, securityViolations };
-
-    } catch (error) {
-      console.error('🔐 PERMISSION AUTHORIZATION: Authorization failed:', error);
-      securityViolations.push('Critical authorization error occurred');
-      return { isAuthorized: false, deniedPermissions, securityViolations };
-    }
+    const requiredPermissions = this.getRequiredPermissions(packageData.packageType);
+    const userPermissions = await this.getUserPermissions(packageData.metadata.userId, packageData.metadata.userRole);
+    
+    const grantedPermissions = requiredPermissions.filter(permission => 
+      userPermissions.includes(permission)
+    );
+    const deniedPermissions = requiredPermissions.filter(permission => 
+      !userPermissions.includes(permission)
+    );
+    
+    const isAuthorized = deniedPermissions.length === 0;
+    
+    console.log('🔐 PERMISSION VALIDATION: Authorization completed:', {
+      isAuthorized,
+      requiredPermissions: requiredPermissions.length,
+      grantedPermissions: grantedPermissions.length,
+      deniedPermissions: deniedPermissions.length
+    });
+    
+    return {
+      isAuthorized,
+      deniedPermissions,
+      grantedPermissions
+    };
   }
 
   // Thread 4: Storage Transaction
-  async savePackageTransaction(packageData: ScheduleValidationPackage): Promise<{
+  async executeStorageTransaction(packageData: ScheduleValidationPackage): Promise<{
     success: boolean;
     createdEntities: {
-      scheduleBlockId?: number;
+      scheduleBlockId: number | null;
       weekScheduleIds: number[];
       shiftIds: number[];
     };
     errors: string[];
   }> {
-    console.log('💾 STORAGE TRANSACTION: Starting atomic save for package type:', packageData.packageType);
+    console.log('💾 STORAGE TRANSACTION: Starting atomic transaction');
     
     const errors: string[] = [];
-    let scheduleBlockId: number | undefined;
-    const weekScheduleIds: number[] = [];
-    const shiftIds: number[] = [];
+    let scheduleBlockId: number | null = null;
+    let weekScheduleIds: number[] = [];
+    let shiftIds: number[] = [];
 
     try {
-      // Start transaction
       return await db.transaction(async (tx) => {
-        
-        // Save schedule block
-        if (packageData.packageType === 'create') {
-          const [createdBlock] = await tx
+        console.log('💾 STORAGE TRANSACTION: Transaction started');
+
+        // Create schedule block
+        if (packageData.scheduleBlock && packageData.packageType === 'create') {
+          const [createdScheduleBlock] = await tx
             .insert(scheduleBlocks)
             .values({
               name: packageData.scheduleBlock.name,
-              description: packageData.scheduleBlock.description || null,
+              description: packageData.scheduleBlock.description || '',
               locationId: packageData.scheduleBlock.locationId,
-              isActive: packageData.scheduleBlock.isActive
+              isActive: packageData.scheduleBlock.isActive ?? true,
+              createdBy: packageData.metadata.userId
             })
-            .returning();
-          scheduleBlockId = createdBlock.id;
-          
-        } else if (packageData.packageType === 'update' && packageData.scheduleBlock.id) {
-          await tx
-            .update(scheduleBlocks)
-            .set({
-              name: packageData.scheduleBlock.name,
-              description: packageData.scheduleBlock.description || null,
-              locationId: packageData.scheduleBlock.locationId,
-              isActive: packageData.scheduleBlock.isActive
-            })
-            .where(eq(scheduleBlocks.id, packageData.scheduleBlock.id));
-          scheduleBlockId = packageData.scheduleBlock.id;
+            .returning({ id: scheduleBlocks.id });
+
+          scheduleBlockId = createdScheduleBlock.id;
+          console.log('💾 STORAGE TRANSACTION: Schedule block created with ID:', scheduleBlockId);
         }
 
-        // Save week schedules
-        for (const weekSchedule of packageData.weekSchedules) {
-          if (packageData.packageType === 'create') {
-            const [createdWeek] = await tx
+        // Create week schedules
+        if (packageData.weekSchedules.length > 0 && scheduleBlockId) {
+          for (const weekSchedule of packageData.weekSchedules) {
+            const [createdWeekSchedule] = await tx
               .insert(weekSchedules)
               .values({
-                scheduleBlockId: scheduleBlockId!,
+                scheduleBlockId,
                 weekNumber: weekSchedule.weekNumber,
                 templateId: weekSchedule.templateId || null
               })
-              .returning();
-            weekScheduleIds.push(createdWeek.id);
-            
-          } else if (packageData.packageType === 'update' && weekSchedule.id) {
-            await tx
-              .update(weekSchedules)
-              .set({
-                weekNumber: weekSchedule.weekNumber,
-                templateId: weekSchedule.templateId || null
-              })
-              .where(eq(weekSchedules.id, weekSchedule.id));
-            weekScheduleIds.push(weekSchedule.id);
+              .returning({ id: weekSchedules.id });
+
+            weekScheduleIds.push(createdWeekSchedule.id);
           }
+          console.log('💾 STORAGE TRANSACTION: Week schedules created:', weekScheduleIds.length);
         }
 
-        // Save shifts
-        for (const [index, shift] of packageData.shifts.entries()) {
-          const targetWeekScheduleId = shift.weekScheduleId || weekScheduleIds[index] || weekScheduleIds[0];
-          
-          if (packageData.packageType === 'create') {
+        // Create shifts
+        if (packageData.shifts.length > 0 && weekScheduleIds.length > 0) {
+          for (const shift of packageData.shifts) {
+            const weekScheduleId = weekScheduleIds[0]; // Use first week schedule for now
+            
             const [createdShift] = await tx
               .insert(shifts)
               .values({
-                weekScheduleId: targetWeekScheduleId,
+                weekScheduleId,
                 title: shift.title,
                 position: shift.position,
-                dayOfWeek: shift.dayOfWeek as any,
+                dayOfWeek: shift.dayOfWeek,
                 startTime: shift.startTime,
                 endTime: shift.endTime,
                 maxSlots: shift.maxSlots,
-                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null,
-                competencyRequirements: shift.competencyRequirements || []
+                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
               })
-              .returning();
+              .returning({ id: shifts.id });
+
             shiftIds.push(createdShift.id);
-            
-          } else if (packageData.packageType === 'update' && shift.id) {
-            await tx
-              .update(shifts)
-              .set({
-                title: shift.title,
-                position: shift.position,
-                dayOfWeek: shift.dayOfWeek as any,
-                startTime: shift.startTime,
-                endTime: shift.endTime,
-                maxSlots: shift.maxSlots,
-                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null,
-                competencyRequirements: shift.competencyRequirements || []
-              })
-              .where(eq(shifts.id, shift.id));
-            shiftIds.push(shift.id);
           }
+          console.log('💾 STORAGE TRANSACTION: Shifts created:', shiftIds.length);
         }
 
         console.log('💾 STORAGE TRANSACTION: Transaction completed successfully:', {
@@ -428,7 +375,7 @@ export class ValidationPackageService {
     // Validate consistency between levels
     for (const weekSchedule of packageData.weekSchedules) {
       const shiftsInWeek = packageData.shifts.filter(shift => 
-        shift.weekScheduleId === weekSchedule.id || shift.weekNumber === weekSchedule.weekNumber
+        shift.weekScheduleId === weekSchedule.id
       );
       
       if (shiftsInWeek.length === 0) {
@@ -445,17 +392,6 @@ export class ValidationPackageService {
   ): Promise<void> {
     console.log('📋 BUSINESS RULES: Validating scheduler business logic');
     
-    // Location consistency
-    if (packageData.scheduleBlock.locationId) {
-      const locationShifts = packageData.shifts.filter(shift => 
-        shift.locationId && shift.locationId !== packageData.scheduleBlock.locationId
-      );
-      
-      if (locationShifts.length > 0) {
-        warnings.push('Location mismatch: Some shifts have different locations than schedule block');
-      }
-    }
-    
     // Schedule timing conflicts
     const shiftsByDay = new Map<string, typeof packageData.shifts>();
     packageData.shifts.forEach(shift => {
@@ -467,16 +403,18 @@ export class ValidationPackageService {
     });
     
     // Check for overlapping shifts on same day
-    shiftsByDay.forEach((shifts, day) => {
-      for (let i = 0; i < shifts.length; i++) {
-        for (let j = i + 1; j < shifts.length; j++) {
-          const shift1 = shifts[i];
-          const shift2 = shifts[j];
-          
-          if (shift1.startTime && shift1.endTime && shift2.startTime && shift2.endTime) {
-            const overlap = (shift1.startTime < shift2.endTime && shift2.startTime < shift1.endTime);
-            if (overlap) {
-              warnings.push(`${day}: Potential shift overlap between "${shift1.title}" and "${shift2.title}"`);
+    shiftsByDay.forEach((dayShifts, day) => {
+      if (Array.isArray(dayShifts)) {
+        for (let i = 0; i < dayShifts.length; i++) {
+          for (let j = i + 1; j < dayShifts.length; j++) {
+            const shift1 = dayShifts[i];
+            const shift2 = dayShifts[j];
+            
+            if (shift1.startTime && shift1.endTime && shift2.startTime && shift2.endTime) {
+              const overlap = (shift1.startTime < shift2.endTime && shift2.startTime < shift1.endTime);
+              if (overlap) {
+                warnings.push(`${day}: Potential shift overlap between "${shift1.title}" and "${shift2.title}"`);
+              }
             }
           }
         }
@@ -529,7 +467,6 @@ export class ValidationPackageService {
         'schedule.create',
         'schedule.read',
         'schedule.update',
-        'schedule.assign_users',
         'location.access_managed'
       ],
       crew_chief: [
@@ -540,126 +477,10 @@ export class ValidationPackageService {
       crew_member: [
         'schedule.read',
         'location.access_assigned'
-      ],
-      applicant: [
-        'schedule.read'
       ]
     };
 
-    // Get user-specific blocked permissions from database
-    try {
-      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      if (user.length > 0 && user[0].blockedPermissions) {
-        const blockedPerms = user[0].blockedPermissions as Record<string, string[]>;
-        const rolePerms = newRolePermissions[userRole] || [];
-        
-        // Remove blocked permissions
-        const schedulerBlocked = blockedPerms['scheduler'] || [];
-        return rolePerms.filter(perm => !schedulerBlocked.includes(perm));
-      }
-    } catch (error) {
-      console.warn('Could not fetch user-specific permissions, using role defaults:', error);
-    }
-
-    return newRolePermissions[userRole] || [];
-  }
-
-  private async validateRussianDollIntegrity(
-    packageData: ScheduleValidationPackage,
-    errors: string[],
-    warnings: string[]
-  ): Promise<void> {
-    // Check week number uniqueness within schedule block
-    const weekNumbers = packageData.weekSchedules.map(ws => ws.weekNumber);
-    const uniqueWeekNumbers = new Set(weekNumbers);
-    if (weekNumbers.length !== uniqueWeekNumbers.size) {
-      errors.push('Duplicate week numbers found within schedule block');
-    }
-
-    // Check shift time overlaps within same day/week
-    for (const weekSchedule of packageData.weekSchedules) {
-      const weekShifts = packageData.shifts.filter(s => 
-        s.weekScheduleId === weekSchedule.id || !s.weekScheduleId
-      );
-      
-      this.validateShiftTimeOverlaps(weekShifts, errors, warnings);
-    }
-  }
-
-  private validateShiftTimeOverlaps(shifts: any[], errors: string[], warnings: string[]): void {
-    const dayGroups = shifts.reduce((groups, shift) => {
-      const key = shift.dayOfWeek;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(shift);
-      return groups;
-    }, {} as Record<string, any[]>);
-
-    for (const [day, dayShifts] of Object.entries(dayGroups)) {
-      dayShifts.sort((a, b) => a.startTime.localeCompare(b.startTime));
-      
-      for (let i = 0; i < dayShifts.length - 1; i++) {
-        const current = dayShifts[i];
-        const next = dayShifts[i + 1];
-        
-        if (current.endTime > next.startTime) {
-          warnings.push(`Overlapping shifts detected on ${day}: ${current.position} and ${next.position}`);
-        }
-      }
-    }
-  }
-
-  private async validateBusinessRules(
-    packageData: ScheduleValidationPackage,
-    errors: string[],
-    warnings: string[]
-  ): Promise<void> {
-    // Validate subscription deadlines
-    for (const shift of packageData.shifts) {
-      if (shift.subscriptionDeadline) {
-        const deadline = new Date(shift.subscriptionDeadline);
-        if (deadline < new Date()) {
-          warnings.push(`Subscription deadline for ${shift.position} is in the past`);
-        }
-      }
-    }
-
-    // Validate max slots
-    for (const shift of packageData.shifts) {
-      if (shift.maxSlots > 50) {
-        warnings.push(`Unusually high max slots (${shift.maxSlots}) for ${shift.position}`);
-      }
-    }
-  }
-
-  private async validatePackageSpecificSecurity(
-    packageData: ScheduleValidationPackage,
-    securityViolations: string[]
-  ): Promise<void> {
-    // Validate that user isn't trying to modify schedules they don't own
-    if (packageData.packageType === 'update' && packageData.scheduleBlock.id) {
-      const existingBlock = await db
-        .select()
-        .from(scheduleBlocks)
-        .where(eq(scheduleBlocks.id, packageData.scheduleBlock.id))
-        .limit(1);
-
-      if (existingBlock.length === 0) {
-        securityViolations.push('Schedule block not found or access denied');
-      } else if (existingBlock[0].locationId !== packageData.scheduleBlock.locationId) {
-        securityViolations.push('Cannot change location of existing schedule block');
-      }
-    }
-
-    // Validate time constraints (e.g., no shifts longer than 24 hours)
-    for (const shift of packageData.shifts) {
-      const start = new Date(`2024-01-01 ${shift.startTime}`);
-      const end = new Date(`2024-01-01 ${shift.endTime}`);
-      const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-      
-      if (duration > 24 || duration < 0) {
-        securityViolations.push(`Invalid shift duration for ${shift.position}`);
-      }
-    }
+    return newRolePermissions[userRole] || ['schedule.read'];
   }
 }
 
