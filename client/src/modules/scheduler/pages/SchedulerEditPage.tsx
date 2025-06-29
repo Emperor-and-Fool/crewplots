@@ -503,8 +503,7 @@ export default function SchedulerEditPage() {
       competencyRequirements: shift.competencyRequirements || []
     });
     
-    // Switch to Basic Info tab for editing
-    setActiveTab('basic-info');
+    // Don't change tabs when editing - stay where the user is
     
     toast({
       title: "Shift selected for editing",
@@ -544,8 +543,7 @@ export default function SchedulerEditPage() {
       competencyRequirements: shift.competencyRequirements || []
     });
     
-    // Switch to Basic Info tab for editing
-    setActiveTab('basic-info');
+    // Don't change tabs when editing - stay where the user is
     
     toast({
       title: "Group selected for editing",
