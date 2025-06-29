@@ -87,56 +87,26 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Fetch week schedule data first to get the schedule_block_id
-  const { data: weekScheduleData, isLoading: weekScheduleLoading } = useQuery({
-    queryKey: ['/api/week-schedules', id],
+  // Fetch schedule block data
+  const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
+    queryKey: ['/api/schedule-blocks', id],
     queryFn: async () => {
-      const response = await fetch(`/api/week-schedules/${id}`, {
+      console.log('🔍 FRONTEND: Fetching schedule block with ID:', id);
+      console.log('🔍 FRONTEND: Permissions check - canEditSchedules:', permissions.canEditSchedules);
+      const response = await fetch(`/api/schedule-blocks/${id}`, {
         credentials: 'include'
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch week schedule');
-      }
-      return response.json();
-    },
-    enabled: !!id && permissions.canEditSchedules,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-
-  // Then fetch the schedule block data using the schedule_block_id
-  const { data: scheduleBlockData, isLoading: scheduleBlockLoading } = useQuery({
-    queryKey: ['/api/schedule-blocks', weekScheduleData?.scheduleBlockId],
-    queryFn: async () => {
-      const response = await fetch(`/api/schedule-blocks/${weekScheduleData.scheduleBlockId}`, {
-        credentials: 'include'
-      });
+      console.log('🔍 FRONTEND: Schedule block response status:', response.status, response.statusText);
       if (!response.ok) {
         throw new Error('Failed to fetch schedule block');
       }
-      return response.json();
-    },
-    enabled: !!weekScheduleData?.scheduleBlockId && permissions.canEditSchedules,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-
-  // Fetch all week schedules in the same schedule block
-  const { data: allWeekSchedules = [], isLoading: allWeekSchedulesLoading } = useQuery({
-    queryKey: ['/api/week-schedules', 'frameId', weekScheduleData?.scheduleBlockId],
-    queryFn: async () => {
-      const response = await fetch(`/api/week-schedules?frameId=${weekScheduleData.scheduleBlockId}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch week schedules');
-      }
       const data = await response.json();
-      return data.weekSchedules || [];
+      console.log('🔍 FRONTEND: Schedule block data received:', data);
+      return data;
     },
-    enabled: !!weekScheduleData?.scheduleBlockId && permissions.canEditSchedules,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    enabled: !!id && permissions.canEditSchedules,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
   // Use schedule block data as the primary source
