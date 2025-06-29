@@ -1422,26 +1422,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Week Schedule Shifts API
   app.post("/api/week-schedules/:id/shifts", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+      console.log("🔄 AUTO-SAVE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
     try {
       const weekScheduleId = parseInt(req.params.id);
+      console.log("🔄 AUTO-SAVE: Creating shift for week schedule:", weekScheduleId);
+      console.log("🔄 AUTO-SAVE: Request body:", req.body);
+      
       const validatedData = insertShiftSchema.parse({
         ...req.body,
         weekScheduleId
       });
+      console.log("🔄 AUTO-SAVE: Validated data:", validatedData);
+      
       const shift = await storage.createShiftForWeekSchedule(validatedData);
+      console.log("🔄 AUTO-SAVE: Created shift successfully:", shift);
       res.status(201).json(shift);
     } catch (error) {
-      console.error("Error creating shift for week schedule:", error);
+      console.error("🔄 AUTO-SAVE: Error creating shift for week schedule:", error);
       res.status(400).json({ error: "Failed to create shift" });
     }
   });
 
   app.get("/api/week-schedules/:id/shifts", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
