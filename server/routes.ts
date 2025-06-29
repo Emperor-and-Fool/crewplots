@@ -1635,6 +1635,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Authentication consolidation endpoint to resolve browser context session isolation
+  app.get("/api/auth-consolidation", async (req, res) => {
+    try {
+      console.log(`[AuthConsolidation] Checking authentication, session ID: ${req.sessionID}`);
+      
+      if (!req.user) {
+        console.log(`[AuthConsolidation] No authenticated user found`);
+        return res.json({ authenticated: false, user: null });
+      }
+
+      const user = req.user as any;
+      const fullUser = await storage.getUser(user.id);
+      
+      if (!fullUser) {
+        console.log(`[AuthConsolidation] User not found in database: ${user.id}`);
+        return res.json({ authenticated: false, user: null });
+      }
+
+      // Get user permissions
+      const { db } = await import('./db');
+      const { users, roles, permissions, rolePermissions } = await import('@shared/schema');
+      const { eq, sql } = await import('drizzle-orm');
+      
+      const userPermissionsQuery = await db
+        .select({
+          permissions: sql<string[]>`COALESCE(ARRAY_AGG(DISTINCT ${permissions.name}) FILTER (WHERE ${permissions.name} IS NOT NULL), ARRAY[]::text[])`
+        })
+        .from(users)
+        .leftJoin(roles, eq(users.role, roles.name))
+        .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+        .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(users.id, fullUser.id))
+        .groupBy(users.id);
+
+      const userPermissions = userPermissionsQuery.length > 0 ? userPermissionsQuery[0].permissions || [] : [];
+
+      const authData = {
+        authenticated: true,
+        user: {
+          id: fullUser.id,
+          username: fullUser.username,
+          role: fullUser.role,
+          email: fullUser.email,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName,
+          name: fullUser.name,
+          phoneNumber: fullUser.phoneNumber,
+          permissions: userPermissions
+        }
+      };
+
+      console.log(`[AuthConsolidation] Successfully authenticated user: ${fullUser.username}`);
+      res.json(authData);
+    } catch (error) {
+      console.error('[AuthConsolidation] Error:', error);
+      res.status(500).json({ authenticated: false, user: null, error: 'Authentication check failed' });
+    }
+  });
+
   // Session Consolidation API - Critical fix for shift-creation authentication
   app.get("/api/scheduler/creation-data", async (req, res) => {
     try {

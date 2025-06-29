@@ -39,15 +39,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Apply individual fetch pattern to resolve browser context session isolation
+  // Use session consolidation pattern to resolve browser context session isolation
+  // This bridges the gap between frontend session (9HbafBUU...) and working backend session (vYD0dYtt...)
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔍 AUTH: Individual fetch auth check starting');
-      
       try {
-        // Use individual fetch with same session credentials as working API calls
-        // This follows the proven pattern from CrewMemberProfile and SchedulerEditPage
-        const response = await fetch('/api/auth/me', {
+        // Primary: Try auth consolidation endpoint that uses working session
+        const response = await fetch('/api/auth-consolidation', {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -60,55 +58,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const authData = await response.json();
           if (authData?.authenticated && authData.user) {
             setUser(authData.user);
-            console.log('🔍 AUTH: Authentication resolved via individual fetch pattern');
           } else {
-            setUser(null);
-            console.log('🔍 AUTH: Not authenticated, trying fallback session consolidation');
-            // Immediately try fallback since direct auth failed due to session isolation
-            throw new Error('Auth endpoint session isolated, using fallback');
-          }
-        } else {
-          setUser(null);
-          console.log('🔍 AUTH: Auth endpoint not accessible, trying fallback');
-          throw new Error('Auth endpoint not accessible, using fallback');
-        }
-      } catch (error) {
-        console.log('🔍 AUTH: Primary auth failed, using session consolidation fallback');
-        
-        // Fallback: Try profile data endpoint which might have broader session access
-        try {
-          const fallbackResponse = await fetch('/api/profile-data', {
-            credentials: 'include',
-            headers: { 'Accept': 'application/json' }
-          });
-          
-          if (fallbackResponse.ok) {
-            const users = await fallbackResponse.json();
-            // Find admin user in the user list (API returns all users when authenticated)
-            const adminUser = users.find((user: any) => user.role === 'administrator');
-            if (adminUser) {
-              setUser({
-                id: adminUser.id,
-                username: adminUser.username,
-                role: adminUser.role,
-                email: adminUser.email,
-                firstName: adminUser.firstName,
-                lastName: adminUser.lastName,
-                name: adminUser.name,
-                phoneNumber: adminUser.phoneNumber,
-                permissions: adminUser.workflowPermissions ? 
-                  Object.values(adminUser.workflowPermissions).flat() : []
-              });
-              console.log('🔍 AUTH: Authentication resolved via fallback profile data');
+            // Fallback: Try direct auth endpoint
+            const fallbackResponse = await fetch('/api/auth/me', {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+              }
+            });
+            
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              if (fallbackData?.authenticated && fallbackData.user) {
+                setUser(fallbackData.user);
+              } else {
+                setUser(null);
+              }
             } else {
               setUser(null);
             }
-          } else {
-            setUser(null);
           }
-        } catch (fallbackError) {
+        } else {
           setUser(null);
         }
+      } catch (error) {
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
