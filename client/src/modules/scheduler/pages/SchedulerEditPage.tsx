@@ -185,7 +185,7 @@ export default function SchedulerEditPage() {
     }
   }, [actualScheduleData, basicInfoForm]);
 
-  const isLoading = scheduleLoading && !existingSchedule;
+  const isLoading = scheduleBlockLoading && !existingSchedule;
   
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
@@ -206,8 +206,8 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      // Set currentWeekSchedule to the updated data for the tabbed interface
-      setCurrentWeekSchedule(data);
+      // Update selectedWeekScheduleId for schedule block architecture
+      setSelectedWeekScheduleId(data.id);
       setHasBeenEdited(true);
       toast({
         title: "Schedule updated successfully",
@@ -362,21 +362,21 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Multi-week frame mutations
-  const createMultiWeekFrameMutation = useMutation({
-    mutationFn: async (frameData: { name: string; description?: string; locationId: number; maxWeeks: number }) => {
-      return await apiRequest('POST', '/api/multi-week-frames', frameData);
+  // Schedule block update mutation
+  const updateScheduleBlockMutation = useMutation({
+    mutationFn: async (blockData: { name: string; description?: string; locationId: number; isActive: boolean }) => {
+      return await apiRequest('PUT', `/api/schedule-blocks/${id}`, blockData);
     },
-    onSuccess: (frame) => {
-      setMultiWeekFrame(frame);
+    onSuccess: (block) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks'] });
       toast({
-        title: "Multi-week frame created",
-        description: `Frame "${frame.name}" is ready for additional weeks`
+        title: "Schedule updated successfully",
+        description: `Schedule "${block.name}" has been updated`
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create multi-week frame",
+        title: "Failed to update schedule",
         description: error.message,
         variant: "destructive"
       });
