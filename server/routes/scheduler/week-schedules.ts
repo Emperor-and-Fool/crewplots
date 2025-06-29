@@ -18,19 +18,40 @@ function hasPermission(userRole: string, permission: string): boolean {
   return rolePermissions[userRole]?.includes(permission) || false;
 }
 
-// Get week schedules with optional location filtering
+// Get week schedules with optional location filtering and frameId support
 router.get("/", authenticateUser, async (req: any, res) => {
   if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
   try {
+    const frameId = req.query.frameId ? parseInt(req.query.frameId as string) : undefined;
     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
-    console.log(`✅ WEEK SCHEDULES FETCH - Location filter:`, locationId || 'All locations');
     
-    const weekSchedules = await storage.getWeekSchedules(locationId);
-    console.log(`✅ WEEK SCHEDULES FETCH - Found ${weekSchedules.length} schedules`);
-    res.json(weekSchedules);
+    if (frameId) {
+      // Schedule block mode - fetch schedule block with its week schedules
+      console.log(`🔍 SCHEDULE BLOCK QUERY - Fetching block ID: ${frameId}`);
+      
+      const scheduleBlock = await storage.getScheduleBlock(frameId);
+      if (!scheduleBlock) {
+        return res.status(404).json({ error: "Schedule block not found" });
+      }
+      
+      const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(frameId);
+      console.log(`🔍 SCHEDULE BLOCK QUERY - Found ${weekSchedules.length} schedules in block`);
+      
+      res.json({
+        scheduleBlock,
+        weekSchedules,
+        isScheduleBlockMode: true
+      });
+    } else {
+      // Standard location-based query
+      console.log(`✅ WEEK SCHEDULES FETCH - Location filter:`, locationId || 'All locations');
+      const weekSchedules = await storage.getWeekSchedules(locationId);
+      console.log(`✅ WEEK SCHEDULES FETCH - Found ${weekSchedules.length} schedules`);
+      res.json(weekSchedules);
+    }
   } catch (error) {
     console.error("❌ WEEK SCHEDULES FETCH - Error:", error);
     res.status(500).json({ error: "Failed to fetch week schedules" });
