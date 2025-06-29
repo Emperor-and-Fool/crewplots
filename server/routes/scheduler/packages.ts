@@ -1,6 +1,6 @@
 import express from 'express';
 import { validationPackageService } from '../../services/validation-package-service';
-import { authenticateUser } from '../auth-routes';
+import { authenticateUser } from '../../middleware/auth';
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.get('/schedule-blocks', authenticateUser, async (req: any, res) => {
 });
 
 // POST /api/scheduler/packages/validate - Validate schedule package
-router.post('/validate', requireAuth, async (req: any, res) => {
+router.post('/validate', authenticateUser, async (req: any, res) => {
   try {
     console.log('🔍 PACKAGE VALIDATION: Starting validation request');
 
@@ -70,7 +70,7 @@ router.post('/validate', requireAuth, async (req: any, res) => {
 });
 
 // POST /api/scheduler/packages/create - Create schedule package
-router.post('/create', requireAuth, async (req: any, res) => {
+router.post('/create', authenticateUser, async (req: any, res) => {
   try {
     console.log('🎁 PACKAGE API: Starting package creation');
 
