@@ -168,6 +168,8 @@ export default function SchedulerEditPage() {
       }
       
       console.log('🔍 ALL SHIFTS: Total shifts loaded:', allShifts.length);
+      console.log('🔍 ALL SHIFTS: Draft shifts found:', allShifts.filter(s => s.status === 'draft'));
+      console.log('🔍 ALL SHIFTS: All shifts data:', allShifts);
       return allShifts;
     },
     enabled: !!scheduleId && permissions.canEditSchedules,
