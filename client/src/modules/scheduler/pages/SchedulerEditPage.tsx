@@ -107,8 +107,8 @@ export default function SchedulerEditPage() {
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
 
-  // Extract the appropriate schedule data based on mode
-  const existingSchedule = isFrameMode ? scheduleData?.weekSchedules?.[0] : scheduleData;
+  // Use schedule block data as the primary source
+  const existingSchedule = scheduleBlockData;
 
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
