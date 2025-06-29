@@ -1171,8 +1171,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Week Schedule Management API
-  app.get("/api/week-schedules", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  app.get("/api/week-schedules", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1423,9 +1423,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Week Schedule Shifts API
-  app.post("/api/week-schedules/:id/shifts", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("🔄 AUTO-SAVE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
+  app.post("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
+      console.log("🔄 AUTO-SAVE: Permission denied for user:", req.user.username, "role:", req.user.role);
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
@@ -1449,8 +1449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/week-schedules/:id/shifts", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  app.get("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
+    if (!hasPermission(req.user.role, "scheduler_development")) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
