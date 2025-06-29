@@ -48,6 +48,7 @@ import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
 import emailRoutes from './routes/email';
+import schedulerRoutes from './routes/scheduler';
 import securityRoutes from './routes/security';
 import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 

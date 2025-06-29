@@ -7,9 +7,9 @@ const router = express.Router();
 
 function hasPermission(userRole: string, permission: string): boolean {
   const rolePermissions: Record<string, string[]> = {
-    administrator: ['schedule', 'manage', 'view', 'edit', 'delete', 'create'],
-    owner: ['schedule', 'manage', 'view', 'edit', 'delete', 'create'],
-    app_manager: ['schedule', 'manage', 'view', 'edit', 'delete', 'create'],
+    administrator: ['schedule', 'scheduler_development', 'manage', 'view', 'edit', 'delete', 'create'],
+    owner: ['schedule', 'scheduler_development', 'manage', 'view', 'edit', 'delete', 'create'],
+    app_manager: ['schedule', 'scheduler_development', 'manage', 'view', 'edit', 'delete', 'create'],
     crew_chief: ['view', 'edit'],
     crew_member: ['view'],
     applicant: ['view']
@@ -19,11 +19,21 @@ function hasPermission(userRole: string, permission: string): boolean {
 }
 
 // Get shift requirements
-router.get("/", async (req, res) => {
+router.get("/", authenticateUser, async (req: any, res) => {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
+
   try {
     const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
-    const requirements = await storage.getShiftRequirements(shiftId);
-    res.json(requirements);
+    
+    if (shiftId) {
+      const requirements = await storage.getShiftRequirementsByShift(shiftId);
+      res.json(requirements);
+    } else {
+      const requirements = await storage.getShiftRequirements();
+      res.json(requirements);
+    }
   } catch (error) {
     console.error("Error fetching shift requirements:", error);
     res.status(500).json({ error: "Failed to fetch shift requirements" });
@@ -32,7 +42,7 @@ router.get("/", async (req, res) => {
 
 // Create shift requirement
 router.post("/", authenticateUser, async (req: any, res) => {
-  if (!hasPermission(req.user.role, "schedule")) {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
@@ -48,13 +58,13 @@ router.post("/", authenticateUser, async (req: any, res) => {
 
 // Update shift requirement
 router.put("/:id", authenticateUser, async (req: any, res) => {
-  if (!hasPermission(req.user.role, "schedule")) {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
   try {
     const id = parseInt(req.params.id);
-    const validatedData = insertShiftRequirementSchema.parse(req.body);
+    const validatedData = insertShiftRequirementSchema.partial().parse(req.body);
     const requirement = await storage.updateShiftRequirement(id, validatedData);
     res.json(requirement);
   } catch (error) {
@@ -65,7 +75,7 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
 
 // Delete shift requirement
 router.delete("/:id", authenticateUser, async (req: any, res) => {
-  if (!hasPermission(req.user.role, "schedule")) {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
