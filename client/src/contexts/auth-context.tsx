@@ -46,7 +46,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         // Debug: Log current cookies before auth check
         console.log('🔍 CLIENT AUTH DEBUG: Starting auth check');
-        console.log('🔍 CLIENT COOKIES:', document.cookie);
+        const currentCookies = document.cookie;
+        console.log('🔍 CLIENT COOKIES:', currentCookies);
+        
+        // Skip auth check if no cookies exist (means no login has occurred)
+        if (!currentCookies || currentCookies.trim() === '') {
+          console.log('🔍 CLIENT AUTH DEBUG: No cookies found, skipping auth check');
+          setIsAuthenticated(false);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
         
         // Primary: Try auth consolidation endpoint that uses working session
         const response = await fetch('/api/auth-consolidation', {
