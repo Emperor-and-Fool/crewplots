@@ -659,7 +659,7 @@ export default function SchedulerEditPage() {
     }
   });
 
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
@@ -1041,7 +1041,7 @@ export default function SchedulerEditPage() {
                         
                         await saveSchedulePackageMutation.mutateAsync(packageData);
                         
-                        navigate('/scheduler');
+                        setLocation('/scheduler');
                       }}
                       disabled={updateWeekScheduleMutation.isPending || saveSchedulePackageMutation.isPending}
                     >
