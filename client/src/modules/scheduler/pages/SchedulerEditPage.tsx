@@ -212,17 +212,6 @@ export default function SchedulerEditPage() {
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
 
-  // State for week selection in shift creation
-  const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
-
-  // Set default selected week when allWeekSchedules loads
-  useEffect(() => {
-    if (allWeekSchedules.length > 0 && selectedWeekScheduleId === null) {
-      // Default to the first week schedule
-      setSelectedWeekScheduleId(allWeekSchedules[0].id);
-    }
-  }, [allWeekSchedules, selectedWeekScheduleId]);
-
   // Function to go back to initial schedule form
   const handleBackToSchedule = () => {
     setShowTabbedInterface(false);
