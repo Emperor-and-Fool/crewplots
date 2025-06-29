@@ -300,7 +300,7 @@ export default function SchedulerEditPage() {
       for (const weekScheduleId of targetWeekScheduleIds) {
         for (const dayOfWeek of data.daysOfWeek) {
           shiftsToCreate.push({
-            scheduleId: weekScheduleId,
+            weekScheduleId: weekScheduleId, // Backend expects weekScheduleId
             shiftGroupId,
             batchId,
             title: `${data.position} - ${dayOfWeek}`,
@@ -321,7 +321,7 @@ export default function SchedulerEditPage() {
       // Serial processing: create shifts one by one to avoid session conflicts
       const createdShifts = [];
       for (const shift of shiftsToCreate) {
-        const weekScheduleId = shift.scheduleId;
+        const weekScheduleId = shift.weekScheduleId;
         console.log(`🚀 FRONTEND: Creating shift for week ${weekScheduleId}:`, shift);
         const createdShift = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/shifts`, shift);
         createdShifts.push(createdShift);
@@ -1196,11 +1196,11 @@ export default function SchedulerEditPage() {
                           disabled={createShiftMutation.isPending}
                         >
                           {createShiftMutation.isPending ? (
-                            "Creating Shifts..."
+                            "Saving Shifts..."
                           ) : (
                             <>
                               <Plus className="h-4 w-4 mr-2" />
-                              Create Shifts
+                              Save Shifts
                             </>
                           )}
                         </Button>
