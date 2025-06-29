@@ -596,41 +596,7 @@ class DatabaseStorage {
     }
   }
 
-  async getCrewMembersByLocation(locationId: number): Promise<User[]> {
-    try {
-      // Get crew members assigned to a specific location via user_locations junction table
-      const result = await db.select({
-        id: users.id,
-        public_id: users.public_id,
-        username: users.username,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        name: users.name,
-        role: users.role,
-        locationId: users.locationId,
-        phoneNumber: users.phoneNumber,
-        status: users.status,
-        resumeUrl: users.resumeUrl,
-        notes: users.notes,
-        workflowPermissions: users.workflowPermissions,
-        blockedPermissions: users.blockedPermissions,
-        createdAt: users.createdAt,
-        profileImage: users.profileImage,
-      })
-      .from(users)
-      .innerJoin(userLocations, eq(users.id, userLocations.userId))
-      .where(and(
-        eq(userLocations.locationId, locationId),
-        inArray(users.role, ['crew_member', 'crew_manager', 'floor_manager'])
-      ));
-      
-      return result;
-    } catch (error) {
-      console.error("Error in getCrewMembersByLocation:", error);
-      return [];
-    }
-  }
+  // near-future-removal: Duplicate getCrewMembersByLocation removed - keeping only the working implementation above
 
   // Removed getStaffByUser - migrated to user-centric crew management
 
@@ -1100,108 +1066,7 @@ class DatabaseStorage {
 
   // near-future-removal: Legacy duplicate week schedule methods removed - keeping only the working database implementation
 
-  async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
-    const [createdShift] = await db.insert(shifts).values(shift).returning();
-    return createdShift;
-  }
-
-  async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
-  }
-
-  // Shifts
-  async getShift(id: number): Promise<Shift | undefined> {
-    const [shift] = await db.select().from(shifts).where(eq(shifts.id, id));
-    return shift;
-  }
-
-  async getShifts(): Promise<Shift[]> {
-    try {
-      const result = await db.select().from(shifts);
-      return result;
-    } catch (error) {
-      console.error("Error in getShifts:", error);
-      return [];
-    }
-  }
-
-  async getShiftsBySchedule(scheduleId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.scheduleId, scheduleId));
-  }
-
-  async getShiftsByUser(userId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.userId, userId));
-  }
-
-  async getShiftsByDate(scheduleId: number, date: Date): Promise<Shift[]> {
-    return await db.select().from(shifts)
-      .where(and(
-        eq(shifts.scheduleId, scheduleId),
-        eq(shifts.date, date)
-      ));
-  }
-
-  async findExistingShift(weekScheduleId: number, day: string, position: string): Promise<Shift | undefined> {
-    // Check for existing shift with same week schedule, day, and position to prevent duplicates
-    const results = await db.select().from(shifts)
-      .where(
-        and(
-          eq(shifts.weekScheduleId, weekScheduleId),
-          eq(shifts.day, day),
-          eq(shifts.position, position)
-        )
-      );
-    return results[0];
-  }
-
-  async createShift(shift: InsertShift): Promise<Shift> {
-    // Server-side upsert prevention - check for existing shift before creating
-    // This prevents the same race condition we fixed in the messaging system
-    const existingShift = await this.findExistingShift(
-      shift.weekScheduleId, 
-      shift.day, 
-      shift.position
-    );
-    
-    if (existingShift) {
-      console.log("🔍 SCHEDULER UPSERT: Found existing shift, returning instead of creating duplicate");
-      return existingShift;
-    }
-    
-    const [createdShift] = await db.insert(shifts).values(shift).returning();
-    console.log("🔍 SCHEDULER UPSERT: Created new shift successfully");
-    return createdShift;
-  }
-
-  async updateShift(id: number, shift: Partial<InsertShift>): Promise<Shift | undefined> {
-    const [updatedShift] = await db
-      .update(shifts)
-      .set(shift)
-      .where(eq(shifts.id, id))
-      .returning();
-    return updatedShift;
-  }
-
-  async deleteShift(id: number): Promise<boolean> {
-    await db.delete(shifts).where(eq(shifts.id, id));
-    return true;
-  }
-
-  // Location-filtered shifts (via schedule relationship)
-  async getShiftsByLocation(locationId: number): Promise<Shift[]> {
-    try {
-      // Get shifts that belong to schedules for this location
-      const result = await db.select()
-        .from(shifts)
-        .innerJoin(weekSchedules, eq(shifts.weekScheduleId, weekSchedules.id))
-        .where(eq(weekSchedules.locationId, locationId));
-      
-      return result.map(row => row.shifts);
-    } catch (error) {
-      console.error("Error in getShiftsByLocation:", error);
-      return [];
-    }
-  }
+  // near-future-removal: Legacy duplicate shift methods removed - keeping only the working database implementation at end of file
 
   // Location-filtered applications (users with applicant role)
   async getApplicationsByLocation(locationId: number): Promise<User[]> {
