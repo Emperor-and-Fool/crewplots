@@ -40,7 +40,13 @@ export interface ScheduleValidationPackage {
     endTime: string;
     maxSlots: number;
     subscriptionDeadline?: string;
-    competencyRequirements?: any[];
+  }>;
+  shiftRequirements?: Array<{
+    shiftId?: number;
+    competencyId: number;
+    minimumLevel: number;
+    requiredCount: number;
+    weight: number;
   }>;
   metadata: {
     userId: number;
@@ -278,18 +284,20 @@ export class ValidationPackageService {
           for (const shift of packageData.shifts) {
             const weekScheduleId = weekScheduleIds[0]; // Use first week schedule for now
             
+            const shiftData = {
+              weekScheduleId: weekScheduleId,
+              title: shift.title,
+              position: shift.position || null,
+              dayOfWeek: shift.dayOfWeek,
+              startTime: shift.startTime,
+              endTime: shift.endTime,
+              maxSlots: shift.maxSlots,
+              subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
+            };
+
             const [createdShift] = await tx
               .insert(shifts)
-              .values({
-                weekScheduleId,
-                title: shift.title,
-                position: shift.position,
-                dayOfWeek: shift.dayOfWeek,
-                startTime: shift.startTime,
-                endTime: shift.endTime,
-                maxSlots: shift.maxSlots,
-                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
-              })
+              .values(shiftData)
               .returning({ id: shifts.id });
 
             shiftIds.push(createdShift.id);
