@@ -1194,6 +1194,7 @@ export default function SchedulerEditPage() {
                           type="submit" 
                           className="w-full"
                           disabled={createShiftMutation.isPending}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {createShiftMutation.isPending ? (
                             "Saving Shifts..."
