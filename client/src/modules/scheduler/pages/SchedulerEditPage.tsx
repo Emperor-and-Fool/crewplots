@@ -49,31 +49,17 @@ type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
   const params = useParams();
-  const { scheduleId, frameId } = params;
+  const { id } = params; // Now points to schedule block ID
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   
-  // Determine if this is frame-based or legacy schedule-based URL
-  const isFrameMode = !!frameId;
-  const currentId = frameId || scheduleId;
-  
-  // Debug URL parameters
-  console.log('🔍 URL DEBUG: params =', params);
-  console.log('🔍 URL DEBUG: scheduleId =', scheduleId);
-  console.log('🔍 URL DEBUG: frameId =', frameId);
-  console.log('🔍 URL DEBUG: isFrameMode =', isFrameMode);
-  console.log('🔍 URL DEBUG: currentId =', currentId);
-  const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
+  // Schedule block-based state
+  const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  
-  // Multi-week frame state
-  const [multiWeekFrame, setMultiWeekFrame] = useState<any>(null);
-  const [currentWeekNumber, setCurrentWeekNumber] = useState<number>(1);
-  const [showAddWeekDialog, setShowAddWeekDialog] = useState(false);
 
   // Form setup
   const scheduleForm = useForm<WeekScheduleUpdateForm>({
