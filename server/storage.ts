@@ -1035,14 +1035,10 @@ class DatabaseStorage {
 
     // Create the new week linked to the block
     const newWeekData = {
-      ...sourceWeek,
       scheduleBlockId,
       weekNumber,
-      name: `${sourceWeek.name} (Week ${weekNumber})`,
+      templateId: sourceWeek.templateId,
     };
-    delete (newWeekData as any).id;
-    delete (newWeekData as any).createdAt;
-    delete (newWeekData as any).updatedAt;
 
     const [newWeek] = await db.insert(weekSchedules).values(newWeekData).returning();
 
@@ -1523,8 +1519,46 @@ class DatabaseStorage {
   }
 
   async getWeekSchedules(locationId?: number): Promise<WeekSchedule[]> {
-    // near-future-removal: weeks table doesn't have locationId - location filtering via scheduleBlocks join needed
+    if (locationId) {
+      return await db.select({ 
+        id: weekSchedules.id,
+        scheduleBlockId: weekSchedules.scheduleBlockId,
+        weekNumber: weekSchedules.weekNumber,
+        templateId: weekSchedules.templateId,
+        createdAt: weekSchedules.createdAt,
+        updatedAt: weekSchedules.updatedAt
+      })
+      .from(weekSchedules)
+      .innerJoin(scheduleBlocks, eq(weekSchedules.scheduleBlockId, scheduleBlocks.id))
+      .where(eq(scheduleBlocks.locationId, locationId));
+    }
     return await db.select().from(weekSchedules);
+  }
+
+  async getWeekSchedulesByScheduleBlock(scheduleBlockId: number): Promise<WeekSchedule[]> {
+    return await db.select().from(weekSchedules)
+      .where(eq(weekSchedules.scheduleBlockId, scheduleBlockId))
+      .orderBy(weekSchedules.weekNumber);
+  }
+
+  // Schedule Blocks
+  async getScheduleBlocks(): Promise<ScheduleBlock[]> {
+    return await db.select().from(scheduleBlocks).orderBy(scheduleBlocks.id);
+  }
+
+  async getScheduleBlock(id: number): Promise<ScheduleBlock | undefined> {
+    const [scheduleBlock] = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id));
+    return scheduleBlock || undefined;
+  }
+
+  async createScheduleBlock(scheduleBlock: InsertScheduleBlock): Promise<ScheduleBlock> {
+    const [created] = await db.insert(scheduleBlocks).values(scheduleBlock).returning();
+    return created;
+  }
+
+  async updateScheduleBlock(id: number, updates: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined> {
+    const [updated] = await db.update(scheduleBlocks).set(updates).where(eq(scheduleBlocks.id, id)).returning();
+    return updated;
   }
 
   async getWeekScheduleById(id: number): Promise<WeekSchedule | undefined> {

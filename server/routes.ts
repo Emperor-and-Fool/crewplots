@@ -1179,20 +1179,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const frameId = req.query.frameId ? parseInt(req.query.frameId as string) : undefined;
       
       if (frameId) {
-        console.log(`🔍 FRAME QUERY - Fetching schedules for frame: ${frameId}`);
-        // Get frame data and all week schedules in this frame
-        const frame = await storage.getMultiWeekFrame(frameId);
-        if (!frame) {
-          return res.status(404).json({ error: "Frame not found" });
+        console.log(`🔍 SCHEDULE BLOCK QUERY - Fetching schedules for block: ${frameId}`);
+        // Get schedule block data and all week schedules in this block
+        const scheduleBlock = await storage.getScheduleBlock(frameId);
+        if (!scheduleBlock) {
+          return res.status(404).json({ error: "Schedule block not found" });
         }
         
-        const weekSchedules = await storage.getWeekSchedulesByFrame(frameId);
-        console.log(`🔍 FRAME QUERY - Found ${weekSchedules.length} schedules in frame`);
+        const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(frameId);
+        console.log(`🔍 SCHEDULE BLOCK QUERY - Found ${weekSchedules.length} schedules in block`);
         
         res.json({
-          frame,
+          scheduleBlock,
           weekSchedules,
-          isFrameMode: true
+          isScheduleBlockMode: true
         });
       } else {
         // Standard location-based query
