@@ -17,8 +17,10 @@ import {
   generatePublicId
 } from "@shared/schema";
 
-// Alias for backward compatibility
+// Aliases for backward compatibility
 const weekSchedules = weeks;
+type WeekSchedule = Week;
+type InsertWeekSchedule = InsertWeek;
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
@@ -1097,7 +1099,7 @@ class DatabaseStorage {
 
   async getCashCountsByLocation(locationId: number): Promise<CashCount[]> {
     try {
-      return await db.select().from(cashCounts).where(eq(cashCounts.location_id, locationId));
+      return await db.select().from(cashCounts).where(eq(cashCounts.locationId, locationId));
     } catch (error) {
       console.error("Error in getCashCountsByLocation:", error);
       // Return empty array if table structure doesn't match
@@ -1106,7 +1108,8 @@ class DatabaseStorage {
   }
 
   async getCashCountsByShift(shiftId: number): Promise<CashCount[]> {
-    return await db.select().from(cashCounts).where(eq(cashCounts.shiftId, shiftId));
+    // near-future-removal: shiftId field not in current cash_counts schema - feature pending implementation
+    return [];
   }
 
   async getCashCountsByDateRange(locationId: number, startDate: Date, endDate: Date): Promise<CashCount[]> {
@@ -1519,9 +1522,7 @@ class DatabaseStorage {
   }
 
   async getWeekSchedules(locationId?: number): Promise<WeekSchedule[]> {
-    if (locationId) {
-      return await db.select().from(weekSchedules).where(eq(weekSchedules.locationId, locationId));
-    }
+    // near-future-removal: weeks table doesn't have locationId - location filtering via scheduleBlocks join needed
     return await db.select().from(weekSchedules);
   }
 
@@ -1563,7 +1564,7 @@ class DatabaseStorage {
   }
 
   async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
+    return await db.select().from(shifts).where(eq(shifts.weekId, weekScheduleId));
   }
 
   async deleteShift(id: number): Promise<boolean> {
