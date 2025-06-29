@@ -541,7 +541,7 @@ export default function SchedulerEditPage() {
     return () => {
       if (draftShiftId) {
         // Cleanup draft when leaving the page
-        apiRequest('DELETE', `/api/shifts/${draftShiftId}`).catch(console.warn);
+        apiRequest('DELETE', `/api/scheduler/shifts/${draftShiftId}`).catch(console.warn);
       }
     };
   }, [draftShiftId]);
@@ -578,11 +578,11 @@ export default function SchedulerEditPage() {
 
   const deleteShiftMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest('DELETE', `/api/shifts/${shiftId}`);
+      return apiRequest('DELETE', `/api/scheduler/shifts/${shiftId}`);
     },
     onSuccess: () => {
       // Invalidate the week schedule shifts query
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', scheduleId, 'shifts'] });
       toast({
         title: "Shift deleted successfully",
         description: "The shift has been removed from the schedule"
@@ -790,7 +790,7 @@ export default function SchedulerEditPage() {
         });
 
         // Refresh data to get updated schedule
-        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', scheduleId] });
 
         // Now copy this week to create week 2
         await copyWeekToFrameMutation.mutateAsync({
