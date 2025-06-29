@@ -116,29 +116,35 @@ export class ValidationPackageService {
     const warnings: string[] = [];
 
     try {
-      // Validate schedule block
-      const scheduleBlockResult = scheduleBlockPackageSchema.safeParse(packageData.scheduleBlock);
+      // Validate schedule block using existing schemas
+      const scheduleBlockResult = packageData.packageType === 'create' 
+        ? insertScheduleBlockSchema.safeParse(packageData.scheduleBlock)
+        : insertScheduleBlockSchema.partial().safeParse(packageData.scheduleBlock);
       if (!scheduleBlockResult.success) {
         errors.push(...scheduleBlockResult.error.errors.map(e => `Schedule Block: ${e.message}`));
       }
 
-      // Validate week schedules
+      // Validate week schedules using existing schemas
       for (const [index, weekSchedule] of packageData.weekSchedules.entries()) {
-        const result = weekSchedulePackageSchema.safeParse(weekSchedule);
+        const result = packageData.packageType === 'create'
+          ? insertWeekScheduleSchema.safeParse(weekSchedule)
+          : insertWeekScheduleSchema.partial().safeParse(weekSchedule);
         if (!result.success) {
           errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.message}`));
         }
       }
 
-      // Validate shifts
+      // Validate shifts using existing schemas
       for (const [index, shift] of packageData.shifts.entries()) {
-        const result = shiftPackageSchema.safeParse(shift);
+        const result = packageData.packageType === 'create'
+          ? insertShiftSchema.safeParse(shift)
+          : updateShiftSchema.safeParse(shift);
         if (!result.success) {
           errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.message}`));
         }
 
         // Time validation
-        if (shift.startTime >= shift.endTime) {
+        if (shift.startTime && shift.endTime && shift.startTime >= shift.endTime) {
           errors.push(`Shift ${index + 1}: End time must be after start time`);
         }
       }
