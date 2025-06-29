@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log("Login successful, result:", data);
+
           
           if (data && data.user) {
             setUser(data.user);
@@ -244,9 +244,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: Register): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Registration data:", JSON.stringify(userData, (key, value) => 
-        key === 'password' ? '********' : value
-      ));
+
       
       // Return a Promise to handle asynchronous XMLHttpRequest
       return new Promise<boolean>((resolve) => {
