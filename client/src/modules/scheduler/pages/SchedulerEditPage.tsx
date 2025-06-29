@@ -244,9 +244,11 @@ export default function SchedulerEditPage() {
       // Default to ALL week schedules in the current schedule block for proper multi-week auto-save
       const allWeekIds = allWeekSchedules.map(ws => ws.id);
       console.log('🔧 MULTI-WEEK FIX: Setting default selected weeks to ALL weeks:', allWeekIds);
+      console.log('🔧 MULTI-WEEK FIX: Week schedules loaded:', allWeekSchedules);
+      console.log('🔧 MULTI-WEEK FIX: Schedule block ID:', scheduleBlockData?.id);
       setSelectedWeekScheduleIds(allWeekIds);
     }
-  }, [allWeekSchedules, selectedWeekScheduleIds]);
+  }, [allWeekSchedules, selectedWeekScheduleIds, scheduleBlockData]);
 
   // Function to go back to initial schedule form
   const handleBackToSchedule = () => {
