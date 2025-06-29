@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -277,30 +277,96 @@ export default function SchedulerEditPage() {
     }
   });
 
-  const createShiftMutation = useMutation({
-    mutationFn: async (data: ShiftCreationForm) => {
-      console.log('🚀 FRONTEND: Starting shift creation mutation');
-      console.log('🚀 FRONTEND: Form data received:', data);
-      console.log('🚀 FRONTEND: Current scheduleId:', scheduleId);
+  // Auto-save state management
+  const [isAutoSaving, setIsAutoSaving] = React.useState(false);
+  const [hasSaveError, setHasSaveError] = React.useState(false);
+  const [lastSavedFormData, setLastSavedFormData] = React.useState<string>('');
+  const [draftShiftId, setDraftShiftId] = React.useState<number | null>(null);
+
+  // Auto-save mutation using notes system pattern
+  const autoSaveDraftMutation = useMutation({
+    mutationFn: async (formData: ShiftCreationForm) => {
+      console.log('🔄 AUTO-SAVE: Starting auto-save for shift draft');
       
       // Generate unique group ID for shifts created together
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('🚀 FRONTEND: Generated shiftGroupId:', shiftGroupId);
       
       // Use selected week schedule IDs for shift creation, fallback to first week if none selected
       const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
-      console.log('🚀 FRONTEND: Target week schedule IDs:', targetWeekScheduleIds);
+      
+      // For auto-save, just save the first shift as draft
+      const firstWeekId = targetWeekScheduleIds[0];
+      const firstDay = formData.daysOfWeek[0];
+      
+      if (!firstWeekId || !firstDay) {
+        throw new Error('No week schedule or day selected');
+      }
+
+      const draftShift = {
+        weekScheduleId: firstWeekId,
+        shiftGroupId,
+        title: `${formData.position} - ${firstDay}`,
+        position: formData.position,
+        dayOfWeek: firstDay,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        maxSlots: formData.maxSlots,
+        subscriptionDeadline: formData.subscriptionDeadline || null,
+        competencyRequirements: formData.competencyRequirements || [],
+        status: 'draft' as const
+      };
+
+      if (draftShiftId) {
+        // Update existing draft - need PUT endpoint for shifts
+        console.log(`🔄 AUTO-SAVE: Updating existing draft ${draftShiftId}`);
+        const response = await apiRequest('PUT', `/api/shifts/${draftShiftId}`, draftShift);
+        return await response.json();
+      } else {
+        // Create new draft
+        console.log('🔄 AUTO-SAVE: Creating new draft shift');
+        const response = await apiRequest('POST', `/api/week-schedules/${firstWeekId}/shifts`, draftShift);
+        return await response.json();
+      }
+    },
+    onMutate: () => {
+      setIsAutoSaving(true);
+      setHasSaveError(false);
+    },
+    onSuccess: (savedShift) => {
+      console.log('🔄 AUTO-SAVE: Draft saved successfully', savedShift);
+      if (!draftShiftId) {
+        setDraftShiftId(savedShift.id);
+      }
+      setIsAutoSaving(false);
+      setHasSaveError(false);
+    },
+    onError: (error) => {
+      console.error('🔄 AUTO-SAVE: Failed to save draft', error);
+      setIsAutoSaving(false);
+      setHasSaveError(true);
+    }
+  });
+
+  // Final save mutation (converts draft to final shifts)
+  const finalSaveMutation = useMutation({
+    mutationFn: async (data: ShiftCreationForm) => {
+      console.log('💾 FINAL SAVE: Converting draft to final shifts');
+      
+      // Generate unique group ID for shifts created together
+      const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Use selected week schedule IDs for shift creation, fallback to first week if none selected
+      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
       
       // Generate unique batch ID for shifts created across multiple weeks
       const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('🚀 FRONTEND: Generated batchId:', batchId);
 
-      // Create shifts for each selected week and each selected day
+      // Create final shifts for each selected week and each selected day
       const shiftsToCreate = [];
       for (const weekScheduleId of targetWeekScheduleIds) {
         for (const dayOfWeek of data.daysOfWeek) {
           shiftsToCreate.push({
-            weekScheduleId: weekScheduleId, // Backend expects weekScheduleId
+            weekScheduleId: weekScheduleId,
             shiftGroupId,
             batchId,
             title: `${data.position} - ${dayOfWeek}`,
@@ -316,45 +382,50 @@ export default function SchedulerEditPage() {
         }
       }
 
-      console.log('🚀 FRONTEND: Shifts to create:', shiftsToCreate);
+      // Delete draft if exists
+      if (draftShiftId) {
+        try {
+          await apiRequest('DELETE', `/api/shifts/${draftShiftId}`);
+          console.log('💾 FINAL SAVE: Draft deleted');
+        } catch (error) {
+          console.warn('💾 FINAL SAVE: Failed to delete draft', error);
+        }
+      }
 
-      // Serial processing: create shifts one by one to avoid session conflicts
+      // Serial processing: create final shifts one by one
       const createdShifts = [];
       for (const shift of shiftsToCreate) {
         const weekScheduleId = shift.weekScheduleId;
-        console.log(`🚀 FRONTEND: Creating shift for week ${weekScheduleId}:`, shift);
-        const createdShift = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/shifts`, shift);
+        console.log(`💾 FINAL SAVE: Creating final shift for week ${weekScheduleId}:`, shift);
+        const response = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/shifts`, shift);
+        const createdShift = await response.json();
         createdShifts.push(createdShift);
       }
       
-      console.log('🚀 FRONTEND: All shifts created successfully:', createdShifts);
+      console.log('💾 FINAL SAVE: All final shifts created successfully:', createdShifts);
       return createdShifts;
     },
     onSuccess: (data) => {
-      console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
-      
-      // Invalidate both the all-shifts query and individual week schedules
+      // Invalidate cache and refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      
-      // Also invalidate individual week schedule shifts
       selectedWeekScheduleIds.forEach(weekId => {
         queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
       });
-      
-      // Force immediate refetch for real-time data updates
       refetchShifts();
       
-      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for schedule block:', scheduleId);
-      
+      // Reset form and state
       shiftForm.reset();
       setEditingShift(null);
+      setDraftShiftId(null);
+      setLastSavedFormData('');
+      
       const shiftCount = data.length;
       const weekCount = selectedWeekScheduleIds.length || 1;
-      const dayCount = shiftForm.getValues('daysOfWeek').length;
+      const dayCount = data.length / weekCount;
       
       toast({
-        title: `${shiftCount} shift${shiftCount > 1 ? 's' : ''} created successfully`,
+        title: `${shiftCount} shift${shiftCount > 1 ? 's' : ''} saved successfully`,
         description: weekCount > 1 
           ? `Created identical shifts across ${weekCount} weeks (${dayCount} day${dayCount > 1 ? 's' : ''} each)`
           : "Your shifts have been added to the schedule"
@@ -362,12 +433,46 @@ export default function SchedulerEditPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create shifts",
+        title: "Failed to save shifts",
         description: error.message,
         variant: "destructive"
       });
     }
   });
+
+  // Auto-save effect with debouncing (following notes system pattern)
+  React.useEffect(() => {
+    const subscription = shiftForm.watch((formData) => {
+      const formDataString = JSON.stringify(formData);
+      
+      // Skip if form data hasn't changed or is empty
+      if (formDataString === lastSavedFormData || !formData.position || !formData.startTime || !formData.endTime || !formData.daysOfWeek || formData.daysOfWeek.length === 0) {
+        return;
+      }
+
+      const autoSaveTimer = setTimeout(() => {
+        if (formDataString !== lastSavedFormData) {
+          console.log('🔄 AUTO-SAVE: Form changed, triggering auto-save');
+          setLastSavedFormData(formDataString);
+          autoSaveDraftMutation.mutate(formData);
+        }
+      }, 2000); // Auto-save after 2 seconds of inactivity
+
+      return () => clearTimeout(autoSaveTimer);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [lastSavedFormData, autoSaveDraftMutation]);
+
+  // Cleanup draft on unmount
+  React.useEffect(() => {
+    return () => {
+      if (draftShiftId) {
+        // Cleanup draft when leaving the page
+        apiRequest('DELETE', `/api/shifts/${draftShiftId}`).catch(console.warn);
+      }
+    };
+  }, [draftShiftId]);
 
   const handleScheduleSubmit = async (data: WeekScheduleUpdateForm) => {
     // Get the latest isActive value from basicInfoForm since that's where the Switch is connected
@@ -380,16 +485,13 @@ export default function SchedulerEditPage() {
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
-    console.log('🎯 FRONTEND: handleShiftSubmit called with data:', data);
-    console.log('🎯 FRONTEND: editingShift state:', editingShift);
-    console.log('🎯 FRONTEND: createShiftMutation.isPending:', createShiftMutation.isPending);
+    console.log('💾 FRONTEND: handleShiftSubmit called with data:', data);
+    console.log('💾 FRONTEND: editingShift state:', editingShift);
+    console.log('💾 FRONTEND: finalSaveMutation.isPending:', finalSaveMutation.isPending);
     
     // In edit mode, we should NOT create new shifts when editing existing schedule
-    // This prevents the same duplicate creation issue we had with the messaging system
     if (editingShift) {
-      console.log('🎯 FRONTEND: In edit mode - showing toast and returning');
-      // If we're editing an existing shift, update it instead of creating new ones
-      // This prevents duplicate shifts from being created during edit operations
+      console.log('💾 FRONTEND: In edit mode - showing toast and returning');
       toast({
         title: "Edit Mode Active",
         description: "Click-to-edit functionality is for viewing shift details. To modify shifts, use individual shift management.",
@@ -398,10 +500,10 @@ export default function SchedulerEditPage() {
       return;
     }
     
-    console.log('🎯 FRONTEND: Not in edit mode - proceeding with shift creation');
-    console.log('🎯 FRONTEND: Calling createShiftMutation.mutate with data:', data);
-    // Only create new shifts when explicitly adding new ones to the schedule
-    createShiftMutation.mutate(data);
+    console.log('💾 FRONTEND: Not in edit mode - proceeding with final save');
+    console.log('💾 FRONTEND: Calling finalSaveMutation.mutate with data:', data);
+    // Convert draft to final shifts
+    finalSaveMutation.mutate(data);
   };
 
   const deleteShiftMutation = useMutation({
@@ -1190,18 +1292,42 @@ export default function SchedulerEditPage() {
                           </div>
                         </div>
 
+                        {/* Auto-save status indicator */}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                          <div className="flex items-center gap-2">
+                            {isAutoSaving ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent"></div>
+                                <span>Auto-saving...</span>
+                              </>
+                            ) : hasSaveError ? (
+                              <>
+                                <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                                <span>Auto-save failed</span>
+                              </>
+                            ) : draftShiftId ? (
+                              <>
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                <span>Draft saved</span>
+                              </>
+                            ) : (
+                              <span>Fill form to auto-save</span>
+                            )}
+                          </div>
+                        </div>
+
                         <Button 
                           type="submit" 
                           className="w-full"
-                          disabled={createShiftMutation.isPending}
+                          disabled={finalSaveMutation.isPending}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {createShiftMutation.isPending ? (
-                            "Saving Shifts..."
+                          {finalSaveMutation.isPending ? (
+                            "Finalizing Shifts..."
                           ) : (
                             <>
                               <Plus className="h-4 w-4 mr-2" />
-                              Save Shifts
+                              Finalize Shifts
                             </>
                           )}
                         </Button>
