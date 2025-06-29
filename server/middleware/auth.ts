@@ -19,34 +19,34 @@ declare module 'express-session' {
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        console.log("Auth middleware - Checking authentication");
-        console.log("Auth middleware - isAuthenticated:", req.isAuthenticated());
-        console.log("Auth middleware - Session:", req.session);
-        console.log("Auth middleware - User:", req.user ? `Found: ${(req.user as any).username}` : 'None');
+        console.log("Auth middleware - Checking session authentication");
+        console.log("Auth middleware - Session ID:", req.sessionID || 'none');
+        console.log("Auth middleware - Session data:", req.session);
         
-        // When using passport, we can simply use isAuthenticated() method
-        if (!req.isAuthenticated()) {
-            console.log("Not authenticated with Passport");
+        // Check if user is logged in via session (our current working approach)
+        if (!req.session?.userId || !req.session?.loggedIn) {
+            console.log("No active session found");
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
 
-        // Passport already attaches the user to req.user
-        // We just need to verify it's valid
-        const user = req.user as any;
-        if (!user || !user.id) {
-            console.log("Invalid user object in session");
-            req.logout((err) => {
+        // Get user from storage using session userId
+        const user = await storage.getUser(req.session.userId);
+        if (!user) {
+            console.log("User not found for session userId:", req.session.userId);
+            // Clear invalid session
+            req.session.destroy((err) => {
                 if (err) {
-                    console.error("Error logging out:", err);
+                    console.error("Error destroying session:", err);
                 }
             });
             res.status(401).json({ message: "Invalid session - Please log in again" });
             return;
         }
 
-        console.log("User authenticated successfully:", (req.user as any).username);
-        // User is already attached to the request by Passport
+        // Attach user to request for use in route handlers
+        req.user = user;
+        console.log("User authenticated successfully:", user.username, "Role:", user.role);
         next();
     } catch (error) {
         console.error("Authentication error:", error);
