@@ -97,11 +97,11 @@ export default function SchedulerEditPage() {
 
   // Fetch schedule block data
   const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
-    queryKey: ['/api/schedule-blocks', id],
+    queryKey: ['/api/scheduler/schedule-blocks', id],
     queryFn: async () => {
       console.log('🔍 FRONTEND: Fetching schedule block with ID:', id);
       console.log('🔍 FRONTEND: Permissions check - canEditSchedules:', permissions.canEditSchedules);
-      const response = await fetch(`/api/schedule-blocks/${id}`, {
+      const response = await fetch(`/api/scheduler/schedule-blocks/${id}`, {
         credentials: 'include'
       });
       console.log('🔍 FRONTEND: Schedule block response status:', response.status, response.statusText);
@@ -409,9 +409,9 @@ export default function SchedulerEditPage() {
       setHasSaveError(false);
       
       // Invalidate cache to show draft shifts in preview across all weeks
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'] });
       selectedWeekScheduleIds.forEach(weekId => {
-        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', weekId, 'shifts'] });
       });
       refetchShifts();
     },
