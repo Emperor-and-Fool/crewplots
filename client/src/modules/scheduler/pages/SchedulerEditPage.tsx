@@ -57,7 +57,7 @@ export default function SchedulerEditPage() {
   const permissions = useSchedulerPermissions();
   
   // Schedule block-based state
-  const [selectedWeekScheduleIds, setSelectedWeekScheduleIds] = useState<number[]>([]);
+  const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
@@ -212,13 +212,13 @@ export default function SchedulerEditPage() {
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
 
-  // Set default selected weeks when allWeekSchedules loads
+  // Set default selected week when allWeekSchedules loads
   useEffect(() => {
-    if (allWeekSchedules.length > 0 && selectedWeekScheduleIds.length === 0) {
-      // Default to all week schedules selected
-      setSelectedWeekScheduleIds(allWeekSchedules.map(ws => ws.id));
+    if (allWeekSchedules.length > 0 && selectedWeekScheduleId === null) {
+      // Default to the first week schedule
+      setSelectedWeekScheduleId(allWeekSchedules[0].id);
     }
-  }, [allWeekSchedules, selectedWeekScheduleIds]);
+  }, [allWeekSchedules, selectedWeekScheduleId]);
 
   // Function to go back to initial schedule form
   const handleBackToSchedule = () => {
