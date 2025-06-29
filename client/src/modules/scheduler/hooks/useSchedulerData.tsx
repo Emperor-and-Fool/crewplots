@@ -5,9 +5,9 @@ import type { WeekScheduleWithShifts, WeekScheduleFormData, ShiftFormData } from
 // Data fetching hooks
 export const useWeekSchedules = () => {
   return useQuery({
-    queryKey: ['/api/week-schedules'],
+    queryKey: ['/api/scheduler/week-schedules'],
     queryFn: async () => {
-      const response = await fetch('/api/week-schedules');
+      const response = await fetch('/api/scheduler/week-schedules');
       if (!response.ok) throw new Error('Failed to fetch week schedules');
       return response.json();
     }

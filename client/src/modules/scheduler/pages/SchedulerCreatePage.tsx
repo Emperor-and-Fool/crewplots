@@ -87,13 +87,13 @@ export default function SchedulerCreatePage() {
   });
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ['/api/week-schedules', currentWeekSchedule?.id, 'shifts'],
+    queryKey: ['/api/scheduler/week-schedules', currentWeekSchedule?.id, 'shifts'],
     enabled: !!currentWeekSchedule?.id
   });
 
   const createWeekScheduleMutation = useMutation({
     mutationFn: async (data: WeekScheduleCreationForm) => {
-      return apiRequest('POST', '/api/week-schedules', data);
+      return apiRequest('POST', '/api/scheduler/week-schedules', data);
     },
     onSuccess: (newSchedule) => {
       setCurrentWeekSchedule(newSchedule);
@@ -124,10 +124,10 @@ export default function SchedulerCreatePage() {
         status: 'open'
       }));
       
-      return apiRequest('POST', `/api/week-schedules/${currentWeekSchedule.id}/shifts`, { shifts: shiftsToCreate });
+      return apiRequest('POST', `/api/scheduler/week-schedules/${currentWeekSchedule.id}/shifts`, { shifts: shiftsToCreate });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', currentWeekSchedule.id, 'shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', currentWeekSchedule.id, 'shifts'] });
       shiftForm.reset();
       toast({
         title: "Shifts created successfully",

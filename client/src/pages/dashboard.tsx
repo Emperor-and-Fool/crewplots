@@ -51,9 +51,9 @@ export default function Dashboard() {
 
   // Fetch shifts for the active week schedule
   const { data: shifts } = useQuery({
-    queryKey: ['/api/week-schedules', activeWeekSchedule?.id, 'shifts'],
+    queryKey: ['/api/scheduler/week-schedules', activeWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
-      const response = await fetch(`/api/week-schedules/${activeWeekSchedule.id}/shifts`, {
+      const response = await fetch(`/api/scheduler/week-schedules/${activeWeekSchedule.id}/shifts`, {
         credentials: 'include'
       });
       if (!response.ok) {

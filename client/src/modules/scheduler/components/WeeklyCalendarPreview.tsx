@@ -177,7 +177,7 @@ export default function WeeklyCalendarPreview({
     setIsAddingWeek(true);
     try {
       // Create a new week schedule based on the current one
-      const response = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/copy`, {
+      const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekScheduleId}/copy`, {
         weekNumber: weekCount + 1
       });
       
