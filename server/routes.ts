@@ -38,7 +38,7 @@ function hasPermission(userRole: User['role'], permission: string): boolean {
 import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
 import { authenticateUser, detectLegacyAuth } from './middleware/auth';
 import path from "path";
-import authRoutes from './routes/auth';
+import authRoutes from './routes/auth-routes';
 import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
 // Redis routes moved to backup - using single Redis implementation
