@@ -55,11 +55,6 @@ export default function SchedulerEditPage() {
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   
-  // Debug logging
-  console.log('🔍 SCHEDULER EDIT DEBUG: ID from params:', id);
-  console.log('🔍 SCHEDULER EDIT DEBUG: User:', user);
-  console.log('🔍 SCHEDULER EDIT DEBUG: Permissions:', permissions);
-  
   // Schedule block-based state
   const [selectedWeekScheduleId, setSelectedWeekScheduleId] = useState<number | null>(null);
   const [hasBeenEdited, setHasBeenEdited] = useState(false);
@@ -108,7 +103,7 @@ export default function SchedulerEditPage() {
       console.log('🔍 FRONTEND: Schedule block data received:', data);
       return data;
     },
-    enabled: !!id, // Remove permissions check for debugging
+    enabled: !!id && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });
