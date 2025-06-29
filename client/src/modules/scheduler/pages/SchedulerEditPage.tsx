@@ -1414,21 +1414,9 @@ export default function SchedulerEditPage() {
                           </div>
                         </div>
 
-                        <Button 
-                          type="submit" 
-                          className="w-full"
-                          disabled={finalSaveMutation.isPending}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {finalSaveMutation.isPending ? (
-                            "Finalizing Shifts..."
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Finalize Shifts
-                            </>
-                          )}
-                        </Button>
+                        <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg bg-muted/20">
+                          Draft shifts are automatically saved. Go to the Schedule tab to finalize them using the validation framework.
+                        </div>
                       </form>
                     </Form>
                   </CardContent>
