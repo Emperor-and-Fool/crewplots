@@ -21,6 +21,7 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
+import MultiWeekCalendarPreview from '../components/MultiWeekCalendarPreview';
 
 // Schema for week schedule update form
 const weekScheduleUpdateSchema = z.object({
@@ -125,6 +126,27 @@ export default function SchedulerEditPage() {
     enabled: permissions.canEditSchedules,
     staleTime: 10 * 60 * 1000, // 10 minutes cache for locations
     gcTime: 60 * 60 * 1000, // 1 hour in memory
+  });
+
+  // Fetch all week schedules for this schedule block
+  const { data: allWeekSchedules = [], isLoading: weekSchedulesLoading } = useQuery({
+    queryKey: ['/api/week-schedules', 'frameId', scheduleId],
+    queryFn: async () => {
+      console.log('🔍 WEEK SCHEDULES QUERY: Fetching all weeks for schedule block:', scheduleId);
+      const response = await fetch(`/api/week-schedules?frameId=${scheduleId}`, {
+        credentials: 'include'
+      });
+      console.log('🔍 WEEK SCHEDULES QUERY: Response status:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error('Failed to fetch week schedules');
+      }
+      const data = await response.json();
+      console.log('🔍 WEEK SCHEDULES QUERY: Week schedules data received:', data);
+      return data.weekSchedules || [];
+    },
+    enabled: !!scheduleId && permissions.canEditSchedules,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Individual fetch for shifts - following CrewMemberProfile pattern
@@ -1062,9 +1084,10 @@ export default function SchedulerEditPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <WeeklyCalendarPreview 
-                      shifts={shifts as any[]}
-                      weekScheduleName={existingSchedule?.name || ''}
+                    <MultiWeekCalendarPreview 
+                      scheduleBlockId={parseInt(scheduleId)}
+                      scheduleBlockName={existingSchedule?.name || ''}
+                      weekSchedules={allWeekSchedules}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
