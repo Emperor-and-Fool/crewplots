@@ -392,11 +392,11 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (copiedWeek) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/multi-week-frames', multiWeekFrame?.id, 'weeks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', id] });
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
-        description: `Week ${copiedWeek.weekNumber} added to multi-week frame`
+        description: `Week ${copiedWeek.weekNumber} added to schedule`
       });
       // Stay on current editor - don't navigate away
       // The user wants to see unified multi-week editing
@@ -459,15 +459,8 @@ export default function SchedulerEditPage() {
       };
 
       try {
-        const frame = await createMultiWeekFrameMutation.mutateAsync(frameData);
-        
-        // Update the current schedule to be part of this frame as week 1
-        await updateWeekScheduleMutation.mutateAsync({
-          ...actualScheduleData,
-          multiWeekFrameId: frame.id,
-          weekNumber: 1,
-          name: `${actualScheduleData.name} (Week 1)`
-        });
+        // Update the schedule block with the new data
+        await updateScheduleBlockMutation.mutateAsync(frameData);
 
         // Refresh data to get updated schedule
         queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
@@ -530,7 +523,7 @@ export default function SchedulerEditPage() {
     );
   }
 
-  if (isLoading || (!existingSchedule && !currentWeekSchedule)) {
+  if (isLoading || !existingSchedule) {
     return (
       <div className="container mx-auto p-6">
         <Card>
@@ -544,7 +537,7 @@ export default function SchedulerEditPage() {
     );
   }
 
-  if (scheduleError) {
+  if (error) {
     return (
       <div className="container mx-auto p-6">
         <Card>
