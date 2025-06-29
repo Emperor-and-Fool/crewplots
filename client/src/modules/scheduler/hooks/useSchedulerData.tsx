@@ -16,10 +16,10 @@ export const useWeekSchedules = () => {
 
 export const useWeekSchedule = (id: number | null) => {
   return useQuery({
-    queryKey: ['/api/week-schedules', id],
+    queryKey: ['/api/scheduler/week-schedules', id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await fetch(`/api/week-schedules/${id}`);
+      const response = await fetch(`/api/scheduler/week-schedules/${id}`);
       if (!response.ok) throw new Error('Failed to fetch week schedule');
       return response.json();
     },
@@ -29,10 +29,10 @@ export const useWeekSchedule = (id: number | null) => {
 
 export const useWeekScheduleShifts = (weekScheduleId: number | null) => {
   return useQuery({
-    queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'],
+    queryKey: ['/api/scheduler/week-schedules', weekScheduleId, 'shifts'],
     queryFn: async () => {
       if (!weekScheduleId) return [];
-      const response = await fetch(`/api/week-schedules/${weekScheduleId}/shifts`);
+      const response = await fetch(`/api/scheduler/week-schedules/${weekScheduleId}/shifts`);
       if (!response.ok) throw new Error('Failed to fetch shifts');
       return response.json();
     },
@@ -44,10 +44,10 @@ export const useWeekScheduleShifts = (weekScheduleId: number | null) => {
 export const useCreateWeekSchedule = () => {
   return useMutation({
     mutationFn: async (data: WeekScheduleFormData) => {
-      return apiRequest('POST', '/api/week-schedules', data);
+      return apiRequest('POST', '/api/scheduler/week-schedules', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
     }
   });
 };
@@ -55,11 +55,11 @@ export const useCreateWeekSchedule = () => {
 export const useUpdateWeekSchedule = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<WeekScheduleFormData> }) => {
-      return apiRequest('PATCH', `/api/week-schedules/${id}`, data);
+      return apiRequest('PATCH', `/api/scheduler/week-schedules/${id}`, data);
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', id] });
     }
   });
 };
@@ -67,11 +67,11 @@ export const useUpdateWeekSchedule = () => {
 export const useCreateShift = () => {
   return useMutation({
     mutationFn: async (data: ShiftFormData & { weekScheduleId: number }) => {
-      return apiRequest('POST', '/api/shifts', data);
+      return apiRequest('POST', '/api/scheduler/shifts', data);
     },
     onSuccess: (_, { weekScheduleId }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', weekScheduleId, 'shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
     }
   });
 };
@@ -79,10 +79,10 @@ export const useCreateShift = () => {
 export const useUpdateShift = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ShiftFormData> }) => {
-      return apiRequest('PATCH', `/api/shifts/${id}`, data);
+      return apiRequest('PATCH', `/api/scheduler/shifts/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
     }
   });
 };
