@@ -392,7 +392,7 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (copiedWeek) => {
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/multi-week-frames', multiWeekFrame?.id, 'weeks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
@@ -459,7 +459,8 @@ export default function SchedulerEditPage() {
       };
 
       try {
-        const frame = await createMultiWeekFrameMutation.mutateAsync(frameData);
+        // Schedule block architecture - no frame creation needed
+        const frame = { id: parseInt(scheduleId!) };
         
         // Update the current schedule to be part of this frame as week 1
         await updateWeekScheduleMutation.mutateAsync({
@@ -544,7 +545,7 @@ export default function SchedulerEditPage() {
     );
   }
 
-  if (error) {
+  if (scheduleBlockError) {
     return (
       <div className="container mx-auto p-6">
         <Card>
@@ -695,7 +696,7 @@ export default function SchedulerEditPage() {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  {createMultiWeekFrameMutation.isPending || copyWeekToFrameMutation.isPending 
+                  {updateScheduleBlockMutation.isPending || copyWeekToFrameMutation.isPending 
                     ? "Adding Week..." 
                     : "Add Week"
                   }
