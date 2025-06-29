@@ -1083,10 +1083,10 @@ export default function SchedulerEditPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <WeeklyCalendarPreview 
-                      shifts={shifts as any[]}
-                      weekScheduleName={existingSchedule?.name || ''}
-                      weekScheduleId={scheduleId ? parseInt(scheduleId) : undefined}
+                    <MultiWeekCalendarPreview 
+                      scheduleBlockId={scheduleBlockData?.id || 0}
+                      scheduleBlockName={scheduleBlockData?.name || ''}
+                      weekSchedules={allWeekSchedules}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
