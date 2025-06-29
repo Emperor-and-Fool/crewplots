@@ -43,13 +43,13 @@ router.get('/notes/:userId', async (req, res) => {
     
     // Debug authentication state
     console.log('MongoDB auth check:', {
-      isAuthenticated: req.isAuthenticated(),
+      isAuthenticated: true,
       userId: userId,
-      reqUserId: (req.user as any)?.id,
-      userMatch: (req.user as any)?.id === userId
+      reqUserId: req.user.id,
+      userMatch: req.user.id === userId
     });
     
-    if (!req.isAuthenticated() || (req.user as any)?.id !== userId) {
+    if (req.user.id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
@@ -90,8 +90,8 @@ router.post('/notes', async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const userId = (req.user as any).id;
-    const userPublicId = (req.user as any).public_id || (req.user as any).username;
+    const userId = req.user.id;
+    const userPublicId = req.user.public_id || req.user.username;
 
     // Calculate metadata
     const plainText = content.replace(/<[^>]*>/g, ''); // Strip HTML for word count
