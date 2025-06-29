@@ -279,6 +279,46 @@ export default function SchedulerEditPage() {
     }
   });
 
+  // Shift update mutation (for editing existing shifts)
+  const updateShiftMutation = useMutation({
+    mutationFn: async ({ shiftId, shiftData }: { shiftId: number; shiftData: ShiftCreationForm }) => {
+      console.log('💾 FRONTEND: Updating existing shift', shiftId, 'with data:', shiftData);
+      return apiRequest('PUT', `/api/shifts/${shiftId}`, {
+        position: shiftData.position,
+        startTime: shiftData.startTime,
+        endTime: shiftData.endTime,
+        maxSlots: shiftData.maxSlots,
+        subscriptionDeadline: shiftData.subscriptionDeadline || null,
+        competencyRequirements: shiftData.competencyRequirements || []
+      });
+    },
+    onSuccess: () => {
+      // Invalidate cache and refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      selectedWeekScheduleIds.forEach(weekId => {
+        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+      });
+      refetchShifts();
+      
+      // Reset editing state
+      setEditingShift(null);
+      shiftForm.reset();
+      
+      toast({
+        title: "Shift updated successfully",
+        description: "Your changes have been saved"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update shift",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   // Auto-save state management
   const [isAutoSaving, setIsAutoSaving] = React.useState(false);
   const [hasSaveError, setHasSaveError] = React.useState(false);
@@ -492,21 +532,19 @@ export default function SchedulerEditPage() {
     console.log('💾 FRONTEND: editingShift state:', editingShift);
     console.log('💾 FRONTEND: finalSaveMutation.isPending:', finalSaveMutation.isPending);
     
-    // In edit mode, we should NOT create new shifts when editing existing schedule
     if (editingShift) {
-      console.log('💾 FRONTEND: In edit mode - showing toast and returning');
-      toast({
-        title: "Edit Mode Active",
-        description: "Click-to-edit functionality is for viewing shift details. To modify shifts, use individual shift management.",
-        variant: "default"
+      // Edit mode: update existing shift
+      console.log('💾 FRONTEND: In edit mode - updating existing shift');
+      updateShiftMutation.mutate({
+        shiftId: editingShift.id,
+        shiftData: data
       });
-      return;
+    } else {
+      // Create mode: create new shifts
+      console.log('💾 FRONTEND: Not in edit mode - proceeding with final save');
+      console.log('💾 FRONTEND: Calling finalSaveMutation.mutate with data:', data);
+      finalSaveMutation.mutate(data);
     }
-    
-    console.log('💾 FRONTEND: Not in edit mode - proceeding with final save');
-    console.log('💾 FRONTEND: Calling finalSaveMutation.mutate with data:', data);
-    // Convert draft to final shifts
-    finalSaveMutation.mutate(data);
   };
 
   const deleteShiftMutation = useMutation({

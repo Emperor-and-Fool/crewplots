@@ -13,39 +13,13 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Session debugging middleware (only in development)
+// Authentication debugging (minimal, only in development)
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
-    // Track session creation and changes
-    const originalSessionID = req.sessionID;
-    const incomingCookies = req.headers.cookie;
-    
-    if (req.path.includes('auth') || req.path.includes('login')) {
-      console.log(`🔍 SESSION DEBUG [${req.method} ${req.path}]:`, {
-        sessionID: req.sessionID,
-        incomingCookies: incomingCookies ? incomingCookies.substring(0, 100) + '...' : 'none',
-        hasSession: !!req.session,
-        isNewSession: req.session?.isNew,
-        passportUser: req.session?.passport?.user ? 'present' : 'none'
-      });
-    }
-    
-    // Track if sessionID changes during request
-    res.on('finish', () => {
-      if (originalSessionID !== req.sessionID && (req.path.includes('auth') || req.path.includes('login'))) {
-        console.log(`🔄 SESSION CHANGED during ${req.method} ${req.path}:`, {
-          from: originalSessionID,
-          to: req.sessionID,
-          setCookieHeader: res.getHeaders()['set-cookie']
-        });
-      }
-    });
-    
     if (req.path.includes('login') && req.method === 'POST') {
-      console.log('DEBUG Login attempt:', { 
+      console.log('Login attempt:', { 
         method: req.method, 
-        contentType: req.get('Content-Type'),
-        hasBody: !!req.body && Object.keys(req.body).length > 0 
+        contentType: req.get('Content-Type')
       });
     }
     next();

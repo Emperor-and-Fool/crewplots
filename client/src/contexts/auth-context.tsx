@@ -44,14 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Debug: Log current cookies before auth check
-        console.log('🔍 CLIENT AUTH DEBUG: Starting auth check');
-        const currentCookies = document.cookie;
-        console.log('🔍 CLIENT COOKIES:', currentCookies);
-        
         // Skip auth check if no cookies exist (means no login has occurred)
+        // This prevents creating empty sessions before authentication
+        const currentCookies = document.cookie;
         if (!currentCookies || currentCookies.trim() === '') {
-          console.log('🔍 CLIENT AUTH DEBUG: No cookies found, skipping auth check');
           setIsAuthenticated(false);
           setUser(null);
           setIsLoading(false);
