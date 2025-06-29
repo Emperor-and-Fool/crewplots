@@ -507,9 +507,9 @@ export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 
 export const insertScheduleBlockSchema = createInsertSchema(scheduleBlocks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 // export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true, createdAt: true, updatedAt: true }); // near-future-removal: Legacy table replaced with weekSchedules
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
-export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
 export const insertShiftSubscriptionSchema = createInsertSchema(shiftSubscriptions).omit({ id: true, subscribedAt: true });
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ id: true, assignedAt: true });
