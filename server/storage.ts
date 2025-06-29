@@ -1565,7 +1565,7 @@ class DatabaseStorage {
   }
 
   async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.weekId, weekScheduleId));
+    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
   }
 
   async deleteShift(id: number): Promise<boolean> {
