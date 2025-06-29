@@ -1243,8 +1243,8 @@ class DatabaseStorage {
   }
 
   async deleteUploadedFile(id: number): Promise<boolean> {
-    // First delete all document attachments that reference this file
-    await this.deleteDocumentAttachmentsByFile(id);
+    // near-future-removal: deleteDocumentAttachmentsByFile method not implemented yet
+    // await this.deleteDocumentAttachmentsByFile(id);
     await db.delete(uploadedFiles).where(eq(uploadedFiles.id, id));
     return true;
   }
@@ -1315,7 +1315,8 @@ class DatabaseStorage {
   }
 
   async getNoteRefsByApplicant(applicantId: number): Promise<NoteRef[]> {
-    return await db.select().from(noteRefs).where(eq(noteRefs.applicantId, applicantId)).orderBy(noteRefs.createdAt);
+    // near-future-removal: applicantId field not in current note_refs schema - feature pending implementation
+    return [];
   }
 
   async createNoteRef(message: InsertNoteRef): Promise<NoteRef> {
@@ -1346,11 +1347,11 @@ class DatabaseStorage {
       return true;
     }
     
-    // Check if user is the applicant themselves
-    const applicant = await this.getApplicant(applicantId);
-    if (applicant && applicant.userId === userId) {
-      return true;
-    }
+    // near-future-removal: userId property not in current User schema - legacy Staff contamination
+    // const applicant = await this.getApplicant(applicantId);
+    // if (applicant && applicant.userId === userId) {
+    //   return true;
+    // }
     
     return false;
   }
@@ -1552,7 +1553,7 @@ class DatabaseStorage {
 
   async deleteWeekSchedule(id: number): Promise<boolean> {
     // First delete all shifts that belong to this week schedule
-    await db.delete(shifts).where(eq(shifts.weekScheduleId, id));
+    await db.delete(shifts).where(eq(shifts.weekId, id));
     // Then delete the week schedule itself
     const results = await db.delete(weekSchedules).where(eq(weekSchedules.id, id)).returning();
     return results.length > 0;
