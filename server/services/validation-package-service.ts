@@ -118,23 +118,33 @@ export class ValidationPackageService {
         }
       }
 
-      // Validate week schedules using existing schemas
+      // Validate week schedules using creation-specific logic
       if (packageData.weekSchedules && packageData.weekSchedules.length > 0) {
         packageData.weekSchedules.forEach((weekSchedule, index) => {
-          const result = packageData.packageType === 'create'
-            ? insertWeekScheduleSchema.safeParse(weekSchedule)
-            : insertWeekScheduleSchema.partial().safeParse(weekSchedule);
-          if (!result.success) {
-            errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+          if (packageData.packageType === 'create') {
+            // For creation, only validate required fields - scheduleBlockId will be set during transaction
+            if (!weekSchedule.weekNumber) {
+              errors.push(`Week Schedule ${index + 1}: weekNumber: Required`);
+            }
+            if (!weekSchedule.createdBy) {
+              errors.push(`Week Schedule ${index + 1}: createdBy: Required`);
+            }
+            // scheduleBlockId is optional during creation
+          } else {
+            // For updates, use full schema validation
+            const result = insertWeekScheduleSchema.partial().safeParse(weekSchedule);
+            if (!result.success) {
+              errors.push(...result.error.errors.map(e => `Week Schedule ${index + 1}: ${e.path.join('.')}: ${e.message}`));
+            }
           }
         });
       }
 
-      // Validate shifts using existing schemas
+      // Validate shifts using creation-specific schemas
       if (packageData.shifts && packageData.shifts.length > 0) {
         packageData.shifts.forEach((shift, index) => {
           const result = packageData.packageType === 'create'
-            ? insertShiftSchema.safeParse(shift)
+            ? createShiftSchema.safeParse(shift)
             : updateShiftSchema.safeParse(shift);
           if (!result.success) {
             errors.push(...result.error.errors.map(e => `Shift ${index + 1}: ${e.path.join('.')}: ${e.message}`));

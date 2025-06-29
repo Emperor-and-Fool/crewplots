@@ -518,11 +518,21 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, cre
 export const updateShiftSchema = insertShiftSchema.partial();
 
 // Creation-specific schemas for package validation (allow optional parent IDs)
-export const createWeekScheduleSchema = insertWeekScheduleSchema.omit({ scheduleBlockId: true }).extend({
+export const createWeekScheduleSchema = z.object({
+  weekNumber: z.number(),
+  templateId: z.number().optional(),
+  createdBy: z.number(),
   scheduleBlockId: z.number().optional() // Optional during creation, will be set by transaction
 });
 
-export const createShiftSchema = insertShiftSchema.omit({ weekScheduleId: true }).extend({
+export const createShiftSchema = z.object({
+  title: z.string(),
+  position: z.string().optional(),
+  dayOfWeek: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]),
+  startTime: z.string(),
+  endTime: z.string(),
+  maxSlots: z.number().optional(),
+  subscriptionDeadline: z.string().datetime().or(z.date()).optional(),
   weekScheduleId: z.number().optional() // Optional during creation, will be set by transaction
 });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
