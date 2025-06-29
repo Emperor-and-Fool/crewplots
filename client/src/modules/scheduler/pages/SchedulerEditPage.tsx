@@ -212,6 +212,14 @@ export default function SchedulerEditPage() {
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
 
+  // Set default selected week when allWeekSchedules loads
+  useEffect(() => {
+    if (allWeekSchedules.length > 0 && selectedWeekScheduleId === null) {
+      // Default to the first week schedule
+      setSelectedWeekScheduleId(allWeekSchedules[0].id);
+    }
+  }, [allWeekSchedules, selectedWeekScheduleId]);
+
   // Function to go back to initial schedule form
   const handleBackToSchedule = () => {
     setShowTabbedInterface(false);
@@ -255,8 +263,12 @@ export default function SchedulerEditPage() {
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('🚀 FRONTEND: Generated shiftGroupId:', shiftGroupId);
       
+      // Use selected week schedule ID for shift creation, fallback to first week if none selected
+      const targetWeekScheduleId = selectedWeekScheduleId || (allWeekSchedules.length > 0 ? allWeekSchedules[0].id : parseInt(scheduleId || '0'));
+      console.log('🚀 FRONTEND: Target week schedule ID:', targetWeekScheduleId);
+      
       const shiftsToCreate = data.daysOfWeek.map(dayOfWeek => ({
-        scheduleId: parseInt(scheduleId || '0'),
+        scheduleId: targetWeekScheduleId,
         shiftGroupId,
         title: `${data.position} - ${dayOfWeek}`, // Generate title from position and day
         position: data.position,
@@ -270,11 +282,11 @@ export default function SchedulerEditPage() {
       }));
 
       console.log('🚀 FRONTEND: Shifts to create:', shiftsToCreate);
-      console.log('🚀 FRONTEND: Making API requests to:', `/api/week-schedules/${scheduleId}/shifts`);
+      console.log('🚀 FRONTEND: Making API requests to:', `/api/week-schedules/${targetWeekScheduleId}/shifts`);
 
       const promises = shiftsToCreate.map((shift, index) => {
         console.log(`🚀 FRONTEND: Creating shift ${index + 1}:`, shift);
-        return apiRequest('POST', `/api/week-schedules/${scheduleId}/shifts`, shift);
+        return apiRequest('POST', `/api/week-schedules/${targetWeekScheduleId}/shifts`, shift);
       });
       
       console.log('🚀 FRONTEND: Executing', promises.length, 'API requests');
@@ -284,10 +296,12 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
+      // Use the selected week schedule ID for cache invalidation, with fallback
+      const targetWeekScheduleId = selectedWeekScheduleId || (allWeekSchedules.length > 0 ? allWeekSchedules[0].id : parseInt(scheduleId || '0'));
       // Force refresh the shifts query using the exact same key structure
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
-      queryClient.refetchQueries({ queryKey: ['/api/week-schedules', scheduleId, 'shifts'] });
-      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered');
+      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', targetWeekScheduleId, 'shifts'] });
+      queryClient.refetchQueries({ queryKey: ['/api/week-schedules', targetWeekScheduleId, 'shifts'] });
+      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for week schedule ID:', targetWeekScheduleId);
       
       shiftForm.reset();
       setEditingShift(null);
@@ -998,6 +1012,28 @@ export default function SchedulerEditPage() {
                             </FormItem>
                           )}
                         />
+
+                        {/* Week Selector - only show if multiple weeks */}
+                        {allWeekSchedules.length > 1 && (
+                          <div className="space-y-3">
+                            <FormLabel>Select Week</FormLabel>
+                            <Select 
+                              value={selectedWeekScheduleId?.toString() || ''} 
+                              onValueChange={(value) => setSelectedWeekScheduleId(parseInt(value))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose which week to add shifts to" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {allWeekSchedules.map((weekSchedule) => (
+                                  <SelectItem key={weekSchedule.id} value={weekSchedule.id.toString()}>
+                                    Week {weekSchedule.weekNumber}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
 
                         <div className="space-y-3">
                           <FormLabel>Days of Week</FormLabel>
