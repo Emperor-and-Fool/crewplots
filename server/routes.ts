@@ -1034,146 +1034,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-  app.delete("/api/shift-subscriptions/:id", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+  // app.delete("/api/shift-subscriptions/:id", async (req, res) => {
+  //   if (!req.user) {
+  //     return res.status(401).json({ error: "Not authenticated" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteShiftSubscription(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting shift subscription:", error);
-      res.status(500).json({ error: "Failed to delete shift subscription" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteShiftSubscription(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting shift subscription:", error);
+  //     res.status(500).json({ error: "Failed to delete shift subscription" });
+  //   }
+  // });
 
 
 
-  // Shift Assignments Management
-  app.get("/api/shift-assignments", async (req, res) => {
-    try {
-      const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
-      const assignments = await storage.getShiftAssignments(shiftId, userId);
-      res.json(assignments);
-    } catch (error) {
-      console.error("Error fetching shift assignments:", error);
-      res.status(500).json({ error: "Failed to fetch shift assignments" });
-    }
-  });
+  // MOVED TO MODULAR: Shift Assignments Management - now in /api/scheduler/assignments
+  // app.get("/api/shift-assignments", async (req, res) => {
+  //   try {
+  //     const shiftId = req.query.shiftId ? parseInt(req.query.shiftId as string) : undefined;
+  //     const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+  //     const assignments = await storage.getShiftAssignments(shiftId, userId);
+  //     res.json(assignments);
+  //   } catch (error) {
+  //     console.error("Error fetching shift assignments:", error);
+  //     res.status(500).json({ error: "Failed to fetch shift assignments" });
+  //   }
+  // });
 
-  app.post("/api/shift-assignments", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/shift-assignments", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const validatedData = insertShiftAssignmentSchema.parse({
-        ...req.body,
-        assignedBy: req.user.id
-      });
-      const assignment = await storage.createShiftAssignment(validatedData);
-      res.status(201).json(assignment);
-    } catch (error) {
-      console.error("Error creating shift assignment:", error);
-      res.status(400).json({ error: "Failed to create shift assignment" });
-    }
-  });
+  //   try {
+  //     const validatedData = insertShiftAssignmentSchema.parse({
+  //       ...req.body,
+  //       assignedBy: req.user.id
+  //     });
+  //     const assignment = await storage.createShiftAssignment(validatedData);
+  //     res.status(201).json(assignment);
+  //   } catch (error) {
+  //     console.error("Error creating shift assignment:", error);
+  //     res.status(400).json({ error: "Failed to create shift assignment" });
+  //   }
+  // });
 
-  app.put("/api/shift-assignments/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.put("/api/shift-assignments/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertShiftAssignmentSchema.parse(req.body);
-      const assignment = await storage.updateShiftAssignment(id, validatedData);
-      res.json(assignment);
-    } catch (error) {
-      console.error("Error updating shift assignment:", error);
-      res.status(400).json({ error: "Failed to update shift assignment" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const validatedData = insertShiftAssignmentSchema.parse(req.body);
+  //     const assignment = await storage.updateShiftAssignment(id, validatedData);
+  //     res.json(assignment);
+  //   } catch (error) {
+  //     console.error("Error updating shift assignment:", error);
+  //     res.status(400).json({ error: "Failed to update shift assignment" });
+  //   }
+  // });
 
-  app.delete("/api/shift-assignments/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/shift-assignments/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteShiftAssignment(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting shift assignment:", error);
-      res.status(500).json({ error: "Failed to delete shift assignment" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteShiftAssignment(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting shift assignment:", error);
+  //     res.status(500).json({ error: "Failed to delete shift assignment" });
+  //   }
+  // });
 
-  // Scheduling Windows Management
-  app.get("/api/scheduling-windows", async (req, res) => {
-    try {
-      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
-      const role = req.query.role as string | undefined;
-      const windows = await storage.getSchedulingWindows(locationId, role);
-      res.json(windows);
-    } catch (error) {
-      console.error("Error fetching scheduling windows:", error);
-      res.status(500).json({ error: "Failed to fetch scheduling windows" });
-    }
-  });
+  // MOVED TO MODULAR: Scheduling Windows Management - now in /api/scheduler/assignments
+  // app.get("/api/scheduling-windows", async (req, res) => {
+  //   try {
+  //     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+  //     const role = req.query.role as string | undefined;
+  //     const windows = await storage.getSchedulingWindows(locationId, role);
+  //     res.json(windows);
+  //   } catch (error) {
+  //     console.error("Error fetching scheduling windows:", error);
+  //     res.status(500).json({ error: "Failed to fetch scheduling windows" });
+  //   }
+  // });
 
-  app.post("/api/scheduling-windows", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/scheduling-windows", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const validatedData = insertSchedulingWindowSchema.parse({
-        ...req.body,
-        createdBy: req.user.id
-      });
-      const window = await storage.createSchedulingWindow(validatedData);
-      res.status(201).json(window);
-    } catch (error) {
-      console.error("Error creating scheduling window:", error);
-      res.status(400).json({ error: "Failed to create scheduling window" });
-    }
-  });
+  //   try {
+  //     const validatedData = insertSchedulingWindowSchema.parse({
+  //       ...req.body,
+  //       createdBy: req.user.id
+  //     });
+  //     const window = await storage.createSchedulingWindow(validatedData);
+  //     res.status(201).json(window);
+  //   } catch (error) {
+  //     console.error("Error creating scheduling window:", error);
+  //     res.status(400).json({ error: "Failed to create scheduling window" });
+  //   }
+  // });
 
-  app.put("/api/scheduling-windows/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.put("/api/scheduling-windows/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertSchedulingWindowSchema.parse(req.body);
-      const window = await storage.updateSchedulingWindow(id, validatedData);
-      res.json(window);
-    } catch (error) {
-      console.error("Error updating scheduling window:", error);
-      res.status(400).json({ error: "Failed to update scheduling window" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const validatedData = insertSchedulingWindowSchema.parse(req.body);
+  //     const window = await storage.updateSchedulingWindow(id, validatedData);
+  //     res.json(window);
+  //   } catch (error) {
+  //     console.error("Error updating scheduling window:", error);
+  //     res.status(400).json({ error: "Failed to update scheduling window" });
+  //   }
+  // });
 
-  app.delete("/api/scheduling-windows/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/scheduling-windows/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteSchedulingWindow(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting scheduling window:", error);
-      res.status(500).json({ error: "Failed to delete scheduling window" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteSchedulingWindow(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting scheduling window:", error);
+  //     res.status(500).json({ error: "Failed to delete scheduling window" });
+  //   }
+  // });
 
   // MOVED TO MODULAR: Week Schedule Management API - now in /api/scheduler/week-schedules
   // app.get("/api/week-schedules", authenticateUser, async (req, res) => {
@@ -1378,127 +1378,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-  // Get all weeks in a multi-week frame
-  app.get("/api/multi-week-frames/:id/weeks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Multi-week frames and shifts management - now in /api/scheduler/
+  // app.get("/api/multi-week-frames/:id/weeks", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const frameId = parseInt(req.params.id);
-      const weeks = await storage.getWeekSchedulesByFrame(frameId);
-      res.json(weeks);
-    } catch (error) {
-      console.error("Error fetching frame weeks:", error);
-      res.status(500).json({ error: "Failed to fetch weeks in frame" });
-    }
-  });
+  //   try {
+  //     const frameId = parseInt(req.params.id);
+  //     const weeks = await storage.getWeekSchedulesByFrame(frameId);
+  //     res.json(weeks);
+  //   } catch (error) {
+  //     console.error("Error fetching frame weeks:", error);
+  //     res.status(500).json({ error: "Failed to fetch weeks in frame" });
+  //   }
+  // });
 
-  // Update multi-week frame metadata
-  app.patch("/api/multi-week-frames/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.patch("/api/multi-week-frames/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const frameId = parseInt(req.params.id);
-      const validatedData = insertScheduleBlockSchema.omit({ createdBy: true }).partial().parse(req.body);
-      const frame = await storage.updateMultiWeekFrame(frameId, validatedData);
-      res.json(frame);
-    } catch (error) {
-      console.error("Error updating multi-week frame:", error);
-      res.status(400).json({ error: "Failed to update multi-week frame" });
-    }
-  });
+  //   try {
+  //     const frameId = parseInt(req.params.id);
+  //     const validatedData = insertScheduleBlockSchema.omit({ createdBy: true }).partial().parse(req.body);
+  //     const frame = await storage.updateMultiWeekFrame(frameId, validatedData);
+  //     res.json(frame);
+  //   } catch (error) {
+  //     console.error("Error updating multi-week frame:", error);
+  //     res.status(400).json({ error: "Failed to update multi-week frame" });
+  //   }
+  // });
 
-  app.delete("/api/week-schedules/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/week-schedules/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteWeekSchedule(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting week schedule:", error);
-      res.status(500).json({ error: "Failed to delete week schedule" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteWeekSchedule(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting week schedule:", error);
+  //     res.status(500).json({ error: "Failed to delete week schedule" });
+  //   }
+  // });
 
-  // Week Schedule Shifts API
-  app.post("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      console.log("🔄 AUTO-SAVE: Permission denied for user:", req.user.username, "role:", req.user.role);
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("🔄 AUTO-SAVE: Permission denied for user:", req.user.username, "role:", req.user.role);
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const weekScheduleId = parseInt(req.params.id);
-      console.log("🔄 AUTO-SAVE: Creating shift for week schedule:", weekScheduleId);
-      console.log("🔄 AUTO-SAVE: Request body:", req.body);
+  //   try {
+  //     const weekScheduleId = parseInt(req.params.id);
+  //     console.log("🔄 AUTO-SAVE: Creating shift for week schedule:", weekScheduleId);
+  //     console.log("🔄 AUTO-SAVE: Request body:", req.body);
       
-      const validatedData = insertShiftSchema.parse({
-        ...req.body,
-        weekScheduleId
-      });
-      console.log("🔄 AUTO-SAVE: Validated data:", validatedData);
+  //     const validatedData = insertShiftSchema.parse({
+  //       ...req.body,
+  //       weekScheduleId
+  //     });
+  //     console.log("🔄 AUTO-SAVE: Validated data:", validatedData);
       
-      const shift = await storage.createShiftForWeekSchedule(validatedData);
-      console.log("🔄 AUTO-SAVE: Created shift successfully:", shift);
-      res.status(201).json(shift);
-    } catch (error) {
-      console.error("🔄 AUTO-SAVE: Error creating shift for week schedule:", error);
-      res.status(400).json({ error: "Failed to create shift" });
-    }
-  });
+  //     const shift = await storage.createShiftForWeekSchedule(validatedData);
+  //     console.log("🔄 AUTO-SAVE: Created shift successfully:", shift);
+  //     res.status(201).json(shift);
+  //   } catch (error) {
+  //     console.error("🔄 AUTO-SAVE: Error creating shift for week schedule:", error);
+  //     res.status(400).json({ error: "Failed to create shift" });
+  //   }
+  // });
 
-  app.get("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.get("/api/week-schedules/:id/shifts", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const weekScheduleId = parseInt(req.params.id);
-      const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
-      res.json(shifts);
-    } catch (error) {
-      console.error("Error fetching shifts for week schedule:", error);
-      res.status(500).json({ error: "Failed to fetch shifts" });
-    }
-  });
+  //   try {
+  //     const weekScheduleId = parseInt(req.params.id);
+  //     const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
+  //     res.json(shifts);
+  //   } catch (error) {
+  //     console.error("Error fetching shifts for week schedule:", error);
+  //     res.status(500).json({ error: "Failed to fetch shifts" });
+  //   }
+  // });
 
-  // Delete shift endpoint
-  app.delete("/api/shifts/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/shifts/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteShift(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting shift:", error);
-      res.status(500).json({ error: "Failed to delete shift" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteShift(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting shift:", error);
+  //     res.status(500).json({ error: "Failed to delete shift" });
+  //   }
+  // });
 
-  // Delete week schedule endpoint
-  app.delete("/api/week-schedules/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/week-schedules/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteWeekSchedule(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting week schedule:", error);
-      res.status(500).json({ error: "Failed to delete week schedule" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     await storage.deleteWeekSchedule(id);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting week schedule:", error);
+  //     res.status(500).json({ error: "Failed to delete week schedule" });
+  //   }
+  // });
 
   // PUT endpoint for updating shifts (used by auto-save)
   app.put("/api/shifts/:id", async (req, res) => {
