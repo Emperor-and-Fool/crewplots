@@ -1496,146 +1496,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-  // PUT endpoint for updating shifts (used by auto-save)
-  app.put("/api/shifts/:id", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("🔄 AUTO-SAVE UPDATE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: PUT endpoint for updating shifts - now in /api/scheduler/shifts
+  // app.put("/api/shifts/:id", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("🔄 AUTO-SAVE UPDATE: Permission denied for user:", req.user?.username, "role:", req.user?.role);
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const shiftId = parseInt(req.params.id);
-      console.log("🔄 AUTO-SAVE UPDATE: Updating shift:", shiftId);
-      console.log("🔄 AUTO-SAVE UPDATE: Request body:", req.body);
+  //   try {
+  //     const shiftId = parseInt(req.params.id);
+  //     console.log("🔄 AUTO-SAVE UPDATE: Updating shift:", shiftId);
+  //     console.log("🔄 AUTO-SAVE UPDATE: Request body:", req.body);
       
-      const validatedData = insertShiftSchema.parse(req.body);
-      console.log("🔄 AUTO-SAVE UPDATE: Validated data:", validatedData);
+  //     const validatedData = insertShiftSchema.parse(req.body);
+  //     console.log("🔄 AUTO-SAVE UPDATE: Validated data:", validatedData);
       
-      const shift = await storage.updateShift(shiftId, validatedData);
-      console.log("🔄 AUTO-SAVE UPDATE: Updated shift successfully:", shift);
-      res.json(shift);
-    } catch (error) {
-      console.error("🔄 AUTO-SAVE UPDATE: Error updating shift:", error);
-      res.status(400).json({ error: "Failed to update shift" });
-    }
-  });
+  //     const shift = await storage.updateShift(shiftId, validatedData);
+  //     console.log("🔄 AUTO-SAVE UPDATE: Updated shift successfully:", shift);
+  //     res.json(shift);
+  //   } catch (error) {
+  //     console.error("🔄 AUTO-SAVE UPDATE: Error updating shift:", error);
+  //     res.status(400).json({ error: "Failed to update shift" });
+  //   }
+  // });
 
-  app.put("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Week schedule shift operations - now in /api/scheduler/
+  // app.put("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const shiftId = parseInt(req.params.shiftId);
-      const validatedData = insertShiftSchema.parse(req.body);
-      const shift = await storage.updateShift(shiftId, validatedData);
-      res.json(shift);
-    } catch (error) {
-      console.error("Error updating shift:", error);
-      res.status(400).json({ error: "Failed to update shift" });
-    }
-  });
+  //   try {
+  //     const shiftId = parseInt(req.params.shiftId);
+  //     const validatedData = insertShiftSchema.parse(req.body);
+  //     const shift = await storage.updateShift(shiftId, validatedData);
+  //     res.json(shift);
+  //   } catch (error) {
+  //     console.error("Error updating shift:", error);
+  //     res.status(400).json({ error: "Failed to update shift" });
+  //   }
+  // });
 
-  app.delete("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.delete("/api/week-schedules/:scheduleId/shifts/:shiftId", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const shiftId = parseInt(req.params.shiftId);
-      await storage.deleteShift(shiftId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting shift:", error);
-      res.status(500).json({ error: "Failed to delete shift" });
-    }
-  });
+  //   try {
+  //     const shiftId = parseInt(req.params.shiftId);
+  //     await storage.deleteShift(shiftId);
+  //     res.status(204).send();
+  //   } catch (error) {
+  //     console.error("Error deleting shift:", error);
+  //     res.status(500).json({ error: "Failed to delete shift" });
+  //   }
+  // });
 
-  // Schedule Blocks API
-  app.get("/api/schedule-blocks", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Schedule Blocks API - now in /api/scheduler/schedule-blocks
+  // app.get("/api/schedule-blocks", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
-      const scheduleBlocks = await storage.getScheduleBlocks(locationId);
-      res.json(scheduleBlocks);
-    } catch (error) {
-      console.error("Error fetching schedule blocks:", error);
-      res.status(500).json({ error: "Failed to fetch schedule blocks" });
-    }
-  });
+  //   try {
+  //     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+  //     const scheduleBlocks = await storage.getScheduleBlocks(locationId);
+  //     res.json(scheduleBlocks);
+  //   } catch (error) {
+  //     console.error("Error fetching schedule blocks:", error);
+  //     res.status(500).json({ error: "Failed to fetch schedule blocks" });
+  //   }
+  // });
 
-  app.get("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.get("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const scheduleBlock = await storage.getScheduleBlock(id);
-      if (!scheduleBlock) {
-        return res.status(404).json({ error: "Schedule block not found" });
-      }
-      res.json(scheduleBlock);
-    } catch (error) {
-      console.error("Error fetching schedule block:", error);
-      res.status(500).json({ error: "Failed to fetch schedule block" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const scheduleBlock = await storage.getScheduleBlock(id);
+  //     if (!scheduleBlock) {
+  //       return res.status(404).json({ error: "Schedule block not found" });
+  //     }
+  //     res.json(scheduleBlock);
+  //   } catch (error) {
+  //     console.error("Error fetching schedule block:", error);
+  //     res.status(500).json({ error: "Failed to fetch schedule block" });
+  //   }
+  // });
 
-  app.post("/api/schedule-blocks", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/schedule-blocks", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const scheduleBlock = await storage.createScheduleBlock(req.body);
-      res.status(201).json(scheduleBlock);
-    } catch (error) {
-      console.error("Error creating schedule block:", error);
-      res.status(500).json({ error: "Failed to create schedule block" });
-    }
-  });
+  //   try {
+  //     const scheduleBlock = await storage.createScheduleBlock(req.body);
+  //     res.status(201).json(scheduleBlock);
+  //   } catch (error) {
+  //     console.error("Error creating schedule block:", error);
+  //     res.status(500).json({ error: "Failed to create schedule block" });
+  //   }
+  // });
 
-  app.put("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
-    console.log("🔧 SCHEDULE BLOCK UPDATE: User object:", req.user);
-    console.log("🔧 SCHEDULE BLOCK UPDATE: User role:", req.user?.role);
-    console.log("🔧 SCHEDULE BLOCK UPDATE: Permission check result:", req.user ? hasPermission(req.user.role, "scheduler_development") : false);
+  // app.put("/api/schedule-blocks/:id", authenticateUser, async (req, res) => {
+  //   console.log("🔧 SCHEDULE BLOCK UPDATE: User object:", req.user);
+  //   console.log("🔧 SCHEDULE BLOCK UPDATE: User role:", req.user?.role);
+  //   console.log("🔧 SCHEDULE BLOCK UPDATE: Permission check result:", req.user ? hasPermission(req.user.role, "scheduler_development") : false);
     
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      console.log("🔧 SCHEDULE BLOCK UPDATE: Permission denied");
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("🔧 SCHEDULE BLOCK UPDATE: Permission denied");
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      const scheduleBlock = await storage.updateScheduleBlock(id, req.body);
-      if (!scheduleBlock) {
-        return res.status(404).json({ error: "Schedule block not found" });
-      }
-      res.json(scheduleBlock);
-    } catch (error) {
-      console.error("Error updating schedule block:", error);
-      res.status(500).json({ error: "Failed to update schedule block" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const scheduleBlock = await storage.updateScheduleBlock(id, req.body);
+  //     if (!scheduleBlock) {
+  //       return res.status(404).json({ error: "Schedule block not found" });
+  //     }
+  //     res.json(scheduleBlock);
+  //   } catch (error) {
+  //     console.error("Error updating schedule block:", error);
+  //     res.status(500).json({ error: "Failed to update schedule block" });
+  //   }
+  // });
 
-  app.get("/api/schedule-blocks/:id/weeks", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "schedule")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.get("/api/schedule-blocks/:id/weeks", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "schedule")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const scheduleBlockId = parseInt(req.params.id);
-      const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(scheduleBlockId);
-      res.json(weekSchedules);
-    } catch (error) {
-      console.error("Error fetching week schedules for block:", error);
-      res.status(500).json({ error: "Failed to fetch week schedules" });
-    }
-  });
+  //   try {
+  //     const scheduleBlockId = parseInt(req.params.id);
+  //     const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(scheduleBlockId);
+  //     res.json(weekSchedules);
+  //   } catch (error) {
+  //     console.error("Error fetching week schedules for block:", error);
+  //     res.status(500).json({ error: "Failed to fetch week schedules" });
+  //   }
+  // });
 
   // Authentication consolidation endpoint to resolve browser context session isolation
   app.get("/api/auth-consolidation", async (req, res) => {
