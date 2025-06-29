@@ -236,30 +236,30 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   nameIdx: index("idx_schedule_blocks_name").on(table.name),
 }));
 
-// Weeks - Individual weeks within a schedule block (formerly week_schedules)
-export const weeks = pgTable("weeks", {
+// Week Schedules - Matches actual database table structure
+export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(), // e.g. "Episode 3", "Week 1: Opening"
+  name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  templateId: integer("template_id").references(() => scheduleTemplates.id),
-  scheduleBlockId: integer("schedule_block_id").references(() => scheduleBlocks.id).notNull(), // Must belong to a schedule block
-  weekNumber: integer("week_number").notNull(), // 1, 2, 3... up to 8 within schedule block
-  isActive: boolean("is_active").default(true).notNull(),
+  locationId: integer("location_id").references(() => locations.id),
   createdBy: integer("created_by").references(() => users.id).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  templateId: integer("template_id").references(() => scheduleTemplates.id),
+  multiWeekFrameId: integer("multi_week_frame_id"), // For future multi-week implementation
+  weekNumber: integer("week_number"), // Week position in multi-week frame
 }, (table) => ({
-  scheduleBlockIdx: index("idx_weeks_schedule_block").on(table.scheduleBlockId),
-  weekNumberIdx: index("idx_weeks_week_number").on(table.weekNumber),
-  nameIdx: index("idx_weeks_name").on(table.name),
-  templateIdx: index("idx_weeks_template").on(table.templateId),
-  uniqueWeekInBlock: unique("unique_week_in_block").on(table.scheduleBlockId, table.weekNumber), // Ensure unique week numbers per schedule block
+  locationIdx: index("idx_week_schedules_location").on(table.locationId),
+  nameIdx: index("idx_week_schedules_name").on(table.name),
+  templateIdx: index("idx_week_schedules_template").on(table.templateId),
+  multiWeekFrameIdx: index("idx_week_schedules_frame").on(table.multiWeekFrameId),
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  weekId: integer("week_id").references(() => weeks.id).notNull(), // Must belong to a week
+  weekScheduleId: integer("week_schedule_id").references(() => weekSchedules.id).notNull(), // Must belong to a week schedule
   shiftGroupId: text("shift_group_id"), // Groups shifts created together for multi-day template editing
   userId: integer("user_id").references(() => users.id),
   date: timestamp("date"),
@@ -275,7 +275,7 @@ export const shifts = pgTable("shifts", {
   status: text("status", { enum: ["open", "filled", "cancelled"] }).default("open").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
-  weekIdx: index("idx_shifts_week").on(table.weekId),
+  weekScheduleIdx: index("idx_shifts_week_schedule").on(table.weekScheduleId),
   shiftGroupIdx: index("idx_shifts_group").on(table.shiftGroupId),
   dayOfWeekIdx: index("idx_shifts_day_of_week").on(table.dayOfWeek),
   statusIdx: index("idx_shifts_status").on(table.status),
@@ -513,8 +513,9 @@ export const insertScheduleTemplateSchema = createInsertSchema(scheduleTemplates
 export const insertTemplateShiftSchema = createInsertSchema(templateShifts).omit({ id: true });
 
 export const insertScheduleBlockSchema = createInsertSchema(scheduleBlocks).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true, createdAt: true, updatedAt: true });
+// export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true, createdAt: true, updatedAt: true }); // near-future-removal: Legacy table replaced with weekSchedules
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
+export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
 export const insertShiftSubscriptionSchema = createInsertSchema(shiftSubscriptions).omit({ id: true, subscribedAt: true });
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ id: true, assignedAt: true });
@@ -573,6 +574,7 @@ export type InsertTemplateShift = z.infer<typeof insertTemplateShiftSchema>;
 
 export type InsertScheduleBlock = z.infer<typeof insertScheduleBlockSchema>;
 export type InsertWeek = z.infer<typeof insertWeekSchema>;
+export type InsertWeekSchedule = z.infer<typeof insertWeekScheduleSchema>;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
 export type InsertShiftSubscription = z.infer<typeof insertShiftSubscriptionSchema>;
@@ -605,6 +607,7 @@ export type TemplateShift = typeof templateShifts.$inferSelect;
 
 export type ScheduleBlock = typeof scheduleBlocks.$inferSelect;
 export type Week = typeof weeks.$inferSelect;
+export type WeekSchedule = typeof weekSchedules.$inferSelect;
 export type Shift = typeof shifts.$inferSelect;
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
 export type ShiftSubscription = typeof shiftSubscriptions.$inferSelect;
