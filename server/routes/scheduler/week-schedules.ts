@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../storage';
 import { authenticateUser } from '../../middleware/auth';
-import { insertWeekScheduleSchema, insertShiftSchema } from '@shared/schema';
+import { insertWeekScheduleSchema, insertShiftSchema, updateShiftSchema } from '@shared/schema';
 
 const router = express.Router();
 
@@ -213,7 +213,7 @@ router.put("/:scheduleId/shifts/:shiftId", authenticateUser, async (req: any, re
 
   try {
     const shiftId = parseInt(req.params.shiftId);
-    const validatedData = insertShiftSchema.parse(req.body);
+    const validatedData = updateShiftSchema.parse(req.body);
     const shift = await storage.updateShift(shiftId, validatedData);
     res.json(shift);
   } catch (error) {
