@@ -72,7 +72,7 @@ This plan migrates CrewPlots from fragmented validation patterns to a unified va
 - **Purpose**: Saves atomically to preserve Russian doll structure
 - **Input**: Authorized package
 - **Output**: Saved entities with clean references
-- **Implementation**: `ValidationPackageService.savePackageTransaction()`
+- **Implementation**: `ValidationPackageService.executeStorageTransaction()`
 
 ---
 
@@ -85,7 +85,7 @@ This plan migrates CrewPlots from fragmented validation patterns to a unified va
 #### Tasks:
 1. **Complete Validation Package Service**
    - Implement missing methods in `server/services/validation-package-service.ts`
-   - Add `savePackageTransaction()` method
+   - Add `executeStorageTransaction()` method
    - Create `assembleForCalendar()` method
    - Add comprehensive error handling
 
@@ -97,239 +97,206 @@ This plan migrates CrewPlots from fragmented validation patterns to a unified va
 3. **Integration Tests Setup**
    - Create test suite for package validation
    - Test Russian doll reference integrity
-   - Validate cross-validation rules (unique week numbers, time validation)
-
-#### Verification Points:
-- [ ] Package validation passes with complete schedule data
-- [ ] Package validation correctly rejects invalid data
-- [ ] Russian doll references maintain integrity
-- [ ] No breaking changes to existing functionality
+   - Validate all 4 threads work independently
 
 #### Success Criteria:
-- ValidationPackageService handles complete schedule creation
-- All package validation tests pass
-- Existing routes continue working unchanged
+- Package validation service handles complete schedule creation
+- API endpoints accept and validate package requests
+- No breaking changes to existing scheduler functionality
 
----
-
-### Phase 2: Critical Route Migration (Priority: High)
-**Duration**: 2-3 days
-**Objective**: Migrate problematic routes to use package validation
-
-#### Tasks:
-1. **Fix "Finalize Shifts" Functionality**
-   - Update `POST /api/scheduler/week-schedules/:id/shifts` to use package validation
-   - Handle partial shift data through package assembly
-   - Maintain auto-save compatibility
-
-2. **Eliminate Route Conflicts**
-   - Deprecate duplicate shift update routes
-   - Consolidate to single shift update pattern using packages
-   - Update frontend to use unified endpoints
-
-3. **Frontend Hook Updates**
-   - Update `useSchedulerData.tsx` to support package mutations
-   - Add `usePackageValidation` hook
-   - Maintain backward compatibility for existing components
-
-#### Verification Points:
-- [ ] "Finalize Shifts" button works without validation errors
-- [ ] Auto-save functionality maintains draft shifts correctly
-- [ ] No duplicate API calls or route conflicts
-- [ ] Frontend forms submit successfully
-
-#### Success Criteria:
-- Shift creation/editing works consistently
-- Auto-save system operates without validation failures
-- Route confusion eliminated
-
----
-
-### Phase 3: Calendar Interface Development (Priority: Medium)
-**Duration**: 5-7 days
-**Objective**: Build calendar-based scheduling interface
-
-#### Tasks:
-1. **Calendar Data Structures**
-   - Implement `CalendarScheduleData` transformation
-   - Create date-based schedule visualization
-   - Add week/month navigation
-
-2. **User Assignment Interface**
-   - Build drag-and-drop user assignment
-   - Integrate with competency matching system
-   - Add real-time assignment validation
-
-3. **Calendar Component Integration**
-   - Create `CalendarSchedulerView` component
-   - Replace timeline view with calendar grid
-   - Maintain existing scheduling functionality
-
-#### Verification Points:
-- [ ] Calendar displays schedule blocks accurately
-- [ ] Date-based navigation works correctly
-- [ ] User assignment interface functional
-- [ ] Competency matching integrated
-
-#### Success Criteria:
-- Users can view schedules in calendar format
-- Basic user assignment functionality working
-- Calendar integrates with existing permission system
-
----
-
-### Phase 4: Advanced Calendar Features (Priority: Low)
+### Phase 2: Route Migration (Priority: High)
 **Duration**: 4-6 days
-**Objective**: Complete calendar-based user assignment system
+**Objective**: Replace existing scheduler endpoints with package-based validation
 
 #### Tasks:
-1. **Drag-and-Drop Assignment**
-   - Implement user assignment to specific shifts
+1. **Frontend API Integration**
+   - Update SchedulerEditPage.tsx to use package endpoints
+   - Modify SchedulerCreatePage.tsx for package validation
+   - Replace individual route calls with package operations
+
+2. **Legacy Route Deprecation**
+   - Mark existing routes as deprecated
+   - Add migration warnings to legacy endpoints
+   - Ensure backward compatibility during transition
+
+3. **Error Handling Enhancement**
+   - Improve validation error messages
+   - Add specific guidance for common validation failures
+   - Implement client-side validation feedback
+
+#### Success Criteria:
+- Frontend successfully creates schedules via package endpoints
+- Legacy routes still function but show deprecation warnings
+- Validation errors provide clear, actionable feedback
+
+### Phase 3: Calendar Interface Implementation (Priority: Medium)
+**Duration**: 5-7 days
+**Objective**: Replace timeline view with calendar-based user assignment
+
+#### Tasks:
+1. **Calendar Component Development**
+   - Create week/month calendar view components
+   - Implement date-based schedule visualization
+   - Add shift display within calendar cells
+
+2. **Drag-and-Drop Assignment**
+   - Enable user assignment via drag-and-drop
+   - Implement shift time adjustment through dragging
    - Add visual feedback for assignment operations
-   - Handle assignment conflicts and validation
 
-2. **Real-time Collaboration**
-   - Add WebSocket support for live assignment updates
-   - Implement optimistic UI updates
-   - Handle concurrent assignment conflicts
-
-3. **Advanced Scheduling Features**
-   - Add recurring shift templates
-   - Implement bulk assignment operations
-   - Create assignment analytics and reporting
-
-#### Verification Points:
-- [ ] Drag-and-drop assignment works smoothly
-- [ ] Real-time updates function correctly
-- [ ] Bulk operations complete successfully
-- [ ] Analytics provide useful insights
+3. **Calendar Integration with Validation**
+   - Connect calendar operations to package validation
+   - Ensure calendar changes trigger proper validation threads
+   - Maintain Russian doll architecture through calendar interface
 
 #### Success Criteria:
-- Complete "fix a user in a shift on a certain date at a certain time" functionality
-- Real-time collaborative assignment system
-- Advanced scheduling capabilities operational
+- Users can assign crew members to shifts via calendar interface
+- Calendar view displays complete schedule information
+- All calendar operations use package validation framework
 
----
-
-### Phase 5: Legacy Cleanup (Priority: Low)
-**Duration**: 2-3 days
-**Objective**: Remove redundant validation patterns
+### Phase 4: Advanced Validation Features (Priority: Low)
+**Duration**: 3-4 days
+**Objective**: Add sophisticated validation and conflict resolution
 
 #### Tasks:
-1. **Remove Redundant Schemas**
-   - Deprecate individual validation schemas where replaced
-   - Remove duplicate route handlers
-   - Clean up unused validation imports
+1. **Conflict Detection**
+   - Implement time overlap detection
+   - Add capacity limit validation
+   - Create competency requirement checking
 
-2. **Simplify Auto-save System**
-   - Migrate to package-based auto-save
-   - Remove complex state synchronization
-   - Streamline cache invalidation
+2. **Auto-Resolution Suggestions**
+   - Suggest alternative times for conflicts
+   - Recommend crew members based on competencies
+   - Provide capacity optimization recommendations
 
-3. **Documentation and Training**
-   - Update API documentation
-   - Create developer guides for package validation
-   - Document migration benefits and patterns
-
-#### Verification Points:
-- [ ] Codebase complexity reduced
-- [ ] No unused validation code remains
-- [ ] Documentation complete and accurate
-- [ ] Team trained on new patterns
+3. **Validation Performance Optimization**
+   - Implement validation caching
+   - Add batch validation for multiple operations
+   - Optimize database queries for validation checks
 
 #### Success Criteria:
-- Clean, maintainable validation architecture
-- Reduced code complexity and duplication
-- Clear documentation for future development
+- System automatically detects and suggests solutions for conflicts
+- Validation performance remains under 200ms for standard operations
+- Advanced features enhance rather than complicate user experience
+
+### Phase 5: Legacy System Removal (Priority: Cleanup)
+**Duration**: 2-3 days
+**Objective**: Remove deprecated routes and validation patterns
+
+#### Tasks:
+1. **Legacy Route Removal**
+   - Delete deprecated scheduler endpoints
+   - Remove old validation schemas where appropriate
+   - Clean up unused validation code
+
+2. **Code Organization**
+   - Consolidate validation logic in package service
+   - Remove duplicate permission checking code
+   - Simplify route structure
+
+3. **Documentation Updates**
+   - Update API documentation for package endpoints
+   - Create validation framework usage guide
+   - Document migration benefits and new capabilities
+
+#### Success Criteria:
+- Codebase contains only package-based validation
+- API documentation reflects current validation framework
+- No regression in functionality after cleanup
 
 ---
 
-## Risk Assessment and Mitigation
+## Technical Implementation Details
 
-### High Risk Areas
+### Validation Package Data Structure
+```typescript
+interface ScheduleValidationPackage {
+  packageType: 'create' | 'update' | 'delete' | 'duplicate';
+  scheduleBlock: {
+    name: string;
+    description?: string;
+    locationId: number;
+    isActive: boolean;
+  };
+  weekSchedules: Array<{
+    weekNumber: number;
+    scheduleBlockId?: number;
+  }>;
+  shifts: Array<{
+    title: string;
+    position?: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    maxSlots: number;
+    weekScheduleId?: number;
+    subscriptionDeadline?: Date;
+  }>;
+  metadata: {
+    userId: number;
+    timestamp: Date;
+    validationContext: string;
+  };
+}
+```
 
-#### 1. **Breaking Changes During Migration**
-**Risk**: Existing functionality breaks during route migration
-**Mitigation**: 
-- Implement alongside existing system initially
-- Gradual migration with fallback support
-- Comprehensive testing at each phase
+### API Endpoint Structure
+```typescript
+// Package validation endpoints
+POST   /api/scheduler/packages/validate    // Dry-run validation
+POST   /api/scheduler/packages/create      // Create new package
+PUT    /api/scheduler/packages/:id         // Update existing package
+DELETE /api/scheduler/packages/:id         // Delete package
+POST   /api/scheduler/packages/:id/duplicate // Duplicate package
 
-#### 2. **Frontend-Backend Synchronization**
-**Risk**: Frontend and backend validation expectations diverge
-**Mitigation**:
-- Shared TypeScript types from validation package
-- Integration tests covering complete request/response cycle
-- Parallel development of frontend and backend changes
-
-#### 3. **Performance Impact**
-**Risk**: Package validation slower than individual schemas
-**Mitigation**:
-- Performance benchmarks at each phase
-- Optimization of validation logic
-- Caching strategies for repeated validations
-
-### Medium Risk Areas
-
-#### 1. **Session Management Complexity**
-**Risk**: Package operations affect session consolidation
-**Mitigation**:
-- Maintain individual fetch patterns during migration
-- Test session isolation prevention
-- Monitor authentication flow stability
-
-#### 2. **Calendar UI Complexity**
-**Risk**: Calendar interface too complex for users
-**Mitigation**:
-- Iterative UI development with user feedback
-- Maintain timeline view as fallback option
-- Progressive enhancement approach
+// Response format
+{
+  success: boolean;
+  package?: ScheduleValidationPackage;
+  validation: {
+    thread1: { status: 'passed' | 'failed', errors: string[] };
+    thread2: { status: 'passed' | 'failed', errors: string[] };
+    thread3: { status: 'passed' | 'failed', errors: string[] };
+    thread4: { status: 'passed' | 'failed', errors: string[] };
+  };
+  createdEntities?: {
+    scheduleBlockId: number;
+    weekScheduleIds: number[];
+    shiftIds: number[];
+  };
+}
+```
 
 ---
 
-## Testing and Verification Strategy
+## Risk Mitigation
 
-### Unit Tests
-- **Package Validation**: Test all validation rules and edge cases
-- **Route Handlers**: Test individual API endpoints with package data
-- **Frontend Hooks**: Test data fetching and mutation patterns
+### Technical Risks
+1. **Database Transaction Failures**
+   - **Risk**: Partial package saves leaving inconsistent state
+   - **Mitigation**: Implement comprehensive rollback in Thread 4
+   - **Monitoring**: Add transaction success rate tracking
 
-### Integration Tests
-- **Complete Workflows**: Test schedule creation from frontend to database
-- **Cross-Route Consistency**: Verify package data consistency across routes
-- **Permission Integration**: Test role-based access with packages
+2. **Performance Degradation**
+   - **Risk**: Package validation slower than individual operations
+   - **Mitigation**: Implement validation caching and optimization
+   - **Monitoring**: Set 200ms response time SLA with alerting
 
-### End-to-End Tests
-- **User Workflows**: Test complete scheduling workflows
-- **Calendar Functionality**: Test user assignment operations
-- **Performance**: Load testing with large schedule packages
+3. **Frontend Integration Complexity**
+   - **Risk**: Calendar interface complications with existing components
+   - **Mitigation**: Maintain backward compatibility, phased rollout
+   - **Monitoring**: User task completion rate tracking
 
-### Evaluation Moments
+### Business Risks
+1. **User Experience Disruption**
+   - **Risk**: Calendar interface learning curve for existing users
+   - **Mitigation**: Progressive disclosure, optional timeline fallback
+   - **Monitoring**: User satisfaction surveys and usage analytics
 
-#### After Phase 1:
-- **Technical Review**: Validation package implementation quality
-- **Performance Baseline**: Establish performance metrics
-- **Architecture Assessment**: Russian doll integrity maintenance
-
-#### After Phase 2:
-- **Functionality Review**: Critical workflow restoration
-- **User Experience**: Shift creation/editing workflow quality
-- **Error Rate Analysis**: Validation error frequency reduction
-
-#### After Phase 3:
-- **UI/UX Review**: Calendar interface usability
-- **Feature Completeness**: Calendar functionality scope
-- **Integration Quality**: Calendar-backend integration stability
-
-#### After Phase 4:
-- **User Acceptance**: Complete assignment workflow testing
-- **Performance Review**: System performance under load
-- **Scalability Assessment**: Multi-user assignment handling
-
-#### After Phase 5:
-- **Code Quality**: Clean architecture achievement
-- **Maintainability**: Future development ease
-- **Documentation Quality**: Developer onboarding effectiveness
+2. **Feature Development Delays**
+   - **Risk**: Migration takes longer than estimated
+   - **Mitigation**: Phased approach with independent rollback capability
+   - **Monitoring**: Weekly progress reviews against phase milestones
 
 ---
 
