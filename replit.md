@@ -256,6 +256,18 @@ Changelog:
 - June 29, 2025. COMPLETED: Authentication system centralization - Migrated useAuth hook from legacy fallback pattern to centralized authenticateUser middleware. Removed dual authentication endpoints (/me and /api/auth/me fallback) in favor of single /api/auth/me endpoint using centralized authentication. Fixed navigation logout issue by replacing window.location.href with React router setLocation, preventing page reloads that disrupted authentication context. Authentication system now uses unified centralized middleware throughout application with no fallback patterns.
 ```
 
+## Architectural Constraints
+
+### NO FALLBACKS PRINCIPLE
+**CRITICAL**: Authentication, validation, and business logic must NEVER use fallback patterns.
+
+**ALLOWED**: Infrastructure fallbacks for reliability (Redis→PostgreSQL for sessions, cache layers)
+**PROHIBITED**: Business logic fallbacks (authentication endpoints, validation schemas, API routes)
+
+**Why**: Fallback patterns in business logic create timing issues, session conflicts, and debugging nightmares. The 19-hour authentication bug was caused by competing fallback authentication methods.
+
+**Evidence**: Authentication centralization eliminated logout issues by removing dual endpoint fallbacks.
+
 ## User Preferences
 
 ```
