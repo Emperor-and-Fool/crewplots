@@ -9,7 +9,9 @@ import {
   insertScheduleBlockSchema,
   insertWeekScheduleSchema,
   insertShiftSchema,
-  updateShiftSchema
+  updateShiftSchema,
+  createWeekScheduleSchema,
+  createShiftSchema
 } from '@shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import type { User } from '@shared/schema';
@@ -348,16 +350,38 @@ export class ValidationPackageService {
   ): Promise<void> {
     console.log('🏗️ RUSSIAN DOLL VALIDATION: Checking architectural integrity');
     
-    // Validate Schedule Block → Week Schedules → Shifts hierarchy
-    if (packageData.weekSchedules.length > 0 && !packageData.scheduleBlock.name) {
-      errors.push('Russian Doll: Week schedules require a parent schedule block');
+    // For creation packages, we validate logical hierarchy without requiring existing IDs
+    if (packageData.packageType === 'create') {
+      // Validate Schedule Block → Week Schedules → Shifts hierarchy logically
+      if (packageData.weekSchedules.length > 0 && !packageData.scheduleBlock.name) {
+        errors.push('Russian Doll: Week schedules require a parent schedule block');
+      }
+      
+      if (packageData.shifts.length > 0 && packageData.weekSchedules.length === 0) {
+        errors.push('Russian Doll: Shifts require parent week schedules');
+      }
+      
+      // For creation, we don't validate scheduleBlockId on week schedules since they'll be set during transaction
+      console.log('🏗️ RUSSIAN DOLL VALIDATION: Creation package - skipping ID validations');
+      
+    } else {
+      // For update/delete packages, validate existing relationships
+      for (let i = 0; i < packageData.weekSchedules.length; i++) {
+        const weekSchedule = packageData.weekSchedules[i];
+        if (!weekSchedule.scheduleBlockId) {
+          errors.push(`Week Schedule ${i + 1}: scheduleBlockId: Required`);
+        }
+      }
+      
+      for (let i = 0; i < packageData.shifts.length; i++) {
+        const shift = packageData.shifts[i];
+        if (!shift.weekScheduleId) {
+          errors.push(`Shift ${i + 1}: weekScheduleId: Required`);
+        }
+      }
     }
     
-    if (packageData.shifts.length > 0 && packageData.weekSchedules.length === 0) {
-      errors.push('Russian Doll: Shifts require parent week schedules');
-    }
-    
-    // Validate consistency between levels
+    // Validate consistency between levels (for all package types)
     for (const weekSchedule of packageData.weekSchedules) {
       const shiftsInWeek = packageData.shifts.filter(shift => 
         shift.weekScheduleId === weekSchedule.id

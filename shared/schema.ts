@@ -516,6 +516,15 @@ export const insertWeekScheduleSchema = createInsertSchema(weekSchedules).omit({
 // export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true, createdAt: true, updatedAt: true }); // near-future-removal: Legacy table replaced with weekSchedules
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true, createdAt: true });
 export const updateShiftSchema = insertShiftSchema.partial();
+
+// Creation-specific schemas for package validation (allow optional parent IDs)
+export const createWeekScheduleSchema = insertWeekScheduleSchema.omit({ scheduleBlockId: true }).extend({
+  scheduleBlockId: z.number().optional() // Optional during creation, will be set by transaction
+});
+
+export const createShiftSchema = insertShiftSchema.omit({ weekScheduleId: true }).extend({
+  weekScheduleId: z.number().optional() // Optional during creation, will be set by transaction
+});
 export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({ id: true, createdAt: true });
 export const insertShiftSubscriptionSchema = createInsertSchema(shiftSubscriptions).omit({ id: true, subscribedAt: true });
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ id: true, assignedAt: true });
