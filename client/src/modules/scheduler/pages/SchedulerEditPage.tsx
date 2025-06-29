@@ -339,6 +339,10 @@ export default function SchedulerEditPage() {
       }
       setIsAutoSaving(false);
       setHasSaveError(false);
+      
+      // Invalidate cache to show draft shifts in preview
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      refetchShifts();
     },
     onError: (error) => {
       console.error('🔄 AUTO-SAVE: Failed to save draft', error);
