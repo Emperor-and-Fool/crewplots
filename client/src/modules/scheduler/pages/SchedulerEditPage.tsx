@@ -140,7 +140,7 @@ export default function SchedulerEditPage() {
 
   // Fetch shifts for all week schedules - enable live data updates
   const { data: allShiftsData = [], isLoading: shiftsLoading, error: shiftsError, refetch: refetchShifts } = useQuery({
-    queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'],
+    queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'],
     queryFn: async () => {
       console.log('🔍 ALL SHIFTS: Fetching shifts for schedule block:', scheduleId);
       
@@ -472,7 +472,7 @@ export default function SchedulerEditPage() {
       for (const shift of shiftsToCreate) {
         const weekScheduleId = shift.weekScheduleId;
         console.log(`💾 FINAL SAVE: Creating final shift for week ${weekScheduleId}:`, shift);
-        const response = await apiRequest('POST', `/api/week-schedules/${weekScheduleId}/shifts`, shift);
+        const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekScheduleId}/shifts`, shift);
         const createdShift = await response.json();
         createdShifts.push(createdShift);
       }
@@ -601,7 +601,7 @@ export default function SchedulerEditPage() {
   
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
-      return apiRequest('DELETE', `/api/week-schedules/${scheduleId}`);
+      return apiRequest('DELETE', `/api/scheduler/week-schedules/${scheduleId}`);
     },
     onSuccess: () => {
       setLocation('/scheduler');
@@ -622,10 +622,10 @@ export default function SchedulerEditPage() {
   // Schedule block update mutation
   const updateScheduleBlockMutation = useMutation({
     mutationFn: async (blockData: { name: string; description?: string; locationId: number; isActive: boolean }) => {
-      return await apiRequest('PUT', `/api/schedule-blocks/${id}`, blockData);
+      return await apiRequest('PUT', `/api/scheduler/schedule-blocks/${id}`, blockData);
     },
     onSuccess: (block: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
       toast({
         title: "Schedule updated successfully",
         description: `Schedule "${block?.name || 'block'}" has been updated`
@@ -642,15 +642,15 @@ export default function SchedulerEditPage() {
 
   const copyWeekToFrameMutation = useMutation({
     mutationFn: async ({ frameId, weekNumber }: { frameId: number; weekNumber: number }) => {
-      return await apiRequest('POST', `/api/week-schedules/${scheduleId}/copy`, {
+      return await apiRequest('POST', `/api/scheduler/week-schedules/${scheduleId}/copy`, {
         multiWeekFrameId: frameId,
         weekNumber
       });
     },
     onSuccess: (copiedWeek: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', scheduleId] });
       toast({
         title: "Week copied successfully",
         description: `Week ${copiedWeek?.weekNumber || 'new'} added to multi-week frame`
