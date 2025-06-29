@@ -678,8 +678,8 @@ export default function SchedulerEditPage() {
         </div>
       ) : (
         // Transformed state: Tabbed shift management interface (identical to create page)
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+        <div className="max-w-6xl mx-auto">
+          <div>
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
                 <Button
@@ -1073,54 +1073,7 @@ export default function SchedulerEditPage() {
             </Tabs>
           </div>
 
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Schedule Preview
-                </CardTitle>
-                <CardDescription>
-                  {(locations as Location[]).find((l: Location) => l.id === existingSchedule?.locationId)?.name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <WeeklyCalendarPreview
-                  shifts={(shifts as any[]).map((shift: any) => ({
-                    id: shift.id,
-                    title: shift.position,
-                    dayOfWeek: shift.dayOfWeek,
-                    startTime: shift.startTime,
-                    endTime: shift.endTime,
-                    position: shift.position,
-                    status: shift.status
-                  }))}
-                  weekScheduleName={existingSchedule?.name || ''}
-                  onShiftClick={handleShiftClick}
-                  onShiftDelete={handleShiftDelete}
-                />
-                
-                <div className="pt-4 border-t">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={handleScheduleDelete}
-                    disabled={deleteScheduleMutation.isPending}
-                  >
-                    {deleteScheduleMutation.isPending ? (
-                      "Deleting..."
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Entire Schedule
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
         </div>
       )}
     </div>
