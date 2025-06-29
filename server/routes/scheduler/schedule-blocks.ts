@@ -19,7 +19,11 @@ function hasPermission(userRole: string, permission: string): boolean {
 }
 
 // Get schedule blocks with optional location filtering
-router.get("/", async (req, res) => {
+router.get("/", authenticateUser, async (req: any, res) => {
+  if (!hasPermission(req.user.role, "scheduler_development")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
+
   try {
     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
     console.log(`✅ SCHEDULE BLOCKS FETCH - Location filter:`, locationId || 'All locations');
