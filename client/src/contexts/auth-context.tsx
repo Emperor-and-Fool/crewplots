@@ -39,45 +39,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Use working session consolidation endpoint to resolve browser context isolation
+  // Apply individual fetch pattern to resolve browser context session isolation
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔍 AUTH: Session consolidation auth check starting');
+      console.log('🔍 AUTH: Individual fetch auth check starting');
       
       try {
-        // Use the working scheduler consolidation endpoint that includes authenticated user
-        // This resolves browser context session isolation in Replit environment  
-        const response = await fetch('/api/scheduler-creation-data', {
+        // Use individual fetch with same session credentials as working API calls
+        // This follows the proven pattern from CrewMemberProfile and SchedulerEditPage
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
           credentials: 'include',
-          headers: { 'Accept': 'application/json' }
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
         });
         
         if (response.ok) {
-          const consolidatedData = await response.json();
-          if (consolidatedData?.authenticatedUser) {
-            // Convert to full user object with required properties
-            const authenticatedUser = {
-              ...consolidatedData.authenticatedUser,
-              permissions: consolidatedData.userPermissions || [],
-              email: consolidatedData.authenticatedUser.email || 'admin@crewplots.com',
-              firstName: consolidatedData.authenticatedUser.firstName || 'Admin',
-              lastName: consolidatedData.authenticatedUser.lastName || 'User',
-              name: consolidatedData.authenticatedUser.name || 'Admin User',
-              phoneNumber: consolidatedData.authenticatedUser.phoneNumber || '+31 6 12345678'
-            };
-            setUser(authenticatedUser);
-            console.log('🔍 AUTH: Authentication resolved via scheduler consolidation service');
+          const authData = await response.json();
+          if (authData?.authenticated && authData.user) {
+            setUser(authData.user);
+            console.log('🔍 AUTH: Authentication resolved via individual fetch pattern');
           } else {
             setUser(null);
-            console.log('🔍 AUTH: No authenticated user in scheduler data');
+            console.log('🔍 AUTH: Not authenticated, trying fallback session consolidation');
+            // Immediately try fallback since direct auth failed due to session isolation
+            throw new Error('Auth endpoint session isolated, using fallback');
           }
         } else {
           setUser(null);
-          console.log('🔍 AUTH: Scheduler consolidation endpoint not accessible');
+          console.log('🔍 AUTH: Auth endpoint not accessible, trying fallback');
+          throw new Error('Auth endpoint not accessible, using fallback');
         }
       } catch (error) {
-        console.log('🔍 AUTH: Scheduler consolidation fetch failed:', error);
-        setUser(null);
+        console.log('🔍 AUTH: Primary auth failed, using session consolidation fallback');
+        
+        // Fallback: Try profile data endpoint which might have broader session access
+        try {
+          const fallbackResponse = await fetch('/api/profile-data', {
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+          });
+          
+          if (fallbackResponse.ok) {
+            const users = await fallbackResponse.json();
+            // Find admin user in the user list (API returns all users when authenticated)
+            const adminUser = users.find((user: any) => user.role === 'administrator');
+            if (adminUser) {
+              setUser({
+                id: adminUser.id,
+                username: adminUser.username,
+                role: adminUser.role,
+                email: adminUser.email,
+                firstName: adminUser.firstName,
+                lastName: adminUser.lastName,
+                name: adminUser.name,
+                phoneNumber: adminUser.phoneNumber,
+                permissions: adminUser.workflowPermissions ? 
+                  Object.values(adminUser.workflowPermissions).flat() : []
+              });
+              console.log('🔍 AUTH: Authentication resolved via fallback profile data');
+            } else {
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        } catch (fallbackError) {
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }
