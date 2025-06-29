@@ -646,10 +646,10 @@ export default function SchedulerEditPage() {
                       variant="ghost"
                       onClick={async () => {
                         const formData = scheduleForm.getValues();
-                        await updateWeekScheduleMutation.mutateAsync(formData);
+                        await updateScheduleBlockMutation.mutateAsync(formData);
                         window.location.href = '/scheduler';
                       }}
-                      disabled={updateWeekScheduleMutation.isPending}
+                      disabled={updateScheduleBlockMutation.isPending}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       {updateWeekScheduleMutation.isPending ? "Saving..." : "To Templates"}
