@@ -135,25 +135,44 @@ export default function SchedulerEditPage() {
 
 
 
-  // Individual fetch for shifts - following CrewMemberProfile pattern
-  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
-    queryKey: ['/api/week-schedules', scheduleId, 'shifts'],
+  // Fetch shifts for all week schedules - enable live data updates
+  const { data: allShiftsData = [], isLoading: shiftsLoading, error: shiftsError, refetch: refetchShifts } = useQuery({
+    queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'],
     queryFn: async () => {
-      console.log('🔍 SHIFTS QUERY: Fetching shifts for week schedule:', scheduleId);
-      const response = await fetch(`/api/week-schedules/${scheduleId}/shifts`, {
+      console.log('🔍 ALL SHIFTS: Fetching shifts for schedule block:', scheduleId);
+      
+      // First get all week schedules for this block
+      const weekSchedulesResponse = await fetch('/api/week-schedules', {
         credentials: 'include'
       });
-      console.log('🔍 SHIFTS QUERY: Response status:', response.status, response.statusText);
-      if (!response.ok) {
-        throw new Error('Failed to fetch shifts');
+      if (!weekSchedulesResponse.ok) {
+        throw new Error('Failed to fetch week schedules');
       }
-      const data = await response.json();
-      console.log('🔍 SHIFTS QUERY: Shifts data received:', data);
-      return data;
+      const allWeeks = await weekSchedulesResponse.json();
+      const scheduleBlockWeeks = allWeeks.filter((ws: any) => ws.scheduleBlockId === parseInt(scheduleId || '0'));
+      
+      // Then fetch shifts for each week schedule
+      const allShifts: any[] = [];
+      for (const week of scheduleBlockWeeks) {
+        try {
+          const shiftsResponse = await fetch(`/api/week-schedules/${week.id}/shifts`, {
+            credentials: 'include'
+          });
+          if (shiftsResponse.ok) {
+            const shifts = await shiftsResponse.json();
+            allShifts.push(...shifts.map((shift: any) => ({ ...shift, weekScheduleId: week.id })));
+          }
+        } catch (error) {
+          console.warn('Failed to fetch shifts for week:', week.id, error);
+        }
+      }
+      
+      console.log('🔍 ALL SHIFTS: Total shifts loaded:', allShifts.length);
+      return allShifts;
     },
     enabled: !!scheduleId && permissions.canEditSchedules,
-    staleTime: 2 * 60 * 1000, // 2 minutes cache like CrewMemberProfile
-    gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    staleTime: 30 * 1000, // 30 seconds for live updates
+    gcTime: 5 * 60 * 1000, // 5 minutes in memory
   });
 
   // Fetch all week schedules in the same schedule block for multi-week preview
@@ -313,20 +332,19 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       console.log('🎯 FRONTEND: Shift creation successful, invalidating cache');
-      // Invalidate cache for all week schedules where shifts were created
-      const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
       
-      // Force refresh the shifts query for each affected week schedule
-      targetWeekScheduleIds.forEach(weekScheduleId => {
-        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'] });
-        queryClient.refetchQueries({ queryKey: ['/api/week-schedules', weekScheduleId, 'shifts'] });
-      });
-      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for week schedule IDs:', targetWeekScheduleIds);
+      // Invalidate the all-shifts query for live updates
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      
+      // Force immediate refetch for real-time data updates
+      refetchShifts();
+      
+      console.log('🎯 FRONTEND: Cache invalidation and refetch triggered for schedule block:', scheduleId);
       
       shiftForm.reset();
       setEditingShift(null);
       const shiftCount = data.length;
-      const weekCount = targetWeekScheduleIds.length;
+      const weekCount = selectedWeekScheduleIds.length || 1;
       const dayCount = shiftForm.getValues('daysOfWeek').length;
       
       toast({
@@ -512,16 +530,8 @@ export default function SchedulerEditPage() {
   };
 
   const editShiftGroup = (shift: any) => {
-    // Collect all shifts from all weeks to find group members
-    const allShifts: any[] = [];
-    allWeekSchedules.forEach((weekSchedule: any) => {
-      if (weekSchedule.shifts) {
-        allShifts.push(...weekSchedule.shifts);
-      }
-    });
-    
-    // Find all shifts in the same group
-    const groupShifts = allShifts.filter((s: any) => s.shiftGroupId === shift.shiftGroupId);
+    // Use the live shifts data for group detection
+    const groupShifts = allShiftsData.filter((s: any) => s.shiftGroupId === shift.shiftGroupId);
     const groupDays = groupShifts.map((s: any) => s.dayOfWeek);
     
     console.log('🔍 GROUP EDIT: Found group shifts:', groupShifts.length);
@@ -1228,7 +1238,10 @@ export default function SchedulerEditPage() {
                     <MultiWeekCalendarPreview 
                       scheduleBlockId={scheduleBlockData?.id || 0}
                       scheduleBlockName={scheduleBlockData?.name || ''}
-                      weekSchedules={allWeekSchedules}
+                      weekSchedules={allWeekSchedules.map(ws => ({
+                        ...ws,
+                        shifts: allShiftsData.filter(shift => shift.weekScheduleId === ws.id)
+                      }))}
                       onShiftClick={handleShiftClick}
                     />
                   </CardContent>
