@@ -5,6 +5,7 @@ import {
   integer, 
   boolean, 
   timestamp, 
+  date,
   json, 
   jsonb,
   foreignKey, 
@@ -259,7 +260,7 @@ export const shifts = pgTable("shifts", {
   shiftGroupId: text("shift_group_id"), // Groups shifts created together for multi-day template editing
   batchId: text("batch_id"), // Groups shifts created together across multiple weeks
   userId: integer("user_id").references(() => users.id),
-  date: timestamp("date", { mode: 'date' }), // Database uses date type
+  date: date("date"), // Database uses date type
   dayOfWeek: text("day_of_week", { 
     enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] 
   }),

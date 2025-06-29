@@ -272,11 +272,12 @@ export class ValidationPackageService {
                 weekScheduleId: weekScheduleId,
                 title: shift.title,
                 position: shift.position || null,
-                dayOfWeek: shift.dayOfWeek,
+                dayOfWeek: shift.dayOfWeek as "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
                 startTime: shift.startTime,
                 endTime: shift.endTime,
                 maxSlots: shift.maxSlots,
-                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null
+                subscriptionDeadline: shift.subscriptionDeadline ? new Date(shift.subscriptionDeadline) : null,
+                createdAt: new Date()
               })
               .returning({ id: shifts.id });
 
