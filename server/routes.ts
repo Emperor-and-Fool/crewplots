@@ -879,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messaging/notes', notesRoutes);
 
   app.use('/api', dashboardRoutes);
-  app.use('/api/scheduler', schedulerRoutes);
+  app.use('/api', schedulerRoutes);
   app.use('/api/email', emailRoutes);
   app.use('/api/security', securityRoutes);
   app.use('/api/redis-monitor', redisMonitorRoutes);
