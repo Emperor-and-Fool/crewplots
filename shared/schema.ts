@@ -236,24 +236,18 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   nameIdx: index("idx_schedule_blocks_name").on(table.name),
 }));
 
-// Week Schedules - Matches actual database table structure
+// Week Schedules - Now simplified to focus on week-specific data
 export const weekSchedules = pgTable("week_schedules", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  locationId: integer("location_id").references(() => locations.id),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
+  scheduleBlockId: integer("schedule_block_id").references(() => scheduleBlocks.id).notNull(),
+  weekNumber: integer("week_number").default(1).notNull(), // Week position within schedule block
+  templateId: integer("template_id").references(() => scheduleTemplates.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  templateId: integer("template_id").references(() => scheduleTemplates.id),
-  multiWeekFrameId: integer("multi_week_frame_id"), // For future multi-week implementation
-  weekNumber: integer("week_number"), // Week position in multi-week frame
 }, (table) => ({
-  locationIdx: index("idx_week_schedules_location").on(table.locationId),
-  nameIdx: index("idx_week_schedules_name").on(table.name),
+  scheduleBlockIdx: index("idx_week_schedules_block").on(table.scheduleBlockId),
   templateIdx: index("idx_week_schedules_template").on(table.templateId),
-  multiWeekFrameIdx: index("idx_week_schedules_frame").on(table.multiWeekFrameId),
+  blockWeekUnique: unique("week_schedules_block_week_unique").on(table.scheduleBlockId, table.weekNumber),
 }));
 
 // Shifts (actual scheduled shifts) - Enhanced for scheduler
