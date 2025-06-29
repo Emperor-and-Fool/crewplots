@@ -1517,7 +1517,12 @@ class DatabaseStorage {
   }
 
   // Schedule Blocks
-  async getScheduleBlocks(): Promise<ScheduleBlock[]> {
+  async getScheduleBlocks(locationId?: number): Promise<ScheduleBlock[]> {
+    if (locationId) {
+      return await db.select().from(scheduleBlocks)
+        .where(eq(scheduleBlocks.locationId, locationId))
+        .orderBy(scheduleBlocks.id);
+    }
     return await db.select().from(scheduleBlocks).orderBy(scheduleBlocks.id);
   }
 

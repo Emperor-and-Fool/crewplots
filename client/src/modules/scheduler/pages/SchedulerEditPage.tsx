@@ -85,37 +85,23 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Frame-based or legacy schedule fetch using query parameters
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery({
-    queryKey: isFrameMode ? ['/api/week-schedules', 'frame', frameId] : ['/api/week-schedules', scheduleId],
+  // Fetch schedule block data
+  const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
+    queryKey: ['/api/schedule-blocks', id],
     queryFn: async () => {
-      if (isFrameMode) {
-        console.log('🔍 FRONTEND: Fetching frame with frameId:', frameId);
-        const response = await fetch(`/api/week-schedules?frameId=${frameId}`, {
-          credentials: 'include'
-        });
-        console.log('🔍 FRONTEND: Frame response status:', response.status, response.statusText);
-        if (!response.ok) {
-          throw new Error('Failed to fetch frame');
-        }
-        const data = await response.json();
-        console.log('🔍 FRONTEND: Frame data received:', data);
-        return data;
-      } else {
-        console.log('🔍 FRONTEND: Fetching schedule with scheduleId:', scheduleId);
-        const response = await fetch(`/api/week-schedules/${scheduleId}`, {
-          credentials: 'include'
-        });
-        console.log('🔍 FRONTEND: Response status:', response.status, response.statusText);
-        if (!response.ok) {
-          throw new Error('Failed to fetch schedule');
-        }
-        const data = await response.json();
-        console.log('🔍 FRONTEND: Schedule data received:', data);
-        return data;
+      console.log('🔍 FRONTEND: Fetching schedule block with ID:', id);
+      const response = await fetch(`/api/schedule-blocks/${id}`, {
+        credentials: 'include'
+      });
+      console.log('🔍 FRONTEND: Schedule block response status:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error('Failed to fetch schedule block');
       }
+      const data = await response.json();
+      console.log('🔍 FRONTEND: Schedule block data received:', data);
+      return data;
     },
-    enabled: !!currentId && permissions.canEditSchedules,
+    enabled: !!id && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });

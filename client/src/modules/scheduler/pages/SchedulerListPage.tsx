@@ -14,12 +14,14 @@ export default function SchedulerListPage() {
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
 
-  // Fetch existing week schedules
-  const { data: weekSchedules, isLoading } = useQuery({
-    queryKey: ['/api/week-schedules'],
+  // Fetch existing schedule blocks
+  const { data: scheduleBlocks, isLoading } = useQuery({
+    queryKey: ['/api/schedule-blocks'],
     queryFn: async () => {
-      const response = await fetch('/api/week-schedules');
-      if (!response.ok) throw new Error('Failed to fetch week schedules');
+      const response = await fetch('/api/schedule-blocks', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch schedule blocks');
       return response.json();
     }
   });
@@ -82,13 +84,13 @@ export default function SchedulerListPage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && (!weekSchedules || weekSchedules.length === 0) && (
+      {!isLoading && (!scheduleBlocks || scheduleBlocks.length === 0) && (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Week Schedules</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Schedule Blocks</h3>
             <p className="text-gray-600 mb-6">
-              Create your first week schedule template to get started with shift planning.
+              Create your first schedule block to get started with multi-week planning.
             </p>
             <Button onClick={handleCreateNew} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -99,9 +101,9 @@ export default function SchedulerListPage() {
       )}
 
       {/* Schedule Grid */}
-      {!isLoading && weekSchedules && weekSchedules.length > 0 && (
+      {!isLoading && scheduleBlocks && scheduleBlocks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {weekSchedules.map((schedule: any) => {
+          {scheduleBlocks.map((schedule: any) => {
             const location = (locations as Location[])?.find(l => l.id === schedule.locationId);
             
             return (
@@ -133,7 +135,7 @@ export default function SchedulerListPage() {
                   
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
-                    <span>{schedule.shiftsCount || 0} shifts</span>
+                    <span>{schedule.weekCount || 0} week schedules</span>
                   </div>
                   
                   <div className="flex gap-2 pt-2">

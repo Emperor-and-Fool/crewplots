@@ -1518,6 +1518,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Schedule Blocks API
+  app.get("/api/schedule-blocks", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+      const scheduleBlocks = await storage.getScheduleBlocks(locationId);
+      res.json(scheduleBlocks);
+    } catch (error) {
+      console.error("Error fetching schedule blocks:", error);
+      res.status(500).json({ error: "Failed to fetch schedule blocks" });
+    }
+  });
+
+  app.get("/api/schedule-blocks/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const scheduleBlock = await storage.getScheduleBlock(id);
+      if (!scheduleBlock) {
+        return res.status(404).json({ error: "Schedule block not found" });
+      }
+      res.json(scheduleBlock);
+    } catch (error) {
+      console.error("Error fetching schedule block:", error);
+      res.status(500).json({ error: "Failed to fetch schedule block" });
+    }
+  });
+
+  app.post("/api/schedule-blocks", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const scheduleBlock = await storage.createScheduleBlock(req.body);
+      res.status(201).json(scheduleBlock);
+    } catch (error) {
+      console.error("Error creating schedule block:", error);
+      res.status(500).json({ error: "Failed to create schedule block" });
+    }
+  });
+
+  app.put("/api/schedule-blocks/:id", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const scheduleBlock = await storage.updateScheduleBlock(id, req.body);
+      if (!scheduleBlock) {
+        return res.status(404).json({ error: "Schedule block not found" });
+      }
+      res.json(scheduleBlock);
+    } catch (error) {
+      console.error("Error updating schedule block:", error);
+      res.status(500).json({ error: "Failed to update schedule block" });
+    }
+  });
+
+  app.get("/api/schedule-blocks/:id/weeks", async (req, res) => {
+    if (!req.user || !hasPermission(req.user.role, "schedule")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const scheduleBlockId = parseInt(req.params.id);
+      const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(scheduleBlockId);
+      res.json(weekSchedules);
+    } catch (error) {
+      console.error("Error fetching week schedules for block:", error);
+      res.status(500).json({ error: "Failed to fetch week schedules" });
+    }
+  });
+
   // Session Consolidation API - Critical fix for shift-creation authentication
   app.get("/api/scheduler/creation-data", async (req, res) => {
     try {
