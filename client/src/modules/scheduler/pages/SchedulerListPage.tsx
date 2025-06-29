@@ -14,11 +14,11 @@ export default function SchedulerListPage() {
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
 
-  // Fetch existing schedule blocks
+  // Fetch existing schedule blocks with creator names using packaging service
   const { data: scheduleBlocks, isLoading } = useQuery({
-    queryKey: ['/api/scheduler/schedule-blocks'],
+    queryKey: ['/api/scheduler/packages/schedule-blocks'],
     queryFn: async () => {
-      const response = await fetch('/api/scheduler/schedule-blocks', {
+      const response = await fetch('/api/scheduler/packages/schedule-blocks', {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch schedule blocks');

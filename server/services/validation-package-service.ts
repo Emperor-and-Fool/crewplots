@@ -16,6 +16,20 @@ import {
 import { eq, and, inArray } from 'drizzle-orm';
 import type { User } from '@shared/schema';
 
+// Extended types for data retrieval with relationships
+export interface ScheduleBlockWithCreator {
+  id: number;
+  name: string;
+  description: string | null;
+  locationId: number;
+  createdBy: number;
+  maxWeeks: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  creatorName: string;
+}
+
 // Validation Package Types - Aligned with actual database schema
 export interface ScheduleValidationPackage {
   packageType: 'create' | 'update' | 'duplicate' | 'delete';
@@ -336,6 +350,50 @@ export class ValidationPackageService {
         },
         errors
       };
+    }
+  }
+
+  // Data Retrieval Methods
+  async getScheduleBlocksWithCreators(locationId?: number): Promise<ScheduleBlockWithCreator[]> {
+    console.log('📊 DATA RETRIEVAL: Fetching schedule blocks with creator names');
+    
+    try {
+      const query = db
+        .select({
+          id: scheduleBlocks.id,
+          name: scheduleBlocks.name,
+          description: scheduleBlocks.description,
+          locationId: scheduleBlocks.locationId,
+          createdBy: scheduleBlocks.createdBy,
+          maxWeeks: scheduleBlocks.maxWeeks,
+          isActive: scheduleBlocks.isActive,
+          createdAt: scheduleBlocks.createdAt,
+          updatedAt: scheduleBlocks.updatedAt,
+          creatorName: users.firstName,
+          creatorLastName: users.lastName,
+        })
+        .from(scheduleBlocks)
+        .leftJoin(users, eq(scheduleBlocks.createdBy, users.id));
+
+      let scheduleBlocksData;
+      if (locationId) {
+        scheduleBlocksData = await query.where(eq(scheduleBlocks.locationId, locationId));
+      } else {
+        scheduleBlocksData = await query;
+      }
+
+      // Combine first and last name into single creatorName field
+      const result = scheduleBlocksData.map(block => ({
+        ...block,
+        creatorName: `${block.creatorName || 'Unknown'} ${block.creatorLastName || ''}`.trim()
+      })) as ScheduleBlockWithCreator[];
+
+      console.log(`📊 DATA RETRIEVAL: Found ${result.length} schedule blocks with creator info`);
+      return result;
+      
+    } catch (error) {
+      console.error('📊 DATA RETRIEVAL: Error fetching schedule blocks:', error);
+      throw error;
     }
   }
 

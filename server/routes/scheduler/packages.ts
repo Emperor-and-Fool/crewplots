@@ -34,6 +34,25 @@ const requireAuth = async (req: any, res: any, next: any) => {
   }
 };
 
+// GET /api/scheduler/packages/schedule-blocks - Retrieve schedule blocks with creator info
+router.get('/schedule-blocks', requireAuth, async (req: any, res) => {
+  try {
+    console.log('📊 PACKAGE RETRIEVAL: Fetching schedule blocks with creator names');
+    
+    const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+    console.log('📊 PACKAGE RETRIEVAL: Location filter:', locationId || 'All locations');
+    
+    const scheduleBlocksWithCreators = await validationPackageService.getScheduleBlocksWithCreators(locationId);
+    
+    console.log(`📊 PACKAGE RETRIEVAL: Successfully retrieved ${scheduleBlocksWithCreators.length} schedule blocks`);
+    res.json(scheduleBlocksWithCreators);
+    
+  } catch (error) {
+    console.error('📊 PACKAGE RETRIEVAL: Error:', error);
+    res.status(500).json({ error: 'Failed to retrieve schedule blocks' });
+  }
+});
+
 // POST /api/scheduler/packages/validate - Validate schedule package
 router.post('/validate', requireAuth, async (req: any, res) => {
   try {
