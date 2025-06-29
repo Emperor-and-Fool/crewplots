@@ -468,6 +468,14 @@ export default function SchedulerEditPage() {
 
   const handleShiftClick = (shift: any) => {
     setEditingShift(shift);
+    
+    // Find the week schedule that contains this shift
+    const shiftWeekScheduleId = shift.weekScheduleId || shift.scheduleId;
+    if (shiftWeekScheduleId) {
+      // Auto-select the week that contains this shift
+      setSelectedWeekScheduleIds([shiftWeekScheduleId]);
+    }
+    
     shiftForm.reset({
       position: shift.position || '',
       startTime: shift.startTime || '',
@@ -477,6 +485,10 @@ export default function SchedulerEditPage() {
       daysOfWeek: [shift.dayOfWeek || ''],
       competencyRequirements: shift.competencyRequirements || []
     });
+    
+    // Switch to Basic Info tab for editing
+    setActiveTab('basic-info');
+    
     toast({
       title: "Shift selected for editing",
       description: `Editing ${shift.position} shift for ${shift.dayOfWeek}`
