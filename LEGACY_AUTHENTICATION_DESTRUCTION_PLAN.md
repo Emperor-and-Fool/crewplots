@@ -129,15 +129,24 @@ After destruction, we will identify exactly where centralized authentication nee
 ### Per-Phase Process
 1. **DESTROY**: Remove ALL legacy patterns in target files
 2. **TEST**: Restart app and observe failures
-3. **DOCUMENT**: Record what breaks and what error messages appear
-4. **CONTINUE**: Move to next file regardless of failures
-5. **NO FIXES**: Accept all breakage during destruction phase
+3. **WRITE REPORT**: Document what breaks, error messages, and analysis - BIT BY BIT, PART BY PART
+4. **SMALL FIXES**: Minor obvious fixes within scope can be done BUT MUST BE DOCUMENTED IN REPORT
+5. **CONTINUE**: Move to next file regardless of failures
+6. **NO MAJOR FIXES**: Accept significant breakage during destruction phase
+
+### Continuous Reporting Requirements
+- **WRITE DETAILED REPORTS** during execution, not just at the end
+- **ANALYZE EACH FAILURE** as it occurs with technical details
+- **DOCUMENT SMALL FIXES** immediately when applied
+- **TRACK PROGRESS** file by file with specific outcomes
+- **EXPLAIN ROOT CAUSES** discovered during destruction
+- **DO NOT WAIT** until end to document - report continuously
 
 ### Post-Destruction Analysis
 1. Catalog all authentication failures
-2. Identify missing centralized auth integration points
+2. Identify missing centralized auth integration points  
 3. Create implementation plan for centralized system
-4. Report complete destruction results
+4. Compile final comprehensive report from continuous documentation
 
 ## Success Criteria
 
