@@ -172,7 +172,6 @@ export default function SchedulerEditPage() {
       }
       
       console.log('🔍 ALL SHIFTS: Total shifts loaded:', allShifts.length);
-      console.log('🔍 ALL SHIFTS: Draft shifts found:', allShifts.filter(s => s.status === 'draft'));
       console.log('🔍 ALL SHIFTS: All shifts data:', allShifts);
       return allShifts;
     },
@@ -350,10 +349,10 @@ export default function SchedulerEditPage() {
     return formData.position && formData.startTime && formData.endTime && formData.daysOfWeek && formData.daysOfWeek.length > 0;
   };
 
-  // Auto-save mutation using notes system pattern
+  // Auto-save mutation - simplified without status
   const autoSaveDraftMutation = useMutation({
     mutationFn: async (formData: ShiftCreationForm) => {
-      console.log('🔄 AUTO-SAVE: Starting auto-save for shift draft');
+      console.log('🔄 AUTO-SAVE: Starting auto-save');
       
       // Generate unique group ID for shifts created together
       const shiftGroupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -364,7 +363,7 @@ export default function SchedulerEditPage() {
       console.log('🔄 AUTO-SAVE: Schedule block ID:', scheduleId);
       console.log('🔄 AUTO-SAVE: Available week schedules:', allWeekSchedules);
       console.log('🔄 AUTO-SAVE: Selected week IDs:', selectedWeekScheduleIds);
-      console.log('🔄 AUTO-SAVE: Target weeks for draft:', targetWeekScheduleIds);
+      console.log('🔄 AUTO-SAVE: Target weeks:', targetWeekScheduleIds);
       console.log('🔄 AUTO-SAVE: Days selected:', formData.daysOfWeek);
       
       // Validation - ensure we have valid data
@@ -373,17 +372,17 @@ export default function SchedulerEditPage() {
         return { error: 'Missing week schedules or days' };
       }
       
-      // Clear existing drafts first to prevent duplicates
+      // Clear existing auto-save shifts first to prevent duplicates
       if (draftShiftId) {
-        console.log('🔄 AUTO-SAVE: Clearing previous draft:', draftShiftId);
+        console.log('🔄 AUTO-SAVE: Clearing previous auto-save shift:', draftShiftId);
         try {
           await apiRequest('DELETE', `/api/scheduler/shifts/${draftShiftId}`);
         } catch (error) {
-          console.warn('🔄 AUTO-SAVE: Could not delete previous draft:', error);
+          console.warn('🔄 AUTO-SAVE: Could not delete previous auto-save shift:', error);
         }
       }
       
-      // Create draft shifts for ALL selected weeks, but only first day for auto-save
+      // Create auto-save shifts for ALL selected weeks, but only first day for auto-save
       const firstDay = formData.daysOfWeek[0];
       if (!firstDay) {
         throw new Error('No day selected for auto-save');
@@ -392,7 +391,7 @@ export default function SchedulerEditPage() {
       const createdShifts = [];
       
       for (const weekId of targetWeekScheduleIds) {
-        const draftShift = {
+        const autoSaveShift = {
           weekScheduleId: weekId,
           shiftGroupId,
           title: `${formData.position} - ${firstDay}`,
@@ -402,14 +401,13 @@ export default function SchedulerEditPage() {
           endTime: formData.endTime,
           maxSlots: formData.maxSlots,
           subscriptionDeadline: formData.subscriptionDeadline || null,
-          competencyRequirements: formData.competencyRequirements || [],
-          status: 'draft' as const
+          competencyRequirements: formData.competencyRequirements || []
         };
         
-        console.log(`🔄 AUTO-SAVE: Creating draft shift for week ${weekId}:`, draftShift);
+        console.log(`🔄 AUTO-SAVE: Creating auto-save shift for week ${weekId}:`, autoSaveShift);
         console.log(`🔄 AUTO-SAVE: Making request to URL: /api/scheduler/week-schedules/${weekId}/shifts`);
         
-        const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekId}/shifts`, draftShift);
+        const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekId}/shifts`, autoSaveShift);
         console.log(`🔄 AUTO-SAVE: Response received:`, response);
         createdShifts.push(response);
       }
@@ -421,14 +419,14 @@ export default function SchedulerEditPage() {
       setHasSaveError(false);
     },
     onSuccess: (createdShifts) => {
-      console.log('🔄 AUTO-SAVE: Draft shifts saved successfully across all weeks:', createdShifts);
+      console.log('🔄 AUTO-SAVE: Shifts saved successfully across all weeks:', createdShifts);
       if (createdShifts && createdShifts.length > 0) {
         setDraftShiftId(createdShifts[0].id); // Track first shift for cleanup
       }
       setIsAutoSaving(false);
       setHasSaveError(false);
       
-      // Invalidate cache to show draft shifts in preview across all weeks
+      // Invalidate cache to show shifts in preview across all weeks
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'] });
       selectedWeekScheduleIds.forEach(weekId => {
         queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', weekId, 'shifts'] });
@@ -436,7 +434,7 @@ export default function SchedulerEditPage() {
       refetchShifts();
     },
     onError: (error) => {
-      console.error('🔄 AUTO-SAVE: Failed to save draft', error);
+      console.error('🔄 AUTO-SAVE: Failed to save shifts:', error);
       setIsAutoSaving(false);
       setHasSaveError(true);
     }
