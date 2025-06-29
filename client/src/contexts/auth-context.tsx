@@ -44,16 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if session cookies exist before making auth requests
-        // This prevents AuthContext from creating empty sessions
-        const hasSessionCookie = document.cookie.includes('connect.sid') || document.cookie.includes('session');
-        if (!hasSessionCookie) {
-          console.log('🔐 AUTH: No session cookies found, skipping auth check to prevent empty session creation');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('🔐 AUTH: Session cookies found, checking authentication');
+
         
         // Primary: Try backend authentication check using /me endpoint
         // This uses the working backend session authentication

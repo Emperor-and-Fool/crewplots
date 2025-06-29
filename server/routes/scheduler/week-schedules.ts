@@ -181,7 +181,8 @@ router.get("/:id/shifts", authenticateUser, async (req: any, res) => {
 
 // Create shift for a specific week schedule
 router.post("/:id/shifts", authenticateUser, async (req: any, res) => {
-  if (!hasPermission(req.user.role, "scheduler_development")) {
+  // req.user is populated by authenticateUser middleware
+  if (!hasPermission(req.user?.role, "scheduler_development")) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
@@ -192,7 +193,7 @@ router.post("/:id/shifts", authenticateUser, async (req: any, res) => {
     const validatedData = insertShiftSchema.parse({
       ...req.body,
       weekScheduleId: weekScheduleId,
-      createdBy: req.user.id
+      createdBy: req.user?.id
     });
     
     const shift = await storage.createShift(validatedData);

@@ -16,8 +16,6 @@ export async function apiRequest(
   data?: unknown | undefined,
   timeout = DEFAULT_TIMEOUT,
 ): Promise<Response> {
-  console.log(`🌐 API REQUEST: ${method} ${url}`, data ? { data } : '(no data)');
-  
   // Create AbortController for request timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -31,7 +29,6 @@ export async function apiRequest(
       signal: controller.signal,
     });
 
-    console.log(`🌐 API RESPONSE: ${method} ${url} - Status: ${res.status}`);
     clearTimeout(timeoutId); // Clear timeout if request completes
     await throwIfResNotOk(res);
     return res;
