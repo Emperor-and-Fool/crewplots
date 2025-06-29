@@ -63,10 +63,10 @@ export default function SchedulerListPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="h-8 w-8" />
-            Week Schedule Templates
+            Schedule Blocks
           </h1>
           <p className="text-gray-600 mt-2">
-            Manage reusable week schedules with multiple shifts and competency requirements
+            Manage multi-week schedule blocks containing week schedules and shift planning
           </p>
         </div>
         
