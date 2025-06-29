@@ -46,48 +46,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
 
         
-        // Primary: Try backend authentication check using /me endpoint
-        // This uses the working backend session authentication
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        const response = await fetch('/me', {
+        // Use centralized authentication endpoint - no fallbacks
+        const response = await fetch('/api/auth/me', {
           method: 'GET',
           credentials: 'include',
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          },
-          signal: controller.signal
+          }
         });
-        
-        clearTimeout(timeoutId);
         
         if (response.ok) {
           const authData = await response.json();
           if (authData?.authenticated && authData.user) {
             setUser(authData.user);
           } else {
-            // Fallback: Try direct auth endpoint
-            const fallbackResponse = await fetch('/api/auth/me', {
-              method: 'GET',
-              credentials: 'include',
-              headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-              }
-            });
-            
-            if (fallbackResponse.ok) {
-              const fallbackData = await fallbackResponse.json();
-              if (fallbackData?.authenticated && fallbackData.user) {
-                setUser(fallbackData.user);
-              } else {
-                setUser(null);
-              }
-            } else {
-              setUser(null);
-            }
+            setUser(null);
           }
         } else {
           setUser(null);
