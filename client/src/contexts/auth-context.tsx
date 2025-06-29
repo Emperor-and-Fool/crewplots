@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Skip auth check if no cookies exist (means no login has occurred)
         // This prevents creating empty sessions before authentication
         const currentCookies = document.cookie;
-        if (!currentCookies || currentCookies.trim() === '') {
+        if (!currentCookies || currentCookies.trim() === '' || !currentCookies.includes('connect.sid')) {
           setIsAuthenticated(false);
           setUser(null);
           setIsLoading(false);
@@ -55,14 +55,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         // Primary: Try auth consolidation endpoint that uses working session
+        // Use a longer timeout to prevent session isolation issues
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const response = await fetch('/api/auth-consolidation', {
           method: 'GET',
           credentials: 'include',
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          }
+          },
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         console.log('🔍 CLIENT AUTH RESPONSE:', {
           status: response.status,
