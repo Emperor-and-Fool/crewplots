@@ -172,7 +172,7 @@ export default function SchedulerEditPage() {
       console.log('🔍 ALL SHIFTS: All shifts data:', allShifts);
       return allShifts;
     },
-    enabled: !!scheduleId && permissions.canEditSchedules,
+    enabled: !!scheduleId,
     staleTime: 0, // Always fresh for live updates
     gcTime: 30 * 1000, // 30 seconds in memory
   });
