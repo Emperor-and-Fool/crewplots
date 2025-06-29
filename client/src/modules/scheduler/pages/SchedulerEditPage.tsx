@@ -848,7 +848,7 @@ export default function SchedulerEditPage() {
           ...actualScheduleData,
           multiWeekFrameId: frame.id,
           weekNumber: 1,
-          name: `${actualScheduleData.name} (Week 1)`
+          name: actualScheduleData.name
         });
 
         // Refresh data to get updated schedule
@@ -1100,11 +1100,6 @@ export default function SchedulerEditPage() {
                 <div>
                   <h1 className="text-3xl font-bold">
                     Add Shifts to {actualScheduleData?.name}
-                    {actualScheduleData?.weekNumber && (
-                      <span className="text-muted-foreground text-xl ml-2">
-                        (Week {actualScheduleData.weekNumber})
-                      </span>
-                    )}
                   </h1>
                   <p className="text-muted-foreground mt-2">
                     Create and manage shifts for your weekly schedule
