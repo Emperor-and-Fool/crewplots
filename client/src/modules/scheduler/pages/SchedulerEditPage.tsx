@@ -298,6 +298,44 @@ export default function SchedulerEditPage() {
     }
   });
 
+  // Validation framework mutation for complete schedule chain saving
+  const saveSchedulePackageMutation = useMutation({
+    mutationFn: async (packageData: any) => {
+      console.log('🚀 VALIDATION FRAMEWORK: Starting complete schedule chain save', {
+        scheduleId,
+        packageData,
+        timestamp: new Date().toISOString()
+      });
+      const result = await apiRequest('POST', `/api/scheduler/packages/create`, packageData);
+      console.log('✅ VALIDATION FRAMEWORK: Complete schedule chain saved successfully', {
+        result,
+        timestamp: new Date().toISOString()
+      });
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/shifts'] });
+      
+      setHasBeenEdited(true);
+      
+      toast({
+        title: "Complete schedule saved successfully",
+        description: "All schedule data, weeks, and shifts have been saved using the validation framework"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save complete schedule",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+
+
   // Shift update mutation (for editing existing shifts)
   const updateShiftMutation = useMutation({
     mutationFn: async ({ shiftId, shiftData }: { shiftId: number; shiftData: ShiftCreationForm }) => {
@@ -990,13 +1028,29 @@ export default function SchedulerEditPage() {
                       variant="ghost"
                       onClick={async () => {
                         const formData = scheduleForm.getValues();
-                        await updateWeekScheduleMutation.mutateAsync(formData);
+                        
+                        // Try validation framework first, fallback to legacy save
+                        try {
+                          const packageData = {
+                            operation: 'update',
+                            scheduleBlock: {
+                              id: parseInt(scheduleId!),
+                              ...formData
+                            }
+                          };
+                          console.log('🔗 VALIDATION FRAMEWORK: Saving complete schedule chain', packageData);
+                          await saveSchedulePackageMutation.mutateAsync(packageData);
+                        } catch (error) {
+                          console.log('🔗 FALLBACK: Using legacy save method', error);
+                          await updateWeekScheduleMutation.mutateAsync(formData);
+                        }
+                        
                         window.location.href = '/scheduler';
                       }}
-                      disabled={updateWeekScheduleMutation.isPending}
+                      disabled={updateWeekScheduleMutation.isPending || saveSchedulePackageMutation.isPending}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      {updateWeekScheduleMutation.isPending ? "Saving..." : "To Templates"}
+                      {(updateWeekScheduleMutation.isPending || saveSchedulePackageMutation.isPending) ? "Saving..." : "To Templates"}
                     </Button>
                     
                     <Button 
