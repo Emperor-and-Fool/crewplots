@@ -316,7 +316,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Optimized refreshAuth function using React Query for deduplication
   const refreshAuth = async (): Promise<boolean> => {
-    console.log("Refreshing authentication state");
+
     setIsLoading(true);
     
     try {
