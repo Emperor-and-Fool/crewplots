@@ -482,10 +482,10 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       // Invalidate cache and refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/week-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId, 'all-shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules'] });
       selectedWeekScheduleIds.forEach(weekId => {
-        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/week-schedules', weekId, 'shifts'] });
       });
       refetchShifts();
       

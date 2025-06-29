@@ -81,13 +81,13 @@ export default function MultiWeekCalendarPreview({
 
   // Fetch shifts for all week schedules in this schedule block
   const { data: allShifts = [] } = useQuery({
-    queryKey: ['/api/schedule-blocks', scheduleBlockId, 'all-shifts'],
+    queryKey: ['/api/scheduler/schedule-blocks', scheduleBlockId, 'all-shifts'],
     queryFn: async () => {
       console.log('🔍 MULTI-WEEK SHIFTS: Fetching all shifts for schedule block:', scheduleBlockId);
       
       // Fetch shifts for each week schedule
       const shiftsPromises = weekSchedules.map(async (weekSchedule) => {
-        const response = await fetch(`/api/week-schedules/${weekSchedule.id}/shifts`, {
+        const response = await fetch(`/api/scheduler/week-schedules/${weekSchedule.id}/shifts`, {
           credentials: 'include'
         });
         if (!response.ok) {

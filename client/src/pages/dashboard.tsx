@@ -32,9 +32,9 @@ export default function Dashboard() {
 
   // Fetch week schedules
   const { data: weekSchedules } = useQuery({
-    queryKey: ['/api/week-schedules'],
+    queryKey: ['/api/scheduler/week-schedules'],
     queryFn: async () => {
-      const response = await fetch('/api/week-schedules', {
+      const response = await fetch('/api/scheduler/week-schedules', {
         credentials: 'include'
       });
       if (!response.ok) {

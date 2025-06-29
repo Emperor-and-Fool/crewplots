@@ -47,9 +47,9 @@ export function WeeklySchedule({ locationId, weekStartDate = new Date() }: Weekl
 
   // Fetch week schedules for this location
   const { data: weekSchedules } = useQuery({
-    queryKey: ['/api/week-schedules'],
+    queryKey: ['/api/scheduler/week-schedules'],
     queryFn: async () => {
-      const response = await fetch('/api/week-schedules', {
+      const response = await fetch('/api/scheduler/week-schedules', {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -66,9 +66,9 @@ export function WeeklySchedule({ locationId, weekStartDate = new Date() }: Weekl
 
   // Fetch shifts for the active week schedule
   const { data: shifts } = useQuery<Shift[]>({
-    queryKey: ['/api/week-schedules', activeWeekSchedule?.id, 'shifts'],
+    queryKey: ['/api/scheduler/week-schedules', activeWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
-      const response = await fetch(`/api/week-schedules/${activeWeekSchedule.id}/shifts`, {
+      const response = await fetch(`/api/scheduler/week-schedules/${activeWeekSchedule.id}/shifts`, {
         credentials: 'include'
       });
       if (!response.ok) {
