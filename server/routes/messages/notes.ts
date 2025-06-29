@@ -180,7 +180,7 @@ router.get('/', requireAuth, async (req: any, res) => {
 });
 
 // Create note for authenticated user
-router.post('/', requireAuth, async (req: any, res) => {
+router.post('/', authenticateUser, async (req: any, res) => {
   try {
     const messageSchema = z.object({
       content: z.string().max(10000),
