@@ -336,54 +336,67 @@ export default function SchedulerEditPage() {
       // Use selected week schedule IDs for shift creation, fallback to first week if none selected
       const targetWeekScheduleIds = selectedWeekScheduleIds.length > 0 ? selectedWeekScheduleIds : (allWeekSchedules.length > 0 ? [allWeekSchedules[0].id] : [parseInt(scheduleId || '0')]);
       
-      // For auto-save, just save the first shift as draft
-      const firstWeekId = targetWeekScheduleIds[0];
-      const firstDay = formData.daysOfWeek[0];
+      console.log('🔄 AUTO-SAVE: Target weeks for draft:', targetWeekScheduleIds);
+      console.log('🔄 AUTO-SAVE: Days selected:', formData.daysOfWeek);
       
-      if (!firstWeekId || !firstDay) {
-        throw new Error('No week schedule or day selected');
-      }
-
-      const draftShift = {
-        weekScheduleId: firstWeekId,
-        shiftGroupId,
-        title: `${formData.position} - ${firstDay}`,
-        position: formData.position,
-        dayOfWeek: firstDay,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        maxSlots: formData.maxSlots,
-        subscriptionDeadline: formData.subscriptionDeadline || null,
-        competencyRequirements: formData.competencyRequirements || [],
-        status: 'draft' as const
-      };
-
+      // Clear existing drafts first to prevent duplicates
       if (draftShiftId) {
-        // Update existing draft - need PUT endpoint for shifts
-        console.log(`🔄 AUTO-SAVE: Updating existing draft ${draftShiftId}`);
-        const response = await apiRequest('PUT', `/api/shifts/${draftShiftId}`, draftShift);
-        return await response.json();
-      } else {
-        // Create new draft
-        console.log('🔄 AUTO-SAVE: Creating new draft shift');
-        const response = await apiRequest('POST', `/api/week-schedules/${firstWeekId}/shifts`, draftShift);
-        return await response.json();
+        console.log('🔄 AUTO-SAVE: Clearing previous draft:', draftShiftId);
+        try {
+          await apiRequest('DELETE', `/api/shifts/${draftShiftId}`);
+        } catch (error) {
+          console.warn('🔄 AUTO-SAVE: Could not delete previous draft:', error);
+        }
       }
+      
+      // Create draft shifts for ALL selected weeks, but only first day for auto-save
+      const firstDay = formData.daysOfWeek[0];
+      if (!firstDay) {
+        throw new Error('No day selected for auto-save');
+      }
+      
+      const createdShifts = [];
+      
+      for (const weekId of targetWeekScheduleIds) {
+        const draftShift = {
+          weekScheduleId: weekId,
+          shiftGroupId,
+          title: `${formData.position} - ${firstDay}`,
+          position: formData.position,
+          dayOfWeek: firstDay,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          maxSlots: formData.maxSlots,
+          subscriptionDeadline: formData.subscriptionDeadline || null,
+          competencyRequirements: formData.competencyRequirements || [],
+          status: 'draft' as const
+        };
+        
+        console.log(`🔄 AUTO-SAVE: Creating draft shift for week ${weekId}:`, draftShift);
+        
+        const response = await apiRequest('POST', `/api/week-schedules/${weekId}/shifts`, draftShift);
+        createdShifts.push(response);
+      }
+      
+      return createdShifts;
     },
     onMutate: () => {
       setIsAutoSaving(true);
       setHasSaveError(false);
     },
-    onSuccess: (savedShift) => {
-      console.log('🔄 AUTO-SAVE: Draft saved successfully', savedShift);
-      if (!draftShiftId) {
-        setDraftShiftId(savedShift.id);
+    onSuccess: (createdShifts) => {
+      console.log('🔄 AUTO-SAVE: Draft shifts saved successfully across all weeks:', createdShifts);
+      if (createdShifts && createdShifts.length > 0) {
+        setDraftShiftId(createdShifts[0].id); // Track first shift for cleanup
       }
       setIsAutoSaving(false);
       setHasSaveError(false);
       
-      // Invalidate cache to show draft shifts in preview
+      // Invalidate cache to show draft shifts in preview across all weeks
       queryClient.invalidateQueries({ queryKey: ['/api/schedule-blocks', scheduleId, 'all-shifts'] });
+      selectedWeekScheduleIds.forEach(weekId => {
+        queryClient.invalidateQueries({ queryKey: ['/api/week-schedules', weekId, 'shifts'] });
+      });
       refetchShifts();
     },
     onError: (error) => {
