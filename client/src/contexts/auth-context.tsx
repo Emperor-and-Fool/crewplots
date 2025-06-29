@@ -44,8 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Skip auth check if no cookies exist (means no login has occurred)
-        // This prevents creating empty sessions before authentication
+        // Log cookie status but don't exit early - backend may still have valid session
         const currentCookies = document.cookie;
         console.log('🍪 AUTH DEBUG: Current cookies check:', {
           cookiesExist: !!currentCookies,
@@ -55,20 +54,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           timestamp: new Date().toISOString()
         });
         
-        if (!currentCookies || currentCookies.trim() === '' || !currentCookies.includes('connect.sid')) {
-          console.log('🚪 AUTH DEBUG: No session cookies found, setting user to logged out');
-          setIsAuthenticated(false);
-          setUser(null);
-          setIsLoading(false);
-          return;
-        }
+        // Always try backend authentication check first
+        // Don't rely solely on cookie presence due to hot reload clearing cookies
         
-        // Primary: Try auth consolidation endpoint that uses working session
-        // Use a longer timeout to prevent session isolation issues
+        // Primary: Try backend authentication check using /me endpoint
+        // This uses the working backend session authentication
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
-        const response = await fetch('/api/auth-consolidation', {
+        const response = await fetch('/me', {
           method: 'GET',
           credentials: 'include',
           headers: {

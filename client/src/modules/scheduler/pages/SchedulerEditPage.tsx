@@ -286,20 +286,24 @@ export default function SchedulerEditPage() {
       
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
       console.log('🔄 SAVE DEBUG: Cache invalidated for schedule-blocks');
+      console.log('🍪 SAVE DEBUG: Cookies AFTER cache invalidation:', document.cookie);
       
       // Update selectedWeekScheduleId for schedule block architecture
       // Schedule block architecture - no week schedule ID needed
       setHasBeenEdited(true);
       console.log('✏️ SAVE DEBUG: Set hasBeenEdited to true');
+      console.log('🍪 SAVE DEBUG: Cookies AFTER state update:', document.cookie);
       
       toast({
         title: "Schedule updated successfully",
         description: "You can now manage shifts for this schedule"
       });
       console.log('🔔 SAVE DEBUG: Toast notification triggered');
+      console.log('🍪 SAVE DEBUG: Cookies AFTER toast:', document.cookie);
       
       console.log('✅ SAVE DEBUG: onSuccess handler completed', {
         userStillAuthenticated: !!user,
+        cookieStatus: document.cookie ? 'present' : 'missing',
         timestamp: new Date().toISOString()
       });
     },
