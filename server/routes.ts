@@ -383,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all locations with default query function support
-  app.get("/api/locations", async (req, res) => {
+  app.get("/api/locations", authenticateUser, async (req, res) => {
     try {
       const locations = await storage.getLocations();
       console.log(`[LOCATIONS API] Returning ${locations.length} locations`);
@@ -395,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new location
-  app.post("/api/locations", async (req, res) => {
+  app.post("/api/locations", authenticateUser, async (req, res) => {
     try {
       const locationData = req.body;
       console.log("[LOCATIONS API] Creating location:", locationData);
@@ -464,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get specific location
-  app.get("/api/locations/:id", async (req, res) => {
+  app.get("/api/locations/:id", authenticateUser, async (req, res) => {
     try {
       const locationId = parseInt(req.params.id);
       if (isNaN(locationId)) {
@@ -484,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update location
-  app.patch("/api/locations/:id", async (req, res) => {
+  app.patch("/api/locations/:id", authenticateUser, async (req, res) => {
     try {
       const locationId = parseInt(req.params.id);
       if (isNaN(locationId)) {
@@ -507,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete location
-  app.delete("/api/locations/:id", async (req, res) => {
+  app.delete("/api/locations/:id", authenticateUser, async (req, res) => {
     try {
       const locationId = parseInt(req.params.id);
       if (isNaN(locationId)) {
