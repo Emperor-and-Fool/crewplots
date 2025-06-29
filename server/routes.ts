@@ -675,22 +675,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get shifts by location (via schedule filtering)
-  app.get("/api/shifts/location/:locationId", async (req, res) => {
-    try {
-      const locationId = parseInt(req.params.locationId);
-      if (isNaN(locationId)) {
-        return res.status(400).json({ error: "Invalid location ID" });
-      }
-      
-      const shifts = await storage.getShiftsByLocation(locationId);
-      console.log(`[SHIFTS API] Returning ${shifts.length} shifts for location ${locationId}`);
-      res.json(shifts);
-    } catch (error) {
-      console.error("Error fetching shifts by location:", error);
-      res.status(500).json({ error: "Failed to fetch shifts by location" });
-    }
-  });
+  // MOVED TO MODULAR: Get shifts by location (via schedule filtering) - now in /api/scheduler/shifts
+  // app.get("/api/shifts/location/:locationId", async (req, res) => {
+  //   try {
+  //     const locationId = parseInt(req.params.locationId);
+  //     if (isNaN(locationId)) {
+  //       return res.status(400).json({ error: "Invalid location ID" });
+  //     }
+  //     
+  //     const shifts = await storage.getShiftsByLocation(locationId);
+  //     console.log(`[SHIFTS API] Returning ${shifts.length} shifts for location ${locationId}`);
+  //     res.json(shifts);
+  //   } catch (error) {
+  //     console.error("Error fetching shifts by location:", error);
+  //     res.status(500).json({ error: "Failed to fetch shifts by location" });
+  //   }
+  // });
 
   // Get applications by location
   app.get("/api/applications/location/:locationId", async (req, res) => {
@@ -726,48 +726,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get schedule templates by location
-  app.get("/api/schedule-templates/location/:locationId", async (req, res) => {
-    try {
-      const locationId = parseInt(req.params.locationId);
-      if (isNaN(locationId)) {
-        return res.status(400).json({ error: "Invalid location ID" });
-      }
-      
-      const templates = await storage.getScheduleTemplatesByLocation(locationId);
-      console.log(`[SCHEDULE TEMPLATES API] Returning ${templates.length} templates for location ${locationId}`);
-      res.json(templates);
-    } catch (error) {
-      console.error("Error fetching schedule templates by location:", error);
-      res.status(500).json({ error: "Failed to fetch schedule templates by location" });
-    }
-  });
+  // MOVED TO MODULAR: Get schedule templates by location - now in /api/scheduler/schedule-blocks
+  // app.get("/api/schedule-templates/location/:locationId", async (req, res) => {
+  //   try {
+  //     const locationId = parseInt(req.params.locationId);
+  //     if (isNaN(locationId)) {
+  //       return res.status(400).json({ error: "Invalid location ID" });
+  //     }
+  //     
+  //     const templates = await storage.getScheduleTemplatesByLocation(locationId);
+  //     console.log(`[SCHEDULE TEMPLATES API] Returning ${templates.length} templates for location ${locationId}`);
+  //     res.json(templates);
+  //   } catch (error) {
+  //     console.error("Error fetching schedule templates by location:", error);
+  //     res.status(500).json({ error: "Failed to fetch schedule templates by location" });
+  //   }
+  // });
 
-  // Shifts - Not yet implemented, return empty array
-  app.get("/api/shifts", async (req, res) => {
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development.read")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Shifts - now in /api/scheduler/shifts
+  // app.get("/api/shifts", async (req, res) => {
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development.read")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const weekScheduleId = req.query.weekScheduleId ? parseInt(req.query.weekScheduleId as string) : undefined;
-      
-      if (weekScheduleId) {
-        console.log(`🔍 SHIFTS API: Fetching shifts for week schedule ID: ${weekScheduleId}`);
-        const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
-        console.log(`🔍 SHIFTS API: Found ${shifts.length} shifts for week schedule ${weekScheduleId}`);
-        res.json(shifts);
-      } else {
-        console.log(`🔍 SHIFTS API: Fetching all shifts`);
-        const shifts = await storage.getShifts();
-        console.log(`🔍 SHIFTS API: Found ${shifts.length} total shifts`);
-        res.json(shifts);
-      }
-    } catch (error) {
-      console.error("Error fetching shifts:", error);
-      res.status(500).json({ error: "Failed to fetch shifts" });
-    }
-  });
+  //   try {
+  //     const weekScheduleId = req.query.weekScheduleId ? parseInt(req.query.weekScheduleId as string) : undefined;
+  //     
+  //     if (weekScheduleId) {
+  //       console.log(`🔍 SHIFTS API: Fetching shifts for week schedule ID: ${weekScheduleId}`);
+  //       const shifts = await storage.getShiftsByWeekSchedule(weekScheduleId);
+  //       console.log(`🔍 SHIFTS API: Found ${shifts.length} shifts for week schedule ${weekScheduleId}`);
+  //       res.json(shifts);
+  //     } else {
+  //       console.log(`🔍 SHIFTS API: Fetching all shifts`);
+  //       const shifts = await storage.getShifts();
+  //       console.log(`🔍 SHIFTS API: Found ${shifts.length} total shifts`);
+  //       res.json(shifts);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching shifts:", error);
+  //     res.status(500).json({ error: "Failed to fetch shifts" });
+  //   }
+  // });
 
   // Get users by status - needed for dashboard
   app.get("/api/users/status/:status", async (req, res) => {
@@ -1175,173 +1175,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Week Schedule Management API
-  app.get("/api/week-schedules", authenticateUser, async (req, res) => {
-    if (!hasPermission(req.user.role, "scheduler_development")) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Week Schedule Management API - now in /api/scheduler/week-schedules
+  // app.get("/api/week-schedules", authenticateUser, async (req, res) => {
+  //   if (!hasPermission(req.user.role, "scheduler_development")) {
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
-      const frameId = req.query.frameId ? parseInt(req.query.frameId as string) : undefined;
-      
-      if (frameId) {
-        console.log(`🔍 SCHEDULE BLOCK QUERY - Fetching schedules for block: ${frameId}`);
-        // Get schedule block data and all week schedules in this block
-        const scheduleBlock = await storage.getScheduleBlock(frameId);
-        if (!scheduleBlock) {
-          return res.status(404).json({ error: "Schedule block not found" });
-        }
-        
-        const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(frameId);
-        console.log(`🔍 SCHEDULE BLOCK QUERY - Found ${weekSchedules.length} schedules in block`);
-        
-        res.json({
-          scheduleBlock,
-          weekSchedules,
-          isScheduleBlockMode: true
-        });
-      } else {
-        // Standard location-based query
-        const weekSchedules = await storage.getWeekSchedules(locationId);
-        res.json(weekSchedules);
-      }
-    } catch (error) {
-      console.error("Error fetching week schedules:", error);
-      res.status(500).json({ error: "Failed to fetch week schedules" });
-    }
-  });
+  //   try {
+  //     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
+  //     const frameId = req.query.frameId ? parseInt(req.query.frameId as string) : undefined;
+  //     
+  //     if (frameId) {
+  //       console.log(`🔍 SCHEDULE BLOCK QUERY - Fetching schedules for block: ${frameId}`);
+  //       // Get schedule block data and all week schedules in this block
+  //       const scheduleBlock = await storage.getScheduleBlock(frameId);
+  //       if (!scheduleBlock) {
+  //         return res.status(404).json({ error: "Schedule block not found" });
+  //       }
+  //       
+  //       const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(frameId);
+  //       console.log(`🔍 SCHEDULE BLOCK QUERY - Found ${weekSchedules.length} schedules in block`);
+  //       
+  //       res.json({
+  //         scheduleBlock,
+  //         weekSchedules,
+  //         isScheduleBlockMode: true
+  //       });
+  //     } else {
+  //       // Standard location-based query
+  //       const weekSchedules = await storage.getWeekSchedules(locationId);
+  //       res.json(weekSchedules);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching week schedules:", error);
+  //     res.status(500).json({ error: "Failed to fetch week schedules" });
+  //   }
+  // });
 
-  app.post("/api/week-schedules", async (req, res) => {
-    console.log("🔄 WEEK SCHEDULE CREATE - Start");
-    console.log("User:", req.user?.username, "Role:", req.user?.role);
-    console.log("Request body:", req.body);
-    console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
-    
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("❌ WEEK SCHEDULE CREATE - Permission denied");
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.post("/api/week-schedules", async (req, res) => {
+  //   console.log("🔄 WEEK SCHEDULE CREATE - Start");
+  //   console.log("User:", req.user?.username, "Role:", req.user?.role);
+  //   console.log("Request body:", req.body);
+  //   console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+  //   
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("❌ WEEK SCHEDULE CREATE - Permission denied");
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
-      const validatedData = insertWeekScheduleSchema.parse({
-        ...req.body,
-        createdBy: req.user.id
-      });
-      console.log("✅ WEEK SCHEDULE CREATE - Data validated:", validatedData);
-      
-      const weekSchedule = await storage.createWeekSchedule(validatedData);
-      console.log("✅ WEEK SCHEDULE CREATE - Saved successfully:", weekSchedule);
-      res.status(201).json(weekSchedule);
-    } catch (error) {
-      console.error("❌ WEEK SCHEDULE CREATE - Error:", error);
-      res.status(400).json({ error: "Failed to create week schedule" });
-    }
-  });
+  //   try {
+  //     console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
+  //     const validatedData = insertWeekScheduleSchema.parse({
+  //       ...req.body,
+  //       createdBy: req.user.id
+  //     });
+  //     console.log("✅ WEEK SCHEDULE CREATE - Data validated:", validatedData);
+  //     
+  //     const weekSchedule = await storage.createWeekSchedule(validatedData);
+  //     console.log("✅ WEEK SCHEDULE CREATE - Saved successfully:", weekSchedule);
+  //     res.status(201).json(weekSchedule);
+  //   } catch (error) {
+  //     console.error("❌ WEEK SCHEDULE CREATE - Error:", error);
+  //     res.status(400).json({ error: "Failed to create week schedule" });
+  //   }
+  // });
 
-  // Session Consolidation Endpoint for Scheduler Edit Page
-  app.get("/api/scheduler/edit-data/:id", async (req, res) => {
-    console.log("🔄 SCHEDULER CONSOLIDATION - Edit data request");
-    // near-future-removal: Optional chaining workaround for missing auth middleware typing
-    // console.log("User:", req.user?.username, "Role:", req.user?.role);
-    console.log("User:", req.user.username, "Role:", req.user.role);
-    console.log("Schedule ID:", req.params.id);
-    // near-future-removal: Optional chaining workaround for permission check
-    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
-    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
-    
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("❌ SCHEDULER CONSOLIDATION - Permission denied");
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Session Consolidation Endpoint for Scheduler Edit Page - now in /api/scheduler
+  // app.get("/api/scheduler/edit-data/:id", async (req, res) => {
+  //   console.log("🔄 SCHEDULER CONSOLIDATION - Edit data request");
+  //   // near-future-removal: Optional chaining workaround for missing auth middleware typing
+  //   // console.log("User:", req.user?.username, "Role:", req.user?.role);
+  //   console.log("User:", req.user.username, "Role:", req.user.role);
+  //   console.log("Schedule ID:", req.params.id);
+  //   // near-future-removal: Optional chaining workaround for permission check
+  //   // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+  //   console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
+  //   
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("❌ SCHEDULER CONSOLIDATION - Permission denied");
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const scheduleId = parseInt(req.params.id);
-      console.log("✅ SCHEDULER CONSOLIDATION - Permission granted, loading consolidated data");
-      
-      const { schedulerConsolidationService } = await import('./services/scheduler-consolidation-service');
-      const consolidatedData = await schedulerConsolidationService.getSchedulerEditData(scheduleId, req.user.role);
-      
-      if (!consolidatedData || !consolidatedData.schedule) {
-        console.log("❌ SCHEDULER CONSOLIDATION - Schedule not found");
-        return res.status(404).json({ error: "Schedule not found" });
-      }
-      
-      console.log("✅ SCHEDULER CONSOLIDATION - Data loaded successfully");
-      res.json(consolidatedData);
-    } catch (error) {
-      console.error("❌ SCHEDULER CONSOLIDATION - Error:", error);
-      res.status(500).json({ error: "Failed to fetch scheduler edit data" });
-    }
-  });
+  //   try {
+  //     const scheduleId = parseInt(req.params.id);
+  //     console.log("✅ SCHEDULER CONSOLIDATION - Permission granted, loading consolidated data");
+  //     
+  //     const { schedulerConsolidationService } = await import('./services/scheduler-consolidation-service');
+  //     const consolidatedData = await schedulerConsolidationService.getSchedulerEditData(scheduleId, req.user.role);
+  //     
+  //     if (!consolidatedData || !consolidatedData.schedule) {
+  //       console.log("❌ SCHEDULER CONSOLIDATION - Schedule not found");
+  //       return res.status(404).json({ error: "Schedule not found" });
+  //     }
+  //     
+  //     console.log("✅ SCHEDULER CONSOLIDATION - Data loaded successfully");
+  //     res.json(consolidatedData);
+  //   } catch (error) {
+  //     console.error("❌ SCHEDULER CONSOLIDATION - Error:", error);
+  //     res.status(500).json({ error: "Failed to fetch scheduler edit data" });
+  //   }
+  // });
 
-  app.get("/api/week-schedules/:id", async (req, res) => {
-    console.log("🔍 WEEK SCHEDULE FETCH - Single schedule request");
-    // near-future-removal: Optional chaining workaround for missing auth middleware typing
-    // console.log("User:", req.user?.username, "Role:", req.user?.role);
-    console.log("User:", req.user.username, "Role:", req.user.role);
-    console.log("Schedule ID:", req.params.id);
-    // near-future-removal: Optional chaining workaround for permission check
-    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
-    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
-    
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("❌ WEEK SCHEDULE FETCH - Permission denied");
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // MOVED TO MODULAR: Week schedule endpoints - now in /api/scheduler/week-schedules
+  // app.get("/api/week-schedules/:id", async (req, res) => {
+  //   console.log("🔍 WEEK SCHEDULE FETCH - Single schedule request");
+  //   // near-future-removal: Optional chaining workaround for missing auth middleware typing
+  //   // console.log("User:", req.user?.username, "Role:", req.user?.role);
+  //   console.log("User:", req.user.username, "Role:", req.user.role);
+  //   console.log("Schedule ID:", req.params.id);
+  //   // near-future-removal: Optional chaining workaround for permission check
+  //   // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+  //   console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
+  //   
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("❌ WEEK SCHEDULE FETCH - Permission denied");
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      console.log("✅ WEEK SCHEDULE FETCH - Fetching schedule with ID:", id);
-      console.log("✅ WEEK SCHEDULE FETCH - Calling storage.getWeekScheduleById...");
-      const weekSchedule = await storage.getWeekScheduleById(id);
-      console.log("✅ WEEK SCHEDULE FETCH - Raw result from storage:", JSON.stringify(weekSchedule, null, 2));
-      console.log("✅ WEEK SCHEDULE FETCH - Found schedule:", weekSchedule ? "Yes" : "No");
-      
-      if (!weekSchedule) {
-        console.log("❌ WEEK SCHEDULE FETCH - Schedule not found in database");
-        return res.status(404).json({ error: "Week schedule not found" });
-      }
-      
-      console.log("✅ WEEK SCHEDULE FETCH - Returning schedule data to frontend");
-      res.json(weekSchedule);
-    } catch (error) {
-      console.error("❌ WEEK SCHEDULE FETCH - Database error:", error);
-      res.status(500).json({ error: "Failed to fetch week schedule" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     console.log("✅ WEEK SCHEDULE FETCH - Fetching schedule with ID:", id);
+  //     console.log("✅ WEEK SCHEDULE FETCH - Calling storage.getWeekScheduleById...");
+  //     const weekSchedule = await storage.getWeekScheduleById(id);
+  //     console.log("✅ WEEK SCHEDULE FETCH - Raw result from storage:", JSON.stringify(weekSchedule, null, 2));
+  //     console.log("✅ WEEK SCHEDULE FETCH - Found schedule:", weekSchedule ? "Yes" : "No");
+  //     
+  //     if (!weekSchedule) {
+  //       console.log("❌ WEEK SCHEDULE FETCH - Schedule not found in database");
+  //       return res.status(404).json({ error: "Week schedule not found" });
+  //     }
+  //     
+  //     console.log("✅ WEEK SCHEDULE FETCH - Returning schedule data to frontend");
+  //     res.json(weekSchedule);
+  //   } catch (error) {
+  //     console.error("❌ WEEK SCHEDULE FETCH - Database error:", error);
+  //     res.status(500).json({ error: "Failed to fetch week schedule" });
+  //   }
+  // });
 
-  app.put("/api/week-schedules/:id", async (req, res) => {
-    console.log("🔄 WEEK SCHEDULE UPDATE - Start");
-    // near-future-removal: Optional chaining workaround for missing auth middleware typing
-    // console.log("User:", req.user?.username, "Role:", req.user?.role);
-    console.log("User:", req.user.username, "Role:", req.user.role);
-    console.log("Schedule ID:", req.params.id);
-    console.log("Request body:", req.body);
-    // near-future-removal: Optional chaining workaround for permission check
-    // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
-    console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
-    
-    if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
-      console.log("❌ WEEK SCHEDULE UPDATE - Permission denied");
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
+  // app.put("/api/week-schedules/:id", async (req, res) => {
+  //   console.log("🔄 WEEK SCHEDULE UPDATE - Start");
+  //   // near-future-removal: Optional chaining workaround for missing auth middleware typing
+  //   // console.log("User:", req.user?.username, "Role:", req.user?.role);
+  //   console.log("User:", req.user.username, "Role:", req.user.role);
+  //   console.log("Schedule ID:", req.params.id);
+  //   console.log("Request body:", req.body);
+  //   // near-future-removal: Optional chaining workaround for permission check
+  //   // console.log("Permission check for scheduler_development:", hasPermission(req.user?.role, "scheduler_development"));
+  //   console.log("Permission check for scheduler_development:", hasPermission(req.user.role, "scheduler_development"));
+  //   
+  //   if (!req.user || !hasPermission(req.user.role, "scheduler_development")) {
+  //     console.log("❌ WEEK SCHEDULE UPDATE - Permission denied");
+  //     return res.status(403).json({ error: "Insufficient permissions" });
+  //   }
 
-    try {
-      const id = parseInt(req.params.id);
-      console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
-      const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
-      console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
-      
-      const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
-      console.log("✅ WEEK SCHEDULE UPDATE - Updated successfully:", weekSchedule);
-      res.json(weekSchedule);
-    } catch (error) {
-      console.error("❌ WEEK SCHEDULE UPDATE - Error:", error);
-      res.status(400).json({ error: "Failed to update week schedule" });
-    }
-  });
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
+  //     const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
+  //     console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
+  //     
+  //     const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
+  //     console.log("✅ WEEK SCHEDULE UPDATE - Updated successfully:", weekSchedule);
+  //     res.json(weekSchedule);
+  //   } catch (error) {
+  //     console.error("❌ WEEK SCHEDULE UPDATE - Error:", error);
+  //     res.status(400).json({ error: "Failed to update week schedule" });
+  //   }
+  // });
 
   // === Multi-Week Frame API Routes ===
 
