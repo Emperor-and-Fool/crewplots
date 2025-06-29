@@ -47,7 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Skip auth check if no cookies exist (means no login has occurred)
         // This prevents creating empty sessions before authentication
         const currentCookies = document.cookie;
+        console.log('🍪 AUTH DEBUG: Current cookies check:', {
+          cookiesExist: !!currentCookies,
+          cookiesLength: currentCookies?.length || 0,
+          hasConnectSid: currentCookies?.includes('connect.sid'),
+          fullCookieString: currentCookies,
+          timestamp: new Date().toISOString()
+        });
+        
         if (!currentCookies || currentCookies.trim() === '' || !currentCookies.includes('connect.sid')) {
+          console.log('🚪 AUTH DEBUG: No session cookies found, setting user to logged out');
           setIsAuthenticated(false);
           setUser(null);
           setIsLoading(false);
