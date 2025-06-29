@@ -143,6 +143,13 @@ export class ValidationPackageService {
     };
 
     console.log('🎁 PACKAGE ASSEMBLY: Package assembled successfully');
+    console.log('🎁 PACKAGE ASSEMBLY: Final package data:', JSON.stringify({
+      packageType: packageData.packageType,
+      scheduleBlock: packageData.scheduleBlock,
+      weekSchedulesCount: packageData.weekSchedules.length,
+      shiftsCount: packageData.shifts.length,
+      userId: packageData.metadata.userId
+    }, null, 2));
 
     return packageData;
   }
@@ -161,9 +168,17 @@ export class ValidationPackageService {
     try {
       // Validate schedule block using existing schemas
       if (packageData.scheduleBlock) {
+        console.log('🔍 INTEGRITY VALIDATION: Schedule block data being validated:', JSON.stringify(packageData.scheduleBlock, null, 2));
+        
         const scheduleBlockResult = packageData.packageType === 'create' 
           ? insertScheduleBlockSchema.safeParse(packageData.scheduleBlock)
           : insertScheduleBlockSchema.partial().safeParse(packageData.scheduleBlock);
+          
+        console.log('🔍 INTEGRITY VALIDATION: Schedule block validation result:', {
+          success: scheduleBlockResult.success,
+          errors: scheduleBlockResult.success ? 'none' : scheduleBlockResult.error.errors
+        });
+        
         if (!scheduleBlockResult.success) {
           errors.push(...scheduleBlockResult.error.errors.map(e => `Schedule Block: ${e.path.join('.')}: ${e.message}`));
         }
