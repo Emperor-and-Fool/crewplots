@@ -238,11 +238,13 @@ export default function SchedulerEditPage() {
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
 
-  // Set default selected week when allWeekSchedules loads
+  // Set default selected weeks when allWeekSchedules loads - select ALL weeks for multi-week auto-save
   useEffect(() => {
     if (allWeekSchedules.length > 0 && selectedWeekScheduleIds.length === 0) {
-      // Default to the first week schedule
-      setSelectedWeekScheduleIds([allWeekSchedules[0].id]);
+      // Default to ALL week schedules in the current schedule block for proper multi-week auto-save
+      const allWeekIds = allWeekSchedules.map(ws => ws.id);
+      console.log('🔧 MULTI-WEEK FIX: Setting default selected weeks to ALL weeks:', allWeekIds);
+      setSelectedWeekScheduleIds(allWeekIds);
     }
   }, [allWeekSchedules, selectedWeekScheduleIds]);
 
