@@ -17,6 +17,8 @@ import { queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import type { Message as BaseMessage, InsertMessage } from '@shared/schema';
 import { RichTextEditor, MessageDisplay } from './RichTextEditor';
+import { useMessaging } from '../hooks/useMessaging';
+import type { ComponentMode, WorkflowType } from '../types/messaging.types';
 
 // Extended Message type that includes joined user data
 interface Message extends BaseMessage {
@@ -126,18 +128,39 @@ export function MessagingSystem({
 }: MessagingSystemProps) {
   const { toast } = useToast();
   
-  // Mode-specific behavior configuration
-  const isNoteMode = mode === 'note';
-  const isMessagesMode = mode === 'messages';
+  // Configure useMessaging hook with proper workflow mapping
+  const workflow: WorkflowType = mode === 'note' ? 'application' : 'crew';
   
-  // Edit state management
-  const [editingMessageId, setEditingMessageId] = React.useState<number | null>(null);
-  const [editContent, setEditContent] = React.useState<string>('');
-  const [hasCreatedMessage, setHasCreatedMessage] = React.useState<boolean>(false);
-  const [draftMessageId, setDraftMessageId] = React.useState<number | null>(null);
-  const [lastSavedContent, setLastSavedContent] = React.useState<string>('');
-  const [isAutoSaving, setIsAutoSaving] = React.useState<boolean>(false);
-  const [hasSaveError, setHasSaveError] = React.useState<boolean>(false);
+  // Use the shared messaging hook instead of custom implementation
+  const {
+    messages,
+    isLoading,
+    error,
+    editingMessageId,
+    editContent,
+    hasCreatedMessage,
+    draftMessageId,
+    isAutoSaving,
+    hasSaveError,
+    setEditingMessageId,
+    setEditContent,
+    setDraftMessageId,
+    createMessage,
+    updateMessage,
+    deleteMessage,
+    refetch,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    isNoteMode,
+    isMessagesMode
+  } = useMessaging({
+    userId,
+    receiverId,
+    mode: mode as ComponentMode,
+    workflow,
+    readOnlyMode
+  });
 
   // Form setup with validation
   const form = useForm<MessageFormData>({
@@ -151,60 +174,7 @@ export function MessagingSystem({
     },
   });
 
-  // Determine the correct API endpoint based on readOnlyMode and user context
-  const getNotesEndpoint = () => {
-    if (readOnlyMode && isNoteMode && userId) {
-      // When in read-only mode (viewing applicant notes), use the applicant-specific endpoint
-      return `/api/messaging/notes/applicant/${userId}`;
-    }
-    // Normal mode - user viewing their own notes or messages
-    return isNoteMode ? '/api/messaging/notes' : '/api/messaging/messages';
-  };
 
-  // Fetch data via proper hybrid architecture - PostgreSQL first, then MongoDB content
-  const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: [getNotesEndpoint(), userId],
-    queryFn: async () => {
-      const endpoint = getNotesEndpoint();
-      const response = await fetch(endpoint, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Authentication required');
-        }
-        throw new Error(`Failed to fetch ${isNoteMode ? 'notes' : 'messages'}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`${isNoteMode ? 'Notes' : 'Messages'} fetched via hybrid architecture:`, data);
-      
-      // Check for Redis fallback notifications in headers
-      const cacheStatus = response.headers.get('X-Cache-Status');
-      const debugMessage = response.headers.get('X-Debug-Message');
-      
-      if (cacheStatus === 'postgres-fallback') {
-        console.warn('🚨 REDIS FAILED: Redis cache unavailable, fell back to PostgreSQL');
-        console.log('💾 FALLBACK ACTIVE:', debugMessage);
-        
-        // Show toast notification to user
-        toast({
-          title: "Redis Cache failing",
-          description: "Fall back to default",
-          variant: "destructive"
-        });
-      } else if (cacheStatus === 'redis-hit') {
-        console.log('⚡ REDIS SUCCESS:', debugMessage);
-      }
-      
-      return data;
-    },
-    enabled: !!userId,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    staleTime: 0, // Always consider data stale for instant updates
-  });
 
 
 
