@@ -42,13 +42,13 @@ export const WeeklySummary = ({ locationId }: LocationSummaryProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
 
   // Fetch week schedules for this location
-  const { data: weekSchedules } = useQuery({
+  const { data: weekSchedules } = useQuery<any[]>({
     queryKey: ['/api/scheduler/week-schedules'],
     enabled: !!locationId
   });
 
   // Fetch shifts for selected template
-  const { data: shifts } = useQuery({
+  const { data: shifts } = useQuery<Shift[]>({
     queryKey: ['/api/scheduler/shifts', selectedTemplate],
     enabled: !!selectedTemplate
   });
@@ -62,7 +62,7 @@ export const WeeklySummary = ({ locationId }: LocationSummaryProps) => {
         <div className="space-y-4">
           {/* Template Selection */}
           <div className="flex gap-2">
-            {weekSchedules?.map((schedule: any) => (
+            {weekSchedules && weekSchedules.length > 0 ? weekSchedules.map((schedule: any) => (
               <Button
                 key={schedule.id}
                 variant={selectedTemplate === schedule.id ? "default" : "outline"}
@@ -71,7 +71,7 @@ export const WeeklySummary = ({ locationId }: LocationSummaryProps) => {
               >
                 {schedule.name}
               </Button>
-            ))}
+            )) : null}
           </div>
 
           {/* Schedule Display */}
@@ -91,7 +91,7 @@ export const WeeklySummary = ({ locationId }: LocationSummaryProps) => {
                     <TableCell className="font-medium">{timeSlot}</TableCell>
                     {days.map(day => {
                       const dayShifts = shifts.filter((shift: Shift) => 
-                        shift.daysOfWeek?.includes(day.toLowerCase())
+                        shift.dayOfWeek === day.toLowerCase()
                       );
                       
                       return (
