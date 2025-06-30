@@ -4,6 +4,7 @@ import { Plus, Calendar, MapPin, Users, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/modules/auth';
@@ -68,6 +69,27 @@ export default function SchedulerListPage() {
     }
   });
 
+  // Toggle schedule status mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ scheduleId, isActive }: { scheduleId: number; isActive: boolean }) => {
+      return apiRequest('PUT', `/api/scheduler/packages/schedule-blocks/${scheduleId}`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+      toast({
+        title: "Schedule status updated",
+        description: "The schedule status has been changed successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update schedule status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleDeleteSchedule = (scheduleId: number, closeDialog: () => void) => {
     deleteScheduleMutation.mutate(scheduleId, {
       onSuccess: () => {
@@ -85,6 +107,13 @@ export default function SchedulerListPage() {
           variant: "destructive"
         });
       }
+    });
+  };
+
+  const handleToggleStatus = (scheduleId: number, currentStatus: boolean) => {
+    toggleStatusMutation.mutate({ 
+      scheduleId, 
+      isActive: !currentStatus 
     });
   };
 
@@ -210,11 +239,17 @@ export default function SchedulerListPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{schedule.name}</CardTitle>
-                    <Badge 
-                      className={`${schedule.isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                    >
-                      {schedule.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-medium ${schedule.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                        {schedule.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      <Switch
+                        checked={schedule.isActive}
+                        onCheckedChange={() => handleToggleStatus(schedule.id, schedule.isActive)}
+                        disabled={toggleStatusMutation.isPending}
+                        className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
+                      />
+                    </div>
                   </div>
                   {schedule.description && (
                     <p className="text-sm text-gray-600 mt-2">{schedule.description}</p>
