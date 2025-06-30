@@ -71,7 +71,7 @@ router.post('/register', async (req, res) => {
         });
 
         // Remove password from response
-        const { password, ...userWithoutPassword } = user;
+        const { password: userPassword, ...userWithoutPassword } = user;
 
         return res.status(201).json({
             message: 'User registered successfully',
@@ -137,36 +137,36 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
             
-            // Manually log in the admin user using Passport's login method
-            req.login(adminUser, { session: true }, (err) => {
-                if (err) {
-                    console.error('Admin login error:', err);
-                    return res.status(500).json({ message: 'Error during login process' });
+            // Use centralized auth compatible session format
+            req.session.passport = {
+                user: { 
+                    id: adminUser.id,
+                    username: adminUser.username,
+                    role: adminUser.role,
+                    loggedIn: true
                 }
-                
-                console.log('Admin login successful, session established with ID:', req.sessionID);
-                
-                // Set a debug cookie to test cookie functionality
-                res.cookie('admin-login', new Date().toISOString(), { 
-                    maxAge: 86400000,
-                    httpOnly: true,
-                    sameSite: 'lax'
-                });
-                
-                // Return success with user data (excluding password)
-                const { password, ...userWithoutPassword } = adminUser;
-                return res.status(200).json({
-                    message: 'Login successful',
-                    user: userWithoutPassword,
-                    debug: {
-                        adminBypass: true,
-                        sessionId: req.sessionID,
-                        timestamp: new Date().toISOString()
-                    }
-                });
+            };
+            
+            console.log('Admin login successful, session established with ID:', req.sessionID);
+            
+            // Set a debug cookie to test cookie functionality
+            res.cookie('admin-login', new Date().toISOString(), { 
+                maxAge: 86400000,
+                httpOnly: true,
+                sameSite: 'lax'
             });
             
-            return; // End execution here for admin login
+            // Return success with user data (excluding password)
+            const { password, ...userWithoutPassword } = adminUser;
+            return res.status(200).json({
+                message: 'Login successful',
+                user: userWithoutPassword,
+                debug: {
+                    adminBypass: true,
+                    sessionId: req.sessionID,
+                    timestamp: new Date().toISOString()
+                }
+            });
         }
         
         // For email login or username login, we need to find the correct user first
@@ -204,33 +204,35 @@ router.post('/login', upload.none(), async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid username/email or password' });
         }
         
-        // If we get here, credentials are correct - use Passport to log in
-        req.login(user, { session: true }, (err) => {
-            if (err) {
-                console.error('Login error:', err);
-                return res.status(500).json({ message: 'Error during login process' });
+        // If we get here, credentials are correct - use centralized auth compatible session format
+        req.session.passport = {
+            user: { 
+                id: user.id,
+                username: user.username,
+                role: user.role,
+                loggedIn: true
             }
-            
-            console.log('Passport login successful for user:', user.username);
-            console.log('Session established with ID:', req.sessionID);
-            
-            // Set a regular cookie for debugging
-            res.cookie('login-timestamp', new Date().toISOString(), { 
-                maxAge: 86400000,
-                httpOnly: true,
-                sameSite: 'lax'
-            });
-            
-            // Return success with user data (excluding password)
-            const { password, ...userWithoutPassword } = user;
-            return res.status(200).json({
-                message: 'Login successful',
-                user: userWithoutPassword,
-                debug: {
-                    sessionId: req.sessionID,
-                    timestamp: new Date().toISOString()
-                }
-            });
+        };
+        
+        console.log('Centralized auth login successful for user:', user.username);
+        console.log('Session established with ID:', req.sessionID);
+        
+        // Set a regular cookie for debugging
+        res.cookie('login-timestamp', new Date().toISOString(), { 
+            maxAge: 86400000,
+            httpOnly: true,
+            sameSite: 'lax'
+        });
+        
+        // Return success with user data (excluding password)
+        const { password: loginPassword, ...userWithoutPassword } = user;
+        return res.status(200).json({
+            message: 'Login successful',
+            user: userWithoutPassword,
+            debug: {
+                sessionId: req.sessionID,
+                timestamp: new Date().toISOString()
+            }
         });
     } catch (error) {
         if (error instanceof ZodError) {
