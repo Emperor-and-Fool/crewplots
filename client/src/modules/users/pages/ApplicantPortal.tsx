@@ -15,11 +15,29 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/modules/messaging';
 import { ProfileCard } from '@/modules/users/components/profiles';
+import { LogOut } from 'lucide-react';
 
 function ApplicantPortal() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, logout } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Apply the recommended pattern: guard conditions without effects
   if (authLoading) {
@@ -73,9 +91,20 @@ function ApplicantPortal() {
             Welcome back, {user.firstName || user.username}
           </p>
         </div>
-        <Badge className={getStatusBadge(user.status || 'new')}>
-          {user.status?.charAt(0).toUpperCase() + (user.status?.slice(1) || 'new'.slice(1))}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge className={getStatusBadge(user.status || 'new')}>
+            {user.status?.charAt(0).toUpperCase() + (user.status?.slice(1) || 'new'.slice(1))}
+          </Badge>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogout}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
