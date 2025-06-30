@@ -59,14 +59,14 @@ client/src/components/ui/rich-text-editor.tsx.bak
 **Objective:** Move primary messaging component with full feature preservation
 
 **File Operations:**
-1. **Create Backup:**
+1. **Copy to Module:**
    ```bash
-   cp client/src/components/ui/messaging-system.tsx client/src/components/ui/messaging-system.tsx.bak
+   cp client/src/components/ui/messaging-system.tsx client/src/modules/messaging/components/MessagingSystem.tsx
    ```
 
-2. **Move to Module:**
+2. **Create Backup:**
    ```bash
-   mv client/src/components/ui/messaging-system.tsx client/src/modules/messaging/components/MessagingSystem.tsx
+   mv client/src/components/ui/messaging-system.tsx client/src/components/ui/messaging-system.tsx.bak
    ```
 
 3. **Update Import References:**
@@ -85,14 +85,14 @@ client/src/components/ui/rich-text-editor.tsx.bak
 **Objective:** Move TipTap integration to messaging module
 
 **File Operations:**
-1. **Create Backup:**
+1. **Copy to Module:**
    ```bash
-   cp client/src/components/ui/rich-text-editor.tsx client/src/components/ui/rich-text-editor.tsx.bak
+   cp client/src/components/ui/rich-text-editor.tsx client/src/modules/messaging/components/RichTextEditor.tsx
    ```
 
-2. **Move to Module:**
+2. **Create Backup:**
    ```bash
-   mv client/src/components/ui/rich-text-editor.tsx client/src/modules/messaging/components/RichTextEditor.tsx
+   mv client/src/components/ui/rich-text-editor.tsx client/src/components/ui/rich-text-editor.tsx.bak
    ```
 
 3. **Update Dependencies:**
