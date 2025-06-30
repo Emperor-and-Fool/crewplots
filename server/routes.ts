@@ -132,19 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       saveUninitialized: false, // Don't create sessions for unauthenticated requests
       name: 'connect.sid', // Use default session name
       rolling: false, // Don't force cookies on every response to reduce overhead
-      // Smart session creation: Only create sessions when needed
-      genid: (req) => {
-        // Create sessions only for authentication routes or when existing session needs renewal
-        const isAuthRoute = req.path === '/login' || req.path === '/register' || req.path.startsWith('/auth/');
-        const hasExistingSession = req.headers.cookie?.includes('connect.sid');
-        
-        if (isAuthRoute || hasExistingSession) {
-          return require('crypto').randomBytes(16).toString('hex');
-        }
-        
-        // For other requests, return a temporary identifier that won't be saved
-        return 'temp-' + Date.now();
-      }
+      // Note: Removed custom genid to prevent client-side execution issues
+      // Session creation is controlled by saveUninitialized: false instead
     })
   );
 
