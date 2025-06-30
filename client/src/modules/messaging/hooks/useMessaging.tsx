@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import type { ExtendedMessage, ComponentMode, WorkflowType, MessageFormData } from '../types/messaging.types';
 
 export interface MessagingConfig {
@@ -25,7 +26,7 @@ export function useMessaging(config: MessagingConfig) {
   const [hasCreatedMessage, setHasCreatedMessage] = useState<boolean>(false);
   const [draftMessageId, setDraftMessageId] = useState<number | null>(null);
   const [lastSavedContent, setLastSavedContent] = useState<string>('');
-  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+
   const [hasSaveError, setHasSaveError] = useState<boolean>(false);
 
   // Mode-specific behavior (extracted from messaging-system.tsx lines 129-131)
@@ -135,7 +136,6 @@ export function useMessaging(config: MessagingConfig) {
       queryClient.invalidateQueries({ queryKey: ['/api/messaging/notes'] });
       setEditingMessageId(null);
       setEditContent('');
-      setIsAutoSaving(false);
       setHasSaveError(false);
       
       toast({
@@ -249,21 +249,43 @@ export function useMessaging(config: MessagingConfig) {
     },
   });
 
-  // Auto-save functionality (extracted from messaging-system.tsx lines 322-350)
-  useEffect(() => {
-    if (!editContent || readOnlyMode || editContent === lastSavedContent) {
-      return;
-    }
-
-    const autoSaveTimer = setTimeout(() => {
-      if (editContent !== lastSavedContent && editContent.trim().length > 0) {
-        setIsAutoSaving(true);
-        autoSaveDraftMutation.mutate(editContent);
+  // Auto-save functionality using shared useAutoSave hook (migrated from lines 253-266)
+  const { status: autoSaveStatus } = useAutoSave(editContent, {
+    endpoint: draftMessageId ? `/api/messaging/notes/${draftMessageId}` : '/api/messaging/notes',
+    method: draftMessageId ? 'PUT' : 'POST',
+    debounceMs: 2000,
+    enabled: !readOnlyMode && editContent !== lastSavedContent && editContent.trim().length > 0,
+    transformData: (content: string) => {
+      if (draftMessageId) {
+        return { content };
+      } else {
+        return {
+          content,
+          userId: userId,
+          workflow: workflow,
+          messageType: 'rich-text',
+          priority: 'normal',
+          isPrivate: false,
+          receiverId: receiverId
+        };
       }
-    }, 2000); // Auto-save after 2 seconds of inactivity
+    },
+    onSaveSuccess: (savedMessage) => {
+      if (!draftMessageId) {
+        setDraftMessageId(savedMessage.id);
+        setHasCreatedMessage(true);
+      }
+      setLastSavedContent(editContent);
+      setHasSaveError(false);
+    },
+    onSaveError: (error: any) => {
+      setHasSaveError(true);
+      console.error('Auto-save failed:', error);
+    }
+  });
 
-    return () => clearTimeout(autoSaveTimer);
-  }, [editContent, lastSavedContent, readOnlyMode, autoSaveDraftMutation]);
+  // Map shared auto-save status to legacy isAutoSaving state for compatibility
+  const isAutoSaving = autoSaveStatus === 'saving';
 
   // Public interface
   return {
