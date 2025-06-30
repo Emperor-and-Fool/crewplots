@@ -178,194 +178,13 @@ export function MessagingSystem({
 
 
 
-  // Delete message mutation
-  const deleteMessageMutation = useMutation({
-    mutationFn: async (messageId: number): Promise<void> => {
-      const response = await fetch(`/api/messaging/notes/${messageId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete note: ${response.statusText}`);
-      }
-    },
-    onSuccess: (_, deletedMessageId) => {
-      // Update cache using the correct query key
-      const currentQueryKey = [getNotesEndpoint(), userId];
-      queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
-        return old.filter(msg => msg.id !== deletedMessageId);
-      });
-      
-      // Also refetch to ensure consistency
-      console.log(`🐛 REFETCH DEBUG: Calling refetch() after delete - this may reset component state`);
-      refetch();
-      
-      toast({
-        title: 'Note deleted',
-        description: 'Your note has been successfully deleted.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to delete note',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
 
-  // Edit message mutation
-  const editMessageMutation = useMutation({
-    mutationFn: async ({ messageId, content }: { messageId: number, content: string }): Promise<void> => {
-      const response = await fetch(`/api/messaging/notes/${messageId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ content }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to update note: ${response.statusText}`);
-      }
-    },
-    onSuccess: (_, { messageId, content }) => {
-      // Update cache using the correct query key
-      const currentQueryKey = [getNotesEndpoint(), userId];
-      queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
-        return old.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, content, updatedAt: new Date() }
-            : msg
-        );
-      });
-      
-      // Also refetch to ensure consistency
-      console.log(`🐛 REFETCH DEBUG: Calling refetch() after edit - this may reset component state`);
-      refetch();
-      
-      // Reset edit state
-      setEditingMessageId(null);
-      setEditContent('');
-      
-      toast({
-        title: 'Motivation saved',
-        description: 'Your motivation has been saved.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to update note',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
 
-  // Create message mutation - use applicant-specific endpoint
-  const createMessageMutation = useMutation({
-    mutationFn: async (data: MessageFormData): Promise<Message> => {
-      const messageData = {
-        content: data.content,
-        priority: data.priority,
-        isPrivate: data.isPrivate,
-      };
 
-      const response = await fetch('/api/messaging/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData),
-        credentials: 'include',
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create message: ${response.statusText}`);
-      }
 
-      return response.json();
-    },
-    onSuccess: async (newMessage) => {
-      // Set the flag to indicate a message was created
-      setHasCreatedMessage(true);
-      
-      // Directly update cache with server response (setQueryData strategy)
-      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
-        return [...(old || []), newMessage];
-      });
-      
-      // Also use programmatic refetch for guaranteed fresh data
-      console.log(`🐛 REFETCH DEBUG: Calling refetch() after create - this may reset component state`);
-      await refetch();
-      
-      // Reset form
-      form.reset();
-      
-      // Call custom handler
-      onMessageSent?.(newMessage);
-      
-      // Show success toast
-      toast({
-        title: isNoteMode ? 'Note saved' : 'Message sent',
-        description: isNoteMode ? 'Your note has been saved.' : 'Your message has been sent.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: isNoteMode ? 'Failed to save note' : 'Failed to send message',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Auto-save draft mutation - handles both note and message modes
-  const autoSaveDraftMutation = useMutation({
-    mutationFn: async (content: string): Promise<Message> => {
-      const messageData = {
-        content,
-        priority: 'normal' as const,
-        isPrivate: false,
-      };
-
-      // Always POST - server handles upsert logic (client-side prevention disabled)
-      console.log(`🐛 AUTO-SAVE DEBUG: Starting auto-save, content length=${content.length}`);
-      console.log(`🐛 AUTO-SAVE DEBUG: Using POST request - server will handle upsert`);
-      
-      const response = await fetch('/api/messaging/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to save note: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log(`🐛 AUTO-SAVE DEBUG: POST request completed, returned message ID=${result.id}`);
-      return result;
-    },
-    onMutate: () => {
-      console.log(`🐛 AUTO-SAVE DEBUG: onMutate - server-side upsert mode`);
-      setIsAutoSaving(true);
-      setHasSaveError(false);
-    },
-    onSuccess: (message) => {
-      console.log(`🐛 AUTO-SAVE DEBUG: onSuccess - received message ID=${message.id}`);
-      setDraftMessageId(message.id);
-      setLastSavedContent(message.content);
-      setIsAutoSaving(false);
-      setHasSaveError(false);
-    },
-    onError: () => {
-      console.log(`🐛 AUTO-SAVE DEBUG: onError - auto-save failed`);
-      setIsAutoSaving(false);
-      setHasSaveError(true);
-    },
-  });
 
   // Filter messages based on props
   const filteredMessages = React.useMemo(() => {
@@ -385,30 +204,10 @@ export function MessagingSystem({
     );
   }, [messages, showOnlyUserMessages, showSystemMessages, userId]);
 
-  // Debounced auto-save effect - simplified server-side prevention
-  React.useEffect(() => {
-    if (editContent.trim() && editContent !== lastSavedContent) {
-      const timeoutId = setTimeout(() => {
-        autoSaveDraftMutation.mutate(editContent);
-      }, 500);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [editContent, lastSavedContent, autoSaveDraftMutation]);
-
-  // Handle form submission
+  // Handle form submission using the shared messaging hook
   const onSubmit = (data: MessageFormData) => {
-    // If we have a draft, use the proper edit mutation like the Save button
-    if (draftMessageId && editContent.trim()) {
-      editMessageMutation.mutate({
-        messageId: draftMessageId,
-        content: editContent
-      });
-      return;
-    }
-    
     if (data.content.trim()) {
-      createMessageMutation.mutate(data);
+      createMessage(data);
     }
   };
 
@@ -417,8 +216,6 @@ export function MessagingSystem({
     setEditingMessageId(null);
     setEditContent('');
     setDraftMessageId(null);
-    setLastSavedContent('');
-    setHasCreatedMessage(false);
   };
 
   // Handle loading and error states
