@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Calendar, MapPin, Users, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,6 +83,72 @@ export default function SchedulerListPage() {
 
   const handleDeleteSchedule = (scheduleId: number) => {
     deleteScheduleMutation.mutate(scheduleId);
+  };
+
+  // Delete confirmation component with counts
+  const DeleteConfirmationDialog = ({ schedule }: { schedule: any }) => {
+    const deletionInfoQuery = useQuery({
+      queryKey: ['/api/scheduler/packages/delete-info', schedule.id],
+      queryFn: async () => {
+        const response = await fetch(`/api/scheduler/packages/delete-info/${schedule.id}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch deletion info');
+        return response.json();
+      },
+      enabled: false // Only fetch when dialog opens
+    });
+
+    return (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            disabled={deleteScheduleMutation.isPending}
+            onClick={() => deletionInfoQuery.refetch()}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{schedule.name}"? 
+              {deletionInfoQuery.data && (
+                <div className="mt-2 p-3 bg-red-50 rounded-md">
+                  <div className="text-sm text-red-800">
+                    This will permanently remove:
+                    <ul className="mt-1 list-disc list-inside">
+                      <li>{deletionInfoQuery.data.weekSchedulesCount} week schedule{deletionInfoQuery.data.weekSchedulesCount !== 1 ? 's' : ''}</li>
+                      <li>{deletionInfoQuery.data.shiftsCount} shift{deletionInfoQuery.data.shiftsCount !== 1 ? 's' : ''}</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              {deletionInfoQuery.isLoading && (
+                <div className="mt-2 text-sm text-gray-500">Loading deletion details...</div>
+              )}
+              <div className="mt-2 text-sm text-gray-600">
+                This action cannot be undone.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDeleteSchedule(schedule.id)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteScheduleMutation.isPending || deletionInfoQuery.isLoading}
+            >
+              {deleteScheduleMutation.isPending ? "Deleting..." : "Delete Schedule"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
   };
 
   return (
@@ -184,35 +250,7 @@ export default function SchedulerListPage() {
                       Edit Schedule
                     </Button>
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          disabled={deleteScheduleMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{schedule.name}"? This will permanently remove the schedule and all its shifts. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSchedule(schedule.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            {deleteScheduleMutation.isPending ? "Deleting..." : "Delete Schedule"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <DeleteConfirmationDialog schedule={schedule} />
                   </div>
                 </CardContent>
               </Card>

@@ -2,7 +2,7 @@ import express from 'express';
 import { validationPackageService } from '../../services/validation-package-service';
 import { authenticateUser } from '../../middleware/auth';
 import { db } from '../../db';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { scheduleBlocks, weekSchedules, shifts } from '@shared/schema';
 
 const router = express.Router();
@@ -189,6 +189,39 @@ router.put('/update/:id', authenticateUser, async (req: any, res) => {
       error: 'Package update failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+// GET /api/scheduler/packages/delete-info/:id - Get deletion counts
+router.get('/delete-info/:id', authenticateUser, async (req, res) => {
+  try {
+    const scheduleBlockId = parseInt(req.params.id);
+    
+    // Get week schedules for this block
+    const weekSchedulesToDelete = await db
+      .select({ id: weekSchedules.id })
+      .from(weekSchedules)
+      .where(eq(weekSchedules.scheduleBlockId, scheduleBlockId));
+    
+    const weekScheduleIds = weekSchedulesToDelete.map(ws => ws.id);
+    
+    // Get shifts count
+    let shiftsCount = 0;
+    if (weekScheduleIds.length > 0) {
+      const shiftsResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(shifts)
+        .where(inArray(shifts.weekScheduleId, weekScheduleIds));
+      shiftsCount = Number(shiftsResult[0]?.count || 0);
+    }
+    
+    res.json({
+      weekSchedulesCount: weekSchedulesToDelete.length,
+      shiftsCount: shiftsCount
+    });
+  } catch (error) {
+    console.error('🗑️ PACKAGE API: Error getting deletion info:', error);
+    res.status(500).json({ error: 'Failed to get deletion information' });
   }
 });
 
