@@ -211,7 +211,7 @@ export function useMessaging(config: MessagingConfig) {
   const { status: autoSaveStatus } = useAutoSave(editContent, {
     endpoint: draftMessageId ? `/api/messaging/notes/${draftMessageId}` : '/api/messaging/notes',
     method: draftMessageId ? 'PUT' : 'POST',
-    enabled: !readOnlyMode && editContent.trim() && editContent !== lastSavedContent,
+    enabled: Boolean(!readOnlyMode && editContent.trim().length > 0 && editContent !== lastSavedContent),
     debounceMs: 2000,
     onSaveSuccess: (savedMessage) => {
       if (!draftMessageId) {
@@ -254,21 +254,7 @@ export function useMessaging(config: MessagingConfig) {
     },
   });
 
-  // Auto-save functionality (extracted from messaging-system.tsx lines 322-350)
-  useEffect(() => {
-    if (!editContent || readOnlyMode || editContent === lastSavedContent) {
-      return;
-    }
 
-    const autoSaveTimer = setTimeout(() => {
-      if (editContent !== lastSavedContent && editContent.trim().length > 0) {
-        setIsAutoSaving(true);
-        autoSaveDraftMutation.mutate(editContent);
-      }
-    }, 2000); // Auto-save after 2 seconds of inactivity
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [editContent, lastSavedContent, readOnlyMode, autoSaveDraftMutation]);
 
   // Public interface
   return {
@@ -282,8 +268,11 @@ export function useMessaging(config: MessagingConfig) {
     editContent,
     hasCreatedMessage,
     draftMessageId,
-    isAutoSaving,
-    hasSaveError,
+    
+    // Auto-save state (shared hook integration)
+    autoSaveStatus,
+    isAutoSaving: autoSaveStatus === 'saving',
+    hasSaveError: autoSaveStatus === 'error',
     
     // State setters
     setEditingMessageId,
