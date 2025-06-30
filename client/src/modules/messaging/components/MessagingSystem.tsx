@@ -252,7 +252,7 @@ export function MessagingSystem({
     messagesLength: messages.length,
     filteredMessagesLength: filteredMessages.length,
     editingMessageId,
-    createMutationPending: createMessageMutation.isPending,
+    createMutationPending: isCreating,
     isNoteMode
   });
 
@@ -277,7 +277,7 @@ export function MessagingSystem({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
               <span className="ml-2">Loading messages...</span>
             </div>
-          ) : filteredMessages.length === 0 && !createMessageMutation.isPending ? (
+          ) : filteredMessages.length === 0 && !isCreating ? (
             editingMessageId === -1 ? (
               // Show editor when creating first message
               <div className="space-y-3 p-3">
@@ -325,13 +325,13 @@ export function MessagingSystem({
                         if (editContent.trim()) {
                           if (draftMessageId) {
                             // Use edit mutation (PUT) for existing draft
-                            editMessageMutation.mutate({
+                            updateMessage({
                               messageId: draftMessageId,
                               content: editContent
                             });
                           } else {
                             // Only create new if no draft exists
-                            createMessageMutation.mutate({
+                            createMessage({
                               content: editContent,
                               messageType: 'rich-text',
                               priority: 'normal',
@@ -342,9 +342,9 @@ export function MessagingSystem({
                           setEditContent('');
                         }
                       }}
-                      disabled={editMessageMutation.isPending || createMessageMutation.isPending || !editContent.trim()}
+                      disabled={isUpdating || isCreating || !editContent.trim()}
                     >
-                      {createMessageMutation.isPending ? (
+                      {isCreating ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
                       ) : (
                         <Send className="h-3 w-3 mr-1" />
@@ -358,7 +358,7 @@ export function MessagingSystem({
                         setEditingMessageId(null);
                         setEditContent('');
                       }}
-                      disabled={createMessageMutation.isPending}
+                      disabled={isCreating}
                     >
                       <X className="h-3 w-3 mr-1" />
                       Cancel
