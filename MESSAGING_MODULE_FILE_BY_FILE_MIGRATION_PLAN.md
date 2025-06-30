@@ -195,8 +195,8 @@ client/src/components/ui/rich-text-editor.tsx.bak
    - Ensure clean API surface
    - Document component usage
 
-3. **Remove Legacy Files:**
-   - Delete `.bak` files after verification
+3. **Archive Legacy Files:**
+   - Move `.bak` files to mirrored backup directory structure
    - Clean up unused UI component references
 
 **Impact Assessment:**
@@ -204,7 +204,7 @@ client/src/components/ui/rich-text-editor.tsx.bak
 - **Risk Level:** Low (import path updates)
 - **Rollback:** Restore `.bak` files and revert import changes
 
-**Expected Outcome:** Clean modular architecture with no legacy references
+**Expected Outcome:** Clean modular architecture with legacy files safely archived
 
 ## Risk Assessment
 
