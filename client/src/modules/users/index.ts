@@ -48,6 +48,16 @@ export {
   ApplicantCard
 } from './components';
 
+// Page exports - User-related pages
+export {
+  Profile,
+  ProfileEdit,
+  UserSettings,
+  CrewManagement,
+  CrewMemberProfile,
+  ApplicantPortal
+} from './pages';
+
 // Utility exports
 export {
   isApplicant,
