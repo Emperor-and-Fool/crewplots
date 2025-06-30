@@ -682,7 +682,7 @@ export default function SchedulerEditPage() {
   // Schedule block update mutation
   const updateScheduleBlockMutation = useMutation({
     mutationFn: async (blockData: { name: string; description?: string; locationId: number; isActive: boolean }) => {
-      return await apiRequest('PUT', `/api/scheduler/schedule-blocks/${id}`, blockData);
+      return await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, blockData);
     },
     onSuccess: (block: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
