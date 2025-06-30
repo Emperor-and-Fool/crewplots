@@ -146,7 +146,6 @@ export function useMessaging(config: MessagingConfig) {
     },
     onError: (error: any) => {
       setHasSaveError(true);
-      setIsAutoSaving(false);
       toast({
         title: 'Error',
         description: `Failed to update ${isNoteMode ? 'note' : 'message'}. Please try again.`,
@@ -156,66 +155,7 @@ export function useMessaging(config: MessagingConfig) {
     },
   });
 
-  // Auto-save draft mutation (extracted from messaging-system.tsx lines 252-290)
-  const autoSaveDraftMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (draftMessageId) {
-        // Update existing draft
-        const response = await fetch(`/api/messaging/notes/${draftMessageId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ content }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to update draft: ${response.status}`);
-        }
-        
-        return response.json();
-      } else {
-        // Create new draft
-        const response = await fetch('/api/messaging/notes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            content,
-            userId: userId,
-            workflow: workflow,
-            messageType: 'rich-text',
-            priority: 'normal',
-            isPrivate: false,
-            receiverId: receiverId
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to create draft: ${response.status}`);
-        }
-        
-        return response.json();
-      }
-    },
-    onSuccess: (savedMessage) => {
-      if (!draftMessageId) {
-        setDraftMessageId(savedMessage.id);
-        setHasCreatedMessage(true);
-      }
-      setLastSavedContent(editContent);
-      setIsAutoSaving(false);
-      setHasSaveError(false);
-    },
-    onError: (error: any) => {
-      setIsAutoSaving(false);
-      setHasSaveError(true);
-      console.error('Auto-save failed:', error);
-    },
-  });
+
 
   // Delete message mutation (extracted from messaging-system.tsx lines 292-320)
   const deleteMessageMutation = useMutation({
