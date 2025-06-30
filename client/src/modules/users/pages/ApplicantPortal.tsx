@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MessagingSystem } from '@/modules/messaging';
+import { MessagingSystem as LegacyMessagingSystem } from '@/components/ui/messaging-system';
 import { ProfileCard } from '@/modules/users/components/profiles';
 import { LogOut } from 'lucide-react';
 
@@ -186,7 +187,7 @@ function ApplicantPortal() {
             <CardTitle>Your Documents & Motivation here</CardTitle>
           </CardHeader>
           <CardContent>
-            <MessagingSystem
+            <LegacyMessagingSystem
               userId={user.id}
               mode="note"
               title="Why you want to be part of our crew"
