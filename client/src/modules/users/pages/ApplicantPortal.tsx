@@ -186,7 +186,7 @@ function ApplicantPortal() {
             <CardTitle>Your Documents & Motivation here</CardTitle>
           </CardHeader>
           <CardContent>
-            <LegacyMessagingSystem
+            <MessagingSystem
               userId={user.id}
               mode="note"
               title="Why you want to be part of our crew"
