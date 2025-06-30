@@ -316,39 +316,73 @@ export class ValidationPackageService {
       return await db.transaction(async (tx) => {
         console.log('💾 STORAGE TRANSACTION: Transaction started');
 
-        // Create schedule block
-        if (packageData.scheduleBlock && packageData.packageType === 'create') {
-          const [createdScheduleBlock] = await tx
-            .insert(scheduleBlocks)
-            .values({
-              name: packageData.scheduleBlock.name,
-              description: packageData.scheduleBlock.description || '',
-              locationId: packageData.scheduleBlock.locationId,
-              isActive: packageData.scheduleBlock.isActive ?? true,
-              createdBy: packageData.metadata.userId
-            })
-            .returning({ id: scheduleBlocks.id });
-
-          scheduleBlockId = createdScheduleBlock.id;
-          console.log('💾 STORAGE TRANSACTION: Schedule block created with ID:', scheduleBlockId);
-        }
-
-        // Create week schedules
-        if (packageData.weekSchedules.length > 0 && scheduleBlockId) {
-          for (const weekSchedule of packageData.weekSchedules) {
-            const [createdWeekSchedule] = await tx
-              .insert(weekSchedules)
+        // Handle schedule block (create or update)
+        if (packageData.scheduleBlock) {
+          if (packageData.packageType === 'create') {
+            const [createdScheduleBlock] = await tx
+              .insert(scheduleBlocks)
               .values({
-                scheduleBlockId: scheduleBlockId,
-                weekNumber: weekSchedule.weekNumber,
-                templateId: weekSchedule.templateId || null,
+                name: packageData.scheduleBlock.name,
+                description: packageData.scheduleBlock.description || '',
+                locationId: packageData.scheduleBlock.locationId,
+                isActive: packageData.scheduleBlock.isActive ?? true,
                 createdBy: packageData.metadata.userId
               })
-              .returning({ id: weekSchedules.id });
+              .returning({ id: scheduleBlocks.id });
 
-            weekScheduleIds.push(createdWeekSchedule.id);
+            scheduleBlockId = createdScheduleBlock.id;
+            console.log('💾 STORAGE TRANSACTION: Schedule block created with ID:', scheduleBlockId);
+          } else if (packageData.packageType === 'update' && packageData.scheduleBlock.id) {
+            await tx
+              .update(scheduleBlocks)
+              .set({
+                name: packageData.scheduleBlock.name,
+                description: packageData.scheduleBlock.description || '',
+                locationId: packageData.scheduleBlock.locationId,
+                isActive: packageData.scheduleBlock.isActive ?? true,
+                updatedAt: new Date()
+              })
+              .where(eq(scheduleBlocks.id, packageData.scheduleBlock.id));
+
+            scheduleBlockId = packageData.scheduleBlock.id;
+            console.log('💾 STORAGE TRANSACTION: Schedule block updated with ID:', scheduleBlockId);
           }
-          console.log('💾 STORAGE TRANSACTION: Week schedules created:', weekScheduleIds.length);
+        }
+
+        // Handle week schedules (create or update)
+        if (packageData.weekSchedules.length > 0 && scheduleBlockId) {
+          for (const weekSchedule of packageData.weekSchedules) {
+            if (packageData.packageType === 'create' || !weekSchedule.id) {
+              // Create new week schedule
+              const [createdWeekSchedule] = await tx
+                .insert(weekSchedules)
+                .values({
+                  scheduleBlockId: scheduleBlockId,
+                  weekNumber: weekSchedule.weekNumber,
+                  templateId: weekSchedule.templateId || null,
+                  createdBy: packageData.metadata.userId
+                })
+                .returning({ id: weekSchedules.id });
+
+              weekScheduleIds.push(createdWeekSchedule.id);
+              console.log('💾 STORAGE TRANSACTION: Week schedule created with ID:', createdWeekSchedule.id);
+            } else if (packageData.packageType === 'update' && weekSchedule.id) {
+              // Update existing week schedule
+              await tx
+                .update(weekSchedules)
+                .set({
+                  scheduleBlockId: scheduleBlockId,
+                  weekNumber: weekSchedule.weekNumber,
+                  templateId: weekSchedule.templateId || null,
+                  updatedAt: new Date()
+                })
+                .where(eq(weekSchedules.id, weekSchedule.id));
+
+              weekScheduleIds.push(weekSchedule.id);
+              console.log('💾 STORAGE TRANSACTION: Week schedule updated with ID:', weekSchedule.id);
+            }
+          }
+          console.log('💾 STORAGE TRANSACTION: Week schedules processed:', weekScheduleIds.length);
         }
 
         // Create shifts with correct field mapping
