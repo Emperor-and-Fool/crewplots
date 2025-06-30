@@ -263,6 +263,7 @@ export default function SchedulerEditPage() {
 
 
   // Mutations
+
   const updateWeekScheduleMutation = useMutation({
     mutationFn: async (data: WeekScheduleUpdateForm) => {
       console.log('🚀 SAVE DEBUG: Starting schedule block save mutation', {
@@ -279,6 +280,8 @@ export default function SchedulerEditPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
       
       // Update selectedWeekScheduleId for schedule block architecture
       // Schedule block architecture - no week schedule ID needed
@@ -687,6 +690,13 @@ export default function SchedulerEditPage() {
     onSuccess: (block: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', id] });
+      
+      // Update form with latest data
+      if (block && block.isActive !== undefined) {
+        basicInfoForm.setValue('isActive', block.isActive);
+      }
+      
       toast({
         title: "Schedule updated successfully",
         description: `Schedule "${block?.name || 'block'}" has been updated`
@@ -1220,7 +1230,6 @@ export default function SchedulerEditPage() {
                                     field.onChange(checked);
                                     // Auto-save when toggle is changed
                                     const formData = basicInfoForm.getValues();
-                                    console.log('🔄 TOGGLE DEBUG: Toggle clicked', { checked, formData, scheduleBlockId: id });
                                     updateScheduleBlockMutation.mutate({
                                       ...formData,
                                       isActive: checked
