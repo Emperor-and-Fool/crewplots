@@ -113,11 +113,11 @@ router.post('/login', upload.none(), async (req, res, next) => {
         
         // Extract credentials regardless of content type
         const username = req.body?.username || null;
-        const loginPassword = req.body?.password || null;
+        const submittedPassword = req.body?.password || null;
         
-        console.log(`Extracted username: ${username ? username : 'missing'}, password: ${loginPassword ? '******' : 'missing'}`);
+        console.log(`Extracted username: ${username ? username : 'missing'}, password: ${submittedPassword ? '******' : 'missing'}`);
         
-        if (!username || !loginPassword) {
+        if (!username || !submittedPassword) {
             return res.status(400).json({ message: 'Username and password are required' });
         }
         
@@ -127,7 +127,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
         // Special case for admin development login
-        if (identifier === 'admin' && loginPassword === 'adminpass123') {
+        if (identifier === 'admin' && submittedPassword === 'adminpass123') {
             console.log('Admin login detected using development credentials');
             
             // Look up the admin user first
@@ -198,7 +198,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('User found:', user.username, 'with ID:', user.id);
         
         // Now we need to verify the password
-        const isMatch = await bcrypt.compare(loginPassword, user.password);
+        const isMatch = await bcrypt.compare(submittedPassword, user.password);
         if (!isMatch) {
             console.log('Password verification failed for user:', user.username);
             return res.status(401).json({ message: 'Invalid username/email or password' });
@@ -225,7 +225,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         });
         
         // Return success with user data (excluding password)
-        const { password: loginPassword, ...userWithoutPassword } = user;
+        const { password: userPasswordField, ...userWithoutPassword } = user;
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
@@ -378,40 +378,40 @@ router.get('/me', authenticateUser, async (req, res) => {
     }
 });
 
-// Enhanced logout using Passport - support both POST and GET
-const logoutHandler = (req, res) => {
-    console.log('Logging out user, sessionID:', req.sessionID);
-    console.log('Current authentication status:', req.isAuthenticated());
+// Centralized auth logout handler - support both POST and GET
+const logoutHandler = (req: Request, res: Response) => {
+    console.log('Centralized auth logout - sessionID:', req.sessionID);
+    console.log('Session passport data exists:', !!(req.session?.passport?.user));
     
-    // Use Passport's logout method
-    req.logout((err) => {
-        if (err) {
-            console.error('Error during Passport logout:', err);
-            return res.status(500).json({ message: 'Error logging out' });
+    try {
+        // Clear authentication data from session using centralized auth pattern
+        if (req.session?.passport) {
+            delete req.session.passport;
+            console.log('Cleared passport session data');
         }
         
-        // Then destroy the session to be thorough
+        // Destroy the session completely
         req.session.destroy((err) => {
             if (err) {
-                console.error('Error destroying session:', err);
-                return res.status(500).json({ message: 'Error during logout' });
+                console.error('Error destroying session during centralized logout:', err);
+                return res.status(500).json({ message: 'Error during logout process' });
             }
             
-            // Clear ALL cookies
-            res.clearCookie('connect.sid');
-            res.clearCookie('login-timestamp');
-            res.clearCookie('debug-auth-check');
-            res.clearCookie('admin-login');
-            res.clearCookie('crewplots.sid');
-            res.clearCookie('connect.sid-refreshed');
+            // Clear only authentication-related cookies (targeted approach)
+            const authCookies = [
+                'connect.sid',
+                'login-timestamp', 
+                'debug-auth-check',
+                'admin-login',
+                'crewplots.sid',
+                'connect.sid-refreshed'
+            ];
             
-            // Clear additional cookies that might exist
-            const cookieNames = Object.keys(req.cookies || {});
-            cookieNames.forEach(name => {
-                res.clearCookie(name);
+            authCookies.forEach(cookieName => {
+                res.clearCookie(cookieName);
             });
             
-            console.log('User logged out successfully, redirecting to login');
+            console.log('Centralized auth logout successful');
             
             // For GET requests, redirect to login page
             if (req.method === 'GET') {
@@ -422,12 +422,19 @@ const logoutHandler = (req, res) => {
             return res.status(200).json({ 
                 message: 'Logged out successfully',
                 debug: {
+                    method: 'centralized_auth',
                     sessionDestroyed: true,
                     timestamp: new Date().toISOString()
                 }
             });
         });
-    });
+    } catch (error) {
+        console.error('Error during centralized logout:', error);
+        return res.status(500).json({ 
+            message: 'Error during logout process',
+            error: String(error)
+        });
+    }
 };
 
 // Support both POST and GET for logout
@@ -465,40 +472,48 @@ router.post('/clear-sessions', authenticateUser, async (req: Request, res: Respo
     }
 });
 
-// Development direct HTML logout with Passport
-router.get('/dev-logout', (req, res) => {
-    console.log('Direct server-side logout, sessionID:', req.sessionID);
-    console.log('Current authentication status:', req.isAuthenticated());
+// Development direct HTML logout with centralized auth
+router.get('/dev-logout', (req: Request, res: Response) => {
+    console.log('Development centralized auth logout, sessionID:', req.sessionID);
+    console.log('Session passport data exists:', !!(req.session?.passport?.user));
     
-    // Use Passport's logout method
-    req.logout((err) => {
-        if (err) {
-            console.error('Error during Passport logout:', err);
-            return res.status(500).send('Error during logout process');
+    try {
+        // Clear authentication data from session using centralized auth pattern
+        if (req.session?.passport) {
+            delete req.session.passport;
+            console.log('Dev logout: Cleared passport session data');
         }
         
-        // Then destroy the session to be thorough
+        // Destroy the session completely
         req.session.destroy((err) => {
             if (err) {
-                console.error('Error destroying session:', err);
+                console.error('Error destroying session during dev logout:', err);
                 return res.status(500).send('Error destroying session');
             }
             
-            // Clear cookies
-            res.clearCookie('connect.sid');
-            res.clearCookie('login-timestamp');
-            res.clearCookie('debug-auth-check');
-            res.clearCookie('admin-login');
+            // Clear only authentication-related cookies (targeted approach)
+            const authCookies = [
+                'connect.sid',
+                'login-timestamp', 
+                'debug-auth-check',
+                'admin-login',
+                'crewplots.sid',
+                'connect.sid-refreshed'
+            ];
             
-            console.log('User logged out successfully with direct approach');
+            authCookies.forEach(cookieName => {
+                res.clearCookie(cookieName);
+            });
             
-            // Serve HTML with a redirect to login page
+            console.log('Development centralized auth logout successful');
+            
+            // Serve HTML with immediate redirect to login page
             res.send(`
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <title>Logout Successful</title>
-                    <meta http-equiv="refresh" content="2;url=/login" />
+                    <meta http-equiv="refresh" content="1;url=/login" />
                     <style>
                         body {
                             font-family: system-ui, -apple-system, sans-serif;
@@ -514,11 +529,17 @@ router.get('/dev-logout', (req, res) => {
                         h1 {
                             color: #0070f3;
                         }
+                        .method {
+                            color: #666;
+                            font-size: 0.9em;
+                            margin-top: 1em;
+                        }
                     </style>
                 </head>
                 <body>
                     <h1>Logout Successful</h1>
                     <p>You are being redirected to the login page...</p>
+                    <div class="method">Using centralized authentication</div>
                     <script>
                         // Force reload to login and clear history
                         window.location.replace('/login');
@@ -527,7 +548,10 @@ router.get('/dev-logout', (req, res) => {
                 </html>
             `);
         });
-    });
+    } catch (error) {
+        console.error('Error during development logout:', error);
+        return res.status(500).send('Error during logout process: ' + String(error));
+    }
 });
 
 // Change password
