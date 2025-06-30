@@ -1,18 +1,22 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Calendar, MapPin, Users, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Plus, Calendar, MapPin, Users, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import type { Location } from '@shared/schema';
 
 export default function SchedulerListPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
+  const { toast } = useToast();
 
   // Fetch existing schedule blocks with creator names using packaging service
   const { data: scheduleBlocks, isLoading } = useQuery({

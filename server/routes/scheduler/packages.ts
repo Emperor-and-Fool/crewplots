@@ -1,6 +1,9 @@
 import express from 'express';
 import { validationPackageService } from '../../services/validation-package-service';
 import { authenticateUser } from '../../middleware/auth';
+import { db } from '../../db';
+import { eq, inArray } from 'drizzle-orm';
+import { scheduleBlocks, weekSchedules, shifts } from '@shared/schema';
 
 const router = express.Router();
 
@@ -184,6 +187,85 @@ router.put('/update/:id', authenticateUser, async (req: any, res) => {
     console.error('🔄 PACKAGE API: Update failed:', error);
     res.status(500).json({ 
       error: 'Package update failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// DELETE /api/scheduler/packages/delete/:id - Delete schedule package
+router.delete('/delete/:id', authenticateUser, async (req: any, res) => {
+  try {
+    console.log('🗑️ PACKAGE API: Starting package deletion for ID:', req.params.id);
+    const scheduleBlockId = parseInt(req.params.id);
+
+    // Check permissions  
+    const authResult = await validationPackageService.validatePackagePermissions({
+      packageType: 'delete',
+      scheduleBlock: { 
+        id: scheduleBlockId,
+        name: 'Delete Operation',
+        locationId: 1,
+        isActive: false
+      },
+      weekSchedules: [],
+      shifts: [],
+      metadata: {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requestedPermissions: ['schedule.delete'],
+        locationAccess: [],
+        timestamp: new Date()
+      }
+    });
+
+    if (!authResult.isAuthorized) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        deniedPermissions: authResult.deniedPermissions
+      });
+    }
+
+    // Delete cascade: shifts -> week_schedules -> schedule_blocks
+    await db.transaction(async (tx) => {
+      // Get week schedules for this block
+      const weekSchedulesToDelete = await tx
+        .select({ id: weekSchedules.id })
+        .from(weekSchedules)
+        .where(eq(weekSchedules.scheduleBlockId, scheduleBlockId));
+
+      const weekScheduleIds = weekSchedulesToDelete.map(ws => ws.id);
+
+      // Delete shifts
+      if (weekScheduleIds.length > 0) {
+        await tx
+          .delete(shifts)
+          .where(inArray(shifts.weekScheduleId, weekScheduleIds));
+        console.log('🗑️ PACKAGE API: Deleted shifts for week schedules:', weekScheduleIds);
+      }
+
+      // Delete week schedules
+      await tx
+        .delete(weekSchedules)
+        .where(eq(weekSchedules.scheduleBlockId, scheduleBlockId));
+      console.log('🗑️ PACKAGE API: Deleted week schedules for block:', scheduleBlockId);
+
+      // Delete schedule block
+      await tx
+        .delete(scheduleBlocks)
+        .where(eq(scheduleBlocks.id, scheduleBlockId));
+      console.log('🗑️ PACKAGE API: Deleted schedule block:', scheduleBlockId);
+    });
+
+    console.log('🗑️ PACKAGE API: Package deleted successfully');
+    res.status(200).json({
+      success: true,
+      message: 'Schedule package deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('🗑️ PACKAGE API: Deletion failed:', error);
+    res.status(500).json({ 
+      error: 'Package deletion failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
