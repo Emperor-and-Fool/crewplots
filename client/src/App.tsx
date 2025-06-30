@@ -15,7 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import ApplicantPortal from "@/pages/applicant-portal";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
-import Scheduling from "@/pages/scheduling";
+
 import ViewCalendar from "@/pages/view-calendar";
 import { SchedulerListPage, SchedulerCreatePage, SchedulerEditPage } from "@/modules/scheduler";
 import Applicants from "@/pages/applicants";
@@ -226,14 +226,7 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/scheduling">
-                {isAuthenticated ? 
-                  <RoleProtectedRoute 
-                    component={Scheduling} 
-                    requiredRoles={["owner", "crew_chief", "administrator"]} 
-                  /> : 
-                  <Redirect to="/login" />}
-              </Route>
+
               
               <Route path="/scheduler">
                 {isAuthenticated ? 
