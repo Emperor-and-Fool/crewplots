@@ -61,9 +61,30 @@ export class HybridSessionStore extends session.Store {
   }
 
   /**
-   * Set session: PostgreSQL first → Redis cache update
+   * Check if session contains meaningful authentication data
+   */
+  private isEmptySession(session: session.SessionData): boolean {
+    // Skip saving sessions that only contain cookie data (no authentication)
+    const hasPassport = session.passport && Object.keys(session.passport).length > 0;
+    const hasUser = session.passport?.user !== undefined;
+    const hasOtherData = Object.keys(session).some(key => {
+      if (key === 'cookie' || key === 'passport') return false;
+      return (session as any)[key] !== undefined;
+    });
+    
+    return !hasPassport && !hasUser && !hasOtherData;
+  }
+
+  /**
+   * Set session: PostgreSQL first → Redis cache update (optimized for empty sessions)
    */
   set(sid: string, session: session.SessionData, callback?: (err?: any) => void): void {
+    // Skip saving empty sessions to reduce database overhead
+    if (this.isEmptySession(session)) {
+      console.log(`[HybridSessionStore] Skipping empty session save: ${sid.substring(0, 8)}...`);
+      return callback?.(null);
+    }
+
     // Save to PostgreSQL first (source of truth)
     this.pgStore.set(sid, session, (pgErr: any) => {
       if (pgErr) {

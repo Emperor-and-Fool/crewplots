@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
-  // Configure session middleware
+  // Configure session middleware with smart session creation
   app.use(
     session({
       cookie: { 
@@ -128,10 +128,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       },
       store: hybridSessionStore,
       secret: process.env.SESSION_SECRET || "crewplots-dev-static-key-2025",
-      resave: true, // Force session save on each request to ensure cross-frame compatibility
-      saveUninitialized: true, // Create session for tracking before user logs in
+      resave: false, // Don't save session on each request unless modified
+      saveUninitialized: false, // Don't create sessions for unauthenticated requests
       name: 'connect.sid', // Use default session name
-      rolling: true, // Force cookies to be set on every response
+      rolling: false, // Don't force cookies on every response to reduce overhead
+      // Smart session creation: Only create sessions when needed
+      genid: (req) => {
+        // Create sessions only for authentication routes or when existing session needs renewal
+        const isAuthRoute = req.path === '/login' || req.path === '/register' || req.path.startsWith('/auth/');
+        const hasExistingSession = req.headers.cookie?.includes('connect.sid');
+        
+        if (isAuthRoute || hasExistingSession) {
+          return require('crypto').randomBytes(16).toString('hex');
+        }
+        
+        // For other requests, return a temporary identifier that won't be saved
+        return 'temp-' + Date.now();
+      }
     })
   );
 

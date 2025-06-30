@@ -35,6 +35,13 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         // Mark this request as using centralized authentication
         (req as any).usedCentralizedAuth = true;
         
+        // Fast-path: Skip expensive processing for obviously empty sessions
+        if (!req.session || !req.session.passport) {
+            console.log("Fast-path: No session or passport data found");
+            res.status(401).json({ message: "Unauthorized - Please log in" });
+            return;
+        }
+        
         console.log("Auth middleware - Checking session authentication");
         console.log("Auth middleware - Session ID:", req.sessionID || 'none');
         console.log("Auth middleware - Session data:", req.session);
