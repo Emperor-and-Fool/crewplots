@@ -178,6 +178,34 @@ function ApplicantPortal() {
           </Card>
         </div>
       </div>
+
+      {/* OLD messaging system card for comparison */}
+      {user && (
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle>Your Documents & Motivation here</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MessagingSystem
+              userId={user.id}
+              mode="note"
+              title="Why you want to be part of our crew"
+              placeholder="Type your note about your application..."
+              showPriority={false}
+              showPrivateToggle={false}
+              compactMode={true}
+              workflow="application"
+              documentStorage={true}
+              onMessageSent={(message) => {
+                toast({
+                  title: "Note saved successfully!",
+                  description: "Your note has been recorded and will be reviewed.",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
