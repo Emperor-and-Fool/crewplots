@@ -1220,6 +1220,7 @@ export default function SchedulerEditPage() {
                                     field.onChange(checked);
                                     // Auto-save when toggle is changed
                                     const formData = basicInfoForm.getValues();
+                                    console.log('🔄 TOGGLE DEBUG: Toggle clicked', { checked, formData, scheduleBlockId: id });
                                     updateScheduleBlockMutation.mutate({
                                       ...formData,
                                       isActive: checked
