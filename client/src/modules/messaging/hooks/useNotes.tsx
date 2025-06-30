@@ -27,7 +27,7 @@ export function useNotes(config: NotesConfig) {
     queryFn: async () => {
       const endpoint = readOnlyMode && userId 
         ? `/api/messaging/notes/applicant/${userId}`
-        : `/api/messaging/notes/${userId}`;
+        : '/api/messaging/notes';
         
       const response = await fetch(endpoint, {
         credentials: 'include'

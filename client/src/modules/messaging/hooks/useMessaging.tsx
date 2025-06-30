@@ -37,7 +37,7 @@ export function useMessaging(config: MessagingConfig) {
     if (readOnlyMode && isNoteMode && userId) {
       return `/api/messaging/notes/applicant/${userId}`;
     }
-    return `/api/messaging/notes/${userId}`;
+    return '/api/messaging/notes';
   }, [readOnlyMode, isNoteMode, userId]);
 
   // Message fetching query (extracted from messaging-system.tsx lines 167-185)
