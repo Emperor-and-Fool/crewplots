@@ -1216,7 +1216,16 @@ export default function SchedulerEditPage() {
                               <FormControl>
                                 <Switch
                                   checked={field.value}
-                                  onCheckedChange={field.onChange}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    // Auto-save when toggle is changed
+                                    const formData = basicInfoForm.getValues();
+                                    updateScheduleBlockMutation.mutate({
+                                      ...formData,
+                                      isActive: checked
+                                    });
+                                  }}
+                                  disabled={updateScheduleBlockMutation.isPending}
                                 />
                               </FormControl>
                             </FormItem>
