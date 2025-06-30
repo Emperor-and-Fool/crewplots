@@ -9,8 +9,7 @@
 // Type exports - maintain schema-first architecture
 export type { 
   User, 
-  InsertUser, 
-  SelectUser 
+  InsertUser
 } from '@shared/schema';
 
 export type {
@@ -29,8 +28,7 @@ export type {
   ApplicantTimelineEvent,
   ApplicantStatusUpdate,
   ApplicantBulkOperation,
-  UserModuleUIState,
-  UserModuleConfig
+  UserModuleUIState
 } from './types';
 
 // Hook exports - business logic layer
@@ -66,7 +64,7 @@ export {
 } from './types';
 
 // Module configuration
-export const UserModuleConfig = {
+const UserModuleConfigData = {
   version: '1.0.0',
   features: {
     enableRegistration: true,
@@ -85,6 +83,8 @@ export const UserModuleConfig = {
     showUserTimeline: true,
   }
 };
+
+export { UserModuleConfigData as UserModuleConfig };
 
 // Module metadata
 export const UserModuleInfo = {

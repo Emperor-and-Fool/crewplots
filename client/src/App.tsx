@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { EmergencyLogout } from "@/components/emergency-logout";
 import { RegistrationPage, LoginPage } from "@/modules/auth";
 import Dashboard from "@/pages/dashboard";
-import ApplicantPortal from "@/pages/applicant-portal";
+import { ApplicantPortal } from "@/modules/users";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
 
