@@ -1,53 +1,45 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-
-export type StatusIndicatorState = 'idle' | 'saving' | 'saved' | 'error';
+import { cn } from "@/lib/utils";
 
 interface StatusIndicatorProps {
-  state: StatusIndicatorState;
+  status: 'saving' | 'saved' | 'error' | 'idle';
   className?: string;
-  showText?: boolean;
 }
 
-const statusConfig = {
-  idle: {
-    color: 'bg-gray-300',
-    text: 'Not saved',
-    pulse: false
-  },
-  saving: {
-    color: 'bg-yellow-500',
-    text: 'Saving...',
-    pulse: true
-  },
-  saved: {
-    color: 'bg-green-500',
-    text: 'Saved',
-    pulse: false
-  },
-  error: {
-    color: 'bg-red-500',
-    text: 'Error saving',
-    pulse: false
-  }
-};
+export function StatusIndicator({ status, className }: StatusIndicatorProps) {
+  const getStatusStyles = () => {
+    switch (status) {
+      case 'saving':
+        return 'bg-yellow-500 animate-pulse';
+      case 'saved':
+        return 'bg-green-500';
+      case 'error':
+        return 'bg-red-500';
+      case 'idle':
+      default:
+        return 'bg-gray-300';
+    }
+  };
 
-export function StatusIndicator({ state, className, showText = false }: StatusIndicatorProps) {
-  const config = statusConfig[state];
-  
+  const getStatusText = () => {
+    switch (status) {
+      case 'saving':
+        return 'Saving...';
+      case 'saved':
+        return 'Saved';
+      case 'error':
+        return 'Error';
+      case 'idle':
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div 
-        className={cn(
-          "w-2.5 h-2.5 rounded-full border border-white shadow-sm",
-          config.color,
-          config.pulse && "animate-pulse"
-        )}
-        title={config.text}
-      />
-      {showText && (
-        <span className="text-xs text-gray-600">
-          {config.text}
+      <div className={cn("w-2 h-2 rounded-full", getStatusStyles())} />
+      {getStatusText() && (
+        <span className="text-xs text-muted-foreground">
+          {getStatusText()}
         </span>
       )}
     </div>

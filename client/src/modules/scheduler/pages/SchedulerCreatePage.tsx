@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { StatusIndicator } from '@/components/ui/status-indicator';
 import type { Location } from '@shared/schema';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import WeeklyCalendarPreview from '../components/WeeklyCalendarPreview';
@@ -82,6 +83,11 @@ export default function SchedulerCreatePage() {
   const [currentWeekSchedule, setCurrentWeekSchedule] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('basic-info');
   const [editingShift, setEditingShift] = useState<any>(null);
+  
+  // Auto-save state management
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [createdScheduleId, setCreatedScheduleId] = useState<number | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Form for week schedule creation
   const scheduleForm = useForm<SchedulePackageForm>({
@@ -118,6 +124,47 @@ export default function SchedulerCreatePage() {
   const { data: shifts = [] } = useQuery({
     queryKey: ['/api/scheduler/week-schedules', currentWeekSchedule?.id, 'shifts'],
     enabled: !!currentWeekSchedule?.id
+  });
+
+  // Auto-save mutation for partial saves
+  const autoSaveMutation = useMutation({
+    mutationFn: async (data: Partial<SchedulePackageForm>): Promise<PackageValidationResponse> => {
+      // If we already have a schedule, update it; otherwise create new one
+      const endpoint = createdScheduleId 
+        ? `/api/scheduler/packages/update/${createdScheduleId}`
+        : '/api/scheduler/packages/create';
+      
+      const response = await apiRequest('POST', endpoint, {
+        packageType: createdScheduleId ? 'update' : 'create',
+        scheduleBlock: {
+          name: data.name || 'Untitled Schedule',
+          description: data.description || '',
+          locationId: data.locationId || 0,
+          isActive: data.isActive ?? true
+        },
+        weekSchedules: [{
+          weekNumber: 1
+        }],
+        shifts: [] // Empty for basic info auto-save
+      });
+      
+      return response;
+    },
+    onMutate: () => {
+      setAutoSaveStatus('saving');
+    },
+    onSuccess: (data) => {
+      setAutoSaveStatus('saved');
+      if (data.package?.createdEntities?.scheduleBlockId && !createdScheduleId) {
+        setCreatedScheduleId(data.package.createdEntities.scheduleBlockId);
+      }
+      // Reset to idle after 2 seconds
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    },
+    onError: () => {
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus('idle'), 3000);
+    }
   });
 
   const createSchedulePackageMutation = useMutation({
