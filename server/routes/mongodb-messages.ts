@@ -36,46 +36,7 @@ interface NoteDocument {
   };
 }
 
-// Get all notes for a user
-router.get('/notes/:userId', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    
-    // Debug authentication state
-    console.log('MongoDB auth check:', {
-      isAuthenticated: true,
-      userId: userId,
-      reqUserId: req.user.id,
-      userMatch: req.user.id === userId
-    });
-    
-    if (req.user.id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
-
-    const notes = await withMongoDBRetry(async () => {
-      const db = mongoConnection.getDatabase();
-      const collection = db.collection<NoteDocument>('notes');
-      
-      return await collection
-        .find({ userId })
-        .sort({ createdAt: -1 })
-        .toArray();
-    });
-    
-    // Transform MongoDB notes to frontend-expected format
-    const responseNotes = notes.map(note => ({
-      ...note,
-      id: note._id.toString(), // Convert ObjectId to string for frontend
-      _id: undefined // Remove MongoDB-specific field
-    })).map(({ _id, ...note }) => note); // Clean removal of _id
-    
-    res.json(responseNotes);
-  } catch (error) {
-    console.error('Error fetching notes:', error);
-    res.status(500).json({ error: 'Failed to fetch notes' });
-  }
-});
+// Legacy route removed - messaging now uses centralized /api/messaging/notes endpoint
 
 // Create or update note (upsert for single note per user)
 router.post('/notes', async (req, res) => {
