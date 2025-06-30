@@ -5,7 +5,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import type { ExtendedMessage, ComponentMode, WorkflowType, MessageFormData } from '../types/messaging.types';
 
 export interface MessagingConfig {
@@ -26,7 +25,7 @@ export function useMessaging(config: MessagingConfig) {
   const [hasCreatedMessage, setHasCreatedMessage] = useState<boolean>(false);
   const [draftMessageId, setDraftMessageId] = useState<number | null>(null);
   const [lastSavedContent, setLastSavedContent] = useState<string>('');
-
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
   const [hasSaveError, setHasSaveError] = useState<boolean>(false);
 
   // Mode-specific behavior (extracted from messaging-system.tsx lines 129-131)
@@ -136,6 +135,7 @@ export function useMessaging(config: MessagingConfig) {
       queryClient.invalidateQueries({ queryKey: ['/api/messaging/notes'] });
       setEditingMessageId(null);
       setEditContent('');
+      setIsAutoSaving(false);
       setHasSaveError(false);
       
       toast({
@@ -146,6 +146,7 @@ export function useMessaging(config: MessagingConfig) {
     },
     onError: (error: any) => {
       setHasSaveError(true);
+      setIsAutoSaving(false);
       toast({
         title: 'Error',
         description: `Failed to update ${isNoteMode ? 'note' : 'message'}. Please try again.`,
@@ -155,7 +156,66 @@ export function useMessaging(config: MessagingConfig) {
     },
   });
 
-
+  // Auto-save draft mutation (extracted from messaging-system.tsx lines 252-290)
+  const autoSaveDraftMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (draftMessageId) {
+        // Update existing draft
+        const response = await fetch(`/api/messaging/notes/${draftMessageId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ content }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to update draft: ${response.status}`);
+        }
+        
+        return response.json();
+      } else {
+        // Create new draft
+        const response = await fetch('/api/messaging/notes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            content,
+            userId: userId,
+            workflow: workflow,
+            messageType: 'rich-text',
+            priority: 'normal',
+            isPrivate: false,
+            receiverId: receiverId
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to create draft: ${response.status}`);
+        }
+        
+        return response.json();
+      }
+    },
+    onSuccess: (savedMessage) => {
+      if (!draftMessageId) {
+        setDraftMessageId(savedMessage.id);
+        setHasCreatedMessage(true);
+      }
+      setLastSavedContent(editContent);
+      setIsAutoSaving(false);
+      setHasSaveError(false);
+    },
+    onError: (error: any) => {
+      setIsAutoSaving(false);
+      setHasSaveError(true);
+      console.error('Auto-save failed:', error);
+    },
+  });
 
   // Delete message mutation (extracted from messaging-system.tsx lines 292-320)
   const deleteMessageMutation = useMutation({
@@ -189,43 +249,21 @@ export function useMessaging(config: MessagingConfig) {
     },
   });
 
-  // Auto-save functionality using shared useAutoSave hook (migrated from lines 253-266)
-  const { status: autoSaveStatus } = useAutoSave(editContent, {
-    endpoint: draftMessageId ? `/api/messaging/notes/${draftMessageId}` : '/api/messaging/notes',
-    method: draftMessageId ? 'PUT' : 'POST',
-    debounceMs: 2000,
-    enabled: !readOnlyMode && editContent !== lastSavedContent && editContent.trim().length > 0,
-    transformData: (content: string) => {
-      if (draftMessageId) {
-        return { content };
-      } else {
-        return {
-          content,
-          userId: userId,
-          workflow: workflow,
-          messageType: 'rich-text',
-          priority: 'normal',
-          isPrivate: false,
-          receiverId: receiverId
-        };
-      }
-    },
-    onSaveSuccess: (savedMessage) => {
-      if (!draftMessageId) {
-        setDraftMessageId(savedMessage.id);
-        setHasCreatedMessage(true);
-      }
-      setLastSavedContent(editContent);
-      setHasSaveError(false);
-    },
-    onSaveError: (error: any) => {
-      setHasSaveError(true);
-      console.error('Auto-save failed:', error);
+  // Auto-save functionality (extracted from messaging-system.tsx lines 322-350)
+  useEffect(() => {
+    if (!editContent || readOnlyMode || editContent === lastSavedContent) {
+      return;
     }
-  });
 
-  // Map shared auto-save status to legacy isAutoSaving state for compatibility
-  const isAutoSaving = autoSaveStatus === 'saving';
+    const autoSaveTimer = setTimeout(() => {
+      if (editContent !== lastSavedContent && editContent.trim().length > 0) {
+        setIsAutoSaving(true);
+        autoSaveDraftMutation.mutate(editContent);
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [editContent, lastSavedContent, readOnlyMode, autoSaveDraftMutation]);
 
   // Public interface
   return {
