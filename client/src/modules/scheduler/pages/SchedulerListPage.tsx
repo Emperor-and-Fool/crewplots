@@ -60,6 +60,31 @@ export default function SchedulerListPage() {
     navigate(`/scheduler/edit/${scheduleId}`);
   };
 
+  // Delete schedule mutation
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (scheduleId: number) => {
+      return apiRequest('DELETE', `/api/scheduler/packages/delete/${scheduleId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+      toast({
+        title: "Schedule deleted successfully",
+        description: "The schedule and all its shifts have been permanently removed"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete schedule",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDeleteSchedule = (scheduleId: number) => {
+    deleteScheduleMutation.mutate(scheduleId);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -158,6 +183,36 @@ export default function SchedulerListPage() {
                     >
                       Edit Schedule
                     </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={deleteScheduleMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{schedule.name}"? This will permanently remove the schedule and all its shifts. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteSchedule(schedule.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {deleteScheduleMutation.isPending ? "Deleting..." : "Delete Schedule"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
