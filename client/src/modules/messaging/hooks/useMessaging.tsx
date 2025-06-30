@@ -102,7 +102,6 @@ export function useMessaging(config: MessagingConfig) {
       });
     },
     onError: (error: any) => {
-      setHasSaveError(true);
       toast({
         title: 'Error',
         description: `Failed to ${isNoteMode ? 'save note' : 'send message'}. Please try again.`,
@@ -134,8 +133,6 @@ export function useMessaging(config: MessagingConfig) {
       queryClient.invalidateQueries({ queryKey: ['/api/messaging/notes'] });
       setEditingMessageId(null);
       setEditContent('');
-      setIsAutoSaving(false);
-      setHasSaveError(false);
       
       toast({
         title: isNoteMode ? 'Note updated!' : 'Message updated!',
@@ -144,8 +141,6 @@ export function useMessaging(config: MessagingConfig) {
       });
     },
     onError: (error: any) => {
-      setHasSaveError(true);
-      setIsAutoSaving(false);
       toast({
         title: 'Error',
         description: `Failed to update ${isNoteMode ? 'note' : 'message'}. Please try again.`,
@@ -206,26 +201,25 @@ export function useMessaging(config: MessagingConfig) {
         setHasCreatedMessage(true);
       }
       setLastSavedContent(editContent);
-      setIsAutoSaving(false);
-      setHasSaveError(false);
     },
     onError: (error: any) => {
-      setIsAutoSaving(false);
-      setHasSaveError(true);
       console.error('Auto-save failed:', error);
     },
   });
 
   // Shared auto-save hook integration (replaces lines 253-266)
-  const { autoSaveStatus } = useAutoSave({
-    data: editContent,
-    onSave: async (content: string) => {
-      if (content.trim() && content !== lastSavedContent) {
-        await autoSaveDraftMutation.mutateAsync(content);
-      }
-    },
+  const { status: autoSaveStatus } = useAutoSave(editContent, {
+    endpoint: draftMessageId ? `/api/messaging/notes/${draftMessageId}` : '/api/messaging/notes',
+    method: draftMessageId ? 'PUT' : 'POST',
     enabled: !readOnlyMode && editContent.trim() && editContent !== lastSavedContent,
-    debounceMs: 2000
+    debounceMs: 2000,
+    onSaveSuccess: (savedMessage) => {
+      if (!draftMessageId) {
+        setDraftMessageId(savedMessage.id);
+        setHasCreatedMessage(true);
+      }
+      setLastSavedContent(editContent);
+    }
   });
 
   // Delete message mutation (extracted from messaging-system.tsx lines 292-320)
