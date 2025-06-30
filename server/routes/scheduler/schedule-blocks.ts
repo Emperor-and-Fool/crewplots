@@ -86,12 +86,18 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
 
   try {
     const id = parseInt(req.params.id);
+    console.log(`🔄 TOGGLE DEBUG: PUT request for schedule block ${id}`);
+    console.log(`🔄 TOGGLE DEBUG: Request body:`, req.body);
+    
     const validatedData = insertScheduleBlockSchema.omit({ createdBy: true }).partial().parse(req.body);
+    console.log(`🔄 TOGGLE DEBUG: Validated data:`, validatedData);
     
     const scheduleBlock = await storage.updateScheduleBlock(id, validatedData);
+    console.log(`🔄 TOGGLE DEBUG: Updated schedule block result:`, scheduleBlock);
+    
     res.json(scheduleBlock);
   } catch (error) {
-    console.error("Error updating schedule block:", error);
+    console.error("🔄 TOGGLE DEBUG: Error updating schedule block:", error);
     res.status(400).json({ error: "Failed to update schedule block" });
   }
 });
