@@ -129,4 +129,64 @@ router.post('/create', authenticateUser, async (req: any, res) => {
   }
 });
 
+// PUT /api/scheduler/packages/update/:id - Update schedule package
+router.put('/update/:id', authenticateUser, async (req: any, res) => {
+  try {
+    console.log('🔄 PACKAGE API: Starting package update for ID:', req.params.id);
+
+    // Thread 1: Package Assembly (with update context)
+    const packageData = await validationPackageService.assemblePackageFromRequest(
+      { ...req.body, scheduleBlock: { ...req.body.scheduleBlock, id: parseInt(req.params.id) } },
+      req.user,
+      'update'
+    );
+
+    // Thread 2: Integrity Validation
+    const integrityResult = await validationPackageService.validatePackageIntegrity(packageData);
+    if (!integrityResult.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Package validation failed',
+        details: integrityResult.errors,
+        warnings: integrityResult.warnings
+      });
+    }
+
+    // Thread 3: Permission Authorization
+    const authResult = await validationPackageService.validatePackagePermissions(packageData);
+    if (!authResult.isAuthorized) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        deniedPermissions: authResult.deniedPermissions
+      });
+    }
+
+    // Thread 4: Storage Transaction
+    const saveResult = await validationPackageService.executeStorageTransaction(packageData);
+    if (!saveResult.success) {
+      return res.status(500).json({ 
+        error: 'Failed to update schedule package',
+        details: saveResult.errors
+      });
+    }
+
+    console.log('🔄 PACKAGE API: Package updated successfully:', saveResult.createdEntities);
+    res.status(200).json({
+      success: true,
+      package: {
+        id: saveResult.createdEntities.scheduleBlockId,
+        type: packageData.packageType,
+        updatedEntities: saveResult.createdEntities
+      }
+    });
+
+  } catch (error) {
+    console.error('🔄 PACKAGE API: Update failed:', error);
+    res.status(500).json({ 
+      error: 'Package update failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

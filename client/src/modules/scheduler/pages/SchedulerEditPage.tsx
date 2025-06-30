@@ -306,7 +306,7 @@ export default function SchedulerEditPage() {
         packageData,
         timestamp: new Date().toISOString()
       });
-      const result = await apiRequest('POST', `/api/scheduler/packages/create`, packageData);
+      const result = await apiRequest('PUT', `/api/scheduler/packages/update/${scheduleId}`, packageData);
       console.log('✅ VALIDATION FRAMEWORK: Complete schedule chain saved successfully', {
         result,
         timestamp: new Date().toISOString()
