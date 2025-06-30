@@ -9,7 +9,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient, apiRequest } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import type { Location } from '@shared/schema';
 
 export default function SchedulerListPage() {
@@ -17,6 +17,7 @@ export default function SchedulerListPage() {
   const [, navigate] = useLocation();
   const permissions = useSchedulerPermissions();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch existing schedule blocks with creator names using packaging service
   const { data: scheduleBlocks, isLoading } = useQuery({
@@ -64,29 +65,33 @@ export default function SchedulerListPage() {
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
       return apiRequest('DELETE', `/api/scheduler/packages/delete/${scheduleId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
-      toast({
-        title: "Schedule deleted successfully",
-        description: "The schedule and all its shifts have been permanently removed"
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to delete schedule",
-        description: error.message,
-        variant: "destructive"
-      });
     }
   });
 
-  const handleDeleteSchedule = (scheduleId: number) => {
-    deleteScheduleMutation.mutate(scheduleId);
+  const handleDeleteSchedule = (scheduleId: number, closeDialog: () => void) => {
+    deleteScheduleMutation.mutate(scheduleId, {
+      onSuccess: () => {
+        closeDialog();
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+        toast({
+          title: "Schedule deleted successfully",
+          description: "The schedule and all its shifts have been permanently removed"
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Failed to delete schedule",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
   };
 
   // Delete confirmation component with counts
   const DeleteConfirmationDialog = ({ schedule }: { schedule: any }) => {
+    const [dialogOpen, setDialogOpen] = useState(false);
+    
     const deletionInfoQuery = useQuery({
       queryKey: ['/api/scheduler/packages/delete-info', schedule.id],
       queryFn: async () => {
@@ -96,18 +101,17 @@ export default function SchedulerListPage() {
         if (!response.ok) throw new Error('Failed to fetch deletion info');
         return response.json();
       },
-      enabled: false // Only fetch when dialog opens
+      enabled: dialogOpen // Only fetch when dialog is open
     });
 
     return (
-      <AlertDialog>
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogTrigger asChild>
           <Button 
             variant="outline" 
             size="sm"
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
             disabled={deleteScheduleMutation.isPending}
-            onClick={() => deletionInfoQuery.refetch()}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -139,7 +143,7 @@ export default function SchedulerListPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => handleDeleteSchedule(schedule.id)}
+              onClick={() => handleDeleteSchedule(schedule.id, () => setDialogOpen(false))}
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteScheduleMutation.isPending || deletionInfoQuery.isLoading}
             >
