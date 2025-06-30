@@ -15,8 +15,7 @@ import { Header } from "@/components/ui/header";
 import LocationHeader from "@/modules/locations/components/LocationHeader";
 
 // Dashboard module components (sophisticated restoration)
-import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions } from "@/modules/dashboard";
-// Removed broken import - component moved to backup
+import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions, WeeklyCalendarPreview } from "@/modules/dashboard";
 import { ApplicantsSummary } from "@/modules/users/components/workflows/ApplicantsSummary";
 
 
