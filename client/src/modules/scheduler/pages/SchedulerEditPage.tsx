@@ -609,13 +609,11 @@ export default function SchedulerEditPage() {
   }, [draftShiftId]);
 
   const handleScheduleSubmit = async (data: WeekScheduleUpdateForm) => {
-    // Get the latest isActive value from basicInfoForm since that's where the Switch is connected
-    const basicInfoValues = basicInfoForm.getValues();
-    const mergedData = {
-      ...data,
-      isActive: basicInfoValues.isActive // Use the Switch value from basicInfoForm
-    };
-    updateWeekScheduleMutation.mutate(mergedData);
+    console.log('💾 SAVE DEBUG: handleScheduleSubmit called with data:', data);
+    console.log('💾 SAVE DEBUG: basicInfoForm values:', basicInfoForm.getValues());
+    
+    // Use the data directly since it comes from basicInfoForm which includes isActive
+    updateScheduleBlockMutation.mutate(data);
   };
 
   const handleShiftSubmit = async (data: ShiftCreationForm) => {
@@ -687,6 +685,7 @@ export default function SchedulerEditPage() {
       return await apiRequest('PUT', `/api/scheduler/schedule-blocks/${id}`, blockData);
     },
     onSuccess: (block: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
       toast({
         title: "Schedule updated successfully",
