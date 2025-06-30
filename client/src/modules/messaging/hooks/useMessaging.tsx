@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import type { ExtendedMessage, ComponentMode, WorkflowType, MessageFormData } from '../types/messaging.types';
 
 export interface MessagingConfig {
@@ -25,8 +26,6 @@ export function useMessaging(config: MessagingConfig) {
   const [hasCreatedMessage, setHasCreatedMessage] = useState<boolean>(false);
   const [draftMessageId, setDraftMessageId] = useState<number | null>(null);
   const [lastSavedContent, setLastSavedContent] = useState<string>('');
-  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
-  const [hasSaveError, setHasSaveError] = useState<boolean>(false);
 
   // Mode-specific behavior (extracted from messaging-system.tsx lines 129-131)
   const isNoteMode = mode === 'note';
@@ -215,6 +214,18 @@ export function useMessaging(config: MessagingConfig) {
       setHasSaveError(true);
       console.error('Auto-save failed:', error);
     },
+  });
+
+  // Shared auto-save hook integration (replaces lines 253-266)
+  const { autoSaveStatus } = useAutoSave({
+    data: editContent,
+    onSave: async (content: string) => {
+      if (content.trim() && content !== lastSavedContent) {
+        await autoSaveDraftMutation.mutateAsync(content);
+      }
+    },
+    enabled: !readOnlyMode && editContent.trim() && editContent !== lastSavedContent,
+    debounceMs: 2000
   });
 
   // Delete message mutation (extracted from messaging-system.tsx lines 292-320)
