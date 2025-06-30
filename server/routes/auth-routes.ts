@@ -113,11 +113,11 @@ router.post('/login', upload.none(), async (req, res, next) => {
         
         // Extract credentials regardless of content type
         const username = req.body?.username || null;
-        const password = req.body?.password || null;
+        const loginPassword = req.body?.password || null;
         
-        console.log(`Extracted username: ${username ? username : 'missing'}, password: ${password ? '******' : 'missing'}`);
+        console.log(`Extracted username: ${username ? username : 'missing'}, password: ${loginPassword ? '******' : 'missing'}`);
         
-        if (!username || !password) {
+        if (!username || !loginPassword) {
             return res.status(400).json({ message: 'Username and password are required' });
         }
         
@@ -127,7 +127,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
         // Special case for admin development login
-        if (identifier === 'admin' && password === 'adminpass123') {
+        if (identifier === 'admin' && loginPassword === 'adminpass123') {
             console.log('Admin login detected using development credentials');
             
             // Look up the admin user first
@@ -198,7 +198,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('User found:', user.username, 'with ID:', user.id);
         
         // Now we need to verify the password
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(loginPassword, user.password);
         if (!isMatch) {
             console.log('Password verification failed for user:', user.username);
             return res.status(401).json({ message: 'Invalid username/email or password' });
@@ -353,7 +353,7 @@ router.get('/me', authenticateUser, async (req, res) => {
         }
         
         // Remove sensitive data before returning the user
-        const { password, ...userWithoutPassword } = userWithPermissions;
+        const { password: userPasswordField, ...userWithoutPassword } = userWithPermissions;
         
         console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
         console.timeEnd("me:total");
