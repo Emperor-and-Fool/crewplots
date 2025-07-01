@@ -119,10 +119,10 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // Auto-save configuration using validation service
+  // Auto-save configuration using validation engine
   const formValues = form.watch();
   const autoSave = useAutoSave(formValues, {
-    endpoint: `/api/scheduler/packages/create`,
+    endpoint: `/api/validation/execute`,
     method: 'POST',
     debounceMs: 2000,
     minContentLength: 1,
