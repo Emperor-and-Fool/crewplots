@@ -1823,6 +1823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/notes', notesRoutes);
   app.use('/api/email', emailRoutes);
   app.use('/api/scheduler', schedulerRoutes);  // 🆕 NEW: Multi-week scheduling system
+  app.use('/api/validation', validationRoutes); // 🧪 NEW: Unified validation engine (testing)
   app.use('/api/security', securityRoutes);
 
   // Development and monitoring routes
