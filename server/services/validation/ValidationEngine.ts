@@ -53,7 +53,9 @@ export class ValidationEngine {
       
       // Thread 1: Schema Validation using extracted package
       console.log('🔍 UNIFIED ENGINE: Starting schema validation');
+      console.log('🔍 UNIFIED ENGINE: Data being validated:', JSON.stringify(data, null, 2));
       const schemaResult = pkg.validateSchema(data, operation as any);
+      console.log('🔍 UNIFIED ENGINE: Schema validation result:', schemaResult);
       if (!schemaResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, schemaResult.errors);
       }
