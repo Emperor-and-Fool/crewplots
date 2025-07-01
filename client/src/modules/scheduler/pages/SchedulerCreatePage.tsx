@@ -126,7 +126,7 @@ export default function SchedulerCreatePage() {
     enabled: !!currentWeekSchedule?.id
   });
 
-  // Auto-save integration using shared hook (Phase 3.1 Level 1)
+  // Auto-save integration with proper endpoint selection
   const autoSaveState = useAutoSave(scheduleForm.getValues(), {
     endpoint: createdScheduleId 
       ? `/api/scheduler/packages/update/${createdScheduleId}`
@@ -134,6 +134,10 @@ export default function SchedulerCreatePage() {
     method: 'POST',
     enabled: scheduleForm.formState.isDirty,
     debounceMs: 2000,
+    validateData: (data) => {
+      // Minimum data threshold: name and locationId required
+      return !!(data.name?.trim() && data.locationId && data.locationId > 0);
+    },
     transformData: (data) => ({
       packageType: createdScheduleId ? 'update' : 'create',
       scheduleBlock: {
@@ -148,7 +152,7 @@ export default function SchedulerCreatePage() {
       shifts: [] // Empty for basic info auto-save
     }),
     onSaveSuccess: (response: any) => {
-      // Store created schedule ID for future updates
+      // Store created schedule ID for future updates (progressive save logic)
       if (response.package?.createdEntities?.scheduleBlockId && !createdScheduleId) {
         setCreatedScheduleId(response.package.createdEntities.scheduleBlockId);
       }
