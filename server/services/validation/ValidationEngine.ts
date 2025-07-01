@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { storage } from '../../storage';
 
 // Import extracted validation packages
 import { scheduleBlockPackage } from '../../../client/src/modules/scheduler/validation/packages/scheduleBlockPackage';
@@ -93,6 +94,27 @@ export class ValidationEngine {
       // Thread 4: Success - all validations passed
       console.log('✅ UNIFIED ENGINE: All validations passed');
       
+      // Thread 5: Execute Database Transaction
+      console.log('💾 UNIFIED ENGINE: Starting database transaction');
+      let transactionResult;
+      try {
+        if (entityType === 'scheduleBlock' && operation === 'create') {
+          transactionResult = await storage.createScheduleBlock(assembledData);
+          console.log('💾 UNIFIED ENGINE: Schedule block created with ID:', transactionResult.id);
+        } else if (entityType === 'weekSchedule' && operation === 'create') {
+          transactionResult = await storage.createWeekSchedule(assembledData);
+          console.log('💾 UNIFIED ENGINE: Week schedule created with ID:', transactionResult.id);
+        } else if (entityType === 'shift' && operation === 'create') {
+          transactionResult = await storage.createShift(assembledData);
+          console.log('💾 UNIFIED ENGINE: Shift created with ID:', transactionResult.id);
+        } else {
+          throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);
+        }
+      } catch (error) {
+        console.error('🚨 UNIFIED ENGINE: Transaction failed:', error);
+        return this.createFailureResult(packageId, operation, entityType, [`Database transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      }
+      
       const validationTime = Date.now() - startTime;
       
       return {
@@ -108,7 +130,8 @@ export class ValidationEngine {
             rulesApplied: [
               'Schema validation',
               'Permission validation', 
-              'Business rule validation'
+              'Business rule validation',
+              'Database transaction'
             ],
             packageId
           }
@@ -117,7 +140,7 @@ export class ValidationEngine {
           schema: { success: true, errors: [], data: assembledData },
           permission: { success: true, errors: [], permissions: requiredPermissions },
           businessRules: { success: true, errors: [], warnings: businessRuleResult.warnings || [] },
-          transaction: { success: true, errors: [], data: { validated: true } }
+          transaction: { success: true, errors: [], data: transactionResult }
         }
       };
 

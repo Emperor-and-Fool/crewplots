@@ -77,11 +77,19 @@ export default function SchedulerListPage() {
       }
       
       // Extract the schedule block ID from the unified validation response
+      // The validation engine returns the created record in result.data directly
       if (result.success && result.data && result.data.id) {
+        console.log('✅ FRONTEND: Schedule creation successful, ID:', result.data.id);
         return { id: result.data.id };
       }
       
-      throw new Error('Failed to create schedule - validation failed or no ID returned');
+      console.error('❌ FRONTEND: Schedule creation failed:', { 
+        success: result.success, 
+        hasData: !!result.data, 
+        dataHasId: result.data?.id,
+        fullResult: result 
+      });
+      throw new Error('Failed to create schedule - validation passed but no database record created');
     },
     onSuccess: (data: any) => {
       console.log('Create schedule response:', data);
