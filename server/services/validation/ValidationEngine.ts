@@ -51,16 +51,28 @@ export class ValidationEngine {
       // Get validation package for entity type
       const pkg = this.getPackage(entityType);
       
-      // Thread 1: Schema Validation using extracted package
-      console.log('🔍 UNIFIED ENGINE: Starting schema validation');
-      console.log('🔍 UNIFIED ENGINE: Data being validated:', JSON.stringify(data, null, 2));
-      const schemaResult = pkg.validateSchema(data, operation as any);
+      // Thread 1: Data Assembly (inject server-side fields BEFORE validation)
+      console.log('🎁 UNIFIED ENGINE: Starting data assembly');
+      console.log('🎁 UNIFIED ENGINE: Raw frontend data:', JSON.stringify(data, null, 2));
+      
+      // Inject authenticated user fields following legacy pattern
+      const assembledData = { ...data };
+      if (operation === 'create') {
+        assembledData.createdBy = context.userId; // Server-side injection from authenticated session
+        console.log('🎁 UNIFIED ENGINE: Injected createdBy from authenticated user:', context.userId);
+      }
+      
+      console.log('🎁 UNIFIED ENGINE: Assembled data with server fields:', JSON.stringify(assembledData, null, 2));
+      
+      // Thread 2: Schema Validation using extracted package (on assembled data)
+      console.log('🔍 UNIFIED ENGINE: Starting schema validation on assembled data');
+      const schemaResult = pkg.validateSchema(assembledData, operation as any);
       console.log('🔍 UNIFIED ENGINE: Schema validation result:', schemaResult);
       if (!schemaResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, schemaResult.errors);
       }
 
-      // Thread 2: Permission Validation using extracted package
+      // Thread 3: Permission Validation using extracted package
       console.log('🔐 UNIFIED ENGINE: Starting permission validation');
       const requiredPermissions = pkg.getRequiredPermissions(operation as any);
       const userPermissions = context.permissions || [];
@@ -71,9 +83,9 @@ export class ValidationEngine {
         return this.createFailureResult(packageId, operation, entityType, [`Missing permissions: ${missingPermissions.join(', ')}`]);
       }
 
-      // Thread 3: Business Rule Validation using extracted package
+      // Thread 4: Business Rule Validation using extracted package (on assembled data)
       console.log('📋 UNIFIED ENGINE: Starting business rule validation');
-      const businessRuleResult = await pkg.validateBusinessRules(data, context);
+      const businessRuleResult = await pkg.validateBusinessRules(assembledData, context);
       if (!businessRuleResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, businessRuleResult.errors);
       }
@@ -102,7 +114,7 @@ export class ValidationEngine {
           }
         },
         threads: {
-          schema: { success: true, errors: [], data: data },
+          schema: { success: true, errors: [], data: assembledData },
           permission: { success: true, errors: [], permissions: requiredPermissions },
           businessRules: { success: true, errors: [], warnings: businessRuleResult.warnings || [] },
           transaction: { success: true, errors: [], data: { validated: true } }
