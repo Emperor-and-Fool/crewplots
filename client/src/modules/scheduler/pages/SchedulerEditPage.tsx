@@ -14,6 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveIndicator } from '@/components/ui/auto-save-indicator';
 import { apiRequest } from '@/lib/queryClient';
 import { insertScheduleBlockSchema, type InsertScheduleBlock } from '@shared/schema';
 import type { Location } from '@shared/schema';
@@ -117,6 +119,36 @@ export default function SchedulerEditPage() {
     },
   });
 
+  // Auto-save configuration
+  const formValues = form.watch();
+  const autoSave = useAutoSave(formValues, {
+    endpoint: `/api/scheduler/schedule-blocks/${scheduleId}`,
+    method: 'PUT',
+    debounceMs: 2000,
+    minContentLength: 1,
+    enabled: permissions.canEditSchedules && !!scheduleData,
+    validateData: (data) => {
+      // Only auto-save if data is valid and has changed from initial values
+      return !!(data.name && data.name.trim().length > 0);
+    },
+    transformData: (data) => {
+      // Transform form data to match API expectations
+      return {
+        name: data.name || '',
+        description: data.description || '',
+        locationId: data.locationId || 0,
+        isActive: data.isActive !== false
+      };
+    },
+    onSaveSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+    },
+    onSaveError: (error) => {
+      console.error('Auto-save failed:', error);
+    }
+  });
+
   const handleSave = async (data: InsertScheduleBlock) => {
     await updateMutation.mutateAsync(data);
   };
@@ -148,12 +180,25 @@ export default function SchedulerEditPage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">
-          Edit Week Schedule: {scheduleData?.name || 'Loading...'}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Update the details for your weekly schedule template
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">
+              Edit Week Schedule: {scheduleData?.name || 'Loading...'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Update the details for your weekly schedule template
+            </p>
+          </div>
+          <AutoSaveIndicator
+            status={autoSave.status}
+            lastSaved={autoSave.lastSaved}
+            hasUnsavedChanges={autoSave.hasUnsavedChanges}
+            error={autoSave.error}
+            onManualSave={autoSave.manualSave}
+            variant="button"
+            className="flex-shrink-0"
+          />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="space-y-6">
