@@ -64,7 +64,8 @@ export default function SchedulerListPage() {
       };
       
       const response = await apiRequest('POST', '/api/scheduler/schedule-blocks', newSchedule);
-      return response;
+      const data = await response.json();
+      return data;
     },
     onSuccess: (data: any) => {
       console.log('Create schedule response:', data);
