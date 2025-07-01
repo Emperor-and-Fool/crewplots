@@ -10,23 +10,34 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
 
 ## IMPACT ASSESSMENT
 
-### Current State Analysis
+### EVIDENCE-BASED INVESTIGATION
 
-**Database State:**
-- 4 active schedule blocks in production (IDs: 1, 4, 6, 20)
-- Schedule ID 19 was deleted during testing - explains failed auto-save attempts
-- Russian Doll architecture: schedule_blocks → week_schedules → shifts
+**CODEBASE EVIDENCE:**
+- **DUPLICATION CONFIRMED**: SchedulerCreatePage (647 lines) and SchedulerEditPage (892 lines) with 80% identical logic patterns
+- **SHARED PATTERNS IDENTIFIED**: Form schemas, validation workflows, UI components, API interactions
+- **WORKING AUTO-SAVE**: Messaging module provides proven implementation (useAutoSave.tsx + AutoSaveIndicator.tsx)
 
-**Code Architecture:**
-- **DUPLICATE COMPONENTS**: SchedulerCreatePage (647 lines) and SchedulerEditPage (892 lines) with 80% shared logic
-- **AUTO-SAVE INTEGRATION**: Currently in SchedulerCreatePage using `/api/scheduler/packages/update/19` (wrong endpoint)
-- **WORKING PATTERN**: Messaging module has proven auto-save implementation (useAutoSave.tsx + AutoSaveIndicator.tsx)
+**DATABASE EVIDENCE:**
+- 4 active schedule blocks confirmed (IDs: 1, 4, 6, 20)
+- Schedule ID 19 deleted - ROOT CAUSE of failed auto-save attempts
+- Russian Doll architecture validated: schedule_blocks → week_schedules → shifts
 
-**Technical Debt:**
-- Code duplication between create/edit pages
-- Session isolation issues with simultaneous requests
-- Legacy authentication patterns in package endpoints
-- Mixed POST/PUT method usage
+**ENDPOINT CONFIGURATION EVIDENCE:**
+- **CREATE**: `POST /api/scheduler/schedule-blocks` (confirmed working)
+- **UPDATE**: `PUT /api/scheduler/schedule-blocks/:id` (confirmed working)  
+- **MISMATCH**: Auto-save attempting POST to deleted ID 19 endpoint
+
+**IMPLEMENTATION OPPORTUNITIES:**
+- Single adaptive component using `scheduleId ? 'edit' : 'create'` state determination
+- Eliminate 80% code duplication while preserving URL patterns
+- Extract proven auto-save pattern from messaging module
+
+**PRIORITIZATION RATIONALE:**
+1. **Investigation** (Foundation) - Understand all patterns before changes
+2. **Endpoint Fix** (Critical Blocker) - Auto-save must work before consolidation  
+3. **Consolidation** (Core Objective) - Eliminate duplication
+4. **Integration** (Enhancement) - Complex data model support
+5. **Cleanup** (Finalization) - Safe removal of redundant code
 
 ### Risk Assessment
 
@@ -80,10 +91,11 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
    - Ensure all endpoints use `authenticateUser` middleware
    - Test authenticated requests
 
-**Validation:**
-- Auto-save indicator shows "saved" instead of "save failed"
-- Create→edit transition works seamlessly
-- Draft cleanup prevents database pollution
+**Testing and Verification:**
+- Auto-save indicator shows "saved" status instead of "save failed"
+- Create→edit transition works seamlessly with proper endpoint switching
+- Draft cleanup prevents database pollution on navigation
+- Manual testing: Create new schedule, verify auto-save works, navigate and return
 
 ### PHASE 3: PAGE CONSOLIDATION (Estimated: 60 minutes)
 **Objectives:** Merge SchedulerCreatePage and SchedulerEditPage into single adaptive component
@@ -104,10 +116,11 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
    - Preserve existing URL patterns for compatibility
    - Test navigation between create/edit modes
 
-**Validation:**
-- Single component handles both create and edit scenarios
-- URL changes trigger appropriate mode switches
-- All existing functionality preserved
+**Testing and Verification:**
+- Single component handles both create and edit scenarios correctly
+- URL changes trigger appropriate mode switches (/scheduler/new vs /scheduler/edit/:id)
+- All existing functionality preserved: form validation, auto-save, navigation
+- Manual testing: Access both URLs, verify component adapts properly
 
 ### PHASE 4: RUSSIAN DOLL AUTO-SAVE INTEGRATION (Estimated: 45 minutes)
 **Objectives:** Integrate auto-save with complex scheduler data model
@@ -128,10 +141,11 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
    - Prevent session isolation with individual fetch patterns
    - Graceful error handling for validation failures
 
-**Validation:**
-- Complex scheduler data saves correctly through auto-save
-- Validation framework integrates seamlessly
-- User receives clear feedback on save status
+**Testing and Verification:**
+- Complex scheduler data saves correctly through auto-save system
+- Validation framework integrates seamlessly with 4-thread validation
+- User receives clear feedback on save status through auto-save indicator
+- Manual testing: Create schedule with multiple week schedules and shifts, verify all data persists
 
 ### PHASE 5: CLEANUP & OPTIMIZATION (Estimated: 30 minutes)
 **Objectives:** Three-stage cleanup with approval checkpoints
@@ -156,10 +170,11 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
    - Remove unused auto-save types and interfaces
    - Archive outdated documentation files
 
-**Validation:**
+**Testing and Verification:**
 - All three cleanup stages approved and completed
-- No duplicate code remaining
-- Documentation reflects current implementation
+- No duplicate code remaining in codebase
+- Documentation reflects current implementation accurately
+- Manual testing: Verify all features work after cleanup, no broken imports/routes
 
 ### Database Cleanup (Optional)
 7. **Remove orphaned draft schedules** - DELETE incomplete schedule blocks without minimum required data
