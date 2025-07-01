@@ -44,9 +44,9 @@ Implement a comprehensive validation framework that consolidates all data mutati
 **Objective:** Design and implement the foundational validation engine
 
 **Implementation Tasks:**
-1. **Core Validation Service Architecture**
+1. **Core Validation Service Architecture** (KISS - Server-side only)
    ```
-   /src/core/validation/
+   /server/validation/
      ├── engine/
      │   ├── ValidationEngine.ts          // Main orchestrator
      │   ├── PackageRegistry.ts           // Dynamic package loading
