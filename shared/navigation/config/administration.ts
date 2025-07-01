@@ -22,18 +22,11 @@ export const administrationSection: NavigationSection = {
       permission: { role: 'administrator' }
     },
     {
-      id: 'developer-tools',
-      label: 'Developer Tools',
+      id: 'validation-test',
+      label: 'Validation Test',
+      path: '/validation-test',
       icon: Wrench,
-      permission: { role: 'administrator' },
-      children: [
-        {
-          id: 'validation-test',
-          label: 'Validation Test',
-          path: '/validation-test',
-          permission: { role: 'administrator' }
-        }
-      ]
+      permission: { role: 'administrator' }
     }
   ]
 };
