@@ -52,8 +52,9 @@ type ShiftCreationForm = z.infer<typeof shiftCreationSchema>;
 
 export default function SchedulerEditPage() {
   const params = useParams();
-  const { scheduleId } = params; // Schedule block ID from URL parameter
+  const { scheduleId } = params; // Schedule block ID from URL parameter (undefined for create mode)
   const id = scheduleId; // For backward compatibility with existing code
+  const isCreateMode = !scheduleId; // Create mode when no scheduleId in URL
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
@@ -96,7 +97,7 @@ export default function SchedulerEditPage() {
   // Watch form values for auto-save trigger
   const watchedValues = shiftForm.watch();
 
-  // Fetch schedule block data
+  // Fetch schedule block data (only in edit mode)
   const { data: scheduleBlockData, isLoading: scheduleBlockLoading, error: scheduleBlockError } = useQuery({
     queryKey: ['/api/scheduler/schedule-blocks', id],
     queryFn: async () => {
@@ -113,7 +114,7 @@ export default function SchedulerEditPage() {
       console.log('🔍 FRONTEND: Schedule block data received:', data);
       return data;
     },
-    enabled: !!id && permissions.canEditSchedules,
+    enabled: !isCreateMode && !!id && permissions.canEditSchedules,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes in memory
   });

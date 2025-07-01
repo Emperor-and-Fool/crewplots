@@ -17,7 +17,7 @@ import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
 
 import ViewCalendar from "@/pages/view-calendar";
-import { SchedulerListPage, SchedulerCreatePage, SchedulerEditPage } from "@/modules/scheduler";
+import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
 import Applicants from "@/pages/applicants";
 import ApplicantDetail from "@/pages/applicant-detail";
 import { Profile } from "@/modules/users/pages";
@@ -243,7 +243,7 @@ function App() {
                 {isAuthenticated ? 
                   <AppLayout>
                     <RoleProtectedRoute 
-                      component={SchedulerCreatePage} 
+                      component={SchedulerEditPage} 
                       requiredRoles={["owner", "app_manager", "administrator"]} 
                     />
                   </AppLayout> : 
