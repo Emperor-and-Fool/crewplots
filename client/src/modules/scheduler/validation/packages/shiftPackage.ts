@@ -129,8 +129,11 @@ export const shiftPackage: ShiftPackage = {
     const errors: string[] = [];
     const warnings: string[] = [];
     
-    // Shifts inherit location access from their parent schedule block
-    // No location-specific validation needed at this level
+    // Location access validation - same pattern as scheduleBlockPackage
+    // Shifts don't have direct locationId, but we still validate access context
+    if (context.locationAccess !== 'all' && Array.isArray(context.locationAccess) && context.locationAccess.length === 0) {
+      errors.push('User does not have access to any locations');
+    }
     
     // Time validation
     if (data.startTime && data.endTime) {
