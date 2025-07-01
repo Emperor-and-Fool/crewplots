@@ -2,6 +2,43 @@ import { Router } from 'express';
 import { ValidationEngine } from '../../services/validation/ValidationEngine';
 import { authenticateUser } from '../../middleware/auth';
 
+/**
+ * Map workflow permissions to validation permissions
+ */
+function mapWorkflowToValidationPermissions(user: any): string[] {
+  const validationPermissions: string[] = [];
+  
+  // Use database permissions if available (from role_permissions table)
+  if (user.permissions && Array.isArray(user.permissions)) {
+    user.permissions.forEach((perm: string) => validationPermissions.push(perm));
+  }
+  
+  // Map workflow permissions to validation permissions
+  const workflowPerms = user.workflowPermissions || {};
+  
+  if (workflowPerms.scheduling) {
+    if (workflowPerms.scheduling.includes('create')) validationPermissions.push('schedule.create');
+    if (workflowPerms.scheduling.includes('view')) validationPermissions.push('schedule.read');
+    if (workflowPerms.scheduling.includes('edit')) validationPermissions.push('schedule.update');
+    if (workflowPerms.scheduling.includes('delete')) validationPermissions.push('schedule.delete');
+  }
+  
+  if (workflowPerms.location) {
+    if (workflowPerms.location.includes('view')) validationPermissions.push('location.access_assigned');
+    if (user.role === 'administrator') validationPermissions.push('location.access_all');
+  }
+  
+  // Remove duplicates manually (ES5 compatible)
+  const uniquePermissions: string[] = [];
+  validationPermissions.forEach((perm: string) => {
+    if (!uniquePermissions.includes(perm)) {
+      uniquePermissions.push(perm);
+    }
+  });
+  
+  return uniquePermissions;
+}
+
 const router = Router();
 const validationEngine = new ValidationEngine();
 
@@ -24,11 +61,20 @@ router.get('/test', authenticateUser, async (req, res) => {
     
     console.log('🧪 VALIDATION ENGINE: Created testData object:', JSON.stringify(testData, null, 2));
 
+    // Map user permissions using same logic as execution endpoint
+    const mappedPermissions = mapWorkflowToValidationPermissions(req.user);
+    
+    console.log('🧪 PERMISSION MAPPING DEBUG:');
+    console.log('  Input user.permissions:', req.user.permissions || []);
+    console.log('  Input user.workflowPermissions:', req.user.workflowPermissions || {});
+    console.log('  Mapped validation permissions:', mappedPermissions);
+    console.log('  Total permission count:', mappedPermissions.length);
+
     // Create operation context from authenticated user
     const context = {
-      userId: 1, // Admin user from database
-      userRole: 'administrator',
-      permissions: [], // Simplified for testing
+      userId: req.user.id,
+      userRole: req.user.role,
+      permissions: mappedPermissions, // Use mapped permissions instead of empty array
       locationAccess: [1], // Admin has access to location 1
       sessionId: req.sessionID
     };
