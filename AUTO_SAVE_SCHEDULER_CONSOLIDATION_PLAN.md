@@ -44,7 +44,7 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
 
 ## ROLLBACK STRATEGY
 
-**File Safety Protocol:** On every occasion a file gets modified, it will be automatically renamed to `[filename].bak` before changes are made. This provides immediate rollback capability by simply renaming the .bak file back to its original name.
+**File Safety Protocol:** On every occasion a file gets modified, it will be automatically renamed to `[filename].bak` before changes are made. This provides immediate rollback capability by simply renaming the .bak file back to its original name. Earlier commits serve as secondary rollback option.
 
 ## PHASE IMPLEMENTATION PLAN
 
@@ -134,40 +134,32 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
 - User receives clear feedback on save status
 
 ### PHASE 5: CLEANUP & OPTIMIZATION (Estimated: 30 minutes)
-**Objectives:** Remove duplicate code and optimize performance
+**Objectives:** Three-stage cleanup with approval checkpoints
 
 **Tasks:**
-1. **Legacy Component Removal**
+1. **Cleanup Stage 1: Component Removal (Requires Approval)**
+   - List files/components to be removed
+   - Await user approval before deletion
    - Archive original SchedulerCreatePage/SchedulerEditPage
    - Update import references throughout codebase
+
+2. **Cleanup Stage 2: Route and Export Cleanup (Requires Approval)**
+   - List route changes and export modifications to be made
+   - Await user approval before modification
    - Clean up unused exports
+   - Remove legacy routing patterns
 
-2. **Performance Optimization**
-   - Optimize auto-save debouncing for scheduler complexity
-   - Implement smart cache invalidation
-   - Add loading states for better UX
-
-3. **Documentation Updates**
+3. **Cleanup Stage 3: Documentation and Infrastructure (Requires Approval)**
+   - List documentation and infrastructure changes to be made
+   - Await user approval before cleanup
    - Update replit.md with new architecture
-   - Document auto-save patterns for future modules
-   - Create usage examples
+   - Remove unused auto-save types and interfaces
+   - Archive outdated documentation files
 
 **Validation:**
+- All three cleanup stages approved and completed
 - No duplicate code remaining
-- Performance benchmarks meet targets
 - Documentation reflects current implementation
-
-## CLEANUP TASKS REQUIRING APPROVAL
-
-### Immediate Cleanup (Post-Implementation)
-1. **Remove duplicate SchedulerCreatePage.tsx and SchedulerEditPage.tsx** - DELETE original files after successful consolidation
-2. **Remove .bak backup files** - DELETE backup files after 7-day safety period
-3. **Remove INCOMPLETE_AUTO_SAVE_IMPLEMENTATION.md** - DELETE outdated documentation file
-
-### Infrastructure Cleanup
-4. **Remove legacy package endpoint patterns** - MODIFY server/routes/scheduler/packages.ts to remove fallback authentication
-5. **Remove unused auto-save types** - MODIFY shared/types/auto-save.types.ts to remove unused interfaces
-6. **Archive git safety checkpoint** - DELETE auto-save-consolidation-start tag after 30 days
 
 ### Database Cleanup (Optional)
 7. **Remove orphaned draft schedules** - DELETE incomplete schedule blocks without minimum required data
