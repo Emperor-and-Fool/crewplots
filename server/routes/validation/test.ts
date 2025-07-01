@@ -38,6 +38,7 @@ router.get('/test', authenticateUser, async (req, res) => {
     });
 
     console.log('🧪 VALIDATION ENGINE: Test data being sent:', testData);
+    console.log('🧪 VALIDATION ENGINE: req.user object:', req.user);
 
     // Execute validation using new engine
     const result = await validationEngine.validateAndExecute(
