@@ -44,62 +44,22 @@ This plan addresses the consolidation of SchedulerCreatePage and SchedulerEditPa
 
 ## ROLLBACK STRATEGY
 
-### Git Commit Protection
-```bash
-# Create safety checkpoint before any changes
-git add -A
-git commit -m "AUTO-SAVE CONSOLIDATION: Safety checkpoint before Phase 1"
-git tag auto-save-consolidation-start
-```
-
-### File Backup Strategy
-**All modified files will be backed up with .bak extension:**
-
-**Target Files for Backup:**
-1. `client/src/modules/scheduler/pages/SchedulerCreatePage.tsx` → `SchedulerCreatePage.tsx.bak`
-2. `client/src/modules/scheduler/pages/SchedulerEditPage.tsx` → `SchedulerEditPage.tsx.bak`
-3. `client/src/hooks/useAutoSave.tsx` → `useAutoSave.tsx.bak`
-4. `client/src/App.tsx` → `App.tsx.bak`
-5. `server/routes/scheduler/packages.ts` → `packages.ts.bak`
-
-**Backup Command Sequence:**
-```bash
-cp SchedulerCreatePage.tsx SchedulerCreatePage.tsx.bak
-cp SchedulerEditPage.tsx SchedulerEditPage.tsx.bak
-# etc. for each target file
-```
-
-### Emergency Rollback Procedure
-```bash
-# If issues occur, immediate rollback:
-git reset --hard auto-save-consolidation-start
-# Restore .bak files if needed:
-mv SchedulerCreatePage.tsx.bak SchedulerCreatePage.tsx
-```
+**File Safety Protocol:** On every occasion a file gets modified, it will be automatically renamed to `[filename].bak` before changes are made. This provides immediate rollback capability by simply renaming the .bak file back to its original name.
 
 ## PHASE IMPLEMENTATION PLAN
 
-### PHASE 1: SAFETY & INVESTIGATION (Estimated: 30 minutes)
-**Objectives:** Create safety backups and complete technical investigation
+### PHASE 1: INVESTIGATION (Estimated: 30 minutes)
+**Objectives:** Complete technical investigation
 
 **Tasks:**
-1. **Git Safety Checkpoint**
-   - Create commit with current state
-   - Tag checkpoint for instant rollback
-
-2. **File Backup Creation**
-   - Backup all 5 target files with .bak extensions
-   - Verify backup integrity
-
-3. **Technical Deep Dive**
+1. **Technical Deep Dive**
    - Trace auto-save endpoint configuration in both pages
    - Analyze shared logic patterns between create/edit
    - Document minimum data threshold for create→edit transition
 
 **Completion Criteria:**
-- All backups created and verified
 - Technical analysis documented
-- Rollback procedures tested
+- Implementation strategy confirmed
 
 ### PHASE 2: AUTO-SAVE CONFIGURATION FIX (Estimated: 45 minutes)
 **Objectives:** Fix immediate auto-save failure and establish proper endpoint patterns
