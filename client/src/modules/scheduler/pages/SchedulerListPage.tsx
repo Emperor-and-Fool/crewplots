@@ -19,11 +19,11 @@ export default function SchedulerListPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch existing schedule blocks with creator names using packaging service
+  // Fetch existing schedule blocks using unified validation system
   const { data: scheduleBlocks, isLoading } = useQuery({
-    queryKey: ['/api/scheduler/packages/schedule-blocks'],
+    queryKey: ['/api/scheduler/schedule-blocks'],
     queryFn: async () => {
-      const response = await fetch('/api/scheduler/packages/schedule-blocks', {
+      const response = await fetch('/api/scheduler/schedule-blocks', {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch schedule blocks');
@@ -53,30 +53,30 @@ export default function SchedulerListPage() {
     );
   }
 
-  // Create schedule mutation for create-then-redirect pattern using validation service
+  // Create schedule mutation using unified validation system
   const createScheduleMutation = useMutation({
     mutationFn: async () => {
-      const packageData = {
-        packageType: "create",
-        scheduleBlock: {
+      const validationData = {
+        operation: "create",
+        entityType: "scheduleBlock",
+        entityId: null,
+        data: {
           name: "New Schedule",
           description: "",
           locationId: 1, // Default to first location, user can change in edit mode
           isActive: false // Default to inactive until user configures it
-        },
-        weekSchedules: [],
-        shifts: []
+        }
       };
       
-      const response = await apiRequest('POST', '/api/scheduler/packages/create', packageData);
-      const data = await response.json();
+      const response = await apiRequest('POST', '/api/validation/execute', validationData);
+      const result = await response.json();
       
-      // Extract the schedule block ID from the validation service response
-      if (data.success && data.createdEntities && data.createdEntities.scheduleBlockId) {
-        return { id: data.createdEntities.scheduleBlockId };
+      // Extract the schedule block ID from the unified validation response
+      if (result.success && result.data && result.data.id) {
+        return { id: result.data.id };
       }
       
-      throw new Error('Failed to create schedule - no ID returned');
+      throw new Error('Failed to create schedule - validation failed or no ID returned');
     },
     onSuccess: (data: any) => {
       console.log('Create schedule response:', data);
@@ -93,7 +93,7 @@ export default function SchedulerListPage() {
       }
       
       // Invalidate the schedule list to show the new schedule
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
       
       // Add a small delay to ensure database consistency before navigation
       setTimeout(() => {
