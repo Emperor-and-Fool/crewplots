@@ -129,10 +129,8 @@ export const shiftPackage: ShiftPackage = {
     const errors: string[] = [];
     const warnings: string[] = [];
     
-    // Location access validation (inherited from parent schedule structure)
-    // Shifts inherit location access from their parent week schedule and schedule block
-    // This validation ensures user has proper access permissions
-    // Note: Shifts don't have direct locationId, this validation would be handled at the schedule block level
+    // Shifts inherit location access from their parent schedule block
+    // No location-specific validation needed at this level
     
     // Time validation
     if (data.startTime && data.endTime) {
