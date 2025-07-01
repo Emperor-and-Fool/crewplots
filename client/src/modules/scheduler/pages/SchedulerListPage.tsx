@@ -71,6 +71,11 @@ export default function SchedulerListPage() {
       const response = await apiRequest('POST', '/api/validation/execute', validationData);
       const result = await response.json();
       
+      // Check for HTTP errors first
+      if (!response.ok) {
+        throw new Error(result.message || 'Validation execution failed');
+      }
+      
       // Extract the schedule block ID from the unified validation response
       if (result.success && result.data && result.data.id) {
         return { id: result.data.id };
