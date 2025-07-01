@@ -127,7 +127,7 @@ export default function SchedulerCreatePage() {
   });
 
   // Auto-save integration using shared hook (Phase 3.1 Level 1)
-  const { status: autoSaveStatus } = useAutoSave(scheduleForm.getValues(), {
+  const autoSaveState = useAutoSave(scheduleForm.getValues(), {
     endpoint: createdScheduleId 
       ? `/api/scheduler/packages/update/${createdScheduleId}`
       : '/api/scheduler/packages/create',
@@ -147,7 +147,7 @@ export default function SchedulerCreatePage() {
       }],
       shifts: [] // Empty for basic info auto-save
     }),
-    onSaveSuccess: (response) => {
+    onSaveSuccess: (response: any) => {
       // Store created schedule ID for future updates
       if (response.package?.createdEntities?.scheduleBlockId && !createdScheduleId) {
         setCreatedScheduleId(response.package.createdEntities.scheduleBlockId);
@@ -451,7 +451,7 @@ export default function SchedulerCreatePage() {
                     <CardTitle className="flex items-center gap-2">
                       <Clock className="h-5 w-5" />
                       Shift Details
-                      <AutoSaveIndicator status={autoSaveStatus} variant="badge" />
+                      <AutoSaveIndicator status={autoSaveState.status} variant="badge" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
