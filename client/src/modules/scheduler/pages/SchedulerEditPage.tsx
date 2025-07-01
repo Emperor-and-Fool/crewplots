@@ -132,18 +132,18 @@ export default function SchedulerEditPage() {
       return !!(data.name && data.name.trim().length > 0);
     },
     transformData: (data) => {
-      // Transform form data to validation service package format
+      // Transform form data to validation engine format
       return {
-        packageType: "update",
-        scheduleBlock: {
+        operation: "update",
+        entityType: "scheduleBlock",
+        entityId: parseInt(scheduleId),
+        data: {
           id: parseInt(scheduleId),
           name: data.name || '',
           description: data.description || '',
           locationId: data.locationId || 0,
           isActive: data.isActive !== false
-        },
-        weekSchedules: [],
-        shifts: []
+        }
       };
     },
     onSaveSuccess: () => {

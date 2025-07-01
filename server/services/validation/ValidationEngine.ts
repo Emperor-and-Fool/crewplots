@@ -101,12 +101,21 @@ export class ValidationEngine {
         if (entityType === 'scheduleBlock' && operation === 'create') {
           transactionResult = await storage.createScheduleBlock(assembledData);
           console.log('💾 UNIFIED ENGINE: Schedule block created with ID:', transactionResult.id);
+        } else if (entityType === 'scheduleBlock' && operation === 'update') {
+          transactionResult = await storage.updateScheduleBlock(assembledData.id, assembledData);
+          console.log('💾 UNIFIED ENGINE: Schedule block updated ID:', assembledData.id);
         } else if (entityType === 'weekSchedule' && operation === 'create') {
           transactionResult = await storage.createWeekSchedule(assembledData);
           console.log('💾 UNIFIED ENGINE: Week schedule created with ID:', transactionResult.id);
+        } else if (entityType === 'weekSchedule' && operation === 'update') {
+          transactionResult = await storage.updateWeekSchedule(assembledData.id, assembledData);
+          console.log('💾 UNIFIED ENGINE: Week schedule updated ID:', assembledData.id);
         } else if (entityType === 'shift' && operation === 'create') {
           transactionResult = await storage.createShift(assembledData);
           console.log('💾 UNIFIED ENGINE: Shift created with ID:', transactionResult.id);
+        } else if (entityType === 'shift' && operation === 'update') {
+          transactionResult = await storage.updateShift(assembledData.id, assembledData);
+          console.log('💾 UNIFIED ENGINE: Shift updated ID:', assembledData.id);
         } else {
           throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);
         }
