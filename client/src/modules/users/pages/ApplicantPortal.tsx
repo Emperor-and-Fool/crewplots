@@ -159,9 +159,9 @@ function ApplicantPortal() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Messages</CardTitle>
+              <CardTitle>My Motivation</CardTitle>
               <CardDescription>
-                Communication with the hiring team
+                Communicate with the hiring team
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -169,7 +169,7 @@ function ApplicantPortal() {
                 userId={user.id}
                 mode="note"
                 workflow="application"
-                title={`${user.firstName || user.username} - Application`}
+                title="Why I want to be part of your Crew:"
                 placeholder="Add notes about your application, motivation, and why you want to join our team..."
                 readOnlyMode={false}
                 compactMode={true}
