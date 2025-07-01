@@ -65,15 +65,24 @@ router.post("/", authenticateUser, async (req: any, res) => {
   }
 
   try {
+    console.log('📅 CREATE SCHEDULE: Request body:', req.body);
+    console.log('📅 CREATE SCHEDULE: User ID:', req.user.id);
+    
     const validatedData = insertScheduleBlockSchema.parse({
       ...req.body,
       createdBy: req.user.id
     });
     
+    console.log('📅 CREATE SCHEDULE: Validated data:', validatedData);
+    
     const scheduleBlock = await storage.createScheduleBlock(validatedData);
+    
+    console.log('📅 CREATE SCHEDULE: Created schedule block:', scheduleBlock);
+    console.log('📅 CREATE SCHEDULE: Schedule block ID:', scheduleBlock.id);
+    
     res.status(201).json(scheduleBlock);
   } catch (error) {
-    console.error("Error creating schedule block:", error);
+    console.error("📅 CREATE SCHEDULE ERROR:", error);
     res.status(400).json({ error: "Failed to create schedule block" });
   }
 });

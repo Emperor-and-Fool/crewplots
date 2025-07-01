@@ -67,11 +67,26 @@ export default function SchedulerListPage() {
       return response;
     },
     onSuccess: (data: any) => {
+      console.log('Create schedule response:', data);
+      
+      // Ensure we have a valid schedule ID
+      if (!data || !data.id) {
+        console.error('Invalid response from create schedule:', data);
+        toast({
+          title: "Creation Warning",
+          description: "Schedule created but ID is missing. Please refresh the page.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Invalidate the schedule list to show the new schedule
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
       
-      // Navigate to edit page for the newly created schedule
-      navigate(`/scheduler/edit/${data.id}`);
+      // Add a small delay to ensure database consistency before navigation
+      setTimeout(() => {
+        navigate(`/scheduler/edit/${data.id}`);
+      }, 100);
       
       toast({
         title: "Schedule Created",
