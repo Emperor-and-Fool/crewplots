@@ -43,7 +43,7 @@ router.post('/execute', authenticateUser, async (req, res) => {
       res.status(200).json({
         success: true,
         message: 'Validation and execution completed successfully',
-        data: result.threads.transaction.data,
+        data: result.threads.transaction?.data,
         validation: {
           packageId: result.packageId,
           validationTime: result.overall.metadata?.validationTime,
@@ -58,11 +58,15 @@ router.post('/execute', authenticateUser, async (req, res) => {
         warnings: result.overall.warnings,
         validation: {
           packageId: result.packageId,
-          threads: {
-            assembly: result.threads.assembly.success,
-            integrity: result.threads.integrity.success,
-            permission: result.threads.permission.success,
-            transaction: result.threads.transaction.success
+          threads: result.threads.error ? {
+            // Failure case - only error thread exists
+            error: result.threads.error.success
+          } : {
+            // Success case - individual threads exist
+            schema: result.threads.schema?.success,
+            permission: result.threads.permission?.success,
+            businessRules: result.threads.businessRules?.success,
+            transaction: result.threads.transaction?.success
           }
         }
       });
