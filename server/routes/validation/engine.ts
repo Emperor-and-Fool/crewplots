@@ -6,8 +6,43 @@ const router = Router();
 const validationEngine = new ValidationEngine();
 
 /**
- * Role-to-permissions mapping - matches legacy validation system
- * Based on validation-package-service.ts getUserPermissions logic
+ * Map workflow permissions to validation permissions
+ */
+function mapWorkflowToValidationPermissions(user: any): string[] {
+  const validationPermissions: string[] = [];
+  
+  // Use database permissions if available (from role_permissions table)
+  if (user.permissions && Array.isArray(user.permissions)) {
+    validationPermissions.push(...user.permissions);
+  }
+  
+  // Map workflow permissions to validation permissions
+  const workflowPerms = user.workflowPermissions || {};
+  
+  if (workflowPerms.scheduling) {
+    if (workflowPerms.scheduling.includes('create')) validationPermissions.push('schedule.create');
+    if (workflowPerms.scheduling.includes('view')) validationPermissions.push('schedule.read');
+    if (workflowPerms.scheduling.includes('edit')) validationPermissions.push('schedule.update');
+    if (workflowPerms.scheduling.includes('delete')) validationPermissions.push('schedule.delete');
+  }
+  
+  if (workflowPerms.location) {
+    if (workflowPerms.location.includes('view')) validationPermissions.push('location.access_assigned');
+    if (user.role === 'administrator') validationPermissions.push('location.access_all');
+  }
+  
+  // Remove duplicates manually (ES5 compatible)
+  const uniquePermissions: string[] = [];
+  validationPermissions.forEach(perm => {
+    if (!uniquePermissions.includes(perm)) {
+      uniquePermissions.push(perm);
+    }
+  });
+  return uniquePermissions;
+}
+
+/**
+ * Legacy role permissions fallback
  */
 function getRolePermissions(userRole: string): string[] {
   const rolePermissions: Record<string, string[]> = {
@@ -63,8 +98,16 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log('🧪 NEW VALIDATION ENGINE: Test execution started', { operation, entityType });
 
-    // Create operation context from authenticated user with proper permissions
-    const userPermissions = getRolePermissions(req.user.role);
+    // Create operation context from authenticated user with mapped permissions
+    const userPermissions = mapWorkflowToValidationPermissions(req.user);
+    
+    console.log('🔍 PERMISSION MAPPING:', {
+      userRole: req.user.role,
+      workflowPermissions: req.user.workflowPermissions,
+      databasePermissions: req.user.permissions,
+      mappedPermissions: userPermissions
+    });
+    
     const context = {
       userId: req.user.id,
       userRole: req.user.role,
