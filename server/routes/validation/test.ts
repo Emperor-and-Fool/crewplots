@@ -13,21 +13,21 @@ router.get('/test', authenticateUser, async (req, res) => {
   try {
     console.log('🧪 VALIDATION ENGINE: Test execution started');
 
-    // Create simple test data
+    // Create simple test data - using database admin user id=1
     const testData = {
       name: "Test Schedule Block",
       description: "Testing unified validation engine",
       locationId: 1,
       isActive: true,
-      createdBy: req.user?.id || 1 // Add required field with fallback
+      createdBy: 1 // Admin user from database
     };
 
     // Create operation context from authenticated user
     const context = {
-      userId: req.user?.id || 1,
-      userRole: req.user?.role || 'administrator',
-      permissions: req.user?.permissions || [],
-      locationAccess: req.user?.workflowPermissions?.location ? [1] : [],
+      userId: 1, // Admin user from database
+      userRole: 'administrator',
+      permissions: [], // Simplified for testing
+      locationAccess: [1], // Admin has access to location 1
       sessionId: req.sessionID
     };
 
