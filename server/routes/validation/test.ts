@@ -37,6 +37,8 @@ router.get('/test', authenticateUser, async (req, res) => {
       permissions: context.permissions.length
     });
 
+    console.log('🧪 VALIDATION ENGINE: Test data being sent:', testData);
+
     // Execute validation using new engine
     const result = await validationEngine.validateAndExecute(
       'create',
