@@ -21,6 +21,8 @@ router.get('/test', authenticateUser, async (req, res) => {
       isActive: true,
       createdBy: 1 // Admin user from database
     };
+    
+    console.log('🧪 VALIDATION ENGINE: Created testData object:', JSON.stringify(testData, null, 2));
 
     // Create operation context from authenticated user
     const context = {
