@@ -146,7 +146,7 @@ export default function SchedulerListPage() {
     deleteScheduleMutation.mutate(scheduleId, {
       onSuccess: () => {
         closeDialog();
-        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
         toast({
           title: "Schedule deleted successfully",
           description: "The schedule and all its shifts have been permanently removed"
