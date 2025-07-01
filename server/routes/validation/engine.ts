@@ -127,7 +127,7 @@ router.post('/execute', authenticateUser, async (req, res) => {
       userId: req.user.id,
       userRole: req.user.role,
       permissions: userPermissions,
-      locationAccess: req.user.role === 'administrator' ? [req.body.locationId] : [],
+      locationAccess: req.user.role === 'administrator' ? 'all' : [],
       sessionId: req.sessionID
     };
 

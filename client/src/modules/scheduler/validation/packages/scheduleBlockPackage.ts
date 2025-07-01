@@ -95,7 +95,7 @@ export const scheduleBlockPackage: ScheduleBlockPackage = {
     const warnings: string[] = [];
     
     // Location access validation
-    if (data.locationId && !context.locationAccess.includes(data.locationId)) {
+    if (data.locationId && context.locationAccess !== 'all' && !context.locationAccess.includes(data.locationId)) {
       errors.push('User does not have access to the specified location');
     }
     
