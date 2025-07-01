@@ -97,7 +97,7 @@ export default function SchedulerEditPage() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: WeekScheduleUpdateForm) => {
+    mutationFn: async (data: InsertScheduleBlock) => {
       const response = await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, data);
       return response;
     },
@@ -117,7 +117,7 @@ export default function SchedulerEditPage() {
     },
   });
 
-  const handleSave = async (data: WeekScheduleUpdateForm) => {
+  const handleSave = async (data: InsertScheduleBlock) => {
     await updateMutation.mutateAsync(data);
   };
 
@@ -197,7 +197,8 @@ export default function SchedulerEditPage() {
                         <FormControl>
                           <Textarea 
                             placeholder="Enter schedule description" 
-                            {...field} 
+                            {...field}
+                            value={field.value || ''}
                           />
                         </FormControl>
                         <FormMessage />
