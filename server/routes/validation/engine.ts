@@ -11,9 +11,17 @@ const validationEngine = new ValidationEngine();
 function mapWorkflowToValidationPermissions(user: any): string[] {
   const validationPermissions: string[] = [];
   
+  console.log('🔍 MAPPER DEBUG:', {
+    hasPermissions: !!user.permissions,
+    isArray: Array.isArray(user.permissions),
+    permissions: user.permissions,
+    workflowPermissions: user.workflowPermissions
+  });
+  
   // Use database permissions if available (from role_permissions table)
   if (user.permissions && Array.isArray(user.permissions)) {
-    validationPermissions.push(...user.permissions);
+    user.permissions.forEach((perm: string) => validationPermissions.push(perm));
+    console.log('🔍 MAPPER: Added database permissions:', user.permissions);
   }
   
   // Map workflow permissions to validation permissions
@@ -33,11 +41,18 @@ function mapWorkflowToValidationPermissions(user: any): string[] {
   
   // Remove duplicates manually (ES5 compatible)
   const uniquePermissions: string[] = [];
-  validationPermissions.forEach(perm => {
+  validationPermissions.forEach((perm: string) => {
     if (!uniquePermissions.includes(perm)) {
       uniquePermissions.push(perm);
     }
   });
+  
+  console.log('🔍 MAPPER FINAL:', {
+    totalPermissions: validationPermissions.length,
+    uniquePermissions: uniquePermissions.length,
+    finalPermissions: uniquePermissions
+  });
+  
   return uniquePermissions;
 }
 
