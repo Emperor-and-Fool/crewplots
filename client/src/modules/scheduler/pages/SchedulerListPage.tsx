@@ -53,8 +53,42 @@ export default function SchedulerListPage() {
     );
   }
 
+  // Create schedule mutation for create-then-redirect pattern
+  const createScheduleMutation = useMutation({
+    mutationFn: async () => {
+      const newSchedule = {
+        name: "New Schedule",
+        description: "",
+        locationId: 1, // Default to first location, user can change in edit mode
+        isActive: false // Default to inactive until user configures it
+      };
+      
+      const response = await apiRequest('POST', '/api/scheduler/schedule-blocks', newSchedule);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      // Invalidate the schedule list to show the new schedule
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+      
+      // Navigate to edit page for the newly created schedule
+      navigate(`/scheduler/edit/${data.id}`);
+      
+      toast({
+        title: "Schedule Created",
+        description: "New schedule created successfully. You can now configure it.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error?.message || "Failed to create schedule. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateNew = () => {
-    navigate('/scheduler/new');
+    createScheduleMutation.mutate();
   };
 
   const handleEditSchedule = (scheduleId: number) => {
@@ -169,9 +203,13 @@ export default function SchedulerListPage() {
           </p>
         </div>
         
-        <Button onClick={handleCreateNew} className="flex items-center gap-2">
+        <Button 
+          onClick={handleCreateNew} 
+          disabled={createScheduleMutation.isPending}
+          className="flex items-center gap-2"
+        >
           <Plus className="h-4 w-4" />
-          Create New Schedule
+          {createScheduleMutation.isPending ? "Creating..." : "Create New Schedule"}
         </Button>
       </div>
 
@@ -191,9 +229,13 @@ export default function SchedulerListPage() {
             <p className="text-gray-600 mb-6">
               Create your first schedule to get started with multi-week planning.
             </p>
-            <Button onClick={handleCreateNew} className="flex items-center gap-2">
+            <Button 
+              onClick={handleCreateNew} 
+              disabled={createScheduleMutation.isPending}
+              className="flex items-center gap-2"
+            >
               <Plus className="h-4 w-4" />
-              Create Your First Schedule
+              {createScheduleMutation.isPending ? "Creating..." : "Create Your First Schedule"}
             </Button>
           </CardContent>
         </Card>
