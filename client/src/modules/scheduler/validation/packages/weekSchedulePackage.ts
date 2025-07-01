@@ -78,7 +78,8 @@ export const weekSchedulePackage: WeekSchedulePackage = {
   },
   
   getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
-    const basePermissions = ['scheduler_development'];
+    // Match scheduleBlockPackage.ts permission structure
+    const basePermissions = ['schedule.read'];
     
     switch (operation) {
       case 'create':

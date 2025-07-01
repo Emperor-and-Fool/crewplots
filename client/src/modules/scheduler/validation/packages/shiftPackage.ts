@@ -111,15 +111,16 @@ export const shiftPackage: ShiftPackage = {
   },
   
   getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
-    const basePermissions = ['scheduler_development'];
+    // Match scheduleBlockPackage.ts permission structure  
+    const basePermissions = ['schedule.read'];
     
     switch (operation) {
       case 'create':
-        return [...basePermissions, 'shift.create'];
+        return [...basePermissions, 'schedule.create'];
       case 'update':
-        return [...basePermissions, 'shift.update'];
+        return [...basePermissions, 'schedule.update'];
       case 'delete':
-        return [...basePermissions, 'shift.delete'];
+        return [...basePermissions, 'schedule.delete'];
       default:
         return basePermissions;
     }
