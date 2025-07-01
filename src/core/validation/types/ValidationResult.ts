@@ -1,4 +1,18 @@
-import { ValidationError, ValidationWarning } from './ValidationPackage';
+// Core validation error types - COPIED FROM WORKING PATTERNS
+export interface ValidationError {
+  field?: string;
+  code: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info' | 'critical';
+  context?: Record<string, any>;
+}
+
+export interface ValidationWarning {
+  field?: string;
+  code: string;
+  message: string;
+  suggestion?: string;
+}
 
 // Core validation result interface
 export interface ValidationResult {
@@ -163,7 +177,7 @@ export class ValidationResultBuilder {
     code: ValidationErrorCode | string,
     message: string,
     field?: string,
-    severity: ValidationSeverity = ValidationSeverity.ERROR,
+    severity: 'error' | 'warning' | 'info' | 'critical' = 'error',
     context?: Record<string, any>
   ): ValidationError {
     return {

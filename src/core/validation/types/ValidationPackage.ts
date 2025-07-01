@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Base operation types
-export type ValidationOperation = 'CREATE' | 'UPDATE' | 'DELETE' | 'DUPLICATE';
+// Base operation types - COPIED FROM WORKING IMPLEMENTATION
+export type ValidationOperation = 'create' | 'update' | 'delete' | 'duplicate';
 export type EntityType = 'schedule' | 'user' | 'applicant' | 'location' | 'shift' | 'weekSchedule';
 
 // Core validation package interface
