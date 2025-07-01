@@ -61,21 +61,21 @@ router.get('/test', authenticateUser, async (req, res) => {
     
     console.log('🧪 VALIDATION ENGINE: Created testData object:', JSON.stringify(testData, null, 2));
 
-    // Map user permissions using same logic as execution endpoint
+    // Create operation context from authenticated user - USE ACTUAL MAPPER
     const mappedPermissions = mapWorkflowToValidationPermissions(req.user);
     
-    console.log('🧪 PERMISSION MAPPING DEBUG:');
+    console.log('🧪 PERMISSION MAPPING DEBUG (test endpoint):');
+    console.log('  Raw req.user object:', JSON.stringify(req.user, null, 2));
     console.log('  Input user.permissions:', req.user.permissions || []);
     console.log('  Input user.workflowPermissions:', req.user.workflowPermissions || {});
     console.log('  Mapped validation permissions:', mappedPermissions);
     console.log('  Total permission count:', mappedPermissions.length);
 
-    // Create operation context from authenticated user
     const context = {
       userId: req.user.id,
       userRole: req.user.role,
-      permissions: mappedPermissions, // Use mapped permissions instead of empty array
-      locationAccess: [1], // Admin has access to location 1
+      permissions: mappedPermissions, // Should be populated if mapper works
+      locationAccess: [1],
       sessionId: req.sessionID
     };
 
