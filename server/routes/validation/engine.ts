@@ -16,6 +16,7 @@ function getRolePermissions(userRole: string): string[] {
       'schedule.read', 
       'schedule.update',
       'schedule.delete',
+      'scheduler_development',
       'scheduler_development.read',
       'scheduler_development.write',
       'scheduler_development.execute',
