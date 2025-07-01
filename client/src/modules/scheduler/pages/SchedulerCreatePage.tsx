@@ -87,9 +87,7 @@ export default function SchedulerCreatePage() {
   const [editingShift, setEditingShift] = useState<any>(null);
   
   // Auto-save state management
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [createdScheduleId, setCreatedScheduleId] = useState<number | null>(null);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Form for week schedule creation
   const scheduleForm = useForm<SchedulePackageForm>({
@@ -128,44 +126,32 @@ export default function SchedulerCreatePage() {
     enabled: !!currentWeekSchedule?.id
   });
 
-  // Auto-save mutation for partial saves
-  const autoSaveMutation = useMutation({
-    mutationFn: async (data: Partial<SchedulePackageForm>): Promise<PackageValidationResponse> => {
-      // If we already have a schedule, update it; otherwise create new one
-      const endpoint = createdScheduleId 
-        ? `/api/scheduler/packages/update/${createdScheduleId}`
-        : '/api/scheduler/packages/create';
-      
-      const response = await apiRequest('POST', endpoint, {
-        packageType: createdScheduleId ? 'update' : 'create',
-        scheduleBlock: {
-          name: data.name || 'Untitled Schedule',
-          description: data.description || '',
-          locationId: data.locationId || 0,
-          isActive: data.isActive ?? true
-        },
-        weekSchedules: [{
-          weekNumber: 1
-        }],
-        shifts: [] // Empty for basic info auto-save
-      });
-      
-      return response;
-    },
-    onMutate: () => {
-      setAutoSaveStatus('saving');
-    },
-    onSuccess: (data) => {
-      setAutoSaveStatus('saved');
-      if (data.package?.createdEntities?.scheduleBlockId && !createdScheduleId) {
-        setCreatedScheduleId(data.package.createdEntities.scheduleBlockId);
+  // Auto-save integration using shared hook (Phase 3.1 Level 1)
+  const { status: autoSaveStatus } = useAutoSave(scheduleForm.getValues(), {
+    endpoint: createdScheduleId 
+      ? `/api/scheduler/packages/update/${createdScheduleId}`
+      : '/api/scheduler/packages/create',
+    method: 'POST',
+    enabled: scheduleForm.formState.isDirty,
+    debounceMs: 2000,
+    transformData: (data) => ({
+      packageType: createdScheduleId ? 'update' : 'create',
+      scheduleBlock: {
+        name: data.name || 'Untitled Schedule',
+        description: data.description || '',
+        locationId: data.locationId || 0,
+        isActive: data.isActive ?? true
+      },
+      weekSchedules: [{
+        weekNumber: 1
+      }],
+      shifts: [] // Empty for basic info auto-save
+    }),
+    onSaveSuccess: (response) => {
+      // Store created schedule ID for future updates
+      if (response.package?.createdEntities?.scheduleBlockId && !createdScheduleId) {
+        setCreatedScheduleId(response.package.createdEntities.scheduleBlockId);
       }
-      // Reset to idle after 2 seconds
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
-    },
-    onError: () => {
-      setAutoSaveStatus('error');
-      setTimeout(() => setAutoSaveStatus('idle'), 3000);
     }
   });
 
@@ -465,6 +451,7 @@ export default function SchedulerCreatePage() {
                     <CardTitle className="flex items-center gap-2">
                       <Clock className="h-5 w-5" />
                       Shift Details
+                      <AutoSaveIndicator status={autoSaveStatus} variant="badge" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
