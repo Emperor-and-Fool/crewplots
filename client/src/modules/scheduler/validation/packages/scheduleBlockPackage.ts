@@ -1,61 +1,44 @@
 import { insertScheduleBlockSchema } from '@shared/schema';
-import type { z } from 'zod';
 
-export interface ScheduleBlockValidationPackage {
-  entityType: 'scheduleBlock';
-  operations: {
-    create: {
-      schema: typeof insertScheduleBlockSchema;
-      permissions: string[];
-      businessRules: string[];
-    };
-    update: {
-      schema: typeof insertScheduleBlockSchema;
-      permissions: string[];
-      businessRules: string[];
-    };
-    delete: {
-      permissions: string[];
-      businessRules: string[];
-    };
-  };
+/**
+ * Schedule Block Validation Package
+ * Extracted from server/services/validation-package-service.ts
+ * Defines validation rules, permissions, and business logic for schedule blocks
+ */
+
+export interface ScheduleBlockData {
+  id?: number;
+  name: string;
+  description?: string;
+  locationId: number;
+  isActive: boolean;
+  createdBy?: number;
 }
 
-export const scheduleBlockPackage: ScheduleBlockValidationPackage = {
-  entityType: 'scheduleBlock',
-  operations: {
-    create: {
-      schema: insertScheduleBlockSchema,
-      permissions: ['scheduler_development.write', 'schedule.create'],
-      businessRules: [
-        'UNIQUE_SCHEDULE_NAME_PER_LOCATION',
-        'VALID_LOCATION_ACCESS',
-        'MINIMUM_SCHEDULE_DURATION'
-      ]
-    },
-    update: {
-      schema: insertScheduleBlockSchema,
-      permissions: ['scheduler_development.write', 'schedule.update'],
-      businessRules: [
-        'UNIQUE_SCHEDULE_NAME_PER_LOCATION',
-        'VALID_LOCATION_ACCESS',
-        'PRESERVE_EXISTING_SHIFTS',
-        'ACTIVATION_STATE_RULES'
-      ]
-    },
-    delete: {
-      permissions: ['scheduler_development.write', 'schedule.delete'],
-      businessRules: [
-        'NO_ACTIVE_SHIFTS',
-        'CONFIRM_CASCADE_DELETE',
-        'BACKUP_BEFORE_DELETE'
-      ]
-    }
-  }
-};
+export interface ScheduleBlockPackage {
+  entityType: 'scheduleBlock';
+  
+  // Schema validation
+  validateSchema: (data: ScheduleBlockData, operation: 'create' | 'update') => {
+    isValid: boolean;
+    errors: string[];
+  };
+  
+  // Permission requirements
+  getRequiredPermissions: (operation: 'create' | 'update' | 'delete') => string[];
+  
+  // Business rule validation
+  validateBusinessRules: (data: ScheduleBlockData, context: ValidationContext) => Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>;
+  
+  // Package assembly
+  assemblePackage: (requestData: any, user: any, operation: 'create' | 'update' | 'delete') => Promise<any>;
+}
 
-// Validation context for schedule blocks
-export interface ScheduleBlockContext {
+export interface ValidationContext {
   userId: number;
   userRole: string;
   permissions: string[];
@@ -63,47 +46,98 @@ export interface ScheduleBlockContext {
   sessionId: string;
 }
 
-// Business rule implementations
-export const scheduleBlockBusinessRules = {
-  UNIQUE_SCHEDULE_NAME_PER_LOCATION: async (data: any, context: ScheduleBlockContext) => {
-    // Will be implemented with database check
-    return { valid: true, message: 'Schedule name is unique for location' };
-  },
+export const scheduleBlockPackage: ScheduleBlockPackage = {
+  entityType: 'scheduleBlock',
   
-  VALID_LOCATION_ACCESS: async (data: any, context: ScheduleBlockContext) => {
-    if (data.locationId && !context.locationAccess.includes(data.locationId)) {
-      return { valid: false, message: 'User does not have access to this location' };
+  validateSchema(data: ScheduleBlockData, operation: 'create' | 'update') {
+    const errors: string[] = [];
+    
+    try {
+      if (operation === 'create') {
+        const result = insertScheduleBlockSchema.safeParse(data);
+        if (!result.success) {
+          errors.push(...result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
+        }
+      } else {
+        const result = insertScheduleBlockSchema.partial().safeParse(data);
+        if (!result.success) {
+          errors.push(...result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
+        }
+      }
+    } catch (error) {
+      errors.push(`Schema validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    return { valid: true, message: 'Location access validated' };
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   },
   
-  MINIMUM_SCHEDULE_DURATION: async (data: any, context: ScheduleBlockContext) => {
-    // Schedule blocks should have meaningful duration
-    return { valid: true, message: 'Schedule duration is valid' };
+  getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
+    const basePermissions = ['scheduler_development'];
+    
+    switch (operation) {
+      case 'create':
+        return [...basePermissions, 'schedule.create'];
+      case 'update':
+        return [...basePermissions, 'schedule.update'];
+      case 'delete':
+        return [...basePermissions, 'schedule.delete'];
+      default:
+        return basePermissions;
+    }
   },
   
-  PRESERVE_EXISTING_SHIFTS: async (data: any, context: ScheduleBlockContext) => {
-    // When updating, ensure existing shifts remain valid
-    return { valid: true, message: 'Existing shifts preserved' };
+  async validateBusinessRules(data: ScheduleBlockData, context: ValidationContext) {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    // Location access validation
+    if (data.locationId && !context.locationAccess.includes(data.locationId)) {
+      errors.push('User does not have access to the specified location');
+    }
+    
+    // Schedule name validation
+    if (!data.name || data.name.trim().length < 3) {
+      errors.push('Schedule name must be at least 3 characters long');
+    }
+    
+    // Active status validation
+    if (data.isActive === undefined) {
+      warnings.push('Schedule activation status not specified, defaulting to active');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
   },
   
-  ACTIVATION_STATE_RULES: async (data: any, context: ScheduleBlockContext) => {
-    // Rules around activating/deactivating schedules
-    return { valid: true, message: 'Activation state rules validated' };
-  },
-  
-  NO_ACTIVE_SHIFTS: async (data: any, context: ScheduleBlockContext) => {
-    // Check for active shifts before deletion
-    return { valid: true, message: 'No active shifts blocking deletion' };
-  },
-  
-  CONFIRM_CASCADE_DELETE: async (data: any, context: ScheduleBlockContext) => {
-    // Ensure user confirms cascading deletes
-    return { valid: true, message: 'Cascade delete confirmed' };
-  },
-  
-  BACKUP_BEFORE_DELETE: async (data: any, context: ScheduleBlockContext) => {
-    // Backup data before deletion
-    return { valid: true, message: 'Backup completed before deletion' };
+  async assemblePackage(requestData: any, user: any, operation: 'create' | 'update' | 'delete') {
+    // Extracted from validation-package-service.ts assemblePackageFromRequest method
+    const scheduleBlockData = {
+      ...requestData.scheduleBlock,
+      id: requestData.scheduleBlock?.id || undefined
+    };
+    
+    if (operation === 'create') {
+      scheduleBlockData.createdBy = user.id;
+    }
+    
+    return {
+      packageType: operation,
+      scheduleBlock: scheduleBlockData,
+      weekSchedules: requestData.weekSchedules || [],
+      shifts: requestData.shifts || [],
+      metadata: {
+        userId: user.id,
+        userRole: user.role,
+        requestedPermissions: this.getRequiredPermissions(operation),
+        locationAccess: [], // Will be populated by service
+        timestamp: new Date()
+      }
+    };
   }
 };
