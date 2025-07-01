@@ -176,7 +176,7 @@ export default function SchedulerEditPage() {
       console.log('🔍 ALL SHIFTS: All shifts data:', allShifts);
       return allShifts;
     },
-    enabled: !!scheduleId,
+    enabled: !isCreateMode && !!scheduleId,
     staleTime: 0, // Always fresh for live updates
     gcTime: 30 * 1000, // 30 seconds in memory
   });
@@ -202,9 +202,9 @@ export default function SchedulerEditPage() {
   // Use consolidated data as primary source (following the standard pattern)
   const actualScheduleData = existingSchedule;
 
-  // Populate form when schedule data loads
+  // Populate form when schedule data loads (only in edit mode)
   useEffect(() => {
-    if (actualScheduleData && actualScheduleData.name) {
+    if (!isCreateMode && actualScheduleData && actualScheduleData.name) {
       scheduleForm.reset({
         name: actualScheduleData.name || '',
         description: actualScheduleData.description || '',
@@ -212,7 +212,7 @@ export default function SchedulerEditPage() {
         isActive: actualScheduleData.isActive !== false
       });
     }
-  }, [actualScheduleData, scheduleForm]);
+  }, [actualScheduleData, scheduleForm, isCreateMode]);
 
   // Create a basic info form that syncs with the schedule data for the tabbed interface
   const basicInfoForm = useForm<WeekScheduleUpdateForm>({
@@ -225,9 +225,9 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Keep basicInfoForm in sync with schedule data
+  // Keep basicInfoForm in sync with schedule data (only in edit mode)
   useEffect(() => {
-    if (actualScheduleData && actualScheduleData.name) {
+    if (!isCreateMode && actualScheduleData && actualScheduleData.name) {
       basicInfoForm.reset({
         name: actualScheduleData.name || '',
         description: actualScheduleData.description || '',
@@ -235,9 +235,9 @@ export default function SchedulerEditPage() {
         isActive: actualScheduleData.isActive !== false
       });
     }
-  }, [actualScheduleData, basicInfoForm]);
+  }, [actualScheduleData, basicInfoForm, isCreateMode]);
 
-  const isLoading = scheduleBlockLoading && !existingSchedule;
+  const isLoading = !isCreateMode && scheduleBlockLoading && !existingSchedule;
   
   // State for controlling view transition
   const [showTabbedInterface, setShowTabbedInterface] = useState(true);
@@ -270,32 +270,51 @@ export default function SchedulerEditPage() {
       console.log('🚀 SAVE DEBUG: Starting schedule block save mutation', {
         scheduleId,
         data,
+        isCreateMode,
         timestamp: new Date().toISOString()
       });
-      const result = await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, data);
-      console.log('✅ SAVE DEBUG: Save mutation completed successfully', {
-        result,
-        timestamp: new Date().toISOString()
-      });
-      return result;
+      
+      if (isCreateMode) {
+        // Create new schedule block
+        const result = await apiRequest('POST', `/api/scheduler/schedule-blocks`, data);
+        console.log('✅ SAVE DEBUG: Create mutation completed successfully', {
+          result,
+          timestamp: new Date().toISOString()
+        });
+        return result;
+      } else {
+        // Update existing schedule block
+        const result = await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, data);
+        console.log('✅ SAVE DEBUG: Update mutation completed successfully', {
+          result,
+          timestamp: new Date().toISOString()
+        });
+        return result;
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId] });
+      if (!isCreateMode) {
+        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks', scheduleId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
       
-      // Update selectedWeekScheduleId for schedule block architecture
-      // Schedule block architecture - no week schedule ID needed
+      // In create mode, redirect to edit mode with the new schedule ID
+      if (isCreateMode && data?.id) {
+        window.location.href = `/scheduler/edit/${data.id}`;
+        return;
+      }
+      
       setHasBeenEdited(true);
       
       toast({
-        title: "Schedule updated successfully",
-        description: "You can now manage shifts for this schedule"
+        title: isCreateMode ? "Schedule created successfully" : "Schedule updated successfully",
+        description: isCreateMode ? "Redirecting to edit mode to add shifts" : "You can now manage shifts for this schedule"
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to update schedule",
+        title: isCreateMode ? "Failed to create schedule" : "Failed to update schedule",
         description: error.message,
         variant: "destructive"
       });
@@ -955,10 +974,10 @@ export default function SchedulerEditPage() {
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold">
-              Edit Week Schedule: {existingSchedule?.name || 'Loading...'}
+              {isCreateMode ? 'Create New Schedule' : `Edit Week Schedule: ${existingSchedule?.name || 'Loading...'}`}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Update the details for your weekly schedule template
+              {isCreateMode ? 'Create a new weekly schedule template for your team' : 'Update the details for your weekly schedule template'}
             </p>
           </div>
 
