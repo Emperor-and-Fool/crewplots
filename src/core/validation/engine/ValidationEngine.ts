@@ -2,10 +2,12 @@ import { PackageRegistry } from './PackageRegistry';
 import { RuleProcessor } from './RuleProcessor';
 import { TransactionManager } from './TransactionManager';
 import type { 
-  ValidationPackage, 
-  ValidationResult,
+  ValidationPackage,
   OperationContext 
 } from '../types/ValidationPackage';
+import type { 
+  ValidationResult
+} from '../types/ValidationResult';
 import type { 
   ValidationOperationResult,
   AssemblyResult,
