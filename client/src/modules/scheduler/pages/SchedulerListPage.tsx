@@ -53,19 +53,30 @@ export default function SchedulerListPage() {
     );
   }
 
-  // Create schedule mutation for create-then-redirect pattern
+  // Create schedule mutation for create-then-redirect pattern using validation service
   const createScheduleMutation = useMutation({
     mutationFn: async () => {
-      const newSchedule = {
-        name: "New Schedule",
-        description: "",
-        locationId: 1, // Default to first location, user can change in edit mode
-        isActive: false // Default to inactive until user configures it
+      const packageData = {
+        packageType: "create",
+        scheduleBlock: {
+          name: "New Schedule",
+          description: "",
+          locationId: 1, // Default to first location, user can change in edit mode
+          isActive: false // Default to inactive until user configures it
+        },
+        weekSchedules: [],
+        shifts: []
       };
       
-      const response = await apiRequest('POST', '/api/scheduler/schedule-blocks', newSchedule);
+      const response = await apiRequest('POST', '/api/scheduler/packages/create', packageData);
       const data = await response.json();
-      return data;
+      
+      // Extract the schedule block ID from the validation service response
+      if (data.success && data.createdEntities && data.createdEntities.scheduleBlockId) {
+        return { id: data.createdEntities.scheduleBlockId };
+      }
+      
+      throw new Error('Failed to create schedule - no ID returned');
     },
     onSuccess: (data: any) => {
       console.log('Create schedule response:', data);

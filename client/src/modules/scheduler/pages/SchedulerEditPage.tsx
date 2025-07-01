@@ -119,11 +119,11 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // Auto-save configuration
+  // Auto-save configuration using validation service
   const formValues = form.watch();
   const autoSave = useAutoSave(formValues, {
-    endpoint: `/api/scheduler/schedule-blocks/${scheduleId}`,
-    method: 'PUT',
+    endpoint: `/api/scheduler/packages/create`,
+    method: 'POST',
     debounceMs: 2000,
     minContentLength: 1,
     enabled: permissions.canEditSchedules && !!scheduleData,
@@ -132,17 +132,23 @@ export default function SchedulerEditPage() {
       return !!(data.name && data.name.trim().length > 0);
     },
     transformData: (data) => {
-      // Transform form data to match API expectations
+      // Transform form data to validation service package format
       return {
-        name: data.name || '',
-        description: data.description || '',
-        locationId: data.locationId || 0,
-        isActive: data.isActive !== false
+        packageType: "update",
+        scheduleBlock: {
+          id: parseInt(scheduleId),
+          name: data.name || '',
+          description: data.description || '',
+          locationId: data.locationId || 0,
+          isActive: data.isActive !== false
+        },
+        weekSchedules: [],
+        shifts: []
       };
     },
     onSaveSuccess: () => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
     },
     onSaveError: (error) => {
       console.error('Auto-save failed:', error);
