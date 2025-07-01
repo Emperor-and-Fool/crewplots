@@ -26,6 +26,11 @@ export type { WeekScheduleData, WeekSchedulePackage } from './packages/weekSched
 export type { ShiftData, ShiftPackage } from './packages/shiftPackage';
 export type { ValidationContext, BusinessRuleResult } from './rules/businessRules';
 
+// Import packages for registry
+import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
+import { weekSchedulePackage } from './packages/weekSchedulePackage';
+import { shiftPackage } from './packages/shiftPackage';
+
 // Package registry for unified validation engine
 export const schedulerValidationPackages = {
   scheduleBlock: scheduleBlockPackage,

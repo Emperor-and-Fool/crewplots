@@ -134,7 +134,7 @@ export const scheduleBlockPackage: ScheduleBlockPackage = {
       metadata: {
         userId: user.id,
         userRole: user.role,
-        requestedPermissions: this.getRequiredPermissions(operation),
+        requestedPermissions: scheduleBlockPackage.getRequiredPermissions(operation),
         locationAccess: [], // Will be populated by service
         timestamp: new Date()
       }
