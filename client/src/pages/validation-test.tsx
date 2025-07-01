@@ -47,7 +47,8 @@ export default function ValidationTestPage() {
           name: 'Browser Test Schedule Block',
           description: 'Testing unified validation engine from browser',
           locationId: 1,
-          isActive: true
+          isActive: true,
+          createdBy: 1 // Add required field - will be set properly by backend context
         }
       };
       

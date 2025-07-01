@@ -18,7 +18,8 @@ router.get('/test', authenticateUser, async (req, res) => {
       name: "Test Schedule Block",
       description: "Testing unified validation engine",
       locationId: 1,
-      isActive: true
+      isActive: true,
+      createdBy: req.user.id // Add required field
     };
 
     // Create operation context from authenticated user
