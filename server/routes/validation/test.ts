@@ -19,15 +19,15 @@ router.get('/test', authenticateUser, async (req, res) => {
       description: "Testing unified validation engine",
       locationId: 1,
       isActive: true,
-      createdBy: req.user.id // Add required field
+      createdBy: req.user?.id || 1 // Add required field with fallback
     };
 
     // Create operation context from authenticated user
     const context = {
-      userId: req.user.id,
-      userRole: req.user.role,
-      permissions: req.user.permissions || [],
-      locationAccess: req.user.workflowPermissions?.location ? [1] : [],
+      userId: req.user?.id || 1,
+      userRole: req.user?.role || 'administrator',
+      permissions: req.user?.permissions || [],
+      locationAccess: req.user?.workflowPermissions?.location ? [1] : [],
       sessionId: req.sessionID
     };
 
