@@ -75,16 +75,16 @@ export const scheduleBlockPackage: ScheduleBlockPackage = {
   },
   
   getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
-    // Match actual administrator permissions from logs
-    const basePermissions = ['scheduler_development'];
+    // Match legacy validation-package-service.ts permission structure (lines 601-615)
+    const basePermissions = ['schedule.read'];
     
     switch (operation) {
       case 'create':
-        return [...basePermissions, 'scheduler_development.write'];
+        return [...basePermissions, 'schedule.create'];
       case 'update':
-        return [...basePermissions, 'scheduler_development.write'];
+        return [...basePermissions, 'schedule.update'];
       case 'delete':
-        return [...basePermissions, 'scheduler_development.write'];
+        return [...basePermissions, 'schedule.delete'];
       default:
         return basePermissions;
     }
