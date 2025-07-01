@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/modules/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveIndicator } from '@/components/ui/auto-save-indicator';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import type { Location } from '@shared/schema';
