@@ -11,7 +11,7 @@ export interface ShiftData {
   weekScheduleId?: number;
   title: string;
   position?: string;
-  dayOfWeek: string;
+  daysOfWeek: string[];
   startTime: string;
   endTime: string;
   maxSlots: number;
@@ -46,7 +46,7 @@ export interface ValidationContext {
   userId: number;
   userRole: string;
   permissions: string[];
-  locationAccess: number[];
+  locationAccess: number[] | 'all';
   sessionId: string;
 }
 
@@ -62,8 +62,8 @@ export const shiftPackage: ShiftPackage = {
         if (!data.title) {
           errors.push('title: Required');
         }
-        if (!data.dayOfWeek) {
-          errors.push('dayOfWeek: Required');
+        if (!data.daysOfWeek || !Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0) {
+          errors.push('daysOfWeek: Required and must be a non-empty array');
         }
         if (!data.startTime) {
           errors.push('startTime: Required');
@@ -75,10 +75,14 @@ export const shiftPackage: ShiftPackage = {
           errors.push('maxSlots: Must be at least 1');
         }
         
-        // Validate day of week
+        // Validate days of week
         const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        if (data.dayOfWeek && !validDays.includes(data.dayOfWeek.toLowerCase())) {
-          errors.push('dayOfWeek: Must be a valid day of the week');
+        if (data.daysOfWeek && data.daysOfWeek.length > 0) {
+          for (const day of data.daysOfWeek) {
+            if (!validDays.includes(day.toLowerCase())) {
+              errors.push(`daysOfWeek: "${day}" is not a valid day of the week`);
+            }
+          }
         }
         
         // Validate time format (HH:MM)

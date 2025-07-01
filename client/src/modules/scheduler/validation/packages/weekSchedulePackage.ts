@@ -41,7 +41,7 @@ export interface ValidationContext {
   userId: number;
   userRole: string;
   permissions: string[];
-  locationAccess: number[];
+  locationAccess: number[] | 'all';
   sessionId: string;
 }
 
