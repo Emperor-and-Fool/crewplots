@@ -5,11 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/modules/auth';
+import { useToast } from '@/hooks/use-toast';
+import { Copy } from 'lucide-react';
 
 type AuthSyncStatus = 'synced' | 'mismatched' | 'unclear';
 
 export default function EndpointTestPage() {
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [endpoint, setEndpoint] = useState('');
   const [method, setMethod] = useState('GET');
   const [requestBody, setRequestBody] = useState('');
@@ -22,6 +25,29 @@ export default function EndpointTestPage() {
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, `${timestamp}: ${message}`]);
+  };
+
+  const copyResponseToClipboard = async () => {
+    if (!response) {
+      toast({
+        description: "No response data to copy",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const responseText = JSON.stringify(response, null, 2);
+      await navigator.clipboard.writeText(responseText);
+      toast({
+        description: "Response data copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   // Check authentication sync status
@@ -301,8 +327,19 @@ export default function EndpointTestPage() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Response Data</CardTitle>
+              {response && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyResponseToClipboard}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md h-96 overflow-y-auto">
