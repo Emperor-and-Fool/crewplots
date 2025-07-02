@@ -7,7 +7,8 @@ import {
   type ScheduleTemplate, type TemplateShift, type ScheduleBlock,
   type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
   type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
-  type UploadedFile, type HybridCache,
+  type UploadedFile, type HybridCache, type UserModulePermissions, type SchedulerModulePermissions,
+  type LocationModulePermissions,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertScheduleBlock, type InsertWeekSchedule, type InsertShift,
@@ -1101,6 +1102,108 @@ class DatabaseStorage {
     } catch (error) {
       console.error("Error in getUserWithProfile:", error);
       return undefined;
+    }
+  }
+
+  // Lazy Loading Authentication Methods (Plan 052 Phase 1)
+  async getUserWithWorkflows(userId: number): Promise<User & { workflows: string[] }> {
+    try {
+      // Fast workflow discovery - load user with minimal workflow list
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      // Extract workflow list from workflowPermissions without loading full permissions
+      const workflowPermissions = user.workflowPermissions as Record<string, string[]> || {};
+      const workflows = Object.keys(workflowPermissions);
+
+      return {
+        ...user,
+        workflows
+      };
+    } catch (error) {
+      console.error("Error in getUserWithWorkflows:", error);
+      throw error;
+    }
+  }
+
+  async getUsersUsermodPerm(userId: number): Promise<UserModulePermissions> {
+    try {
+      // On-demand user module permission loading
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      const workflowPermissions = user.workflowPermissions as Record<string, string[]> || {};
+      const userPermissions = workflowPermissions.application || [];
+
+      return {
+        user: {
+          view: userPermissions.includes('view') || userPermissions.includes('view_applications'),
+          edit: userPermissions.includes('edit'),
+          hire: userPermissions.includes('hire'),
+          delete: userPermissions.includes('delete'),
+          manage_locations: userPermissions.includes('manage_locations'),
+          view_applications: userPermissions.includes('view_applications')
+        }
+      };
+    } catch (error) {
+      console.error("Error in getUsersUsermodPerm:", error);
+      throw error;
+    }
+  }
+
+  async getUsersSchedmodPerm(userId: number): Promise<SchedulerModulePermissions> {
+    try {
+      // On-demand scheduler module permission loading
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      const workflowPermissions = user.workflowPermissions as Record<string, string[]> || {};
+      const schedulePermissions = workflowPermissions.scheduling || [];
+
+      return {
+        schedule: {
+          create: schedulePermissions.includes('create') || schedulePermissions.includes('schedule.create'),
+          read: schedulePermissions.includes('read') || schedulePermissions.includes('schedule.read'),
+          update: schedulePermissions.includes('update') || schedulePermissions.includes('schedule.update'),
+          delete: schedulePermissions.includes('delete') || schedulePermissions.includes('schedule.delete'),
+          assign_users: schedulePermissions.includes('assign_users') || schedulePermissions.includes('schedule.assign_users'),
+          manage_permissions: schedulePermissions.includes('manage_permissions') || schedulePermissions.includes('schedule.manage_permissions')
+        }
+      };
+    } catch (error) {
+      console.error("Error in getUsersSchedmodPerm:", error);
+      throw error;
+    }
+  }
+
+  async getUsersLocationPerm(userId: number): Promise<LocationModulePermissions> {
+    try {
+      // On-demand location module permission loading
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      const workflowPermissions = user.workflowPermissions as Record<string, string[]> || {};
+      const locationPermissions = workflowPermissions.location || [];
+
+      return {
+        location: {
+          access_all: locationPermissions.includes('access_all') || user.role === 'administrator',
+          access_owned: locationPermissions.includes('access_owned') || locationPermissions.includes('access_all'),
+          access_managed: locationPermissions.includes('access_managed') || locationPermissions.includes('access_all'),
+          access_assigned: locationPermissions.includes('access_assigned') || locationPermissions.includes('access_all')
+        }
+      };
+    } catch (error) {
+      console.error("Error in getUsersLocationPerm:", error);
+      throw error;
     }
   }
 

@@ -95,6 +95,7 @@ import userRoutes from './routes/users';
 import validationRoutes from './routes/validation';
 import validationV3Routes from './routes/validation-v3';
 import securityRoutes from './routes/security';
+import lazyLoadingTestRoutes from './routes/lazy-loading-test';
 import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 
@@ -930,6 +931,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/scheduler', schedulerRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/validation/v3', validationV3Routes);
+  
+  // 🚀 LAZY AUTH: Plan 052 Phase 2 test routes
+  app.use('/api/lazy-test', lazyLoadingTestRoutes);
   app.use('/api/email', emailRoutes);
   app.use('/api/security', securityRoutes);
   app.use('/api/redis-monitor', redisMonitorRoutes);

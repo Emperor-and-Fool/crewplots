@@ -611,6 +611,39 @@ export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 
 export type User = typeof users.$inferSelect;
+
+// Lazy Loading Permission Interfaces
+export interface UserModulePermissions {
+  user: {
+    view: boolean;
+    edit: boolean;
+    hire: boolean;
+    delete: boolean;
+    manage_locations: boolean;
+    view_applications: boolean;
+  };
+}
+
+export interface SchedulerModulePermissions {
+  schedule: {
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+    assign_users: boolean;
+    manage_permissions: boolean;
+  };
+}
+
+export interface LocationModulePermissions {
+  location: {
+    access_all: boolean;
+    access_owned: boolean;
+    access_managed: boolean;
+    access_assigned: boolean;
+  };
+}
+
 export type Location = typeof locations.$inferSelect;
 export type Role = typeof roles.$inferSelect;
 export type Permission = typeof permissions.$inferSelect;
