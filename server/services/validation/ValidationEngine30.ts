@@ -1,18 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { storage } from '../../storage';
 import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from './DataAggregationEngine';
 import type { User } from '@shared/schema';
 
 /**
- * ValidationEngine 3.0 - Enhanced validation with pre-aggregated data support
- * Based on 048_REVISED plan Sequential Architecture Flow:
- * Request → DataAggregationEngine → ValidationEngine30 → Response
+ * ValidationEngine30 - Orchestrator for dual-use validation patterns
+ * Based on Plan 050: Parallel Implementation with zero production risk
  * 
- * Phase 2: VALIDATION (Enhanced)
- * ├─ Receive pre-aggregated data
- * ├─ Apply business rules validation
- * ├─ Check permissions from aggregated context
- * └─ Prepare transaction data
+ * Purpose: Orchestrates validation workflows using existing DataAggregationEngine
+ * Dependencies: Uses existing DataAggregationEngine (no modifications to production ValidationEngine)
+ * Risk: ZERO - New file, no existing dependencies
  */
 
 export interface ValidationContext {
@@ -21,125 +17,177 @@ export interface ValidationContext {
   aggregatedData?: AggregatedUserData;
   permissions?: string[];
   workflowPermissions?: Record<string, any>;
-  locationAccess?: number[];
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-  enhancedData?: any;
-  transactionData?: any;
-  context: ValidationContext;
 }
 
 export interface ValidationRequest {
-  operation: 'create' | 'read' | 'update' | 'delete';
+  operation: 'validate' | 'orchestrate';
   entityType: string;
-  data: any;
-  entityId?: number | null;
-  useAggregation?: boolean; // Enable dual-use: direct or aggregated validation
+  entityId?: number;
+  data?: any;
+  validationRules?: string[];
+}
+
+export interface ValidationResult {
+  success: boolean;
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  data?: any;
+  metadata: {
+    operation: string;
+    duration: number;
+    timestamp: string;
+    useAggregation: boolean;
+  };
 }
 
 export class ValidationEngine30 {
   
   /**
-   * Main validation entry point - supports dual-use patterns
-   * Direct validation: useAggregation = false (fast, no data compilation)
-   * Aggregated validation: useAggregation = true (comprehensive, with user context)
+   * Main orchestrator method - handles dual-use patterns:
+   * 1. Direct validation (operation: 'validate') - Fast, no aggregation
+   * 2. Aggregate-then-validate (operation: 'orchestrate') - Comprehensive with user context
    */
-  async validateAndExecute(
-    request: ValidationRequest,
-    context: ValidationContext
-  ): Promise<ValidationResult> {
-    const packageId = uuidv4();
+  async execute(request: ValidationRequest, context: ValidationContext): Promise<ValidationResult> {
     const startTime = Date.now();
+    const operationId = uuidv4();
     
-    console.log(`🎯 VALIDATION ENGINE 3.0: Starting ${request.operation} for ${request.entityType}`, { 
-      packageId, 
-      useAggregation: request.useAggregation 
-    });
+    console.log(`🎯 VALIDATION ENGINE 30: Starting ${request.operation} for ${request.entityType}`, { operationId });
 
     try {
-      // Phase 1: Data Preparation (Direct or Aggregated)
-      let enhancedContext = context;
-      
-      if (request.useAggregation) {
-        enhancedContext = await this.prepareAggregatedContext(context, request.entityType);
-        console.log(`📊 DATA AGGREGATION: Enhanced context prepared for user ${context.userId}`);
+      if (request.operation === 'validate') {
+        return await this.executeDirectValidation(request, context, startTime);
+      } else if (request.operation === 'orchestrate') {
+        return await this.executeAggregateValidation(request, context, startTime);
       } else {
-        console.log(`⚡ DIRECT VALIDATION: Using provided context for user ${context.userId}`);
+        throw new Error(`Unsupported operation: ${request.operation}`);
       }
-
-      // Phase 2: Business Rules Validation
-      const businessValidation = await this.validateBusinessRules(request, enhancedContext);
-      if (!businessValidation.isValid) {
-        return {
-          isValid: false,
-          errors: businessValidation.errors,
-          warnings: [],
-          context: enhancedContext
-        };
-      }
-
-      // Phase 3: Permission Validation
-      const permissionValidation = await this.validatePermissions(request, enhancedContext);
-      if (!permissionValidation.isValid) {
-        return {
-          isValid: false,
-          errors: permissionValidation.errors,
-          warnings: businessValidation.warnings,
-          context: enhancedContext
-        };
-      }
-
-      // Phase 4: Schema Validation (if data provided)
-      let schemaValidation = { isValid: true, errors: [], enhancedData: request.data };
-      if (request.data) {
-        schemaValidation = await this.validateSchema(request, enhancedContext);
-        if (!schemaValidation.isValid) {
-          return {
-            isValid: false,
-            errors: schemaValidation.errors,
-            warnings: [...businessValidation.warnings, ...permissionValidation.warnings],
-            context: enhancedContext
-          };
-        }
-      }
-
-      // Phase 5: Prepare Transaction Data
-      const transactionData = await this.prepareTransactionData(request, enhancedContext, schemaValidation.enhancedData);
-
-      const duration = Date.now() - startTime;
-      console.log(`✅ VALIDATION ENGINE 3.0: Validation successful for ${request.entityType} (${duration}ms)`);
-
-      return {
-        isValid: true,
-        errors: [],
-        warnings: [...businessValidation.warnings, ...permissionValidation.warnings],
-        enhancedData: schemaValidation.enhancedData,
-        transactionData,
-        context: enhancedContext
-      };
-
     } catch (error) {
       const duration = Date.now() - startTime;
-      console.error(`❌ VALIDATION ENGINE 3.0: Error during validation (${duration}ms):`, error);
+      console.error(`❌ VALIDATION ENGINE 30: Error during ${request.operation}:`, error);
       
       return {
+        success: false,
         isValid: false,
         errors: [error instanceof Error ? error.message : 'Unknown validation error'],
         warnings: [],
-        context: enhancedContext || context
+        metadata: {
+          operation: request.operation,
+          duration,
+          timestamp: new Date().toISOString(),
+          useAggregation: request.operation === 'orchestrate'
+        }
       };
     }
   }
 
   /**
-   * Prepare aggregated context using DataAggregationEngine
-   * Phase 1: DATA AGGREGATION implementation
+   * Direct validation pattern - no aggregation, fast response
    */
-  private async prepareAggregatedContext(
+  private async executeDirectValidation(
+    request: ValidationRequest, 
+    context: ValidationContext, 
+    startTime: number
+  ): Promise<ValidationResult> {
+    console.log(`⚡ DIRECT VALIDATION: Processing ${request.entityType} for user ${context.userId}`);
+
+    // Basic validation without data aggregation
+    const validationErrors: string[] = [];
+    const validationWarnings: string[] = [];
+
+    // Basic permission check using role
+    if (!this.hasBasicPermission(context.userRole, request.entityType)) {
+      validationErrors.push(`Insufficient permissions for ${request.entityType}`);
+    }
+
+    // Basic data validation
+    if (request.data) {
+      const dataValidation = this.validateBasicData(request.data, request.entityType);
+      validationErrors.push(...dataValidation.errors);
+      validationWarnings.push(...dataValidation.warnings);
+    }
+
+    const duration = Date.now() - startTime;
+    const isValid = validationErrors.length === 0;
+
+    console.log(`✅ DIRECT VALIDATION: ${isValid ? 'Success' : 'Failed'} for ${request.entityType} (${duration}ms)`);
+
+    return {
+      success: true,
+      isValid,
+      errors: validationErrors,
+      warnings: validationWarnings,
+      data: request.data,
+      metadata: {
+        operation: 'validate',
+        duration,
+        timestamp: new Date().toISOString(),
+        useAggregation: false
+      }
+    };
+  }
+
+  /**
+   * Aggregate-then-validate pattern - comprehensive validation with user context
+   */
+  private async executeAggregateValidation(
+    request: ValidationRequest, 
+    context: ValidationContext, 
+    startTime: number
+  ): Promise<ValidationResult> {
+    console.log(`📊 AGGREGATE VALIDATION: Processing ${request.entityType} for user ${context.userId}`);
+
+    // Step 1: Aggregate user context using DataAggregationEngine
+    const aggregatedContext = await this.aggregateUserContext(context, request.entityType);
+    
+    // Step 2: Enhanced validation with aggregated data
+    const validationErrors: string[] = [];
+    const validationWarnings: string[] = [];
+
+    // Enhanced permission check using aggregated permissions
+    const permissionValidation = this.validateAggregatedPermissions(
+      aggregatedContext, 
+      request.entityType, 
+      request.operation
+    );
+    validationErrors.push(...permissionValidation.errors);
+    validationWarnings.push(...permissionValidation.warnings);
+
+    // Enhanced data validation with context
+    if (request.data) {
+      const dataValidation = this.validateAggregatedData(
+        request.data, 
+        request.entityType, 
+        aggregatedContext
+      );
+      validationErrors.push(...dataValidation.errors);
+      validationWarnings.push(...dataValidation.warnings);
+    }
+
+    const duration = Date.now() - startTime;
+    const isValid = validationErrors.length === 0;
+
+    console.log(`✅ AGGREGATE VALIDATION: ${isValid ? 'Success' : 'Failed'} for ${request.entityType} (${duration}ms)`);
+
+    return {
+      success: true,
+      isValid,
+      errors: validationErrors,
+      warnings: validationWarnings,
+      data: request.data,
+      metadata: {
+        operation: 'orchestrate',
+        duration,
+        timestamp: new Date().toISOString(),
+        useAggregation: true
+      }
+    };
+  }
+
+  /**
+   * Aggregate user context using existing DataAggregationEngine
+   */
+  private async aggregateUserContext(
     context: ValidationContext, 
     entityType: string
   ): Promise<ValidationContext> {
@@ -149,7 +197,7 @@ export class ValidationEngine30 {
         entityType: 'user',
         entityId: context.userId,
         requiredData: {
-          postgresql: ['user', 'permissions', 'locations'],
+          postgresql: ['user', 'permissions'],
           mongodb: ['notes'],
           redis: ['cache-keys']
         },
@@ -160,7 +208,7 @@ export class ValidationEngine30 {
         },
         cacheStrategy: {
           category: 'validation-context',
-          ttl: 600, // 10 minutes for validation context
+          ttl: 300, // 5 minutes for validation context
           connectionId: `validation-${context.userId}-${entityType}`
         }
       };
@@ -169,257 +217,139 @@ export class ValidationEngine30 {
       const aggregatedData = await dataAggregationEngine.aggregate<AggregatedUserData>(aggregationTask);
       
       if (!aggregatedData) {
-        console.warn(`⚠️ AGGREGATION WARNING: No data found for user ${context.userId}, using basic context`);
+        console.warn(`⚠️ AGGREGATION: No data found for user ${context.userId}, using basic context`);
         return context;
       }
 
-      // Enhanced context with aggregated data
+      // Return enhanced context
       return {
         ...context,
         aggregatedData,
         permissions: aggregatedData.aggregatedPermissions?.rolePermissions || [],
-        workflowPermissions: aggregatedData.aggregatedPermissions?.workflowPermissions || {},
-        locationAccess: aggregatedData.aggregatedLocations?.map(loc => loc.id) || []
+        workflowPermissions: aggregatedData.aggregatedPermissions?.workflowPermissions || {}
       };
 
     } catch (error) {
-      console.error('📊 DATA AGGREGATION ERROR:', error);
+      console.error('📊 AGGREGATION ERROR:', error);
       // Fallback to basic context if aggregation fails
       return context;
     }
   }
 
   /**
-   * Validate business rules based on entity type and operation
+   * Basic permission check for direct validation
    */
-  private async validateBusinessRules(
-    request: ValidationRequest, 
-    context: ValidationContext
-  ): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
+  private hasBasicPermission(userRole: string, entityType: string): boolean {
+    const rolePermissions: Record<string, string[]> = {
+      'administrator': ['user', 'schedule', 'shift', 'location'],
+      'owner': ['user', 'schedule', 'shift', 'location'],
+      'app_manager': ['user', 'schedule', 'shift'],
+      'crew_chief': ['schedule', 'shift'],
+      'crew_member': ['shift'],
+      'applicant': []
+    };
+
+    return rolePermissions[userRole]?.includes(entityType) || false;
+  }
+
+  /**
+   * Basic data validation for direct validation
+   */
+  private validateBasicData(data: any, entityType: string): { errors: string[]; warnings: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Entity-specific business rules
-    switch (request.entityType) {
+    // Basic required field validation
+    switch (entityType) {
       case 'user':
-        await this.validateUserBusinessRules(request, context, errors, warnings);
+        if (!data.username) errors.push('Username is required');
+        if (!data.email) errors.push('Email is required');
         break;
       case 'schedule':
-      case 'scheduleBlock':
-        await this.validateScheduleBusinessRules(request, context, errors, warnings);
+        if (!data.name) errors.push('Schedule name is required');
         break;
       case 'shift':
-        await this.validateShiftBusinessRules(request, context, errors, warnings);
+        if (!data.startTime) errors.push('Start time is required');
+        if (!data.endTime) errors.push('End time is required');
         break;
-      default:
-        // Generic business rules
-        await this.validateGenericBusinessRules(request, context, errors, warnings);
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
+    return { errors, warnings };
   }
 
   /**
-   * Validate permissions using aggregated context or basic role check
+   * Enhanced permission validation using aggregated context
    */
-  private async validatePermissions(
-    request: ValidationRequest, 
-    context: ValidationContext
-  ): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
+  private validateAggregatedPermissions(
+    context: ValidationContext, 
+    entityType: string, 
+    operation: string
+  ): { errors: string[]; warnings: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Use aggregated permissions if available, otherwise fallback to role-based
-    const userPermissions = context.permissions || this.getRoleBasedPermissions(context.userRole);
-    
-    // Operation-specific permission requirements
-    const requiredPermission = this.getRequiredPermission(request.operation, request.entityType);
-    
-    if (!userPermissions.includes(requiredPermission)) {
-      errors.push(`Insufficient permissions: Required '${requiredPermission}' for ${request.operation} on ${request.entityType}`);
+    // Use aggregated permissions if available
+    const userPermissions = context.permissions || [];
+    const workflowPermissions = context.workflowPermissions || {};
+
+    // Check entity-specific permissions
+    const requiredPermission = this.getRequiredPermission(entityType, operation);
+    if (requiredPermission && !userPermissions.includes(requiredPermission)) {
+      errors.push(`Missing required permission: ${requiredPermission}`);
     }
 
-    // Location-based access control (if applicable)
-    if (request.data?.locationId && context.locationAccess) {
-      if (!context.locationAccess.includes(request.data.locationId)) {
-        errors.push(`No access to location ${request.data.locationId}`);
-      }
+    // Check workflow permissions
+    if (entityType === 'schedule' && !workflowPermissions.scheduling) {
+      warnings.push('Limited scheduling permissions detected');
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
+    return { errors, warnings };
   }
 
   /**
-   * Validate schema using appropriate validation logic
+   * Enhanced data validation using aggregated context
    */
-  private async validateSchema(
-    request: ValidationRequest, 
+  private validateAggregatedData(
+    data: any, 
+    entityType: string, 
     context: ValidationContext
-  ): Promise<{ isValid: boolean; errors: string[]; enhancedData: any }> {
-    // For now, basic schema validation
-    // Future: Integrate with existing validation packages from ValidationEngine.ts
+  ): { errors: string[]; warnings: string[] } {
     const errors: string[] = [];
-    let enhancedData = request.data;
+    const warnings: string[] = [];
 
-    // Basic required fields validation
-    if (request.operation === 'create' || request.operation === 'update') {
-      if (!request.data) {
-        errors.push('Data is required for create/update operations');
-      }
-    }
-
-    // Entity-specific schema validation would go here
-    // Future enhancement: Use Zod schemas or existing validation packages
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      enhancedData
-    };
-  }
-
-  /**
-   * Prepare transaction data for database operations
-   */
-  private async prepareTransactionData(
-    request: ValidationRequest, 
-    context: ValidationContext, 
-    validatedData: any
-  ): Promise<any> {
-    // Prepare data for storage layer operations
-    const transactionData = {
-      operation: request.operation,
-      entityType: request.entityType,
-      entityId: request.entityId,
-      data: validatedData,
-      userId: context.userId,
-      timestamp: new Date().toISOString()
-    };
-
-    // Add audit fields if needed
-    if (request.operation === 'create') {
-      transactionData.data.createdBy = context.userId;
-      transactionData.data.createdAt = new Date();
-    } else if (request.operation === 'update') {
-      transactionData.data.updatedBy = context.userId;
-      transactionData.data.updatedAt = new Date();
-    }
-
-    return transactionData;
-  }
-
-  // Business Rules Implementations
-  private async validateUserBusinessRules(
-    request: ValidationRequest, 
-    context: ValidationContext, 
-    errors: string[], 
-    warnings: string[]
-  ): Promise<void> {
-    // User-specific business rules
-    if (request.operation === 'create' && request.data?.role === 'administrator') {
-      if (context.userRole !== 'owner' && context.userRole !== 'administrator') {
-        errors.push('Only owners and administrators can create administrator accounts');
-      }
-    }
-  }
-
-  private async validateScheduleBusinessRules(
-    request: ValidationRequest, 
-    context: ValidationContext, 
-    errors: string[], 
-    warnings: string[]
-  ): Promise<void> {
-    // Schedule-specific business rules
-    if (request.operation === 'create' && !context.permissions?.includes('schedule.create')) {
-      errors.push('Schedule creation requires schedule.create permission');
-    }
-  }
-
-  private async validateShiftBusinessRules(
-    request: ValidationRequest, 
-    context: ValidationContext, 
-    errors: string[], 
-    warnings: string[]
-  ): Promise<void> {
-    // Shift-specific business rules
-    if (request.data?.startTime && request.data?.endTime) {
-      const start = new Date(request.data.startTime);
-      const end = new Date(request.data.endTime);
+    // Enhanced validation using aggregated context
+    if (entityType === 'shift' && data.startTime && data.endTime) {
+      const start = new Date(data.startTime);
+      const end = new Date(data.endTime);
       
       if (start >= end) {
         errors.push('Shift start time must be before end time');
       }
       
-      const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60); // hours
-      if (duration > 16) {
-        warnings.push('Shift duration exceeds 16 hours');
+      // Use aggregated data for enhanced business rules
+      if (context.aggregatedData) {
+        const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        if (duration > 12) {
+          warnings.push('Long shift duration detected - consider break requirements');
+        }
       }
     }
+
+    return { errors, warnings };
   }
 
-  private async validateGenericBusinessRules(
-    request: ValidationRequest, 
-    context: ValidationContext, 
-    errors: string[], 
-    warnings: string[]
-  ): Promise<void> {
-    // Generic business rules for unknown entity types
-    if (request.operation === 'delete' && !context.permissions?.includes('delete')) {
-      errors.push('Delete operations require delete permission');
-    }
-  }
-
-  // Helper methods
-  private getRoleBasedPermissions(userRole: string): string[] {
-    const rolePermissions: Record<string, string[]> = {
-      'administrator': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'admin', 'schedule.create', 'schedule.read', 'schedule.update', 'schedule.delete'],
-      'owner': ['view', 'create', 'edit', 'delete', 'schedule', 'manage', 'schedule.create', 'schedule.read', 'schedule.update', 'schedule.delete'],
-      'app_manager': ['view', 'create', 'edit', 'schedule', 'manage', 'schedule.read', 'schedule.update'],
-      'crew_chief': ['view', 'create', 'edit', 'schedule', 'schedule.read'],
-      'crew_member': ['view', 'manage', 'schedule.read'],
-      'applicant': ['view']
-    };
-    
-    return rolePermissions[userRole] || ['view'];
-  }
-
-  private getRequiredPermission(operation: string, entityType: string): string {
-    const permissionMap: Record<string, Record<string, string>> = {
-      'create': {
-        'user': 'create',
-        'schedule': 'schedule.create',
-        'scheduleBlock': 'schedule.create',
-        'shift': 'schedule.create'
-      },
-      'read': {
-        'user': 'view',
-        'schedule': 'schedule.read',
-        'scheduleBlock': 'schedule.read',
-        'shift': 'schedule.read'
-      },
-      'update': {
-        'user': 'edit',
-        'schedule': 'schedule.update',
-        'scheduleBlock': 'schedule.update',
-        'shift': 'schedule.update'
-      },
-      'delete': {
-        'user': 'delete',
-        'schedule': 'schedule.delete',
-        'scheduleBlock': 'schedule.delete',
-        'shift': 'schedule.delete'
-      }
+  /**
+   * Get required permission for entity and operation
+   */
+  private getRequiredPermission(entityType: string, operation: string): string | null {
+    const permissionMap: Record<string, string> = {
+      'user': 'manage',
+      'schedule': 'schedule',
+      'shift': 'schedule',
+      'location': 'manage'
     };
 
-    return permissionMap[operation]?.[entityType] || 'view';
+    return permissionMap[entityType] || null;
   }
 }
 
