@@ -74,13 +74,13 @@ export default function AdminTestPage() {
         errors: jsonResponse.errors || [],
         warnings: jsonResponse.warnings || [],
         user: {
-          id: jsonResponse.data?.createdBy || jsonResponse.validation?.userId || jsonResponse.data?.id,
-          username: 'admin',
-          role: 'administrator',
-          permissions: jsonResponse.validation?.permissions || [],
-          workflowPermissions: jsonResponse.validation?.workflowPermissions || {}
+          id: jsonResponse.validation?.userContext?.id || jsonResponse.data?.createdBy || 1,
+          username: jsonResponse.validation?.userContext?.username || 'admin',
+          role: jsonResponse.validation?.userContext?.role || 'administrator',
+          permissions: jsonResponse.validation?.userContext?.permissions || [],
+          workflowPermissions: jsonResponse.validation?.userContext?.workflowPermissions || {}
         },
-        permissions: jsonResponse.validation?.permissions || [],
+        permissions: jsonResponse.validation?.userContext?.permissions || [],
         metadata: jsonResponse.validation || {},
         rawResponse: jsonResponse
       };

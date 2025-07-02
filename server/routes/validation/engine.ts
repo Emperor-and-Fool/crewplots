@@ -220,7 +220,15 @@ router.post('/execute', authenticateUser, async (req, res) => {
         validation: {
           packageId: result.packageId,
           validationTime: result.overall.metadata?.validationTime,
-          rulesApplied: result.overall.metadata?.rulesApplied?.length || 0
+          rulesApplied: result.overall.metadata?.rulesApplied?.length || 0,
+          // Include user context with actual permissions from validation
+          userContext: {
+            id: context.userId,
+            username: context.username || req.user.username,
+            role: context.role,
+            permissions: context.permissions || [],
+            workflowPermissions: context.workflowPermissions || {}
+          }
         }
       });
     } else {
