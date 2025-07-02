@@ -107,10 +107,12 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
           </div>
         )}
         
-        {profile.notes && (
+        {profile.notes && typeof profile.notes === 'object' && profile.notes.exists && (
           <div>
-            <p className="text-sm font-medium text-gray-900">Notes</p>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{profile.notes}</p>
+            <p className="text-sm font-medium text-gray-900">Application Notes</p>
+            <p className="text-sm text-gray-600">
+              {profile.notes.wordCount || 0} words • Last updated {profile.notes.lastUpdated ? format(new Date(profile.notes.lastUpdated), 'MMM d, yyyy') : 'never'}
+            </p>
           </div>
         )}
         
