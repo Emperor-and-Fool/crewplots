@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/modules/auth';
 
 interface ValidationResponse {
   isValid: boolean;
@@ -21,9 +22,31 @@ interface ValidationResponse {
 }
 
 export default function AdminTestPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [lastResponse, setLastResponse] = useState<ValidationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Check if user is authenticated and has administrator role
+  if (authLoading) {
+    return <div className="flex h-screen items-center justify-center">
+      <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+    </div>;
+  }
+
+  if (!user || user.role !== 'administrator') {
+    return <div className="flex h-screen items-center justify-center">
+      <Card className="w-96">
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>Administrator access required</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>You need administrator privileges to access this validation test page.</p>
+        </CardContent>
+      </Card>
+    </div>;
+  }
 
   const testValidationEngine = async (testType: string) => {
     setIsLoading(true);

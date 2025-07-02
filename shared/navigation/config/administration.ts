@@ -1,4 +1,4 @@
-import { Settings, Mail, Shield, Wrench } from 'lucide-react';
+import { Settings, Mail, Shield, Wrench, TestTube } from 'lucide-react';
 import { NavigationSection } from '../types';
 
 export const administrationSection: NavigationSection = {
@@ -26,6 +26,13 @@ export const administrationSection: NavigationSection = {
       label: 'Validation Test',
       path: '/validation-test',
       icon: Wrench,
+      permission: { role: 'administrator' }
+    },
+    {
+      id: 'admin-test',
+      label: 'Admin Test',
+      path: '/admin-test',
+      icon: TestTube,
       permission: { role: 'administrator' }
     }
   ]
