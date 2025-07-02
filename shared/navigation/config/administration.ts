@@ -1,4 +1,4 @@
-import { Settings, Mail, Shield, Wrench, TestTube, Globe } from 'lucide-react';
+import { Settings, Mail, Shield, Wrench, TestTube, Globe, Terminal } from 'lucide-react';
 import { NavigationSection } from '../types';
 
 export const administrationSection: NavigationSection = {
@@ -22,25 +22,33 @@ export const administrationSection: NavigationSection = {
       permission: { role: 'administrator' }
     },
     {
-      id: 'validation-test',
-      label: 'Validation Test',
-      path: '/validation-test',
-      icon: Wrench,
-      permission: { role: 'administrator' }
-    },
-    {
-      id: 'admin-test',
-      label: 'Admin Test',
-      path: '/admin-test',
-      icon: TestTube,
-      permission: { role: 'administrator' }
-    },
-    {
-      id: 'endpoint-test',
-      label: 'Endpoint Test',
-      path: '/endpoint-test',
-      icon: Globe,
-      permission: { role: 'administrator' }
+      id: 'devops-tests',
+      label: 'DevOps Tests',
+      icon: Terminal,
+      permission: { role: 'administrator' },
+      children: [
+        {
+          id: 'validation-test',
+          label: 'Validation Test',
+          path: '/validation-test',
+          icon: Wrench,
+          permission: { role: 'administrator' }
+        },
+        {
+          id: 'admin-test',
+          label: 'Admin Test',
+          path: '/admin-test',
+          icon: TestTube,
+          permission: { role: 'administrator' }
+        },
+        {
+          id: 'endpoint-test',
+          label: 'Endpoint Test',
+          path: '/endpoint-test',
+          icon: Globe,
+          permission: { role: 'administrator' }
+        }
+      ]
     }
   ]
 };

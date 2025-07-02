@@ -9,9 +9,10 @@ export interface PermissionConfig {
 export interface NavigationItem {
   id: string;
   label: string;
-  path: string;
+  path?: string;
   icon?: LucideIcon;
   permission?: PermissionConfig;
+  children?: NavigationItem[];
 }
 
 export interface NavigationSection {
