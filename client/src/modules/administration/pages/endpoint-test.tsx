@@ -40,15 +40,24 @@ export default function EndpointTestPage() {
         });
 
         if (response.ok) {
-          const backendUser = await response.json();
-          setBackendAuthStatus(backendUser);
+          const backendResponse = await response.json();
+          setBackendAuthStatus(backendResponse);
           
-          // Compare frontend and backend user data
-          if (backendUser.id === user.id && 
-              backendUser.username === user.username && 
-              backendUser.role === user.role) {
-            setAuthSyncStatus('synced');
+          // Check if backend has proper authentication structure
+          if (backendResponse.authenticated && backendResponse.user) {
+            // Proper structure - compare actual user data
+            if (backendResponse.user.id === user.id && 
+                backendResponse.user.username === user.username && 
+                backendResponse.user.role === user.role) {
+              setAuthSyncStatus('synced');
+            } else {
+              setAuthSyncStatus('mismatched');
+            }
+          } else if (backendResponse.authenticated === true) {
+            // Backend authenticated but response structure issue - sessions in sync but parsing fails
+            setAuthSyncStatus('unclear');
           } else {
+            // Backend not authenticated or unknown structure
             setAuthSyncStatus('mismatched');
           }
         } else {
@@ -211,7 +220,15 @@ export default function EndpointTestPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div><strong>Frontend:</strong> {user ? `${user.username} (${user.role})` : 'Not authenticated'}</div>
-                <div><strong>Backend:</strong> {backendAuthStatus.error ? `Error ${backendAuthStatus.error}: ${backendAuthStatus.message}` : `${backendAuthStatus.username} (${backendAuthStatus.role})`}</div>
+                <div><strong>Backend:</strong> {
+                  backendAuthStatus.error ? 
+                    `Error ${backendAuthStatus.error}: ${backendAuthStatus.message}` : 
+                    backendAuthStatus.user ? 
+                      `${backendAuthStatus.user.username} (${backendAuthStatus.user.role})` :
+                      backendAuthStatus.authenticated ? 
+                        'Authenticated but user data unavailable' :
+                        'Not authenticated'
+                }</div>
                 <div><strong>Status:</strong> <span className={authSyncStatus === 'mismatched' ? 'text-red-600' : 'text-orange-600'}>{authSyncStatus}</span></div>
               </div>
             </CardContent>
