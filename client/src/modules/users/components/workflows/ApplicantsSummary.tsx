@@ -39,15 +39,15 @@ const formatRelativeTime = (date: string | Date) => {
 };
 
 export function ApplicantsSummary({ locationId, limit = 4 }: ApplicantsSummaryProps) {
-  // Use existing profile-data endpoint and filter for applicants
+  // Use users endpoint to get all users and filter for applicants
   const { data: profileData, isLoading } = useQuery<User[]>({
-    queryKey: ['/api/profile-data'],
+    queryKey: ['/api/users'],
     queryFn: async () => {
-      const response = await fetch('/api/profile-data', {
+      const response = await fetch('/api/users', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch profile data');
+        throw new Error('Failed to fetch users data');
       }
       return response.json();
     },
