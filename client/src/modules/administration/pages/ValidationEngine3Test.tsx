@@ -17,6 +17,8 @@ interface TestResult {
 export function ValidationEngine3Test() {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [aggregateResult, setAggregateResult] = useState<TestResult | null>(null);
+  const [validationResult, setValidationResult] = useState<TestResult | null>(null);
+  const [orchestrationResult, setOrchestrationResult] = useState<TestResult | null>(null);
   const [customTask, setCustomTask] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -115,6 +117,113 @@ export function ValidationEngine3Test() {
       }
     } catch (error) {
       setAggregateResult({
+        success: false,
+        message: 'Network error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime: Date.now() - startTime
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testDirectValidation = async () => {
+    setLoading(true);
+    const startTime = Date.now();
+    
+    const validationRequest = {
+      operation: 'create',
+      entityType: 'testEntity',
+      data: {
+        title: 'Test Schedule Block',
+        description: 'Testing direct validation pattern'
+      },
+      entityId: null
+    };
+    
+    try {
+      const response = await fetch('/api/validation/v3/validate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validationRequest)
+      });
+      
+      const data = await response.json();
+      const responseTime = Date.now() - startTime;
+      
+      if (response.ok) {
+        setValidationResult({
+          success: true,
+          message: 'ValidationEngine30 direct validation complete',
+          data,
+          responseTime
+        });
+        toast({ description: 'Direct validation test successful' });
+      } else {
+        setValidationResult({
+          success: false,
+          message: data.message || 'Direct validation failed',
+          error: data.error,
+          responseTime
+        });
+      }
+    } catch (error) {
+      setValidationResult({
+        success: false,
+        message: 'Network error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime: Date.now() - startTime
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testOrchestration = async () => {
+    setLoading(true);
+    const startTime = Date.now();
+    
+    const orchestrationRequest = {
+      operation: 'orchestrate',
+      entityType: 'testEntity',
+      data: {
+        title: 'Test Schedule Block',
+        description: 'Testing aggregate-then-validate pattern'
+      },
+      validationOperation: 'create',
+      entityId: null
+    };
+    
+    try {
+      const response = await fetch('/api/validation/v3/orchestrate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orchestrationRequest)
+      });
+      
+      const data = await response.json();
+      const responseTime = Date.now() - startTime;
+      
+      if (response.ok) {
+        setOrchestrationResult({
+          success: true,
+          message: 'DataOrchestrator3 orchestration complete',
+          data,
+          responseTime
+        });
+        toast({ description: 'Orchestration test successful' });
+      } else {
+        setOrchestrationResult({
+          success: false,
+          message: data.message || 'Orchestration failed',
+          error: data.error,
+          responseTime
+        });
+      }
+    } catch (error) {
+      setOrchestrationResult({
         success: false,
         message: 'Network error',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -230,11 +339,11 @@ export function ValidationEngine3Test() {
           ValidationEngine 3.0 Test Suite
         </h1>
         <p className="text-gray-600">
-          Test the ValidationEngine 3.0 DataAggregationEngine with hybrid storage integration
+          Test ValidationEngine 3.0 with DataAggregationEngine, ValidationEngine30 direct validation, and DataOrchestrator3 orchestration patterns
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Button 
           onClick={testBasicEndpoint} 
           disabled={loading}
@@ -255,6 +364,26 @@ export function ValidationEngine3Test() {
         </Button>
         
         <Button 
+          onClick={testDirectValidation} 
+          disabled={loading}
+          variant="default"
+          className="h-12 bg-blue-600 hover:bg-blue-700"
+        >
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Direct Validation
+        </Button>
+        
+        <Button 
+          onClick={testOrchestration} 
+          disabled={loading}
+          variant="default"
+          className="h-12 bg-purple-600 hover:bg-purple-700"
+        >
+          <Zap className="h-4 w-4 mr-2" />
+          Orchestration
+        </Button>
+        
+        <Button 
           onClick={testCustomTask} 
           disabled={loading}
           variant="secondary"
@@ -265,7 +394,7 @@ export function ValidationEngine3Test() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
         <ResultCard 
           title="Basic Test Results"
           result={testResult}
@@ -275,6 +404,18 @@ export function ValidationEngine3Test() {
         <ResultCard 
           title="Aggregation Test Results"
           result={aggregateResult}
+          icon={Zap}
+        />
+        
+        <ResultCard 
+          title="Direct Validation (Engine30)"
+          result={validationResult}
+          icon={CheckCircle}
+        />
+        
+        <ResultCard 
+          title="Orchestration (DataOrchestrator3)"
+          result={orchestrationResult}
           icon={Zap}
         />
       </div>
