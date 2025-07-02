@@ -74,9 +74,9 @@ export default function AdminTestPage() {
         errors: jsonResponse.errors || [],
         warnings: jsonResponse.warnings || [],
         user: {
-          id: jsonResponse.data?.id || jsonResponse.validation?.userId,
-          username: jsonResponse.data?.username || 'admin',
-          role: jsonResponse.data?.role || 'administrator',
+          id: jsonResponse.data?.createdBy || jsonResponse.validation?.userId || jsonResponse.data?.id,
+          username: 'admin',
+          role: 'administrator',
           permissions: jsonResponse.validation?.permissions || [],
           workflowPermissions: jsonResponse.validation?.workflowPermissions || {}
         },
