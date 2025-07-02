@@ -74,8 +74,12 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             return;
         }
 
-        // Attach user to request for use in route handlers
-        req.user = user;
+        // WORKFLOW PERMISSIONS FIX: Get complete user profile with workflow permissions
+        // This ensures DataAggregationEngine has all required permission data
+        const userWithWorkflowPermissions = await storage.getUserWithProfile(user.id);
+        
+        // Attach enhanced user to request for use in route handlers
+        req.user = userWithWorkflowPermissions || user;
         (req as any).usedCentralizedAuth = true; // Mark route as using centralized auth
         console.log("User authenticated successfully:", user.username, "Role:", user.role);
         
