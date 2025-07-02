@@ -89,6 +89,12 @@ git commit -m "Plan 052 Phase X: [phase description]"
 
 ## Implementation Phases
 
+🔄 **PLAN CHECK REMINDER**: Before proceeding to next phase, verify:
+- Current phase objectives achieved per 052 evidence criteria
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification
+- Reference Plan 048 for architectural questions
+
 ### Phase 1: Storage Layer Foundation (30 minutes)
 **Objective**: Create lazy loading storage methods
 
@@ -111,6 +117,12 @@ async getUsersLocationPerm(userId: number): Promise<LocationModulePermissions>
 - Create test endpoints to verify new methods work
 - Preserve existing getUserWithProfile for parallel testing
 
+⚠️ **IMPLEMENTATION CHECKPOINT**: Return to this plan section if:
+- Architecture questions arise (check 052 evidence)
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)
+- Performance targets unclear (reference specific 052 metrics)
+
 ### Phase 2: Authentication Middleware Migration (20 minutes)  
 **Objective**: Update auth middleware to use lazy loading
 
@@ -124,6 +136,11 @@ async getUsersLocationPerm(userId: number): Promise<LocationModulePermissions>
 **Performance Target**:
 - Reduce auth middleware execution time by 60-80%
 - Reduce memory usage per request by ~90%
+
+📋 **DECISION VALIDATION**: Confirm this choice aligns with:
+- Plan 048 phase objectives and evidence sources
+- Plan 052 architectural decisions and safety measures  
+- Zero Risk Implementation strategy (parallel development)
 
 ### Phase 3: API Endpoint Creation (25 minutes)
 **Objective**: Create on-demand permission loading endpoints
@@ -164,6 +181,12 @@ export const useWorkflowAccess = () => {
 - Update navigation components to check workflows first
 - Load detailed permissions only on module access
 
+⚠️ **IMPLEMENTATION CHECKPOINT**: Return to this plan section if:
+- Frontend integration patterns unclear (check 052 hook examples)
+- Navigation permission patterns need clarification (follow plan structure)
+- Performance concerns arise (reference 048 metrics)
+- Cross-module dependencies discovered (document approach)
+
 ### Phase 5: Performance Verification (10 minutes)
 **Objective**: Measure performance improvements
 
@@ -174,6 +197,11 @@ export const useWorkflowAccess = () => {
 - Module load time when permissions needed (new metric)
 
 ## Cleanup Tasks (Requires User Approval)
+
+📋 **DECISION VALIDATION**: Confirm cleanup tasks align with:
+- Plan 052 architectural objectives and evidence requirements
+- Performance improvements documented in Phase 5 verification
+- Zero regression policy for existing functionality
 
 ### Task 1: Legacy Method Removal
 **Action**: Remove `getUserWithProfile()` method from storage.ts
