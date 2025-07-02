@@ -29,6 +29,11 @@ export interface OrchestrationResult {
   success: boolean;
   validationResult: ValidationResult30;
   aggregatedData?: AggregatedUserData;
+  aggregationValidation?: {
+    isValid: boolean;
+    errors: string[];
+    validatedFields: string[];
+  };
   orchestrationMetadata: {
     orchestrationId: string;
     operation: 'validate' | 'orchestrate';
@@ -179,6 +184,11 @@ export class DataOrchestrator3 {
     // Step 1: Aggregate user context using DataAggregationEngine
     const aggregatedData = await this.aggregateUserContext(request.context, request.entityType);
     
+    // Step 1.5: Validate aggregated data structure
+    const aggregationValidation = this.validateAggregatedData(aggregatedData);
+    console.log('✅ AGGREGATION VALIDATION:', aggregationValidation.isValid ? 'PASSED' : 'FAILED', 
+                `(${aggregationValidation.validatedFields.length} fields validated)`);
+    
     // Step 2: Create enhanced validation request with aggregated context
     const validationRequest: ValidationRequest30 = {
       entityType: request.entityType,
@@ -211,6 +221,7 @@ export class DataOrchestrator3 {
       success: validationResult.overall.isValid,
       validationResult,
       aggregatedData, // Return aggregated data for reference
+      aggregationValidation, // Include aggregation validation results
       orchestrationMetadata: {
         orchestrationId,
         operation: 'orchestrate',
@@ -270,6 +281,62 @@ export class DataOrchestrator3 {
       // Return undefined to fall back to basic validation
       return undefined;
     }
+  }
+
+  /**
+   * Validate aggregated data structure and completeness
+   * Ensures the aggregated data meets required standards
+   */
+  private validateAggregatedData(aggregatedData: AggregatedUserData | undefined): {
+    isValid: boolean;
+    errors: string[];
+    validatedFields: string[];
+  } {
+    const errors: string[] = [];
+    const validatedFields: string[] = [];
+
+    if (!aggregatedData) {
+      return {
+        isValid: false,
+        errors: ['No aggregated data provided'],
+        validatedFields: []
+      };
+    }
+
+    // Core user data validation
+    if (aggregatedData.id) validatedFields.push('user.id');
+    else errors.push('Missing user ID');
+
+    if (aggregatedData.username) validatedFields.push('user.username');
+    else errors.push('Missing username');
+
+    if (aggregatedData.role) validatedFields.push('user.role');
+    else errors.push('Missing user role');
+
+    if (aggregatedData.email) validatedFields.push('user.email');
+    else errors.push('Missing user email');
+
+    // Enhanced aggregated fields validation
+    if (aggregatedData.displayName) validatedFields.push('enhanced.displayName');
+    if (aggregatedData.permissions) validatedFields.push('enhanced.permissions');
+    if (aggregatedData.aggregatedNotes) validatedFields.push('enhanced.notes');
+    if (aggregatedData._metadata) {
+      validatedFields.push('metadata.sources');
+      if (aggregatedData._metadata.sources?.length > 0) {
+        validatedFields.push('metadata.multiStorage');
+      }
+    }
+
+    // Workflow permissions validation
+    if (aggregatedData.workflowPermissions && Object.keys(aggregatedData.workflowPermissions).length > 0) {
+      validatedFields.push('permissions.workflow');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      validatedFields
+    };
   }
 
   /**
