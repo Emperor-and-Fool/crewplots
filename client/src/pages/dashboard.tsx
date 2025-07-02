@@ -98,13 +98,14 @@ export default function Dashboard() {
   const isLocationRestricted = (user?.role === 'crew_chief') && assignedLocationIds.length > 0;
 
   // Cherry-pick crew data from unified profile data (include all non-applicant roles)
-  let staffUsers = profileData?.filter((user: any) => 
+  // Add safety check to ensure profileData is an array
+  let staffUsers = Array.isArray(profileData) ? profileData.filter((user: any) => 
     user.role === 'crew_member' || 
     user.role === 'crew_chief' || 
     user.role === 'app_manager' || 
     user.role === 'owner' || 
     user.role === 'administrator'
-  ) || [];
+  ) : [];
 
   // Apply location filtering for crew managers
   if (isLocationRestricted) {
@@ -126,7 +127,8 @@ export default function Dashboard() {
   }, 0) || 0;
 
   // Calculate applicant stats from profile data (cherry-pick applicants only)
-  let applicantUsers = profileData?.filter((user: any) => user.role === 'applicant') || [];
+  // Add safety check to ensure profileData is an array
+  let applicantUsers = Array.isArray(profileData) ? profileData.filter((user: any) => user.role === 'applicant') : [];
   
   // Apply location filtering for crew managers
   if (isLocationRestricted) {
