@@ -235,7 +235,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register API endpoints FIRST before other routes to prevent conflicts
   
-  // Get individual user by ID
+  // ⚠️ LEGACY USER ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: GET /api/users/:id
+  // Migrated to: server/routes/users/management.ts - GET /api/users/management/:id
+  // Migration reason: Plan 048 - Consolidate inefficient user endpoints into modular structure
+  /*
   app.get("/api/users/:id", async (req, res) => {
     console.log("Individual user endpoint hit with ID:", req.params.id);
     try {
@@ -259,6 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch user" });
     }
   });
+  */
 
   // Legacy: Get individual applicant by ID  
   app.get("/api/applicants/:id", async (req, res) => {
@@ -282,7 +287,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update individual user
+  // ⚠️ LEGACY USER ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: PATCH /api/users/:id
+  // Migrated to: server/routes/users/management.ts - PATCH /api/users/management/:id
+  // Migration reason: Plan 048 - Consolidate inefficient user endpoints into modular structure
+  /*
   app.patch("/api/users/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -304,6 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update user" });
     }
   });
+  */
 
   // Legacy: Update individual applicant
   app.patch("/api/applicants/:id", async (req, res) => {
@@ -350,7 +360,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all users (unified data endpoint)
+  // ⚠️ LEGACY USER ENDPOINTS - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: GET /api/users (with client-side filtering - Plan 048 inefficiency)
+  // Migrated to: server/routes/users/management.ts - GET /api/users/management?role=X
+  // Migration reason: Plan 048 - Eliminate full table scans + client filtering
+  /*
   app.get("/api/users", async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
@@ -375,6 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch users by role" });
     }
   });
+  */
 
   // Legacy endpoint for backward compatibility
   app.get("/api/applicants", async (req, res) => {
@@ -536,6 +551,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Location-filtered API endpoints for database-based filtering
 
   // Crew member routes (user-location assignments)
+  // ⚠️ LEGACY USER-LOCATIONS ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: GET /api/user-locations
+  // Migrated to: server/routes/users/locations.ts - GET /api/users/locations
+  /*
   app.get('/api/user-locations', async (req, res) => {
     try {
       console.log('🔍 API: Fetching user-location assignments');
@@ -547,7 +566,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch user-location assignments" });
     }
   });
+  */
 
+  // ⚠️ LEGACY USER-LOCATIONS ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: POST /api/user-locations
+  // Migrated to: server/routes/users/locations.ts - POST /api/users/locations
+  /*
   app.post('/api/user-locations', async (req, res) => {
     try {
       console.log(`🔍 API DEBUG: POST /api/user-locations - Request body:`, req.body);
@@ -568,7 +592,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create user-location assignment" });
     }
   });
+  */
 
+  // ⚠️ LEGACY USER-LOCATIONS ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: DELETE /api/user-locations/:userId/:locationId
+  // Migrated to: server/routes/users/locations.ts - DELETE /api/users/locations/:userId/:locationId
+  /*
   app.delete('/api/user-locations/:userId/:locationId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -590,6 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to remove user-location assignment" });
     }
   });
+  */
 
   // Removed redundant crew endpoint - using existing /api/profile-data instead
 
@@ -610,6 +640,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ⚠️ LEGACY USER ENDPOINTS - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: GET /api/users/:userId and PATCH /api/users/:userId
+  // Migrated to: server/routes/users/profile.ts - /api/users/profile/:userId
+  // Migration reason: Plan 048 - Eliminate parameter conflicts and complex debug logging
+  /*
   // Get individual user profile
   app.get('/api/users/:userId', async (req, res) => {
     try {
@@ -675,7 +710,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update user profile" });
     }
   });
+  */
 
+  // ⚠️ LEGACY USER-LOCATIONS ENDPOINT - MIGRATED TO MODULAR ROUTES ⚠️
+  // Original: GET /api/user-locations/:userId
+  // Migrated to: server/routes/users/locations.ts - GET /api/users/locations/:userId
+  /*
   // Get user-location assignments for a specific user
   app.get('/api/user-locations/:userId', async (req, res) => {
     try {
@@ -695,6 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch user location assignments" });
     }
   });
+  */
 
   // Get competencies by location
   app.get("/api/competencies/location/:locationId", async (req, res) => {

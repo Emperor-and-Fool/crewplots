@@ -87,7 +87,7 @@ router.get('/test', authenticateUser, async (req, res) => {
       cacheStrategy: {
         category: 'user-profile',
         ttl: 300,
-        connectionId: `test-${req.user.id}`
+        connectionId: `test-${(req.user as any)?.id || 'unknown'}`
       }
     };
     
@@ -147,8 +147,8 @@ router.post('/validation30/test', authenticateUser, async (req, res) => {
         value: 42
       },
       {
-        userId: req.user.id,
-        userRole: req.user.role
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
         // No aggregatedData - direct validation
       }
     );
@@ -183,8 +183,8 @@ router.post('/orchestrator3/test', authenticateUser, async (req, res) => {
       },
       validationOperation: 'create',
       context: {
-        userId: req.user.id,
-        userRole: req.user.role
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
       }
     });
     
@@ -217,8 +217,8 @@ router.post('/validate', authenticateUser, async (req, res) => {
       entityType,
       data,
       {
-        userId: req.user.id,
-        userRole: req.user.role
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
         // No aggregatedData - direct validation pattern
       },
       entityId
@@ -253,8 +253,8 @@ router.post('/orchestrate', authenticateUser, async (req, res) => {
       data,
       validationOperation: validationOperation || 'create',
       context: {
-        userId: req.user.id,
-        userRole: req.user.role
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
       },
       entityId
     });
