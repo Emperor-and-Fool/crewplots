@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/modules/auth';
-import { AppLayout } from '@/components/AppLayout';
 
 export default function EndpointTestPage() {
   const { user, isAuthenticated } = useAuth();
@@ -100,23 +99,20 @@ export default function EndpointTestPage() {
 
   if (!isAuthenticated) {
     return (
-      <AppLayout>
-        <div className="p-6">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                You must be logged in to use the endpoint tester.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </AppLayout>
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              You must be logged in to use the endpoint tester.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Endpoint Tester</h1>
           <Badge variant="secondary">
@@ -234,7 +230,6 @@ export default function EndpointTestPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
