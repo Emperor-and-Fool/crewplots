@@ -308,58 +308,15 @@ router.get('/me', authenticateUser, async (req, res) => {
         }
         console.timeLog("me:total", "after session authentication check");
         
-        // Get user from storage using session data (same as middleware)
+        // Return lightweight session data only (proper separation of concerns)
         const sessionUser = req.session.passport.user;
-        const authenticatedUser = await storage.getUser(sessionUser.id);
-        if (!authenticatedUser) {
-            console.log('User not found for session userId:', sessionUser.id);
-            return res.status(200).json({ 
-                authenticated: false,
-                reason: 'user_not_found_in_database'
-            });
-        }
         
-        // Get user permissions from database
-        let userWithPermissions = { ...authenticatedUser };
-        
-        try {
-            // Import db and query utilities
-            const { db } = await import('../db');
-            const { users, roles, permissions, rolePermissions } = await import('@shared/schema');
-            const { eq, sql } = await import('drizzle-orm');
-            
-            // Query user with their permissions
-            const userPermissionsQuery = await db
-                .select({
-                    id: users.id,
-                    permissions: sql<string[]>`COALESCE(ARRAY_AGG(DISTINCT ${permissions.name}) FILTER (WHERE ${permissions.name} IS NOT NULL), ARRAY[]::text[])`
-                })
-                .from(users)
-                .leftJoin(roles, eq(users.role, roles.name))
-                .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-                .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-                .where(eq(users.id, authenticatedUser.id))
-                .groupBy(users.id);
-            
-            if (userPermissionsQuery.length > 0) {
-                userWithPermissions.permissions = userPermissionsQuery[0].permissions || [];
-                console.log(`User ${authenticatedUser.username} permissions:`, userWithPermissions.permissions);
-            } else {
-                userWithPermissions.permissions = [];
-            }
-        } catch (permError) {
-            console.error('Error fetching user permissions:', permError);
-            userWithPermissions.permissions = [];
-        }
-        
-        // Remove sensitive data before returning the user
-        const { password: userPasswordField, ...userWithoutPassword } = userWithPermissions;
-        
-        console.log('Get /me - returning authenticated user:', userWithoutPassword.username);
+        console.log(`Get /me - returning authenticated session user: ${sessionUser.username}`);
         console.timeEnd("me:total");
-        return res.status(200).json({ 
+        
+        return res.status(200).json({
             authenticated: true,
-            user: userWithoutPassword
+            user: sessionUser
         });
     } catch (error) {
         console.error('Error in /me endpoint:', error);
