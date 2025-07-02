@@ -101,22 +101,6 @@ export const queryClient = new QueryClient({
     mutations: {
       retry: 1,
       retryDelay: 500,
-      onError: (error) => {
-        // Global error handler for automatic logout on 401
-        if (error.message.includes('401:')) {
-          // Import auth context to trigger logout
-          import('@/contexts/auth-context').then(({ AuthContext }) => {
-            // Access auth context and trigger logout
-            const authContextValue = React.useContext(AuthContext);
-            if (authContextValue?.logout) {
-              authContextValue.logout();
-            }
-          }).catch(() => {
-            // Fallback: redirect to login page
-            window.location.href = '/login';
-          });
-        }
-      }
     },
   },
 });
