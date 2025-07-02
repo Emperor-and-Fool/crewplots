@@ -1,217 +1,275 @@
+import { v4 as uuidv4 } from 'uuid';
+import { storage } from '../../storage';
+import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from './DataAggregationEngine';
+import type { User } from '@shared/schema';
+
+// Import proven validation packages from existing ValidationEngine.ts
+import { scheduleBlockPackage } from '../../../client/src/modules/scheduler/validation/packages/scheduleBlockPackage';
+import { weekSchedulePackage } from '../../../client/src/modules/scheduler/validation/packages/weekSchedulePackage';
+import { shiftPackage } from '../../../client/src/modules/scheduler/validation/packages/shiftPackage';
+
 /**
- * ValidationEngine30.ts - Orchestrator for dual-use validation patterns
- * Plan 050: Completely separate, parallel service
+ * ValidationEngine30.ts - Enhanced Validation Engine
+ * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
+ * Parent: Plan 048 Generic Data Aggregation dual-use architecture
  * 
- * ARCHITECTURE GAPS ADDRESSED:
- * 1. Orchestrator layer for dual-use patterns ✅
- * 2. Coordination with DataOrchestrator3.ts
- * 3. Bypasses direct aggregation calls through orchestration
- * 4. Validates aggregated data through dual-use workflow
+ * BUILDS ON PROVEN TECHNOLOGY:
+ * - 5-Thread validation process from ValidationEngine.ts
+ * - Package registry system (scheduleBlock, weekSchedule, shift)
+ * - Data assembly with server-side field injection
+ * - Proven result structure with packageId, threads, metadata
+ * 
+ * ENHANCEMENTS:
+ * - Supports aggregated context from DataAggregationEngine
+ * - Enhanced permission validation with aggregated data
+ * - Dual-use patterns (with/without aggregation)
  */
 
+/**
+ * Enhanced Package Registry - builds on proven ValidationEngine.ts registry
+ */
+const enhancedPackageRegistry = {
+  scheduleBlock: scheduleBlockPackage,
+  weekSchedule: weekSchedulePackage,
+  shift: shiftPackage
+} as const;
+
 export interface ValidationRequest30 {
-  operation: 'validate' | 'orchestrate';
+  operation: string;
   entityType: string;
-  entityId?: number;
-  data?: any;
+  data: any;
   context: {
     userId: number;
     userRole: string;
+    permissions?: string[];
+    aggregatedData?: AggregatedUserData; // Optional: provided by orchestrator
   };
+  entityId?: number | null;
 }
 
 export interface ValidationResult30 {
-  success: boolean;
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-  data?: any;
-  metadata: {
-    operation: 'validate' | 'orchestrate';
-    duration: number;
-    timestamp: string;
-    useAggregation: boolean;
-    orchestrator: 'ValidationEngine30';
+  packageId: string;
+  operation: string;
+  entityType: string;
+  overall: {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    metadata: {
+      validationTime: number;
+      rulesApplied: string[];
+      packageId: string;
+      usedAggregation: boolean;
+      engine: 'ValidationEngine30';
+    };
+  };
+  threads: {
+    dataAssembly?: { success: boolean; errors: string[]; data: any };
+    schema?: { success: boolean; errors: string[]; data: any };
+    permission?: { success: boolean; errors: string[]; permissions: string[] };
+    businessRules?: { success: boolean; errors: string[]; warnings: string[] };
+    transaction?: { success: boolean; errors: string[]; data: any };
+    error?: { success: boolean; errors: string[]; data: any };
   };
 }
 
 /**
- * ValidationEngine30 - Pure orchestrator (no business logic)
- * Coordinates between DataOrchestrator3 and validation workflows
+ * ValidationEngine30 - Enhanced validation engine using proven 5-thread patterns
+ * Built on ValidationEngine.ts proven architecture with aggregation enhancements
  */
 export class ValidationEngine30 {
-  
+
   /**
-   * Main orchestration entry point
-   * Dual-use patterns:
-   * - 'validate': Direct validation (fast)
-   * - 'orchestrate': Aggregate-then-validate (comprehensive)
+   * Get validation package for entity type (proven pattern from ValidationEngine.ts)
    */
-  async execute(request: ValidationRequest30): Promise<ValidationResult30> {
+  private getPackage(entityType: string) {
+    const pkg = enhancedPackageRegistry[entityType as keyof typeof enhancedPackageRegistry];
+    if (!pkg) {
+      throw new Error(`No validation package found for entity type: ${entityType}`);
+    }
+    return pkg;
+  }
+
+  /**
+   * Main validation method - enhanced version using proven 5-thread validation
+   * PROVEN PATTERN: Based on ValidationEngine.validateAndExecute() with aggregation support
+   */
+  async validateAndExecute(
+    operation: string,
+    entityType: string,
+    data: any,
+    context: any,
+    entityId?: number | null
+  ): Promise<ValidationResult30> {
+    const packageId = uuidv4();
     const startTime = Date.now();
     
-    console.log(`🎯 VALIDATION ENGINE 30: Orchestrating ${request.operation} for ${request.entityType}`);
+    console.log(`🎯 VALIDATION ENGINE 30: Starting ${operation} for ${entityType}`, { packageId });
 
     try {
-      let result: ValidationResult30;
+      // Get validation package (PROVEN PATTERN from ValidationEngine.ts)
+      const pkg = this.getPackage(entityType);
+      
+      // THREAD 1: Enhanced Data Assembly (proven pattern + aggregation enhancement)
+      console.log('🎁 VALIDATION ENGINE 30: Starting enhanced data assembly');
+      console.log('🎁 Raw frontend data:', JSON.stringify(data, null, 2));
+      
+      const assembledData = { ...data };
+      if (operation === 'create') {
+        assembledData.createdBy = context.userId; // Proven server-side injection
+        console.log('🎁 Injected createdBy from authenticated user:', context.userId);
+      }
+      
+      // PROVEN DATE CONVERSION from ValidationEngine.ts
+      if (entityType === 'shift' && assembledData.subscriptionDeadline) {
+        if (typeof assembledData.subscriptionDeadline === 'string') {
+          assembledData.subscriptionDeadline = new Date(assembledData.subscriptionDeadline);
+          console.log('🎁 Converted subscriptionDeadline string to Date object');
+        }
+      }
+      
+      // ENHANCEMENT: Add aggregation metadata if available
+      if (context.aggregatedData) {
+        assembledData._aggregationContext = {
+          hasAggregatedData: true,
+          aggregationTimestamp: context.aggregatedData.metadata?.timestamp
+        };
+        console.log('🎁 ENHANCEMENT: Added aggregation context to assembled data');
+      }
+      
+      console.log('🎁 Final assembled data:', JSON.stringify(assembledData, null, 2));
 
-      if (request.operation === 'validate') {
-        // Direct validation path
-        result = await this.orchestrateDirectValidation(request, startTime);
-      } else if (request.operation === 'orchestrate') {
-        // Aggregate-then-validate path
-        result = await this.orchestrateAggregateValidation(request, startTime);
-      } else {
-        throw new Error(`Unsupported operation: ${request.operation}`);
+      // THREAD 2: Schema Validation (PROVEN PATTERN)
+      console.log('🔍 VALIDATION ENGINE 30: Starting schema validation');
+      const schemaResult = pkg.validateSchema(assembledData, operation as any);
+      console.log('🔍 Schema validation result:', schemaResult);
+      if (!schemaResult.isValid) {
+        return this.createFailureResult(packageId, operation, entityType, schemaResult.errors, false);
       }
 
-      console.log(`✅ VALIDATION ENGINE 30: Orchestration complete (${result.metadata.duration}ms)`);
-      return result;
-
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error(`❌ VALIDATION ENGINE 30: Orchestration failed:`, error);
+      // THREAD 3: Enhanced Permission Validation
+      console.log('🔐 VALIDATION ENGINE 30: Starting enhanced permission validation');
+      let userPermissions: string[];
       
+      if (context.aggregatedData?.aggregatedPermissions?.rolePermissions) {
+        // ENHANCEMENT: Use aggregated permissions
+        userPermissions = context.aggregatedData.aggregatedPermissions.rolePermissions || [];
+        console.log('🔐 ENHANCEMENT: Using aggregated permissions:', userPermissions);
+      } else {
+        // PROVEN FALLBACK: Use context permissions
+        userPermissions = context.permissions || [];
+        console.log('🔐 PROVEN: Using context permissions:', userPermissions);
+      }
+      
+      const requiredPermissions = pkg.getRequiredPermissions(operation as any);
+      const hasPermissions = requiredPermissions.every(perm => userPermissions.includes(perm));
+      
+      if (!hasPermissions) {
+        const missingPermissions = requiredPermissions.filter(perm => !userPermissions.includes(perm));
+        return this.createFailureResult(packageId, operation, entityType, [`Missing permissions: ${missingPermissions.join(', ')}`], !!context.aggregatedData);
+      }
+
+      // THREAD 4: Enhanced Business Rule Validation
+      console.log('📋 VALIDATION ENGINE 30: Starting enhanced business rule validation');
+      const businessRuleResult = await pkg.validateBusinessRules(assembledData, context);
+      if (!businessRuleResult.isValid) {
+        return this.createFailureResult(packageId, operation, entityType, businessRuleResult.errors, !!context.aggregatedData);
+      }
+
+      // THREAD 5: Database Transaction (PROVEN PATTERN)
+      console.log('💾 VALIDATION ENGINE 30: Starting database transaction');
+      let transactionResult;
+      try {
+        if (entityType === 'scheduleBlock' && operation === 'create') {
+          transactionResult = await storage.createScheduleBlock(assembledData);
+          console.log('💾 Schedule block created with ID:', transactionResult.id);
+        } else if (entityType === 'scheduleBlock' && operation === 'update') {
+          transactionResult = await storage.updateScheduleBlock(assembledData.id, assembledData);
+          console.log('💾 Schedule block updated ID:', assembledData.id);
+        } else if (entityType === 'weekSchedule' && operation === 'create') {
+          transactionResult = await storage.createWeekSchedule(assembledData);
+          console.log('💾 Week schedule created with ID:', transactionResult.id);
+        } else if (entityType === 'weekSchedule' && operation === 'update') {
+          transactionResult = await storage.updateWeekSchedule(assembledData.id, assembledData);
+          console.log('💾 Week schedule updated ID:', assembledData.id);
+        } else if (entityType === 'shift' && operation === 'create') {
+          transactionResult = await storage.createShift(assembledData);
+          console.log('💾 Shift created with ID:', transactionResult.id);
+        } else if (entityType === 'shift' && operation === 'update') {
+          transactionResult = await storage.updateShift(assembledData.id, assembledData);
+          console.log('💾 Shift updated ID:', assembledData.id);
+        } else {
+          throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);
+        }
+      } catch (error) {
+        console.error('🚨 VALIDATION ENGINE 30: Transaction failed:', error);
+        return this.createFailureResult(packageId, operation, entityType, [`Database transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`], !!context.aggregatedData);
+      }
+      
+      const validationTime = Date.now() - startTime;
+      
+      // PROVEN SUCCESS RESULT STRUCTURE
       return {
-        success: false,
-        isValid: false,
-        errors: [error instanceof Error ? error.message : 'Orchestration error'],
-        warnings: [],
-        metadata: {
-          operation: request.operation,
-          duration,
-          timestamp: new Date().toISOString(),
-          useAggregation: request.operation === 'orchestrate',
-          orchestrator: 'ValidationEngine30'
+        packageId,
+        operation,
+        entityType,
+        overall: {
+          isValid: true,
+          errors: [],
+          warnings: businessRuleResult.warnings || [],
+          metadata: {
+            validationTime,
+            rulesApplied: [
+              'Enhanced data assembly',
+              'Schema validation',
+              'Enhanced permission validation', 
+              'Enhanced business rule validation',
+              'Database transaction'
+            ],
+            packageId,
+            usedAggregation: !!context.aggregatedData,
+            engine: 'ValidationEngine30'
+          }
+        },
+        threads: {
+          dataAssembly: { success: true, errors: [], data: assembledData },
+          schema: { success: true, errors: [], data: assembledData },
+          permission: { success: true, errors: [], permissions: requiredPermissions },
+          businessRules: { success: true, errors: [], warnings: businessRuleResult.warnings || [] },
+          transaction: { success: true, errors: [], data: transactionResult }
         }
       };
+
+    } catch (error) {
+      console.error('🎯 VALIDATION ENGINE 30: Critical error:', error);
+      return this.createFailureResult(packageId, operation, entityType, [`Critical validation error: ${error instanceof Error ? error.message : 'Unknown error'}`], !!context.aggregatedData);
     }
   }
 
   /**
-   * Orchestrate direct validation (no aggregation)
-   * Fast path for simple validation needs
+   * Create failure result for validation errors (PROVEN PATTERN from ValidationEngine.ts)
    */
-  private async orchestrateDirectValidation(
-    request: ValidationRequest30, 
-    startTime: number
-  ): Promise<ValidationResult30> {
-    console.log(`⚡ DIRECT VALIDATION: Processing ${request.entityType} for user ${request.context.userId}`);
-
-    // Direct validation logic (minimal, fast)
-    const validationErrors: string[] = [];
-    const validationWarnings: string[] = [];
-
-    // Basic validation without DataOrchestrator3
-    if (!this.hasBasicAccess(request.context.userRole, request.entityType)) {
-      validationErrors.push(`Access denied for ${request.entityType}`);
-    }
-
-    if (request.data && !this.isValidBasicData(request.data, request.entityType)) {
-      validationErrors.push(`Invalid data for ${request.entityType}`);
-    }
-
-    const duration = Date.now() - startTime;
-    const isValid = validationErrors.length === 0;
-
+  private createFailureResult(packageId: string, operation: string, entityType: string, errors: string[], usedAggregation: boolean): ValidationResult30 {
     return {
-      success: true,
-      isValid,
-      errors: validationErrors,
-      warnings: validationWarnings,
-      data: request.data,
-      metadata: {
-        operation: 'validate',
-        duration,
-        timestamp: new Date().toISOString(),
-        useAggregation: false,
-        orchestrator: 'ValidationEngine30'
+      packageId,
+      operation,
+      entityType,
+      overall: {
+        isValid: false,
+        errors,
+        warnings: [],
+        metadata: {
+          validationTime: 0,
+          rulesApplied: [],
+          packageId,
+          usedAggregation,
+          engine: 'ValidationEngine30'
+        }
+      },
+      threads: {
+        error: { success: false, errors, data: null }
       }
     };
-  }
-
-  /**
-   * Orchestrate aggregate-then-validate (comprehensive)
-   * Routes through DataOrchestrator3 for full context validation
-   */
-  private async orchestrateAggregateValidation(
-    request: ValidationRequest30, 
-    startTime: number
-  ): Promise<ValidationResult30> {
-    console.log(`📊 AGGREGATE VALIDATION: Processing ${request.entityType} for user ${request.context.userId}`);
-
-    // NOTE: This will coordinate with DataOrchestrator3 once created
-    // For now, placeholder orchestration logic
-    const validationErrors: string[] = [];
-    const validationWarnings: string[] = [];
-
-    // Placeholder: Will use DataOrchestrator3.coordinate() 
-    // to aggregate data and then validate the aggregated result
-    validationWarnings.push('DataOrchestrator3 integration pending');
-
-    // Enhanced validation with aggregated context (placeholder)
-    if (!this.hasEnhancedAccess(request.context.userRole, request.entityType)) {
-      validationErrors.push(`Insufficient permissions for ${request.entityType}`);
-    }
-
-    const duration = Date.now() - startTime;
-    const isValid = validationErrors.length === 0;
-
-    return {
-      success: true,
-      isValid,
-      errors: validationErrors,
-      warnings: validationWarnings,
-      data: request.data,
-      metadata: {
-        operation: 'orchestrate',
-        duration,
-        timestamp: new Date().toISOString(),
-        useAggregation: true,
-        orchestrator: 'ValidationEngine30'
-      }
-    };
-  }
-
-  /**
-   * Basic access check for direct validation
-   */
-  private hasBasicAccess(userRole: string, entityType: string): boolean {
-    const basicAccess: Record<string, string[]> = {
-      'administrator': ['user', 'schedule', 'shift', 'location'],
-      'owner': ['user', 'schedule', 'shift', 'location'],
-      'app_manager': ['schedule', 'shift'],
-      'crew_chief': ['shift'],
-      'crew_member': ['shift'],
-      'applicant': []
-    };
-
-    return basicAccess[userRole]?.includes(entityType) || false;
-  }
-
-  /**
-   * Enhanced access check for aggregated validation
-   */
-  private hasEnhancedAccess(userRole: string, entityType: string): boolean {
-    // More sophisticated permission checking with aggregated context
-    // Will be enhanced once DataOrchestrator3 provides aggregated permissions
-    return this.hasBasicAccess(userRole, entityType);
-  }
-
-  /**
-   * Basic data validation
-   */
-  private isValidBasicData(data: any, entityType: string): boolean {
-    switch (entityType) {
-      case 'user':
-        return !!(data.username && data.email);
-      case 'schedule':
-        return !!(data.name);
-      case 'shift':
-        return !!(data.startTime && data.endTime);
-      default:
-        return true;
-    }
   }
 }
 
