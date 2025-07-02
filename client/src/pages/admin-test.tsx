@@ -29,7 +29,8 @@ export default function AdminTestPage() {
     setIsLoading(true);
     try {
       const testData = {
-        packageType: 'scheduleBlock',
+        operation: 'create',
+        entityType: 'scheduleBlock',
         data: {
           name: `Test Schedule Block ${Date.now()}`,
           description: 'ValidationEngine test from admin-test page',
@@ -96,7 +97,8 @@ export default function AdminTestPage() {
               <strong>Test Data:</strong>
               <pre className="mt-2 p-2 bg-muted rounded text-xs">
 {`{
-  packageType: 'scheduleBlock',
+  operation: 'create',
+  entityType: 'scheduleBlock',
   data: {
     name: 'Test Schedule Block [timestamp]',
     description: 'ValidationEngine test',
