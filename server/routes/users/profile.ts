@@ -12,16 +12,34 @@ profileRoutes.get("/", async (req, res) => {
   try {
     const userId = (req.user as any)?.id || 0;
     
-    // For applicants, use the ProfileFetcher service with Redis caching
+    // For applicants, use DataAggregationEngine 3.0 for comprehensive profile data
     if ((req.user as any)?.role === 'applicant') {
-      const { profileFetcherService } = await import('../../services/profile-fetcher-service');
-      const profileData = await profileFetcherService.getProfileData(userId);
+      const { dataAggregationEngine } = await import('../../services/data-aggregation/DataAggregationEngine');
       
-      if (!profileData) {
+      const aggregationTask = {
+        operation: 'profile-data',
+        entityType: 'user',
+        entityId: userId,
+        aggregationTargets: {
+          includeUserData: true,
+          includeNotes: true,
+          includePermissions: true,
+          includeDisplayName: true
+        },
+        cacheStrategy: {
+          category: 'user-profile',
+          ttl: 300, // 5 minutes cache
+          connectionId: `profile-${userId}`
+        }
+      };
+      
+      const result = await dataAggregationEngine.aggregate(aggregationTask);
+      
+      if (!result.success || !result.aggregatedData) {
         return res.status(404).json({ error: "Profile not found" });
       }
       
-      return res.json(profileData);
+      return res.json(result.aggregatedData);
     }
     
     // For managers, crew members, and administrators, get basic user data and cache it using the same pattern
