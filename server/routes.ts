@@ -91,6 +91,7 @@ import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
 import emailRoutes from './routes/email';
 import schedulerRoutes from './routes/scheduler';
+import userRoutes from './routes/users';
 import validationRoutes from './routes/validation';
 import validationV3Routes from './routes/validation-v3';
 import securityRoutes from './routes/security';
@@ -886,6 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api', dashboardRoutes);
   app.use('/api/scheduler', schedulerRoutes);
+  app.use('/api/users', userRoutes);
   app.use('/api/validation/v3', validationV3Routes);
   app.use('/api/email', emailRoutes);
   app.use('/api/security', securityRoutes);
