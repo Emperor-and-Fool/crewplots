@@ -15,31 +15,16 @@ profileRoutes.get("/", async (req, res) => {
     // For applicants, use DataAggregationEngine 3.0 for comprehensive profile data
     if ((req.user as any)?.role === 'applicant') {
       const { dataAggregationEngine } = await import('../../services/validation/DataAggregationEngine');
+      const { createUserProfileAggregationTask } = await import('./aggregation/user-profile-task');
       
-      const aggregationTask = {
-        operation: 'profile-data',
-        entityType: 'user',
-        entityId: userId,
-        aggregationTargets: {
-          includeUserData: true,
-          includeNotes: true,
-          includePermissions: true,
-          includeDisplayName: true
-        },
-        cacheStrategy: {
-          category: 'user-profile',
-          ttl: 300, // 5 minutes cache
-          connectionId: `profile-${userId}`
-        }
-      };
-      
+      const aggregationTask = createUserProfileAggregationTask(userId);
       const result = await dataAggregationEngine.aggregate(aggregationTask);
       
-      if (!result.success || !result.aggregatedData) {
+      if (!result) {
         return res.status(404).json({ error: "Profile not found" });
       }
       
-      return res.json(result.aggregatedData);
+      return res.json(result);
     }
     
     // For managers, crew members, and administrators, get basic user data and cache it using the same pattern
