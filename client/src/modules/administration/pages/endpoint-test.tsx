@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/modules/auth';
+
+type AuthSyncStatus = 'synced' | 'mismatched' | 'unclear';
 
 export default function EndpointTestPage() {
   const { user, isAuthenticated } = useAuth();
@@ -14,10 +16,81 @@ export default function EndpointTestPage() {
   const [response, setResponse] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [authSyncStatus, setAuthSyncStatus] = useState<AuthSyncStatus>('unclear');
+  const [backendAuthStatus, setBackendAuthStatus] = useState<any>(null);
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, `${timestamp}: ${message}`]);
+  };
+
+  // Check authentication sync status
+  useEffect(() => {
+    const checkAuthSync = async () => {
+      if (!isAuthenticated || !user) {
+        setAuthSyncStatus('unclear');
+        setBackendAuthStatus(null);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const backendUser = await response.json();
+          setBackendAuthStatus(backendUser);
+          
+          // Compare frontend and backend user data
+          if (backendUser.id === user.id && 
+              backendUser.username === user.username && 
+              backendUser.role === user.role) {
+            setAuthSyncStatus('synced');
+          } else {
+            setAuthSyncStatus('mismatched');
+          }
+        } else {
+          // Backend says not authenticated but frontend thinks we are
+          setBackendAuthStatus({ error: response.status, message: 'Backend authentication failed' });
+          setAuthSyncStatus('mismatched');
+        }
+      } catch (error) {
+        // Network or other error - unclear state
+        setBackendAuthStatus({ error: 'network', message: error instanceof Error ? error.message : 'Unknown error' });
+        setAuthSyncStatus('unclear');
+      }
+    };
+
+    checkAuthSync();
+    // Re-check every 10 seconds to monitor sync status
+    const interval = setInterval(checkAuthSync, 10000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user]);
+
+  const getAuthSyncBadgeVariant = (): "default" | "destructive" | "secondary" => {
+    switch (authSyncStatus) {
+      case 'synced': return 'default'; // Will be styled green
+      case 'mismatched': return 'destructive'; // Will be styled red
+      case 'unclear': return 'secondary'; // Will be styled orange
+      default: return 'secondary';
+    }
+  };
+
+  const getAuthSyncText = (): string => {
+    if (!isAuthenticated || !user) return 'Not authenticated';
+    
+    switch (authSyncStatus) {
+      case 'synced': 
+        return `✓ Authenticated as ${user.username} (${user.role})`;
+      case 'mismatched': 
+        return `⚠ Auth mismatch: ${user.username} (${user.role})`;
+      case 'unclear': 
+        return `? Auth unclear: ${user.username} (${user.role})`;
+      default: 
+        return `Authenticated as ${user.username} (${user.role})`;
+    }
   };
 
   const testEndpoint = async () => {
@@ -115,10 +188,35 @@ export default function EndpointTestPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Endpoint Tester</h1>
-          <Badge variant="secondary">
-            Authenticated as {user?.username} ({user?.role})
+          <Badge 
+            variant={getAuthSyncBadgeVariant()}
+            className={
+              authSyncStatus === 'synced' 
+                ? 'bg-green-500 hover:bg-green-600 text-white border-green-500' 
+                : authSyncStatus === 'unclear' 
+                ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+                : undefined
+            }
+          >
+            {getAuthSyncText()}
           </Badge>
         </div>
+
+        {/* Authentication Sync Debug Info */}
+        {authSyncStatus !== 'synced' && backendAuthStatus && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Authentication Sync Debug</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div><strong>Frontend:</strong> {user ? `${user.username} (${user.role})` : 'Not authenticated'}</div>
+                <div><strong>Backend:</strong> {backendAuthStatus.error ? `Error ${backendAuthStatus.error}: ${backendAuthStatus.message}` : `${backendAuthStatus.username} (${backendAuthStatus.role})`}</div>
+                <div><strong>Status:</strong> <span className={authSyncStatus === 'mismatched' ? 'text-red-600' : 'text-orange-600'}>{authSyncStatus}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
