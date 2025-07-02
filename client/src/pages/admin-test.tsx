@@ -42,22 +42,24 @@ export default function AdminTestPage() {
       console.log('🚀 Testing ValidationEngine with:', testData);
       
       const response = await apiRequest('POST', '/api/validation/execute', testData);
-      console.log('✅ ValidationEngine Response:', response);
+      const jsonResponse = await response.json();
+      console.log('✅ ValidationEngine Response:', jsonResponse);
       
       // Parse ValidationEngine response structure
       const parsedResponse = {
-        isValid: response.overall?.isValid || false,
-        errors: response.overall?.errors || [],
-        warnings: response.overall?.warnings || [],
+        isValid: jsonResponse.overall?.isValid || false,
+        errors: jsonResponse.overall?.errors || [],
+        warnings: jsonResponse.overall?.warnings || [],
         user: {
-          id: response.context?.userId,
-          username: response.context?.username,
-          role: response.context?.role,
-          permissions: response.context?.permissions || []
+          id: jsonResponse.context?.userId,
+          username: jsonResponse.context?.username,
+          role: jsonResponse.context?.role,
+          permissions: jsonResponse.context?.permissions || [],
+          workflowPermissions: jsonResponse.context?.workflowPermissions || {}
         },
-        permissions: response.threads?.permission?.permissions || [],
-        metadata: response.overall?.metadata || {},
-        rawResponse: response
+        permissions: jsonResponse.threads?.permission?.permissions || [],
+        metadata: jsonResponse.overall?.metadata || {},
+        rawResponse: jsonResponse
       };
       
       setLastResponse(parsedResponse);
