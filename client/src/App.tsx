@@ -30,7 +30,7 @@ import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 import LandingPage from "@/pages/landing";
-import { ValidationTestPage, AdminTestPage, EndpointTestPage } from "@/modules/administration";
+import { ValidationTestPage, AdminTestPage, EndpointTestPage, ValidationEngine3Test } from "@/modules/administration";
 
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
@@ -307,6 +307,8 @@ function App() {
                   </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
+              
+
               
               <Route path="/view-calendar">
                 {isAuthenticated ? 

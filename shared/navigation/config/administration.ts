@@ -47,6 +47,13 @@ export const administrationSection: NavigationSection = {
           path: '/endpoint-test',
           icon: Globe,
           permission: { role: 'administrator' }
+        },
+        {
+          id: 'validation-engine-3-test',
+          label: 'ValidationEngine 3.0 Test',
+          path: '/validation-engine-3-test',
+          icon: TestTube,
+          permission: { role: 'administrator' }
         }
       ]
     }
