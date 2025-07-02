@@ -40,7 +40,7 @@ export function useApplicantManagement(filters: ApplicantListFilters = {}) {
           ttl: 300,
           connectionId: 'applicant-list'
         },
-        filters: {
+        collectionFilters: {
           role: 'applicant',
           status: filters.status,
           location: filters.location,

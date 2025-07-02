@@ -10,7 +10,7 @@ import type { User } from '@shared/schema';
  */
 export interface DataAggregationTask {
   entityType: 'user' | 'schedule' | 'location' | 'custom';
-  entityId: number | string;
+  entityId: number | string | 'collection'; // NEW: Support collection queries
   requiredData: {
     postgresql?: string[];     // ['user', 'locations', 'permissions']
     mongodb?: string[];        // ['notes', 'documents'] 
@@ -25,6 +25,14 @@ export interface DataAggregationTask {
     category: string;
     ttl: number;
     connectionId?: string;
+  };
+  // NEW: Collection filtering support
+  collectionFilters?: {
+    role?: string;
+    status?: string;
+    location?: number;
+    searchTerm?: string;
+    hasNotes?: boolean;
   };
 }
 
@@ -80,7 +88,9 @@ export interface AggregatedUserData {
 export class DataAggregationEngine {
   private cacheKeyPrefix = 'data-aggregation';
   
-  constructor(private hybridCache: HybridCacheService = hybridCacheService) {
+  constructor(
+    private hybridCache: HybridCacheService = hybridCacheService
+  ) {
     console.log('[DataAggregationEngine] Initialized with HybridCacheService integration');
   }
 
@@ -88,6 +98,11 @@ export class DataAggregationEngine {
    * Main aggregation method - following ProfileFetcher cache-first pattern
    */
   async aggregate<T = any>(task: DataAggregationTask): Promise<T | null> {
+    // NEW: Detect collection vs individual entity queries
+    if (task.entityId === 'collection') {
+      return await this.aggregateCollection<T>(task);
+    }
+    
     const cacheKey = `${this.cacheKeyPrefix}:${task.entityType}:${task.entityId}:${this.generateTaskHash(task)}`;
     
     try {
@@ -324,6 +339,123 @@ export class DataAggregationEngine {
     }
     
     return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * NEW: Collection aggregation method for role-based filtering
+   * Based on Plan 051 Phase 2 requirements
+   */
+  private async aggregateCollection<T>(task: DataAggregationTask): Promise<T | null> {
+    // Generate collection-specific cache key with filter hash
+    const filterHash = this.generateFilterHash(task.collectionFilters || {});
+    const cacheKey = `${this.cacheKeyPrefix}:collection:${task.entityType}:${filterHash}`;
+    
+    console.log(`[DataAggregationEngine] Processing collection query for ${task.entityType} with filters:`, task.collectionFilters);
+    
+    try {
+      const cacheOptions: CacheOptions = {
+        category: task.cacheStrategy.category,
+        connectionId: task.cacheStrategy.connectionId || `collection-${task.entityType}`,
+        ttl: task.cacheStrategy.ttl || 300 // Default 5 minutes for collections
+      };
+
+      // Try cache first
+      const cachedResult = await this.hybridCache.get<T>(cacheKey, cacheOptions);
+      if (cachedResult) {
+        console.log(`⚡ COLLECTION CACHE HIT: ${task.entityType} collection loaded from cache`);
+        return cachedResult;
+      }
+
+      // Execute fresh collection aggregation
+      const collectionData = await this.executeFreshCollectionAggregation<T>(task);
+      
+      if (collectionData) {
+        // Cache the collection result
+        await this.cacheAggregatedData(cacheKey, collectionData, cacheOptions);
+      }
+      
+      return collectionData;
+    } catch (error) {
+      console.error(`[DataAggregationEngine] Error aggregating collection for ${task.entityType}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute fresh collection aggregation with role-based filtering
+   */
+  private async executeFreshCollectionAggregation<T>(task: DataAggregationTask): Promise<T | null> {
+    if (task.entityType !== 'user') {
+      console.log(`[DataAggregationEngine] Collection aggregation only supports 'user' entityType currently`);
+      return null;
+    }
+
+    // Get all users and apply role filtering (using existing storage pattern)
+    const allUsers = await storage.getUsers();
+    let filteredUsers = allUsers;
+
+    // Apply collection filters
+    if (task.collectionFilters) {
+      const filters = task.collectionFilters;
+      
+      if (filters.role) {
+        filteredUsers = filteredUsers.filter((user: User) => user.role === filters.role);
+      }
+      
+      if (filters.location) {
+        // Filter by location assignment (requires user_locations join)
+        const userLocations = await storage.getUserLocations(0); // Get all user locations
+        const locationUserIds = userLocations
+          .filter((ul: any) => ul.locationId === filters.location)
+          .map((ul: any) => ul.userId);
+        filteredUsers = filteredUsers.filter((user: User) => locationUserIds.includes(user.id));
+      }
+      
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
+        filteredUsers = filteredUsers.filter((user: User) => 
+          user.name?.toLowerCase().includes(searchLower) ||
+          user.username?.toLowerCase().includes(searchLower) ||
+          user.email?.toLowerCase().includes(searchLower)
+        );
+      }
+    }
+
+    console.log(`[DataAggregationEngine] Filtered ${allUsers.length} users to ${filteredUsers.length} for collection query`);
+
+    // Enhance each user with aggregated data (following ProfileFetcher pattern)
+    const enhancedUsers = await Promise.all(
+      filteredUsers.map(async (user: User) => {
+        try {
+          // Create individual aggregation task for each user
+          const userTask: DataAggregationTask = {
+            ...task,
+            entityId: user.id,
+            cacheStrategy: {
+              ...task.cacheStrategy,
+              connectionId: `collection-user-${user.id}`
+            }
+          };
+          
+          // Get enhanced user data
+          const enhancedUser = await this.executeFreshAggregation(userTask);
+          return enhancedUser || user; // Fallback to basic user if enhancement fails
+        } catch (error) {
+          console.warn(`[DataAggregationEngine] Failed to enhance user ${user.id}:`, error);
+          return user; // Return basic user data on enhancement failure
+        }
+      })
+    );
+
+    return enhancedUsers as T;
+  }
+
+  /**
+   * Generate hash for collection filters to use in cache keys
+   */
+  private generateFilterHash(filters: any): string {
+    const filterString = JSON.stringify(filters, Object.keys(filters).sort());
+    return Buffer.from(filterString).toString('base64').substring(0, 8);
   }
 
   /**
