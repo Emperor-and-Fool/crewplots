@@ -70,18 +70,18 @@ export default function AdminTestPage() {
       
       // Parse ValidationEngine response structure
       const parsedResponse = {
-        isValid: jsonResponse.overall?.isValid || false,
-        errors: jsonResponse.overall?.errors || [],
-        warnings: jsonResponse.overall?.warnings || [],
+        isValid: jsonResponse.success || false,
+        errors: jsonResponse.errors || [],
+        warnings: jsonResponse.warnings || [],
         user: {
-          id: jsonResponse.context?.userId,
-          username: jsonResponse.context?.username,
-          role: jsonResponse.context?.role,
-          permissions: jsonResponse.context?.permissions || [],
-          workflowPermissions: jsonResponse.context?.workflowPermissions || {}
+          id: jsonResponse.data?.id || jsonResponse.validation?.userId,
+          username: jsonResponse.data?.username || 'admin',
+          role: jsonResponse.data?.role || 'administrator',
+          permissions: jsonResponse.validation?.permissions || [],
+          workflowPermissions: jsonResponse.validation?.workflowPermissions || {}
         },
-        permissions: jsonResponse.threads?.permission?.permissions || [],
-        metadata: jsonResponse.overall?.metadata || {},
+        permissions: jsonResponse.validation?.permissions || [],
+        metadata: jsonResponse.validation || {},
         rawResponse: jsonResponse
       };
       
