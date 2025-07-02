@@ -198,6 +198,7 @@ interface DataAggregationTask {
 🔄 **PLAN CHECK REMINDER:** Before starting Phase 1, verify:
 - Document 049 architectural decisions understood and referenced
 - HybridCacheService integration patterns from 049 Section 1.4 reviewed
+- **TESTING NOTE:** Multi-location environments don't support curl testing - user handles all endpoint testing
 - ProfileFetcher evidence patterns (049 lines 36-60, 141-150) studied
 - Parallel development strategy confirmed (legacy systems untouched)
 

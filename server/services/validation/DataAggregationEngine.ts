@@ -1,6 +1,6 @@
 import { storage } from '../../storage';
 import { messageStorageService } from '../message-storage-service';
-import { hybridCacheService } from '../hybrid-cache-service-v2';
+import { hybridCacheService, HybridCacheService } from '../hybrid-cache-service-v2';
 import type { CacheOptions } from '../hybrid-cache-service-v2';
 import type { User } from '@shared/schema';
 
@@ -80,7 +80,7 @@ export interface AggregatedUserData {
 export class DataAggregationEngine {
   private cacheKeyPrefix = 'data-aggregation';
   
-  constructor(private hybridCacheService = hybridCacheService) {
+  constructor(private hybridCache: HybridCacheService = hybridCacheService) {
     console.log('[DataAggregationEngine] Initialized with HybridCacheService integration');
   }
 
@@ -100,7 +100,7 @@ export class DataAggregationEngine {
         ttl: task.cacheStrategy.ttl
       };
 
-      const cachedResult = await this.hybridCacheService.get<T>(cacheKey, cacheOptions);
+      const cachedResult = await this.hybridCache.get<T>(cacheKey, cacheOptions);
       
       if (cachedResult) {
         console.log(`⚡ CACHE HIT: Aggregated data loaded from cache for ${task.entityType}:${task.entityId}`);
@@ -210,7 +210,7 @@ export class DataAggregationEngine {
         console.log(`[DataAggregationEngine] Fetching notes from MongoDB for user: ${entityId}`);
         const notes = await messageStorageService.getNoteRefsByUser(entityId);
         
-        mongoData.notes = notes.length > 0 ? {
+        mongoData.aggregatedNotes = notes.length > 0 ? {
           exists: true,
           documentId: notes[0].noteId,
           wordCount: notes[0].wordCount || 0,
@@ -226,7 +226,7 @@ export class DataAggregationEngine {
           workflow: null
         };
         
-        console.log(`[DataAggregationEngine] Notes metadata compiled:`, mongoData.notes);
+        console.log(`[DataAggregationEngine] Notes metadata compiled:`, mongoData.aggregatedNotes);
       } catch (error) {
         console.error(`[DataAggregationEngine] Error fetching notes:`, error);
         mongoData.notes = {
@@ -294,7 +294,7 @@ export class DataAggregationEngine {
    */
   private async cacheAggregatedData(cacheKey: string, data: any, options: CacheOptions): Promise<void> {
     try {
-      const success = await this.hybridCacheService.set(cacheKey, data, options);
+      const success = await this.hybridCache.set(cacheKey, data, options);
       if (success) {
         console.log(`[DataAggregationEngine] Cached aggregated data: ${cacheKey} (TTL: ${options.ttl}s)`);
       } else {
