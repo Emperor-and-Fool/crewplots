@@ -13,10 +13,10 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ userId, className }: ProfileCardProps) {
-  const { data: profileData, isLoading, error } = useQuery({
-    queryKey: ['/api/profile-data'],
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['/api/users/profile', userId],
     queryFn: async () => {
-      const response = await fetch('/api/profile-data', {
+      const response = await fetch('/api/users/profile', {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -24,9 +24,8 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
       }
       return response.json();
     },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
-
-  const profile = profileData?.find((user: User) => user.id === userId);
 
   if (isLoading) {
     return <PortalProfileSkeleton />;

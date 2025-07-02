@@ -10,10 +10,10 @@ profileRoutes.get("/", async (req, res) => {
   }
 
   try {
-    const userId = req.user.id;
+    const userId = (req.user as any)?.id || 0;
     
     // For applicants, use the ProfileFetcher service with Redis caching
-    if (req.user.role === 'applicant') {
+    if ((req.user as any)?.role === 'applicant') {
       const { profileFetcherService } = await import('../../services/profile-fetcher-service');
       const profileData = await profileFetcherService.getProfileData(userId);
       
