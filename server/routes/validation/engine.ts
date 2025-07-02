@@ -187,6 +187,7 @@ router.post('/execute', authenticateUser, async (req, res) => {
       userId: (req.user as any).id,
       userRole: (req.user as any).role,
       permissions: userPermissions,
+      workflowPermissions: (req.user as any).workflowPermissions || {},
       locationAccess: (req.user as any).role === 'administrator' ? 'all' : [],
       sessionId: req.sessionID
     };
@@ -224,8 +225,8 @@ router.post('/execute', authenticateUser, async (req, res) => {
           // Include user context with actual permissions from validation
           userContext: {
             id: context.userId,
-            username: context.username || req.user.username,
-            role: context.role,
+            username: (req.user as any).username || 'admin',
+            role: context.userRole,
             permissions: context.permissions || [],
             workflowPermissions: context.workflowPermissions || {}
           }
