@@ -23,14 +23,24 @@ function ApplicantPortal() {
   const { toast } = useToast();
 
   const handleLogout = async () => {
+    console.log('🔴 LOGOUT DEBUG: ApplicantPortal logout button clicked');
+    console.log('🔴 LOGOUT DEBUG: Current user state:', user);
+    
     try {
+      console.log('🔴 LOGOUT DEBUG: Calling auth context logout()...');
       await logout();
+      console.log('🔴 LOGOUT DEBUG: Auth context logout() completed successfully');
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      
+      console.log('🔴 LOGOUT DEBUG: Navigating to home page...');
       navigate('/');
+      console.log('🔴 LOGOUT DEBUG: Navigation completed');
     } catch (error) {
+      console.error('🔴 LOGOUT DEBUG: Logout failed with error:', error);
       toast({
         title: "Logout failed",
         description: "There was an error logging out. Please try again.",

@@ -337,22 +337,46 @@ router.get('/me', authenticateUser, async (req, res) => {
 
 // Centralized auth logout handler - support both POST and GET
 const logoutHandler = (req: Request, res: Response) => {
-    console.log('Centralized auth logout - sessionID:', req.sessionID);
-    console.log('Session passport data exists:', !!(req.session?.passport?.user));
+    console.log('🔴 LOGOUT DEBUG: Backend logout handler started');
+    console.log('🔴 LOGOUT DEBUG: Request method:', req.method);
+    console.log('🔴 LOGOUT DEBUG: Session ID:', req.sessionID);
+    console.log('🔴 LOGOUT DEBUG: Session passport data exists:', !!(req.session?.passport?.user));
+    console.log('🔴 LOGOUT DEBUG: Current session data:', {
+        passport: req.session?.passport,
+        cookie: req.session?.cookie,
+        id: req.sessionID
+    });
+    console.log('🔴 LOGOUT DEBUG: Request headers:', {
+        'user-agent': req.headers['user-agent'],
+        'cookie': req.headers.cookie,
+        'content-type': req.headers['content-type']
+    });
     
     try {
+        console.log('🔴 LOGOUT DEBUG: Starting session cleanup...');
+        
         // Clear authentication data from session using centralized auth pattern
         if (req.session?.passport) {
+            console.log('🔴 LOGOUT DEBUG: Clearing passport session data...');
             delete req.session.passport;
-            console.log('Cleared passport session data');
+            console.log('🔴 LOGOUT DEBUG: Passport session data cleared');
+        } else {
+            console.log('🔴 LOGOUT DEBUG: No passport session data to clear');
         }
         
+        console.log('🔴 LOGOUT DEBUG: Destroying session...');
         // Destroy the session completely
         req.session.destroy((err) => {
             if (err) {
-                console.error('Error destroying session during centralized logout:', err);
-                return res.status(500).json({ message: 'Error during logout process' });
+                console.error('🔴 LOGOUT DEBUG: Error destroying session:', err);
+                return res.status(500).json({ 
+                    message: 'Error during logout process',
+                    error: err.message,
+                    debug: { sessionId: req.sessionID, timestamp: new Date().toISOString() }
+                });
             }
+            
+            console.log('🔴 LOGOUT DEBUG: Session destroyed successfully');
             
             // Clear only authentication-related cookies (targeted approach)
             const authCookies = [
@@ -364,26 +388,32 @@ const logoutHandler = (req: Request, res: Response) => {
                 'connect.sid-refreshed'
             ];
             
+            console.log('🔴 LOGOUT DEBUG: Clearing authentication cookies:', authCookies);
             authCookies.forEach(cookieName => {
                 res.clearCookie(cookieName);
+                console.log('🔴 LOGOUT DEBUG: Cleared cookie:', cookieName);
             });
             
-            console.log('Centralized auth logout successful');
+            console.log('🔴 LOGOUT DEBUG: All cookies cleared');
             
             // For GET requests, redirect to login page
             if (req.method === 'GET') {
+                console.log('🔴 LOGOUT DEBUG: GET request - redirecting to /login');
                 return res.redirect('/login');
             }
             
+            console.log('🔴 LOGOUT DEBUG: POST request - returning JSON response');
             // For POST requests, return JSON
-            return res.status(200).json({ 
+            const successResponse = {
                 message: 'Logged out successfully',
                 debug: {
                     method: 'centralized_auth',
                     sessionDestroyed: true,
                     timestamp: new Date().toISOString()
                 }
-            });
+            };
+            console.log('🔴 LOGOUT DEBUG: Sending response:', successResponse);
+            return res.status(200).json(successResponse);
         });
     } catch (error) {
         console.error('Error during centralized logout:', error);
