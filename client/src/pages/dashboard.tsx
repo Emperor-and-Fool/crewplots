@@ -64,13 +64,13 @@ export default function Dashboard() {
   });
 
   const { data: profileData } = useQuery({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/profile-data'],
     queryFn: async () => {
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/profile-data', {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch users data');
+        throw new Error('Failed to fetch profile data');
       }
       return response.json();
     }

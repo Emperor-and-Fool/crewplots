@@ -336,24 +336,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🔍 API DEBUG: /api/profile-data request received for user: ${req.user.username}`);
       
-      // CRITICAL FIX: Return CURRENT USER data, not all users array
-      const currentUser = await storage.getUserWithProfile(req.user.id);
+      // Return ALL USERS array (restored original behavior)
+      const allUsers = await storage.getUsers();
       
-      if (!currentUser) {
-        console.log(`🔍 API DEBUG: Current user not found for ID: ${req.user.id}`);
-        return res.status(404).json({ error: "User not found" });
-      }
+      console.log(`🔍 API DEBUG: Retrieved ${allUsers.length} users for profile data`);
       
-      console.log(`🔍 API DEBUG: Retrieved current user:`, {
-        id: currentUser.id,
-        username: currentUser.username,
-        role: currentUser.role,
-        hasPermissions: !!currentUser.permissions,
-        permissionCount: (currentUser.permissions || []).length,
-        hasWorkflow: !!currentUser.workflowPermissions
-      });
-      
-      res.json(currentUser);
+      res.json(allUsers);
     } catch (error) {
       console.error("🔍 API DEBUG: Error in /api/profile-data:", error);
       res.status(500).json({ error: "Failed to fetch profile data" });
