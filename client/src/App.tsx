@@ -32,6 +32,7 @@ import RegistrationSuccess from "@/pages/registration-success";
 import LandingPage from "@/pages/landing";
 import ValidationTestPage from "@/pages/validation-test";
 import AdminTestPage from "@/pages/admin-test";
+import EndpointTestPage from "@/pages/endpoint-test";
 
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
