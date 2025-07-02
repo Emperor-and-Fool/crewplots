@@ -14,23 +14,53 @@ export function useApplicantManagement(filters: ApplicantListFilters = {}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Applicant list query with filtering
+  // Applicant list query with filtering - DataAggregationEngine 3.0
   const {
     data: applicants = [],
     isLoading,
     error
   } = useQuery<User[]>({
-    queryKey: ['/api/applicants', filters],
+    queryKey: ['/api/validation/v3/aggregate', 'applicant-list', filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.location) params.append('location', filters.location.toString());
-      if (filters.searchTerm) params.append('search', filters.searchTerm);
-      if (filters.hasNotes !== undefined) params.append('hasNotes', filters.hasNotes.toString());
+      const aggregationTask = {
+        entityType: 'user' as const,
+        entityId: 'role-filter',
+        requiredData: {
+          postgresql: ['user', 'locations', 'permissions'],
+          mongodb: ['notes'],
+          redis: ['cache-keys']
+        },
+        compilationRules: {
+          enhance: true,
+          permissions: true,
+          metadata: true
+        },
+        cacheStrategy: {
+          category: 'user-aggregation',
+          ttl: 300,
+          connectionId: 'applicant-list'
+        },
+        filters: {
+          role: 'applicant',
+          status: filters.status,
+          location: filters.location,
+          searchTerm: filters.searchTerm,
+          hasNotes: filters.hasNotes
+        }
+      };
       
-      const response = await fetch(`/api/applicants?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch applicants');
-      return response.json();
+      const response = await fetch('/api/validation/v3/aggregate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(aggregationTask)
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch applicants via DataAggregation');
+      const result = await response.json();
+      return result.success ? result.data : [];
     }
   });
 
