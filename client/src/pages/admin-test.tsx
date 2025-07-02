@@ -44,7 +44,23 @@ export default function AdminTestPage() {
       const response = await apiRequest('POST', '/api/validation/execute', testData);
       console.log('✅ ValidationEngine Response:', response);
       
-      setLastResponse(response);
+      // Parse ValidationEngine response structure
+      const parsedResponse = {
+        isValid: response.overall?.isValid || false,
+        errors: response.overall?.errors || [],
+        warnings: response.overall?.warnings || [],
+        user: {
+          id: response.context?.userId,
+          username: response.context?.username,
+          role: response.context?.role,
+          permissions: response.context?.permissions || []
+        },
+        permissions: response.threads?.permission?.permissions || [],
+        metadata: response.overall?.metadata || {},
+        rawResponse: response
+      };
+      
+      setLastResponse(parsedResponse);
       
       toast({
         title: "ValidationEngine Test Complete",

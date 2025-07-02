@@ -39,33 +39,21 @@ router.post('/execute', authenticateUser, async (req, res) => {
       packageId: result.packageId
     });
 
+    // Include user context in response for debugging  
+    const responseWithContext = {
+      ...result,
+      context: {
+        userId: req.user.id,
+        username: req.user.username,
+        role: req.user.role,
+        permissions: context.permissions
+      }
+    };
+
     if (result.overall.isValid) {
-      res.status(200).json({
-        success: true,
-        message: 'Validation and execution completed successfully',
-        data: result.threads.transaction.data,
-        validation: {
-          packageId: result.packageId,
-          validationTime: result.overall.metadata?.validationTime,
-          rulesApplied: result.overall.metadata?.rulesApplied?.length || 0
-        }
-      });
+      res.status(200).json(responseWithContext);
     } else {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: result.overall.errors,
-        warnings: result.overall.warnings,
-        validation: {
-          packageId: result.packageId,
-          threads: {
-            assembly: result.threads.assembly.success,
-            integrity: result.threads.integrity.success,
-            permission: result.threads.permission.success,
-            transaction: result.threads.transaction.success
-          }
-        }
-      });
+      res.status(400).json(responseWithContext);
     }
 
   } catch (error) {
