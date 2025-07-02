@@ -126,7 +126,7 @@ export default function AdminTestPage() {
                   <Badge variant={lastResponse.isValid ? "default" : "destructive"}>
                     {lastResponse.isValid ? "Valid" : "Invalid"}
                   </Badge>
-                  {lastResponse.errors.length > 0 && (
+                  {lastResponse.errors && lastResponse.errors.length > 0 && (
                     <Badge variant="secondary">{lastResponse.errors.length} errors</Badge>
                   )}
                 </div>
@@ -146,7 +146,7 @@ export default function AdminTestPage() {
                 <div>
                   <h4 className="font-semibold mb-2">Mapped Permissions:</h4>
                   <div className="flex flex-wrap gap-1">
-                    {lastResponse.permissions.map((perm, idx) => (
+                    {(lastResponse.permissions || []).map((perm, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs">
                         {perm}
                       </Badge>
@@ -155,7 +155,7 @@ export default function AdminTestPage() {
                 </div>
 
                 {/* Errors */}
-                {lastResponse.errors.length > 0 && (
+                {lastResponse.errors && lastResponse.errors.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2 text-red-600">Validation Errors:</h4>
                     <ul className="text-sm text-red-600 space-y-1">
