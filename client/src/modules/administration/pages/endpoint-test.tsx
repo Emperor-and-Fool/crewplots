@@ -81,10 +81,12 @@ export default function EndpointTestPage() {
       addLog('✅ Request completed successfully');
 
     } catch (error) {
-      addLog(`❌ Request failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      addLog(`❌ Request failed: ${errorMessage}`);
       setResponse({
-        error: error.message,
-        stack: error.stack
+        error: errorMessage,
+        stack: errorStack
       });
     } finally {
       setLoading(false);
