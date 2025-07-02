@@ -112,27 +112,87 @@ router.post('/execute', authenticateUser, async (req, res) => {
     const { operation, entityType, entityId, data } = req.body;
     
     console.log('🧪 NEW VALIDATION ENGINE: Test execution started', { operation, entityType });
+    console.log('🧪 TEST DEBUG: Route entered, req.user:', req.user);
+
+    // CREATE PARALLEL req.user.test APPROACH FOR TESTING  
+    // Method 1: Direct req.user (current approach - has missing permissions)
+    console.log('🧪 TEST DEBUG: Method 1 - Direct req.user:', {
+      id: (req.user as any).id,
+      username: (req.user as any).username,
+      role: (req.user as any).role,
+      hasPermissions: !!(req.user as any).permissions,
+      permissionCount: ((req.user as any).permissions || []).length,
+      hasWorkflow: !!(req.user as any).workflowPermissions,
+      workflowKeys: (req.user as any).workflowPermissions ? Object.keys((req.user as any).workflowPermissions) : []
+    });
+
+    // Method 2: Fetch from /api/profile-data (like scheduler module does)
+    let profileData = null;
+    try {
+      const profileResponse = await fetch(`http://localhost:5000/api/profile-data`, {
+        headers: {
+          'Cookie': req.headers.cookie || '',
+          'User-Agent': 'ValidationEngine-Test'
+        }
+      });
+      
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+        console.log('🧪 TEST DEBUG: Method 2 - Profile data success:', {
+          hasData: !!profileData,
+          hasPermissions: !!(profileData?.permissions),
+          permissionCount: (profileData?.permissions || []).length,
+          keys: profileData ? Object.keys(profileData) : []
+        });
+      } else {
+        console.log('🧪 TEST DEBUG: Method 2 - Profile fetch failed:', profileResponse.status);
+      }
+    } catch (error) {
+      console.log('🧪 TEST DEBUG: Method 2 - Profile fetch error:', (error as Error).message);
+    }
+
+    // Create req.user.test with complete data
+    const reqUserTest = {
+      id: (req.user as any).id,
+      username: (req.user as any).username,
+      role: (req.user as any).role,
+      permissions: profileData?.permissions || (req.user as any).permissions || [],
+      workflowPermissions: profileData?.workflowPermissions || (req.user as any).workflowPermissions || {}
+    };
+
+    console.log('🧪 TEST DEBUG: req.user.test created:', {
+      id: reqUserTest.id,
+      username: reqUserTest.username,
+      role: reqUserTest.role,
+      permissionCount: reqUserTest.permissions.length,
+      workflowKeys: Object.keys(reqUserTest.workflowPermissions),
+      comparisonResults: {
+        reqUserPermissions: ((req.user as any).permissions || []).length,
+        profilePermissions: (profileData?.permissions || []).length,
+        finalPermissions: reqUserTest.permissions.length
+      }
+    });
 
     // Create operation context from authenticated user with mapped permissions
-    const userPermissions = mapWorkflowToValidationPermissions(req.user);
+    const userPermissions = mapWorkflowToValidationPermissions(reqUserTest);
     
     console.log('🔍 PERMISSION MAPPING:', {
-      userRole: req.user.role,
-      workflowPermissions: req.user.workflowPermissions,
-      databasePermissions: req.user.permissions,
+      userRole: (req.user as any).role,
+      workflowPermissions: (req.user as any).workflowPermissions,
+      databasePermissions: (req.user as any).permissions,
       mappedPermissions: userPermissions
     });
     
     const context = {
-      userId: req.user.id,
-      userRole: req.user.role,
+      userId: (req.user as any).id,
+      userRole: (req.user as any).role,
       permissions: userPermissions,
-      locationAccess: req.user.role === 'administrator' ? 'all' : [],
+      locationAccess: (req.user as any).role === 'administrator' ? 'all' : [],
       sessionId: req.sessionID
     };
 
     console.log('🔐 NEW AUTH SYSTEM: Context created', { 
-      role: req.user.role, 
+      role: (req.user as any).role, 
       permissions: userPermissions.length,
       permissionList: userPermissions 
     });
