@@ -30,9 +30,7 @@ import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 import LandingPage from "@/pages/landing";
-import ValidationTestPage from "@/pages/validation-test";
-import AdminTestPage from "@/pages/admin-test";
-import EndpointTestPage from "@/pages/endpoint-test";
+import { ValidationTestPage, AdminTestPage, EndpointTestPage } from "@/modules/administration";
 
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {
@@ -293,6 +291,17 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={AdminTestPage} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/endpoint-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={EndpointTestPage} 
                       requiredRoles={["administrator"]} 
                     />
                   </AppLayout> : 
