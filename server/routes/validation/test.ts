@@ -93,6 +93,65 @@ router.get('/test', authenticateUser, async (req, res) => {
   try {
     console.log('🧪 VALIDATION ENGINE: Test execution started');
 
+    // CREATE PARALLEL req.user.test APPROACH FOR TESTING  
+    // Method 1: Direct req.user (current approach - has missing permissions)
+    console.log('🧪 TEST DEBUG: Method 1 - Direct req.user:', {
+      id: (req.user as any).id,
+      username: (req.user as any).username,
+      role: (req.user as any).role,
+      hasPermissions: !!(req.user as any).permissions,
+      permissionCount: ((req.user as any).permissions || []).length,
+      hasWorkflow: !!(req.user as any).workflowPermissions,
+      workflowKeys: (req.user as any).workflowPermissions ? Object.keys((req.user as any).workflowPermissions) : []
+    });
+
+    // Method 2: Fetch from /api/profile-data (like scheduler module does)
+    let profileData = null;
+    try {
+      const profileResponse = await fetch(`http://localhost:5000/api/profile-data`, {
+        headers: {
+          'Cookie': req.headers.cookie || '',
+          'User-Agent': 'ValidationEngine-Test'
+        }
+      });
+      
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+        console.log('🧪 TEST DEBUG: Method 2 - Profile data success:', {
+          hasData: !!profileData,
+          hasPermissions: !!(profileData?.permissions),
+          permissionCount: (profileData?.permissions || []).length,
+          keys: profileData ? Object.keys(profileData) : []
+        });
+      } else {
+        console.log('🧪 TEST DEBUG: Method 2 - Profile fetch failed:', profileResponse.status);
+      }
+    } catch (error) {
+      console.log('🧪 TEST DEBUG: Method 2 - Profile fetch error:', (error as Error).message);
+    }
+
+    // Create req.user.test with complete data
+    const reqUserTest = {
+      id: (req.user as any).id,
+      username: (req.user as any).username,
+      role: (req.user as any).role,
+      permissions: profileData?.permissions || (req.user as any).permissions || [],
+      workflowPermissions: profileData?.workflowPermissions || (req.user as any).workflowPermissions || {}
+    };
+
+    console.log('🧪 TEST DEBUG: req.user.test created:', {
+      id: reqUserTest.id,
+      username: reqUserTest.username,
+      role: reqUserTest.role,
+      permissionCount: reqUserTest.permissions.length,
+      workflowKeys: Object.keys(reqUserTest.workflowPermissions),
+      comparisonResults: {
+        reqUserPermissions: ((req.user as any).permissions || []).length,
+        profilePermissions: (profileData?.permissions || []).length,
+        finalPermissions: reqUserTest.permissions.length
+      }
+    });
+
     // Create simple test data - using database admin user id=1
     const testData = {
       name: "Test Schedule Block",
@@ -104,8 +163,8 @@ router.get('/test', authenticateUser, async (req, res) => {
     
     console.log('🧪 VALIDATION ENGINE: Created testData object:', JSON.stringify(testData, null, 2));
 
-    // Create operation context from authenticated user - USE ACTUAL MAPPER
-    const mappedPermissions = mapWorkflowToValidationPermissions(req.user);
+    // Create operation context from authenticated user - USE req.user.test WITH COMPLETE DATA
+    const mappedPermissions = mapWorkflowToValidationPermissions(reqUserTest);
     
     console.log('🧪 PERMISSION MAPPING DEBUG (test endpoint):');
     console.log('  Raw req.user object:', JSON.stringify(req.user, null, 2));
