@@ -14,7 +14,7 @@ profileRoutes.get("/", async (req, res) => {
     
     // For applicants, use DataAggregationEngine 3.0 for comprehensive profile data
     if ((req.user as any)?.role === 'applicant') {
-      const { dataAggregationEngine } = await import('../../services/data/DataAggregationEngine');
+      const { dataAggregationEngine } = await import('../../services/validation/DataAggregationEngine');
       
       const aggregationTask = {
         operation: 'profile-data',
