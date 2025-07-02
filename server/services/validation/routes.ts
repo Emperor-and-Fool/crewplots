@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ValidationEngine } from './ValidationEngine';
 import { authenticateUser } from '../../middleware/auth';
+import { storage } from '../../storage';
 
 const router = Router();
 const validationEngine = new ValidationEngine();
@@ -15,12 +16,19 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log('🧪 NEW VALIDATION ENGINE: Test execution started', { operation, entityType });
 
-    // Create operation context from authenticated user
+    // Fetch full user data with permissions (req.user only has session data)
+    const fullUser = await storage.getUser((req.user as any).id);
+    if (!fullUser) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    // Create operation context from full authenticated user data
     const context = {
-      userId: req.user.id,
-      userRole: req.user.role,
-      permissions: req.user.permissions || [],
-      locationAccess: req.user.workflowPermissions?.location ? [req.body.locationId] : [],
+      userId: fullUser.id,
+      userRole: fullUser.role,
+      permissions: (fullUser as any).permissions || [],
+      workflowPermissions: (fullUser as any).workflowPermissions || {},
+      locationAccess: fullUser.workflowPermissions?.location ? [req.body.locationId] : [],
       sessionId: req.sessionID
     };
 
@@ -43,10 +51,11 @@ router.post('/execute', authenticateUser, async (req, res) => {
     const responseWithContext = {
       ...result,
       context: {
-        userId: req.user.id,
-        username: req.user.username,
-        role: req.user.role,
-        permissions: context.permissions
+        userId: fullUser.id,
+        username: fullUser.username,
+        role: fullUser.role,
+        permissions: (fullUser as any).permissions || [],
+        workflowPermissions: (fullUser as any).workflowPermissions || {}
       }
     };
 
