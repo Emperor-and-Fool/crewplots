@@ -63,6 +63,14 @@ export class ValidationEngine {
         console.log('🎁 UNIFIED ENGINE: Injected createdBy from authenticated user:', context.userId);
       }
       
+      // CRITICAL FIX: Convert date strings to Date objects for database compatibility
+      if (entityType === 'shift' && assembledData.subscriptionDeadline) {
+        if (typeof assembledData.subscriptionDeadline === 'string') {
+          assembledData.subscriptionDeadline = new Date(assembledData.subscriptionDeadline);
+          console.log('🎁 UNIFIED ENGINE: Converted subscriptionDeadline string to Date object');
+        }
+      }
+      
       console.log('🎁 UNIFIED ENGINE: Assembled data with server fields:', JSON.stringify(assembledData, null, 2));
       
       // Thread 2: Schema Validation using extracted package (on assembled data)

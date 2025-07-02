@@ -334,12 +334,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all profile data (unified data endpoint) - optimized for messaging system
   app.get("/api/profile-data", authenticateUser, async (req, res) => {
     try {
-      console.log(`🔍 API DEBUG: /api/profile-data request received`);
-      // Use getUserWithProfile for each user to ensure proper role/location data
-      const allUsers = await storage.getUsers();
-      console.log(`🔍 API DEBUG: Retrieved ${allUsers.length} users from storage`);
-      console.log(`🔍 API DEBUG: First 3 users:`, allUsers.slice(0, 3).map(u => ({ id: u.id, name: u.name, role: u.role })));
-      res.json(allUsers);
+      console.log(`🔍 API DEBUG: /api/profile-data request received for user: ${req.user.username}`);
+      
+      // CRITICAL FIX: Return CURRENT USER data, not all users array
+      const currentUser = await storage.getUserWithProfile(req.user.id);
+      
+      if (!currentUser) {
+        console.log(`🔍 API DEBUG: Current user not found for ID: ${req.user.id}`);
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      console.log(`🔍 API DEBUG: Retrieved current user:`, {
+        id: currentUser.id,
+        username: currentUser.username,
+        role: currentUser.role,
+        hasPermissions: !!currentUser.permissions,
+        permissionCount: (currentUser.permissions || []).length,
+        hasWorkflow: !!currentUser.workflowPermissions
+      });
+      
+      res.json(currentUser);
     } catch (error) {
       console.error("🔍 API DEBUG: Error in /api/profile-data:", error);
       res.status(500).json({ error: "Failed to fetch profile data" });
