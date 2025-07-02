@@ -71,6 +71,12 @@ git checkout HEAD -- client/src/modules/users/hooks/useApplicantManagement.tsx
 **Duration:** 30 minutes  
 **Risk:** Low (Interface addition, no breaking changes)
 
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Interface design questions arise (check 049 DataAggregationTask evidence)
+- Multiple filtering approaches seem possible (follow plan decisions)
+- Breaking changes accidentally introduced (maintain backward compatibility)
+- TypeScript integration unclear (reference 048 parallel development strategy)
+
 **Scope:**
 1. **Extend DataAggregationTask Interface**
    ```typescript
@@ -108,6 +114,12 @@ git checkout HEAD -- client/src/modules/users/hooks/useApplicantManagement.tsx
    - Route collection queries to new `aggregateCollection()` method
    - Maintain backward compatibility for individual entity queries
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to Phase 2, verify:
+- DataAggregationTask interface extended without breaking existing functionality
+- Backward compatibility maintained for individual entity queries
+- TypeScript compilation successful with new interface properties
+- Reference 049 architecture decisions for any implementation questions
+
 ### Phase 2: Collection Aggregation Implementation (45 minutes)
 **Duration:** 45 minutes  
 **Risk:** Medium (New functionality, database integration)
@@ -133,6 +145,11 @@ git checkout HEAD -- client/src/modules/users/hooks/useApplicantManagement.tsx
    - Include permission context and metadata
    - Return `AggregatedUserData[]` instead of `User[]`
 
+📋 **DECISION VALIDATION:** Confirm collection caching strategy aligns with:
+- Plan 048 HybridCacheService integration patterns
+- 049 ProfileFetcher performance evidence (< 500ms targets)
+- Zero Risk Implementation strategy (existing cache patterns work)
+
 ### Phase 3: Authentication Integration Testing (30 minutes)
 **Duration:** 30 minutes  
 **Risk:** Low (Uses existing authenticateUser middleware)
@@ -148,6 +165,12 @@ git checkout HEAD -- client/src/modules/users/hooks/useApplicantManagement.tsx
    - Test role filtering: applicant, crew_member, staff, etc.
    - Verify enhanced fields (displayName, aggregatedNotes) work correctly
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to Phase 4, verify:
+- Authentication middleware integration working correctly
+- Data structure compatibility confirmed with frontend expectations
+- Role filtering functional across all user types
+- Performance targets met (< 500ms collection queries)
+
 ### Phase 4: Frontend Migration Testing (45 minutes)
 **Duration:** 45 minutes  
 **Risk:** Medium (Frontend integration, multiple hooks)
@@ -162,6 +185,12 @@ git checkout HEAD -- client/src/modules/users/hooks/useApplicantManagement.tsx
    - Start with `useApplicantManagement.tsx` (already modified)
    - Test one endpoint thoroughly before continuing
    - Migrate remaining 22 endpoints only after successful testing
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** During frontend migration, return to this plan if:
+- Authentication flow issues arise (check 049 session isolation solutions)
+- Data structure mismatches occur (verify AggregatedUserData compatibility)
+- Performance targets not met (reference 049 ProfileFetcher patterns)
+- Multiple migration approaches seem possible (follow progressive testing strategy)
 
 ## Clean-up Tasks (Require User Approval)
 
