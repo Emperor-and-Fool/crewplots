@@ -92,9 +92,6 @@ function ApplicantPortal() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge className={getStatusBadge(user.status || 'new')}>
-            {user.status?.charAt(0).toUpperCase() + (user.status?.slice(1) || 'new'.slice(1))}
-          </Badge>
           <Button 
             variant="outline" 
             size="sm" 
@@ -134,7 +131,7 @@ function ApplicantPortal() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Current Status:</span>
                 <Badge className={getStatusBadge(user.status || 'new')}>
-                  {user.status?.charAt(0).toUpperCase() + (user.status?.slice(1) || 'new'.slice(1))}
+                  {(user.status || 'new').charAt(0).toUpperCase() + (user.status || 'new').slice(1)}
                 </Badge>
               </div>
               
