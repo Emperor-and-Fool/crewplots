@@ -15,6 +15,7 @@ router.post('/execute', authenticateUser, async (req, res) => {
     const { operation, entityType, entityId, data } = req.body;
     
     console.log('🧪 NEW VALIDATION ENGINE: Test execution started', { operation, entityType });
+    console.log('🧪 TEST DEBUG: Route entered, req.user:', (req.user as any));
 
     // CREATE PARALLEL req.user.test APPROACH FOR TESTING
     // Method 1: Traditional storage.getUser approach (what we tried before)
