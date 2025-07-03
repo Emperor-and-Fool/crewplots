@@ -16,7 +16,7 @@ export default function MessagingValidationTest() {
     try {
       console.log('🧪 Testing messaging validation package integration...');
       
-      const response = await apiRequest('POST', '/test-messaging', {});
+      const response = await apiRequest('POST', '/api/validation/v3/test-messaging', {});
       
       console.log('📥 Messaging validation test response:', response);
       
