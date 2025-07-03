@@ -207,7 +207,11 @@ router.post('/orchestrator3/test', authenticateUser, async (req, res) => {
 
 // MESSAGING TEST ENDPOINT - Plan 053 integration verification
 router.post('/test-messaging', authenticateUser, async (req, res) => {
-  console.log('🚨 ENDPOINT HIT: /test-messaging route reached');
+  console.log('🚨 ENDPOINT HIT: /api/validation/v3/test-messaging route reached');
+  console.log('🔍 AUTH DEBUG: req.user exists:', !!req.user);
+  console.log('🔍 AUTH DEBUG: req.session exists:', !!req.session);
+  console.log('🔍 AUTH DEBUG: req.isAuthenticated exists:', typeof req.isAuthenticated);
+  
   try {
     console.log('🧪 MESSAGING VALIDATION TEST: Testing messaging package integration');
     console.log('🧪 User context:', { 
