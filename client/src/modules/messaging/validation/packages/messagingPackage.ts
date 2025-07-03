@@ -267,15 +267,16 @@ export const messagingPackage: MessagingPackage = {
   },
   
   getRequiredPermissions: (operation: 'create' | 'read' | 'update' | 'delete') => {
+    // Use same permission pattern as scheduler packages
     switch (operation) {
       case 'create':
-        return ['messaging.create'];
+        return ['schedule.create']; // Reuse existing database permission
       case 'read':
-        return ['messaging.read'];
+        return ['schedule.read'];   // Reuse existing database permission
       case 'update':
-        return ['messaging.update'];
+        return ['schedule.update']; // Reuse existing database permission
       case 'delete':
-        return ['messaging.delete'];
+        return ['schedule.delete']; // Reuse existing database permission
       default:
         return [];
     }
