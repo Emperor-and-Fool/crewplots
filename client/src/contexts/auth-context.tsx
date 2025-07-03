@@ -172,75 +172,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Logout function with better error handling
+  // Optimistic logout function - immediate UI response with background cleanup
   const logout = async (): Promise<void> => {
-    console.log('🔴 LOGOUT DEBUG: Auth context logout() started');
-    console.log('🔴 LOGOUT DEBUG: Current user before logout:', user);
-    console.log('🔴 LOGOUT DEBUG: Current isAuthenticated:', isAuthenticated);
+    // Phase 1: Immediate optimistic logout
+    setUser(null);
+    setIsLoading(false);
+    queryClient.clear();
     
+    // Navigate immediately to login page with success parameter for toast
+    window.location.href = '/login?logout=success';
+    
+    // Phase 2: Background server cleanup (fire and forget)
+    backgroundSessionCleanup();
+  };
+
+  // Background session cleanup - silent failure handling
+  const backgroundSessionCleanup = async (): Promise<void> => {
     try {
-      console.log('🔴 LOGOUT DEBUG: Setting loading state to true');
-      setIsLoading(true);
-      
-      console.log('🔴 LOGOUT DEBUG: Making POST request to /api/auth/logout...');
-      // Use fetch directly with appropriate error handling
-      const response = await fetch('/api/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
-      
-      console.log('🔴 LOGOUT DEBUG: Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
-      if (response.ok) {
-        console.log('🔴 LOGOUT DEBUG: Response OK, clearing user state...');
-        setUser(null);
-        
-        console.log('🔴 LOGOUT DEBUG: Clearing query caches...');
-        // Clear all query caches
-        queryClient.clear();
-        
-        console.log('🔴 LOGOUT DEBUG: Showing success toast...');
-        toast({
-          title: "Logged out",
-          description: "You have been successfully logged out",
-        });
-        
-        console.log('🔴 LOGOUT DEBUG: Redirecting immediately to /login');
-        // Redirect to login page immediately
-        window.location.href = '/login';
-      } else {
-        console.error("🔴 LOGOUT DEBUG: Logout failed with status:", response.status);
-        const responseText = await response.text();
-        console.error("🔴 LOGOUT DEBUG: Response body:", responseText);
-        
-        toast({
-          title: "Logout failed",
-          description: "An error occurred during logout. Please try again.",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
-      console.error("🔴 LOGOUT DEBUG: Logout error caught:", error);
-      console.error("🔴 LOGOUT DEBUG: Error details:", {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      
-      toast({
-        title: "Logout failed",
-        description: "An error occurred during logout. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      console.log('🔴 LOGOUT DEBUG: Setting loading state to false');
-      setIsLoading(false);
-      console.log('🔴 LOGOUT DEBUG: Auth context logout() completed');
+      // Silent failure - user is already logged out locally
+      console.debug('Background session cleanup failed:', error);
     }
   };
 
