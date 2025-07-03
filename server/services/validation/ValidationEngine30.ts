@@ -16,6 +16,9 @@ import { messagingPackage } from '../../../client/src/modules/messaging/validati
 // Import motivation note validation package
 import { motivationNotePackage } from '../../../client/src/modules/messaging/validation/packages/motivationNotePackage';
 
+// Import user profile validation package
+import { userProfilePackage } from '../../../client/src/modules/users/validation/packages/userProfilePackage';
+
 /**
  * ValidationEngine30.ts - Enhanced Validation Engine
  * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
@@ -41,7 +44,8 @@ const enhancedPackageRegistry = {
   weekSchedule: weekSchedulePackage,
   shift: shiftPackage,
   messaging: messagingPackage,
-  motivationNote: motivationNotePackage
+  motivationNote: motivationNotePackage,
+  userProfile: userProfilePackage
 } as const;
 
 export interface ValidationRequest30 {

@@ -13,19 +13,46 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ userId, className }: ProfileCardProps) {
-  const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['/api/users/profile', userId],
+  const { data: validationResult, isLoading, error } = useQuery({
+    queryKey: ['/api/validation/v3/validate', 'userProfile', userId],
     queryFn: async () => {
-      const response = await fetch('/api/users/profile', {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          packageType: 'userProfile',
+          data: {
+            targetUserId: userId
+          }
+        })
       });
       if (!response.ok) {
         throw new Error('Failed to fetch profile data');
       }
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes (ValidationEngine30 with HybridCache)
   });
+
+  // Extract profile data from ValidationResult30 structure
+  const profile = validationResult?.isValid && validationResult?.data ? {
+    id: validationResult.data.id,
+    username: validationResult.data.username,
+    email: validationResult.data.email,
+    firstName: validationResult.data.firstName,
+    lastName: validationResult.data.lastName,
+    name: validationResult.data.firstName && validationResult.data.lastName 
+      ? `${validationResult.data.firstName} ${validationResult.data.lastName}`
+      : validationResult.data.username,
+    phoneNumber: validationResult.data.phoneNumber,
+    role: validationResult.data.role,
+    status: validationResult.data.status,
+    createdAt: validationResult.data.createdAt,
+    locationId: validationResult.data.locationId
+  } : null;
 
   if (isLoading) {
     return <PortalProfileSkeleton />;
@@ -36,6 +63,19 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
       <Card className={className}>
         <CardContent className="p-6">
           <p className="text-red-600">Failed to load profile information</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle ValidationEngine30 validation errors
+  if (validationResult && !validationResult.isValid) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-6">
+          <p className="text-red-600">
+            Access denied: {validationResult.errors?.[0] || 'Profile access not authorized'}
+          </p>
         </CardContent>
       </Card>
     );
@@ -104,15 +144,6 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
                 {profile.phoneNumber}
               </a>
             </div>
-          </div>
-        )}
-        
-        {profile.notes && typeof profile.notes === 'object' && profile.notes.exists && (
-          <div>
-            <p className="text-sm font-medium text-gray-900">Application Notes</p>
-            <p className="text-sm text-gray-600">
-              {profile.notes.wordCount || 0} words • Last updated {profile.notes.lastUpdated ? format(new Date(profile.notes.lastUpdated), 'MMM d, yyyy') : 'never'}
-            </p>
           </div>
         )}
         
