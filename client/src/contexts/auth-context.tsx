@@ -187,6 +187,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
     queryClient.clear();
     
+    // Set logout success flag for login page
+    sessionStorage.setItem('logout-success', 'true');
+    
     // Navigate immediately to login page using React router (preserves context)
     setLocation('/login');
     
