@@ -179,8 +179,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
     queryClient.clear();
     
-    // Navigate immediately to login page with success parameter for toast
-    window.location.href = '/login?logout=success';
+    // Navigate immediately to login page
+    window.location.href = '/login';
     
     // Phase 2: Background server cleanup (fire and forget)
     backgroundSessionCleanup();
@@ -195,7 +195,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       // Silent failure - user is already logged out locally
-      console.debug('Background session cleanup failed:', error);
     }
   };
 

@@ -3,26 +3,11 @@ import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
 import { AuthPageLayout } from "../components/layouts/AuthPageLayout";
 import { Link } from "wouter";
-import { useEffect } from "react";
 
 export const LoginPage = () => {
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
-
-  // Show logout success toast if redirected from logout
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('logout') === 'success') {
-      toast({
-        title: "Successfully logged out",
-        description: "You have been logged out of your account",
-        duration: 3000,
-      });
-      // Clean up URL parameter
-      window.history.replaceState({}, document.title, '/login');
-    }
-  }, [toast]);
 
   const handleLoginSuccess = (user: any) => {
     console.log("Login successful, navigating to dashboard");
