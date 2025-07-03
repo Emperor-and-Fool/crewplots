@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { User, Register } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { hasAdminBypass } from "@shared/utils/permissions";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
   user: User | null;
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   // Compute isAuthenticated from user state
   const isAuthenticated = Boolean(user);
@@ -185,8 +187,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
     queryClient.clear();
     
-    // Navigate immediately to login page
-    window.location.href = '/login';
+    // Navigate immediately to login page using React router (preserves context)
+    setLocation('/login');
     
     // Phase 2: Background server cleanup (fire and forget)
     backgroundSessionCleanup();
