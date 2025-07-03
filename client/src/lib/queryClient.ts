@@ -85,7 +85,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ 
-        on401: "throw",
+        on401: "returnNull", // Return null instead of throwing on 401 (prevents error toasts during logout)
         timeout: 8000 // Reduced timeout for faster error detection
       }),
       refetchInterval: false,
