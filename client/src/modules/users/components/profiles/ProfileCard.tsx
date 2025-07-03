@@ -23,7 +23,8 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
         },
         credentials: 'include',
         body: JSON.stringify({
-          packageType: 'userProfile',
+          operation: 'read',
+          entityType: 'userProfile',
           data: {
             targetUserId: userId
           }
