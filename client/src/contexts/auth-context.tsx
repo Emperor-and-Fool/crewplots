@@ -43,6 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Use session consolidation pattern to resolve browser context session isolation
   // This bridges the gap between frontend session (9HbafBUU...) and working backend session (vYD0dYtt...)
   useEffect(() => {
+    // Skip auth check on login page - no need to verify what we already know
+    if (window.location.pathname === '/login') {
+      setIsLoading(false);
+      return;
+    }
+
     // Skip auth check if we're in the middle of logging out
     if (isLoggingOut) {
       return;
