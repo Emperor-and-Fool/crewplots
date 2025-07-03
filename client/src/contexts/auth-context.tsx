@@ -30,6 +30,7 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -42,10 +43,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Use session consolidation pattern to resolve browser context session isolation
   // This bridges the gap between frontend session (9HbafBUU...) and working backend session (vYD0dYtt...)
   useEffect(() => {
+    // Skip auth check if we're in the middle of logging out
+    if (isLoggingOut) {
+      return;
+    }
+
     const checkAuth = async () => {
       try {
-
-        
         // Use centralized authentication endpoint - no fallbacks
         const response = await fetch('/api/auth/me', {
           method: 'GET',
@@ -74,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkAuth();
-  }, []);
+  }, [isLoggingOut]);
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
