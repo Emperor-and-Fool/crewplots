@@ -210,12 +210,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: "You have been successfully logged out",
         });
         
-        console.log('🔴 LOGOUT DEBUG: Setting redirect timeout...');
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          console.log('🔴 LOGOUT DEBUG: Redirecting to /login via window.location.href');
-          window.location.href = '/login';
-        }, 500);
+        console.log('🔴 LOGOUT DEBUG: Redirecting immediately to /login');
+        // Redirect to login page immediately
+        window.location.href = '/login';
       } else {
         console.error("🔴 LOGOUT DEBUG: Logout failed with status:", response.status);
         const responseText = await response.text();
