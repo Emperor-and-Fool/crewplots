@@ -207,6 +207,7 @@ router.post('/orchestrator3/test', authenticateUser, async (req, res) => {
 
 // MESSAGING TEST ENDPOINT - Plan 053 integration verification
 router.post('/test-messaging', authenticateUser, async (req, res) => {
+  console.log('🚨 ENDPOINT HIT: /test-messaging route reached');
   try {
     console.log('🧪 MESSAGING VALIDATION TEST: Testing messaging package integration');
     console.log('🧪 User context:', { 

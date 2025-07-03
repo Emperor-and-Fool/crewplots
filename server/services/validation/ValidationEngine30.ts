@@ -266,7 +266,7 @@ export class ValidationEngine30 {
 
       // THREAD 2: Schema Validation (PROVEN PATTERN)
       console.log('🔍 VALIDATION ENGINE 30: Starting schema validation');
-      const schemaResult = await pkg.validateSchema(assembledData);
+      const schemaResult = await pkg.validateSchema(assembledData, operation as 'create' | 'update' | 'delete' | 'read');
       console.log('🔍 Schema validation result:', schemaResult);
       if (!schemaResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, schemaResult.errors, false);

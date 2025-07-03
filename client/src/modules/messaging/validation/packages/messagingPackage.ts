@@ -207,7 +207,7 @@ export interface MessagingPackage {
   entityType: 'messaging';
   
   // Schema validation - matches ValidationEngine30 signature
-  validateSchema: (data: MessagingData) => Promise<{
+  validateSchema: (data: MessagingData, operation: 'create' | 'update' | 'delete' | 'read') => Promise<{
     isValid: boolean;
     errors: string[];
   }>;
@@ -230,17 +230,37 @@ export interface MessagingPackage {
 export const messagingPackage: MessagingPackage = {
   entityType: 'messaging',
   
-  validateSchema: async (data: MessagingData) => {
+  validateSchema: async (data: MessagingData, operation: 'create' | 'update' | 'delete' | 'read') => {
     try {
-      // For now, validate against create schema as default
-      // In a full implementation, operation would be passed as context
-      const result = createNoteSchema.safeParse(data);
+      let schema;
+      
+      switch (operation) {
+        case 'create':
+          schema = createNoteSchema;
+          break;
+        case 'update':
+          schema = updateNoteSchema;
+          break;
+        case 'delete':
+          schema = deleteNoteSchema;
+          break;
+        case 'read':
+          schema = readNotesSchema;
+          break;
+        default:
+          return { 
+            isValid: false, 
+            errors: [`Unknown operation: ${operation}`] 
+          };
+      }
+      
+      const result = schema.safeParse(data);
       if (result.success) {
         return { isValid: true, errors: [] };
       } else {
         return { 
           isValid: false, 
-          errors: result.error.issues.map(issue => issue.message) 
+          errors: result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`) 
         };
       }
     } catch (error) {
