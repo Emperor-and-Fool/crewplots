@@ -13,47 +13,19 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ userId, className }: ProfileCardProps) {
-  const { data: validationResult, isLoading, error } = useQuery({
-    queryKey: ['/api/validation/v3/validate', 'userProfile', userId],
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['/api/users/profile', userId],
     queryFn: async () => {
-      const response = await fetch('/api/validation/v3/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          operation: 'read',
-          entityType: 'userProfile',
-          data: {
-            targetUserId: userId
-          }
-        })
+      const response = await fetch('/api/users/profile', {
+        credentials: 'include'
       });
       if (!response.ok) {
         throw new Error('Failed to fetch profile data');
       }
       return response.json();
     },
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes (ValidationEngine30 with HybridCache)
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
-
-  // Extract profile data from ValidationResult30 structure
-  const profile = validationResult?.isValid && validationResult?.data ? {
-    id: validationResult.data.id,
-    username: validationResult.data.username,
-    email: validationResult.data.email,
-    firstName: validationResult.data.firstName,
-    lastName: validationResult.data.lastName,
-    name: validationResult.data.firstName && validationResult.data.lastName 
-      ? `${validationResult.data.firstName} ${validationResult.data.lastName}`
-      : validationResult.data.username,
-    phoneNumber: validationResult.data.phoneNumber,
-    role: validationResult.data.role,
-    status: validationResult.data.status,
-    createdAt: validationResult.data.createdAt,
-    locationId: validationResult.data.locationId
-  } : null;
 
   if (isLoading) {
     return <PortalProfileSkeleton />;
@@ -61,110 +33,134 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
 
   if (error) {
     return (
-      <Card className={className}>
-        <CardContent className="p-6">
-          <p className="text-red-600">Failed to load profile information</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Handle ValidationEngine30 validation errors
-  if (validationResult && !validationResult.isValid) {
-    return (
-      <Card className={className}>
-        <CardContent className="p-6">
-          <p className="text-red-600">
-            Access denied: {validationResult.errors?.[0] || 'Profile access not authorized'}
-          </p>
-        </CardContent>
-      </Card>
+      <div className={`p-4 text-center text-red-600 ${className}`}>
+        Error loading profile: {error.message}
+      </div>
     );
   }
 
   if (!profile) {
     return (
-      <Card className={className}>
-        <CardContent className="p-6">
-          <p className="text-gray-600">No profile data found</p>
-        </CardContent>
-      </Card>
+      <div className={`p-4 text-center text-gray-600 ${className}`}>
+        Profile not found
+      </div>
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'bg-slate-200 text-slate-800';
-      case 'contacted':
+  // Handle name display with priority: firstName/lastName > name > username
+  const displayName = profile.firstName && profile.lastName 
+    ? `${profile.firstName} ${profile.lastName}`
+    : profile.name || profile.username;
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'administrator':
+        return 'bg-purple-100 text-purple-800';
+      case 'owner':
+        return 'bg-red-100 text-red-800';
+      case 'app_manager':
         return 'bg-blue-100 text-blue-800';
-      case 'interviewed':
-        return 'bg-blue-500 text-white';
-      case 'short-listed':
-        return 'bg-green-500 text-white';
-      case 'hired':
-        return 'bg-purple-500 text-white';
-      case 'rejected':
-        return 'bg-red-500 text-white';
+      case 'crew_chief':
+        return 'bg-green-100 text-green-800';
+      case 'crew_member':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'applicant':
+        return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-200 text-gray-800';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const formatRoleDisplay = (role: string) => {
+    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <UserIcon className="h-5 w-5" />
-              {profile.name}
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">{profile.email}</p>
-          </div>
-          <Badge className={getStatusBadge(profile.status || 'new')}>
-            {profile.status || 'new'}
+    <Card className={`w-full max-w-2xl mx-auto ${className}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <UserIcon className="w-5 h-5" />
+            {displayName}
+          </CardTitle>
+          <Badge className={getRoleBadgeColor(profile.role)}>
+            {formatRoleDisplay(profile.role)}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Role</p>
-          <p className="text-sm text-gray-600 capitalize">{profile.role}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <UserIcon className="w-4 h-4 text-gray-500" />
+              <span className="font-medium">Username:</span>
+              <span>@{profile.username}</span>
+            </div>
+            
+            {profile.email && (
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Email:</span>
+                <a href={`mailto:${profile.email}`} className="text-blue-600 hover:underline">
+                  {profile.email}
+                </a>
+              </div>
+            )}
+            
+            {profile.phone && (
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Phone:</span>
+                <a href={`tel:${profile.phone}`} className="text-blue-600 hover:underline">
+                  {profile.phone}
+                </a>
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            {profile.createdAt && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Member since:</span>
+                <span>{format(new Date(profile.createdAt), 'MMM dd, yyyy')}</span>
+              </div>
+            )}
+            
+            {profile.notes && profile.notes.length > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Notes:</span>
+                <span>{profile.notes.length} note{profile.notes.length === 1 ? '' : 's'}</span>
+              </div>
+            )}
+          </div>
         </div>
         
-        {profile.phoneNumber && (
-          <div>
-            <p className="text-sm font-medium text-gray-900">Phone</p>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Phone className="h-4 w-4" />
-              <a 
-                href={`tel:${profile.phoneNumber}`}
-                className="text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {profile.phoneNumber}
-              </a>
+        {profile.notes && profile.notes.length > 0 && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">Recent Notes</h4>
+            <div className="space-y-2">
+              {profile.notes.slice(0, 3).map((note: any, index: number) => (
+                <div key={index} className="p-2 bg-gray-50 rounded text-sm">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: note.compiledContent || note.content }} />
+                    </div>
+                    <div className="text-xs text-gray-500 ml-2">
+                      {note.wordCount} words
+                    </div>
+                  </div>
+                  {note.updatedAt && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Updated: {format(new Date(note.updatedAt), 'MMM dd, HH:mm')}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
-        
-        {profile.locationId && (
-          <div>
-            <p className="text-sm font-medium text-gray-900">Location</p>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MapPin className="h-4 w-4" />
-              Location {profile.locationId}
-            </div>
-          </div>
-        )}
-        
-        <div>
-          <p className="text-sm font-medium text-gray-900">Member Since</p>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calendar className="h-4 w-4" />
-            {profile.createdAt ? format(new Date(profile.createdAt), 'MMMM d, yyyy') : 'Unknown'}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
