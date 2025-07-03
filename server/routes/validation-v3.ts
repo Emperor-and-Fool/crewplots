@@ -205,6 +205,48 @@ router.post('/orchestrator3/test', authenticateUser, async (req, res) => {
   }
 });
 
+// MESSAGING TEST ENDPOINT - Plan 053 integration verification
+router.post('/test-messaging', authenticateUser, async (req, res) => {
+  try {
+    console.log('🧪 MESSAGING VALIDATION TEST: Testing messaging package integration');
+    
+    // Test data for messaging validation
+    const testData = {
+      content: 'This is a test message for ValidationEngine30 integration',
+      workflow: 'application',
+      messageType: 'rich-text',
+      priority: 'normal',
+      isPrivate: false
+    };
+    
+    // Test messaging validation through ValidationEngine30
+    const result = await validationEngine30.validateAndExecute(
+      'create',
+      'messaging',
+      testData,
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest',
+        permissions: ['schedule.create'] // Required permission for messaging operations
+      }
+    );
+    
+    res.json({
+      success: result.overall.isValid,
+      result,
+      testData,
+      message: 'Messaging package validation test completed',
+      user: req.user
+    });
+  } catch (error) {
+    console.error('🚨 MESSAGING VALIDATION TEST ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Messaging test failed'
+    });
+  }
+});
+
 // PLAN 050: Dual-use pattern endpoints as specified
 // POST /api/validation/v3/validate (direct validation - fast path)
 router.post('/validate', authenticateUser, async (req, res) => {
@@ -336,16 +378,16 @@ router.get('/messaging/notes', authenticateUser, async (req, res) => {
       }
     );
 
-    if (result.isValid) {
+    if (result.overall.isValid) {
       res.json({
         success: true,
         message: 'Notes retrieved via ValidationEngine v3',
-        data: result.data || []
+        data: result.threads.transaction?.data || []
       });
     } else {
       res.status(400).json({
         success: false,
-        errors: result.errors,
+        errors: result.overall.errors,
         message: 'Validation failed'
       });
     }
@@ -379,16 +421,16 @@ router.put('/messaging/notes/:id', authenticateUser, async (req, res) => {
       }
     );
 
-    if (result.isValid) {
+    if (result.overall.isValid) {
       res.json({
         success: true,
         message: 'Note updated via ValidationEngine v3',
-        data: result.data
+        data: result.threads.transaction?.data
       });
     } else {
       res.status(400).json({
         success: false,
-        errors: result.errors,
+        errors: result.overall.errors,
         message: 'Validation failed'
       });
     }
@@ -418,7 +460,7 @@ router.delete('/messaging/notes/:id', authenticateUser, async (req, res) => {
       }
     );
 
-    if (result.isValid) {
+    if (result.overall.isValid) {
       res.json({
         success: true,
         message: 'Note deleted via ValidationEngine v3'
@@ -426,7 +468,7 @@ router.delete('/messaging/notes/:id', authenticateUser, async (req, res) => {
     } else {
       res.status(400).json({
         success: false,
-        errors: result.errors,
+        errors: result.overall.errors,
         message: 'Validation failed'
       });
     }

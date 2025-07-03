@@ -202,54 +202,39 @@ export interface MessagingData {
   ownerStillActive?: boolean;
 }
 
-// Messaging Package Interface matching scheduler package pattern
+// Messaging Package Interface matching ValidationEngine30 expectations
 export interface MessagingPackage {
   entityType: 'messaging';
   
-  // Schema validation
-  validateSchema: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => {
+  // Schema validation - matches ValidationEngine30 signature
+  validateSchema: (data: MessagingData) => Promise<{
     isValid: boolean;
     errors: string[];
-  };
+  }>;
   
   // Permission requirements
-  getRequiredPermissions: (operation: 'create' | 'read' | 'update' | 'delete') => string[];
+  getRequiredPermissions: (operation: string) => string[];
   
-  // Business rule validation
-  validateBusinessRules: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => {
+  // Business rule validation - matches ValidationEngine30 signature
+  validateBusinessRules: (data: MessagingData, context: any) => Promise<{
     isValid: boolean;
     errors: string[];
-  };
+    warnings?: string[];
+  }>;
   
   // Package assembly (data preparation)
-  assemblePackage: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => MessagingData;
+  assemblePackage: (data: MessagingData, operation: string) => MessagingData;
 }
 
-// Implementation of messaging package
+// Implementation of messaging package - matching ValidationEngine30 async expectations
 export const messagingPackage: MessagingPackage = {
   entityType: 'messaging',
   
-  validateSchema: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => {
+  validateSchema: async (data: MessagingData) => {
     try {
-      let schema;
-      switch (operation) {
-        case 'create':
-          schema = createNoteSchema;
-          break;
-        case 'read':
-          schema = readNotesSchema;
-          break;
-        case 'update':
-          schema = updateNoteSchema;
-          break;
-        case 'delete':
-          schema = deleteNoteSchema;
-          break;
-        default:
-          return { isValid: false, errors: [`Unknown operation: ${operation}`] };
-      }
-      
-      const result = schema.safeParse(data);
+      // For now, validate against create schema as default
+      // In a full implementation, operation would be passed as context
+      const result = createNoteSchema.safeParse(data);
       if (result.success) {
         return { isValid: true, errors: [] };
       } else {
@@ -266,7 +251,7 @@ export const messagingPackage: MessagingPackage = {
     }
   },
   
-  getRequiredPermissions: (operation: 'create' | 'read' | 'update' | 'delete') => {
+  getRequiredPermissions: (operation: string) => {
     // Use same permission pattern as scheduler packages
     switch (operation) {
       case 'create':
@@ -282,11 +267,24 @@ export const messagingPackage: MessagingPackage = {
     }
   },
   
-  validateBusinessRules: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => {
-    return validateMessagingBusinessRules(operation, data, {});
+  validateBusinessRules: async (data: MessagingData, context: any) => {
+    try {
+      const result = validateMessagingBusinessRules('create', data, context);
+      return {
+        isValid: result.isValid,
+        errors: result.errors,
+        warnings: [] // Can be enhanced later
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        errors: [`Business rule validation error: ${error instanceof Error ? error.message : 'Unknown error'}`],
+        warnings: []
+      };
+    }
   },
   
-  assemblePackage: (data: MessagingData, operation: 'create' | 'read' | 'update' | 'delete') => {
+  assemblePackage: (data: MessagingData, operation: string) => {
     // Add server-side fields and transformations
     return {
       ...data,

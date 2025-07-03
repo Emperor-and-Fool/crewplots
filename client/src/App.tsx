@@ -27,6 +27,7 @@ import Settings from "@/pages/settings";
 import EmailSettings from "@/pages/email-settings";
 import SecuritySettings from "@/pages/security-settings";
 import { UserSettings } from "@/modules/users/pages";
+import MessagingValidationTest from "@/pages/MessagingValidationTest";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 import LandingPage from "@/pages/landing";
@@ -425,6 +426,17 @@ function App() {
                     <RoleProtectedRoute 
                       component={ProfileEdit} 
                       requiredRoles={["owner", "app_manager", "crew_chief", "crew_member", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
+              <Route path="/messaging-validation-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={MessagingValidationTest} 
+                      requiredRoles={["administrator"]} 
                     />
                   </AppLayout> : 
                   <Redirect to="/login" />}

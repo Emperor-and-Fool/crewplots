@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from './DataAggregationEngine';
+import { MessageService } from '../message-storage-service';
+import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
 
 // Import proven validation packages from existing ValidationEngine.ts
@@ -78,10 +80,119 @@ export interface ValidationResult30 {
 }
 
 /**
+ * HybridTransactionHandler - Manages coordinated PostgreSQL + MongoDB transactions
+ * Following MessageStorageService patterns for hybrid storage
+ */
+class HybridTransactionHandler {
+  private messageService: MessageService;
+
+  constructor() {
+    this.messageService = MessageService.getInstance();
+  }
+
+  /**
+   * Execute hybrid transaction for messaging operations
+   * Coordinates PostgreSQL metadata with MongoDB content storage
+   */
+  async executeMessagingTransaction(validationPackage: any, request: any): Promise<any> {
+    console.log(`[HybridTransactionHandler] Executing messaging transaction for ${request.operation}`);
+    
+    try {
+      // Verify MongoDB connection availability (no fallbacks allowed)
+      const db = mongoConnection.getDatabase();
+      if (!db) {
+        throw new Error('CRITICAL: MongoDB connection required for messaging operations - no fallbacks allowed');
+      }
+
+      // For messaging operations, delegate to MessageService hybrid storage patterns
+      if (request.operation === 'create') {
+        return await this.handleMessagingCreate(request.data, request.context);
+      } else if (request.operation === 'update') {
+        return await this.handleMessagingUpdate(request.data, request.context);
+      } else if (request.operation === 'delete') {
+        return await this.handleMessagingDelete(request.data, request.context);
+      } else {
+        throw new Error(`Unsupported messaging operation: ${request.operation}`);
+      }
+
+    } catch (error) {
+      console.error(`[HybridTransactionHandler] Transaction failed:`, error);
+      throw error;
+    }
+  }
+
+  private async handleMessagingCreate(data: any, context: any): Promise<any> {
+    // Use MessageService createNoteRef for hybrid storage transaction
+    console.log(`[HybridTransactionHandler] Creating messaging note for user ${context.userId}`);
+    
+    const result = await this.messageService.createNoteRef({
+      userId: context.userId,
+      content: data.content || '',
+      messageType: data.contentType || 'rich-text',
+      workflow: data.workflow || 'general'
+    });
+
+    return {
+      isValid: true,
+      errors: [],
+      data: result
+    };
+  }
+
+  private async handleMessagingUpdate(data: any, context: any): Promise<any> {
+    console.log(`[HybridTransactionHandler] Updating messaging note ${data.id} for user ${context.userId}`);
+    
+    if (!data.id) {
+      throw new Error('Note ID required for update operation');
+    }
+
+    const result = await this.messageService.updateNoteRef(
+      data.id,
+      { content: data.content || '' }
+    );
+
+    return {
+      isValid: true,
+      errors: [],
+      data: result
+    };
+  }
+
+  private async handleMessagingDelete(data: any, context: any): Promise<any> {
+    console.log(`[HybridTransactionHandler] Deleting messaging note ${data.id} for user ${context.userId}`);
+    
+    if (!data.id) {
+      throw new Error('Note ID required for delete operation');
+    }
+
+    const result = await this.messageService.deleteNoteRef(data.id);
+    
+    return {
+      isValid: true,
+      errors: [],
+      data: { deleted: result, id: data.id }
+    };
+  }
+
+  /**
+   * Rollback capabilities for failed hybrid transactions
+   */
+  async rollbackTransaction(transactionId: string, operations: any[]): Promise<void> {
+    console.log(`[HybridTransactionHandler] Rolling back transaction ${transactionId}`);
+    console.warn(`[HybridTransactionHandler] Rollback not fully implemented - manual intervention may be required`);
+  }
+}
+
+/**
  * ValidationEngine30 - Enhanced validation engine using proven 5-thread patterns
  * Built on ValidationEngine.ts proven architecture with aggregation enhancements
  */
 export class ValidationEngine30 {
+  private hybridTransactionHandler: HybridTransactionHandler;
+
+  constructor() {
+    this.hybridTransactionHandler = new HybridTransactionHandler();
+  }
 
   /**
    * Get validation package for entity type (proven pattern from ValidationEngine.ts)
@@ -145,7 +256,7 @@ export class ValidationEngine30 {
 
       // THREAD 2: Schema Validation (PROVEN PATTERN)
       console.log('🔍 VALIDATION ENGINE 30: Starting schema validation');
-      const schemaResult = pkg.validateSchema(assembledData, operation as any);
+      const schemaResult = await pkg.validateSchema(assembledData);
       console.log('🔍 Schema validation result:', schemaResult);
       if (!schemaResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, schemaResult.errors, false);
@@ -180,11 +291,22 @@ export class ValidationEngine30 {
         return this.createFailureResult(packageId, operation, entityType, businessRuleResult.errors, !!context.aggregatedData);
       }
 
-      // THREAD 5: Database Transaction (PROVEN PATTERN)
-      console.log('💾 VALIDATION ENGINE 30: Starting database transaction');
+      // THREAD 5: Enhanced Database Transaction (PROVEN PATTERN + Hybrid Storage)
+      console.log('💾 VALIDATION ENGINE 30: Starting enhanced database transaction');
       let transactionResult;
       try {
-        if (entityType === 'scheduleBlock' && operation === 'create') {
+        // Handle messaging operations with hybrid storage
+        if (entityType === 'messaging') {
+          console.log('🔄 VALIDATION ENGINE 30: Using hybrid transaction handler for messaging');
+          const hybridResult = await this.hybridTransactionHandler.executeMessagingTransaction(
+            pkg, 
+            { operation, data: assembledData, context }
+          );
+          transactionResult = hybridResult.data;
+          console.log('💾 Messaging operation completed via hybrid handler');
+        }
+        // Handle scheduler operations with PostgreSQL storage (existing patterns)
+        else if (entityType === 'scheduleBlock' && operation === 'create') {
           transactionResult = await storage.createScheduleBlock(assembledData);
           console.log('💾 Schedule block created with ID:', transactionResult.id);
         } else if (entityType === 'scheduleBlock' && operation === 'update') {
