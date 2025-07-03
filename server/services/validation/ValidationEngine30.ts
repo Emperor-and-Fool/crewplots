@@ -124,13 +124,23 @@ class HybridTransactionHandler {
   private async handleMessagingCreate(data: any, context: any): Promise<any> {
     // Use MessageService createNoteRef for hybrid storage transaction
     console.log(`[HybridTransactionHandler] Creating messaging note for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Input data:`, JSON.stringify(data, null, 2));
     
-    const result = await this.messageService.createNoteRef({
+    // Map validation data to InsertNoteRef schema fields
+    const noteRefData = {
       userId: context.userId,
       content: data.content || '',
-      messageType: data.contentType || 'rich-text',
-      workflow: data.workflow || 'general'
-    });
+      messageType: data.messageType || 'rich-text', // Correct field name from schema
+      workflow: data.workflow || 'application',
+      priority: data.priority || 'normal',
+      isPrivate: data.isPrivate || false,
+      receiverId: data.targetUserId || null, // Map targetUserId to receiverId
+      noteType: 'message' // Default note type for messaging
+    };
+    
+    console.log(`[HybridTransactionHandler] Mapped note data:`, JSON.stringify(noteRefData, null, 2));
+    
+    const result = await this.messageService.createNoteRef(noteRefData);
 
     return {
       isValid: true,
