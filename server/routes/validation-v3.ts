@@ -5,6 +5,8 @@ import { dataOrchestrator3 } from '../services/validation/DataOrchestrator3';
 import { authenticateUser } from '../middleware/auth';
 import type { DataAggregationTask } from '../services/validation/DataAggregationEngine';
 import type { User } from '@shared/schema';
+// Import messaging package from ValidationEngine30 registry
+import { messagingPackage } from '../../client/src/modules/messaging/validation/packages/messagingPackage';
 
 const router = express.Router();
 
@@ -270,6 +272,169 @@ router.post('/orchestrate', authenticateUser, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Orchestration failed'
+    });
+  }
+});
+
+// POST /api/validation/v3/messaging/test - Test messaging validation via ValidationEngine30
+router.post('/messaging/test', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MESSAGING V3 TEST: Testing messaging via ValidationEngine30');
+    
+    // Test data for messaging creation
+    const testData = {
+      content: 'Test message via ValidationEngine v3',
+      workflow: 'application',
+      messageType: 'rich-text',
+      priority: 'normal',
+      isPrivate: false
+    };
+
+    // Test messaging creation through ValidationEngine30
+    const result = await validationEngine30.validateAndExecute(
+      'create',
+      'messaging',
+      testData,
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+    
+    res.json({
+      success: true,
+      message: 'Messaging ValidationEngine30 test completed',
+      data: {
+        validationResult: result,
+        testData
+      }
+    });
+  } catch (error) {
+    console.error('🚨 MESSAGING V3 TEST ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// GET /api/validation/v3/messaging/notes - Read notes via ValidationEngine v3
+router.get('/messaging/notes', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MESSAGING V3: Reading notes via ValidationEngine v3');
+    
+    const result = await validationEngine30.validateAndExecute(
+      'read',
+      'messaging.read',
+      {
+        userId: (req.user as any)?.id,
+        workflow: req.query.workflow || 'application'
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+
+    if (result.isValid) {
+      res.json({
+        success: true,
+        message: 'Notes retrieved via ValidationEngine v3',
+        data: result.data || []
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        errors: result.errors,
+        message: 'Validation failed'
+      });
+    }
+  } catch (error) {
+    console.error('🚨 MESSAGING V3 ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// PUT /api/validation/v3/messaging/notes/:id - Update notes via ValidationEngine v3
+router.put('/messaging/notes/:id', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MESSAGING V3: Updating note via ValidationEngine v3');
+    
+    const result = await validationEngine30.validateAndExecute(
+      'update',
+      'messaging.update',
+      {
+        id: parseInt(req.params.id),
+        content: req.body.content,
+        messageType: req.body.messageType,
+        priority: req.body.priority,
+        isPrivate: req.body.isPrivate
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+
+    if (result.isValid) {
+      res.json({
+        success: true,
+        message: 'Note updated via ValidationEngine v3',
+        data: result.data
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        errors: result.errors,
+        message: 'Validation failed'
+      });
+    }
+  } catch (error) {
+    console.error('🚨 MESSAGING V3 ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// DELETE /api/validation/v3/messaging/notes/:id - Delete notes via ValidationEngine v3
+router.delete('/messaging/notes/:id', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MESSAGING V3: Deleting note via ValidationEngine v3');
+    
+    const result = await validationEngine30.validateAndExecute(
+      'delete',
+      'messaging.delete',
+      {
+        id: parseInt(req.params.id)
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+
+    if (result.isValid) {
+      res.json({
+        success: true,
+        message: 'Note deleted via ValidationEngine v3'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        errors: result.errors,
+        message: 'Validation failed'
+      });
+    }
+  } catch (error) {
+    console.error('🚨 MESSAGING V3 ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
