@@ -46,6 +46,50 @@ export default function MessagingValidationTest() {
     }
   };
 
+  const testMotivationNoteValidation = async () => {
+    setLoading(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      console.log('🧪 Testing motivation note validation package integration...');
+      
+      const response = await fetch('/api/validation/v3/motivation-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          content: 'Test motivation note via ValidationEngine30 - excellent crew member with strong dedication to quality work!',
+          userId: 3, // Test with existing user
+          priority: 'normal'
+        })
+      });
+      
+      const data = await response.json();
+      
+      console.log('📥 Motivation note validation test response:', data);
+      
+      // Transform ValidationEngine30 response
+      const transformedResults = {
+        success: data.success || false,
+        message: data.success 
+          ? 'Motivation note ValidationEngine30 test successful!' 
+          : `Validation failed: ${data.errors?.join(', ') || data.message || 'Unknown error'}`,
+        user: data.user || null,
+        testData: data.data || null,
+        validationMetadata: data.validationMetadata || null,
+        result: data // Include full ValidationEngine30 response for debugging
+      };
+      
+      setResults(transformedResults);
+    } catch (err) {
+      console.error('🚨 Motivation note validation test error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <Card>
@@ -56,13 +100,24 @@ export default function MessagingValidationTest() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
-            onClick={testMessagingValidation}
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? 'Testing...' : 'Test Messaging Validation'}
-          </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button 
+              onClick={testMessagingValidation}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Testing...' : 'Test Messaging Validation'}
+            </Button>
+            
+            <Button 
+              onClick={testMotivationNoteValidation}
+              disabled={loading}
+              className="w-full"
+              variant="outline"
+            >
+              {loading ? 'Testing...' : 'Test Motivation Note Validation'}
+            </Button>
+          </div>
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">

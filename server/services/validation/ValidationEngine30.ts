@@ -13,6 +13,9 @@ import { shiftPackage } from '../../../client/src/modules/scheduler/validation/p
 // Import messaging validation package
 import { messagingPackage } from '../../../client/src/modules/messaging/validation/packages/messagingPackage';
 
+// Import motivation note validation package
+import { motivationNotePackage } from '../../../client/src/modules/messaging/validation/packages/motivationNotePackage';
+
 /**
  * ValidationEngine30.ts - Enhanced Validation Engine
  * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
@@ -37,7 +40,8 @@ const enhancedPackageRegistry = {
   scheduleBlock: scheduleBlockPackage,
   weekSchedule: weekSchedulePackage,
   shift: shiftPackage,
-  messaging: messagingPackage
+  messaging: messagingPackage,
+  motivationNote: motivationNotePackage
 } as const;
 
 export interface ValidationRequest30 {

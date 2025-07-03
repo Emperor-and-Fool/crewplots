@@ -164,28 +164,43 @@ export default function CrewMemberProfile() {
     }
   });
 
-  // Update motivation note mutation
+  // Update motivation note mutation - now using ValidationEngine30
   const updateNoteMutation = useMutation({
     mutationFn: async (note: string) => {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/validation/v3/motivation-notes/${userId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: note })
+        credentials: 'include',
+        body: JSON.stringify({ 
+          content: note,
+          priority: 'normal'
+        })
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to update notes: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to update motivation note: ${response.status}`);
       }
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
-      toast({ title: "Motivation note updated successfully" });
+      
+      // Show validation metadata if available
+      const isValid = data.validationMetadata?.usedAggregation ? 
+        'Motivation note updated with enhanced validation' : 
+        'Motivation note updated successfully';
+        
+      toast({ title: isValid });
     },
     onError: (error) => {
-      console.error('Notes update error:', error);
-      toast({ title: "Failed to update motivation note", variant: "destructive" });
+      console.error('ValidationEngine30 notes update error:', error);
+      toast({ 
+        title: "Failed to update motivation note", 
+        description: error instanceof Error ? error.message : 'Validation failed',
+        variant: "destructive" 
+      });
     }
   });
 

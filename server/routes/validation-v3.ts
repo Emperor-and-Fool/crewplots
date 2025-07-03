@@ -508,4 +508,102 @@ router.delete('/messaging/notes/:id', authenticateUser, async (req, res) => {
   }
 });
 
+// POST /api/validation/v3/motivation-notes - Create motivation note via ValidationEngine30
+router.post('/motivation-notes', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MOTIVATION NOTE V3: Creating motivation note via ValidationEngine30');
+    
+    const result = await validationEngine30.validateAndExecute(
+      'create',
+      'motivationNote',
+      {
+        content: req.body.content,
+        userId: req.body.userId,
+        workflow: 'user-management',
+        messageType: 'motivation-note',
+        priority: req.body.priority || 'normal',
+        isPrivate: true,
+        noteType: 'motivation',
+        visibility: 'private',
+        createdBy: (req.user as any)?.id
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+
+    if (result.overall.isValid) {
+      res.json({
+        success: true,
+        message: 'Motivation note created via ValidationEngine v3',
+        data: result.threads.transaction?.data,
+        validationMetadata: result.overall.metadata
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        errors: result.overall.errors,
+        warnings: result.overall.warnings,
+        message: 'Motivation note validation failed'
+      });
+    }
+  } catch (error) {
+    console.error('🚨 MOTIVATION NOTE V3 ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// PUT /api/validation/v3/motivation-notes/:userId - Update motivation note via ValidationEngine30
+router.put('/motivation-notes/:userId', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔍 MOTIVATION NOTE V3: Updating motivation note via ValidationEngine30');
+    
+    const result = await validationEngine30.validateAndExecute(
+      'update',
+      'motivationNote',
+      {
+        content: req.body.content,
+        userId: parseInt(req.params.userId),
+        workflow: 'user-management',
+        messageType: 'motivation-note',
+        priority: req.body.priority || 'normal',
+        isPrivate: true,
+        noteType: 'motivation',
+        visibility: 'private',
+        createdBy: (req.user as any)?.id
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+      }
+    );
+
+    if (result.overall.isValid) {
+      res.json({
+        success: true,
+        message: 'Motivation note updated via ValidationEngine v3',
+        data: result.threads.transaction?.data,
+        validationMetadata: result.overall.metadata
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        errors: result.overall.errors,
+        warnings: result.overall.warnings,
+        message: 'Motivation note validation failed'
+      });
+    }
+  } catch (error) {
+    console.error('🚨 MOTIVATION NOTE V3 ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
