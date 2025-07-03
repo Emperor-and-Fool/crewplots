@@ -19,7 +19,19 @@ export default function MessagingValidationTest() {
       const response = await apiRequest('POST', '/api/validation/v3/test-messaging', {});
       
       console.log('📥 Messaging validation test response:', response);
-      setResults(response);
+      
+      // Transform ValidationEngine30 response to expected format
+      const transformedResults = {
+        success: response.overall?.isValid || false,
+        message: response.overall?.isValid 
+          ? 'ValidationEngine30 hybrid storage test successful!' 
+          : `Validation failed: ${response.overall?.errors?.join(', ') || 'Unknown error'}`,
+        user: response.user || null,
+        testData: response.threads?.dataAssembly?.data || null,
+        result: response // Include full ValidationEngine30 response for debugging
+      };
+      
+      setResults(transformedResults);
     } catch (err) {
       console.error('🚨 Messaging validation test error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
