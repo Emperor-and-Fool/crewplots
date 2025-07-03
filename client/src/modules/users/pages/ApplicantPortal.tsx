@@ -31,11 +31,6 @@ function ApplicantPortal() {
       await logout();
       console.log('🔴 LOGOUT DEBUG: Auth context logout() completed successfully');
       
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-      
       console.log('🔴 LOGOUT DEBUG: Navigating to home page...');
       navigate('/');
       console.log('🔴 LOGOUT DEBUG: Navigation completed');
