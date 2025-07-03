@@ -10,17 +10,30 @@ export const LoginPage = () => {
   const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
 
-  // Check for logout success flag on page load
+  // Dual verification: Check logout flag + verify server session destruction
   useEffect(() => {
     const logoutSuccess = sessionStorage.getItem('logout-success');
     if (logoutSuccess === 'true') {
-      // Show logout success banner
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out and your session has been cleared.",
-      });
-      // Immediately remove the flag
-      sessionStorage.removeItem('logout-success');
+      // Step 1: Flag exists - user came from logout action
+      
+      // Step 2: Verify server-side session destruction
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(response => {
+          if (response.status === 401) {
+            // Step 3a: Session destroyed - show success banner
+            toast({
+              title: "Logged out successfully",
+              description: "You have been logged out and your session has been cleared.",
+            });
+          }
+          // Step 3b: Session exists or other status - silent failure, no banner
+          // Always clear flag regardless of server response
+          sessionStorage.removeItem('logout-success');
+        })
+        .catch(() => {
+          // Network error - clear flag silently, no banner
+          sessionStorage.removeItem('logout-success');
+        });
     }
   }, [toast]);
 
