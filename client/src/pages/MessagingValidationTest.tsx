@@ -17,13 +17,14 @@ export default function MessagingValidationTest() {
       console.log('🧪 Testing messaging validation package integration...');
       
       const response = await apiRequest('POST', '/api/validation/v3/test-messaging', {});
+      const data = await response.json();
       
-      console.log('📥 Messaging validation test response:', response);
-      console.log('🔍 Response type:', typeof response);
-      console.log('🔍 Response keys:', Object.keys(response || {}));
+      console.log('📥 Messaging validation test response:', data);
+      console.log('🔍 Response type:', typeof data);
+      console.log('🔍 Response keys:', Object.keys(data || {}));
       
       // Handle both direct ValidationEngine30 response and wrapped response
-      const validationResult = response.result || response;
+      const validationResult = data.result || data;
       
       // Transform ValidationEngine30 response to expected format
       const transformedResults = {
