@@ -209,6 +209,11 @@ router.post('/orchestrator3/test', authenticateUser, async (req, res) => {
 router.post('/test-messaging', authenticateUser, async (req, res) => {
   try {
     console.log('🧪 MESSAGING VALIDATION TEST: Testing messaging package integration');
+    console.log('🧪 User context:', { 
+      userId: (req.user as any)?.id, 
+      userRole: (req.user as any)?.role,
+      username: (req.user as any)?.username
+    });
     
     // Test data for messaging validation
     const testData = {
@@ -218,6 +223,8 @@ router.post('/test-messaging', authenticateUser, async (req, res) => {
       priority: 'normal',
       isPrivate: false
     };
+    
+    console.log('🧪 Test data:', JSON.stringify(testData, null, 2));
     
     // Test messaging validation through ValidationEngine30
     const result = await validationEngine30.validateAndExecute(
@@ -231,18 +238,33 @@ router.post('/test-messaging', authenticateUser, async (req, res) => {
       }
     );
     
+    console.log('🧪 Validation result:', JSON.stringify(result, null, 2));
+    
     res.json({
       success: result.overall.isValid,
       result,
       testData,
       message: 'Messaging package validation test completed',
-      user: req.user
+      user: {
+        id: (req.user as any)?.id,
+        username: (req.user as any)?.username,
+        role: (req.user as any)?.role
+      },
+      detailedErrors: result.overall.errors,
+      validationThreads: {
+        schema: result.threads.schema,
+        permission: result.threads.permission,
+        businessRules: result.threads.businessRules,
+        transaction: result.threads.transaction
+      }
     });
   } catch (error) {
     console.error('🚨 MESSAGING VALIDATION TEST ERROR:', error);
+    console.error('🚨 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Messaging test failed'
+      error: error instanceof Error ? error.message : 'Messaging test failed',
+      stack: error instanceof Error ? error.stack : undefined
     });
   }
 });
