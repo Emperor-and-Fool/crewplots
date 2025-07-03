@@ -19,16 +19,21 @@ export default function MessagingValidationTest() {
       const response = await apiRequest('POST', '/api/validation/v3/test-messaging', {});
       
       console.log('📥 Messaging validation test response:', response);
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Response keys:', Object.keys(response || {}));
+      
+      // Handle both direct ValidationEngine30 response and wrapped response
+      const validationResult = response.result || response;
       
       // Transform ValidationEngine30 response to expected format
       const transformedResults = {
-        success: response.overall?.isValid || false,
-        message: response.overall?.isValid 
+        success: validationResult.overall?.isValid || false,
+        message: validationResult.overall?.isValid 
           ? 'ValidationEngine30 hybrid storage test successful!' 
-          : `Validation failed: ${response.overall?.errors?.join(', ') || 'Unknown error'}`,
-        user: response.user || null,
-        testData: response.threads?.dataAssembly?.data || null,
-        result: response // Include full ValidationEngine30 response for debugging
+          : `Validation failed: ${validationResult.overall?.errors?.join(', ') || 'Unknown error'}`,
+        user: validationResult.user || null,
+        testData: validationResult.threads?.dataAssembly?.data || null,
+        result: validationResult // Include full ValidationEngine30 response for debugging
       };
       
       setResults(transformedResults);
