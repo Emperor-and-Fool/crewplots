@@ -1,52 +1,38 @@
 import { z } from 'zod';
 import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 
-// Lightweight auth profile validation schema - minimal fields for auth-context
+// Auth profile INPUT validation schema - validates request parameters
 const authProfileSchema = z.object({
-  id: z.number(),
-  username: z.string(),
-  role: z.string(),
-  workflowPermissions: z.record(z.any()).optional(),
-  blockedPermissions: z.array(z.string()).optional()
+  userId: z.string().min(1, "User ID is required")
 });
 
-// Minimal business rules for auth validation
+// Minimal business rules for auth input validation
 const authProfileBusinessRules = [
   (data: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // Basic auth validation
-    if (!data.id) {
-      errors.push('User ID is required for authentication');
-      return { warnings, errors };
+    // Validate userId parameter format
+    if (data.userId && typeof data.userId !== 'string') {
+      errors.push('User ID must be a string');
     }
 
-    if (!data.username) {
-      errors.push('Username is required for authentication');
-      return { warnings, errors };
-    }
-
-    if (!data.role) {
-      errors.push('User role is required for authentication');
-      return { warnings, errors };
+    if (data.userId && data.userId.trim().length === 0) {
+      errors.push('User ID cannot be empty');
     }
 
     return { warnings, errors };
   }
 ];
 
-// Lightweight assembly function for auth profiles - passport data only
+// Assembly function for auth profile requests - converts input to storage query
 const authProfileAssembly = (rawData: any, user: any, operation: string) => {
   return {
-    id: rawData.id,
-    username: rawData.username,
-    role: rawData.role,
-    workflowPermissions: rawData.workflowPermissions || {},
-    blockedPermissions: rawData.blockedPermissions || [],
-    // Include user context for validation
-    user: user,
-    targetUserId: rawData.id
+    // Convert userId input parameter to query parameter
+    userId: rawData.userId,
+    // Include requesting user context for validation
+    requestingUser: user,
+    operation: operation
   };
 };
 
