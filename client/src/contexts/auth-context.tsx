@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAuth = async () => {
       try {
-        // Use ValidationEngine30 orchestrate endpoint with authProfile package
-        const response = await fetch('/api/validation/v3/orchestrate', {
+        // Use ValidationEngine30 auth endpoint - simplified authentication check
+        const response = await fetch('/api/validation/v3/auth', {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -67,10 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
           },
-          body: JSON.stringify({
-            packageName: 'authProfile',
-            data: {}
-          })
+          body: JSON.stringify({})
         });
         
         if (response.ok) {

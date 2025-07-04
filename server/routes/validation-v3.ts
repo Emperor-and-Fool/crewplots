@@ -310,6 +310,52 @@ router.post('/validate', authenticateUser, async (req, res) => {
   }
 });
 
+// POST /api/validation/v3/auth - Authentication validation endpoint
+router.post('/auth', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔐 AUTH VALIDATION: User session check');
+    
+    // For auth validation, we just need to confirm the user is authenticated
+    // The authenticateUser middleware already validated the session
+    const user = req.user as any;
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+    
+    // Return user data in ValidationEngine30 format
+    res.json({
+      success: true,
+      result: {
+        isValid: true,
+        user: user,
+        authProfile: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          workflowPermissions: user.workflowPermissions || {}
+        }
+      },
+      user: user,
+      metadata: {
+        operation: 'auth-check',
+        entityType: 'authProfile',
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('[ValidationEngine 3.0] Auth validation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Authentication validation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // POST /api/validation/v3/orchestrate (aggregate-then-validate - comprehensive path)
 router.post('/orchestrate', authenticateUser, async (req, res) => {
   try {
