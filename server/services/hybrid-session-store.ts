@@ -20,7 +20,7 @@ export class HybridSessionStore extends session.Store {
     super();
     this.pgStore = new PgStore({ 
       pool: pool,
-      tableName: 'session'
+      tableName: 'sessions'
     });
     console.log('[HybridSessionStore] Initialized with PostgreSQL backend and Redis cache layer');
   }

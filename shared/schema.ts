@@ -476,7 +476,7 @@ export const redisCache = pgTable("redis_cache", {
 });
 
 // Express Session Store - PostgreSQL backend for session storage
-export const sessions = pgTable("session", {
+export const sessions = pgTable("sessions", {
   sid: varchar("sid", { length: 255 }).primaryKey(),
   sess: jsonb("sess").notNull(),
   expire: timestamp("expire", { mode: 'date' }).notNull(),
