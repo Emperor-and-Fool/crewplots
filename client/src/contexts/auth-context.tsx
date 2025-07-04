@@ -58,14 +58,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAuth = async () => {
       try {
-        // Use lightweight ValidationEngine30 auth endpoint - no fallbacks
-        const response = await fetch('/api/validation/v3/auth', {
-          method: 'GET',
+        // Use ValidationEngine30 orchestrate endpoint with authProfile package
+        const response = await fetch('/api/validation/v3/orchestrate', {
+          method: 'POST',
           credentials: 'include',
           headers: {
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          }
+          },
+          body: JSON.stringify({
+            packageName: 'authProfile',
+            data: {}
+          })
         });
         
         if (response.ok) {
