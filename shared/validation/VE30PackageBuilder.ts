@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodSchema, ZodError } from 'zod';
 
 /**
  * VE30PackageBuilder - ValidationEngine 3.0 Package Builder Standard
@@ -32,23 +32,19 @@ export class VE30PackageBuilder {
    * Standard schema validation logic
    * Handles Zod schema validation with operation-specific rules
    */
-  static validateSchema(data: any, operation: string, customSchema: z.ZodSchema): { isValid: boolean; errors: string[] } {
+  static validateSchema(data: any, operation: string, customSchema: ZodSchema<any>): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
     
     try {
-      // For creation operations, handle fields that are assigned during transaction
-      if (operation === 'create') {
-        // Use partial schema for creation to allow missing auto-assigned fields
-        const result = (customSchema as any).partial().safeParse(data);
-        if (!result.success) {
-          errors.push(...result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`));
-        }
-      } else {
-        // For update/read operations, validate all fields
-        const result = customSchema.safeParse(data);
-        if (!result.success) {
-          errors.push(...result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`));
-        }
+      // Validate data against schema
+      const result = customSchema.safeParse(data);
+      if (!result.success) {
+        // For creation operations, filter out missing field errors for auto-assigned fields
+        const filteredErrors = operation === 'create' ? 
+          result.error.errors.filter(e => !['id', 'createdAt', 'updatedAt'].includes(e.path[0] as string)) :
+          result.error.errors;
+        
+        errors.push(...filteredErrors.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`));
       }
     } catch (error) {
       errors.push(`Schema validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -137,7 +133,7 @@ export class VE30PackageBuilder {
       let assembledData = customAssembly ? customAssembly(data, user, operation) : data;
 
       // Standard server-side field injection
-      const standardFields = {
+      const standardFields: any = {
         operation,
         timestamp: new Date().toISOString(),
         requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

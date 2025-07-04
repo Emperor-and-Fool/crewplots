@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 
 // User profile validation schema
 const userProfileSchema = z.object({
@@ -14,9 +15,9 @@ const userProfileSchema = z.object({
   locationId: z.number().optional()
 });
 
-// Business rules for user profile access
-export const userProfileBusinessRules = {
-  validateProfileAccess: (data: any) => {
+// Business rules for user profile validation
+const userProfileBusinessRules = [
+  (data: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
@@ -44,10 +45,11 @@ export const userProfileBusinessRules = {
     return { warnings, errors };
   },
 
-  validateDataCompleteness: (data: any) => {
+  (data: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
+    // Data completeness validation
     if (!data.username) {
       errors.push('Username is required');
     }
@@ -57,43 +59,34 @@ export const userProfileBusinessRules = {
 
     return { warnings, errors };
   }
+];
+
+// Custom assembly function for user profiles
+const userProfileAssembly = (rawData: any, user: any, operation: string) => {
+  return {
+    id: rawData.id,
+    username: rawData.username,
+    email: rawData.email,
+    firstName: rawData.firstName,
+    lastName: rawData.lastName,
+    phoneNumber: rawData.phoneNumber,
+    role: rawData.role,
+    status: rawData.status,
+    createdAt: rawData.createdAt,
+    locationId: rawData.locationId,
+    // Include user context for business rule validation
+    user: user,
+    targetUserId: rawData.targetUserId || rawData.id
+  };
 };
 
-// ValidationEngine30 compatible package interface
-interface ValidationPackage30 {
-  packageType: string;
-  schema: z.ZodSchema<any>;
-  permissions: string[];
-  businessRules: Array<(data: any) => { warnings: string[]; errors: string[]; }>;
-  assembleData: (rawData: any) => any;
-}
-
-export const userProfilePackage: ValidationPackage30 = {
-  packageType: 'userProfile',
-  schema: userProfileSchema,
-  // No database permissions required - using business rules only
-  permissions: [],
-  businessRules: [
-    userProfileBusinessRules.validateProfileAccess,
-    userProfileBusinessRules.validateDataCompleteness
-  ],
-  assembleData: (rawData: any) => {
-    return {
-      id: rawData.id,
-      username: rawData.username,
-      email: rawData.email,
-      firstName: rawData.firstName,
-      lastName: rawData.lastName,
-      phoneNumber: rawData.phoneNumber,
-      role: rawData.role,
-      status: rawData.status,
-      createdAt: rawData.createdAt,
-      locationId: rawData.locationId,
-      // Include user context for business rule validation
-      user: rawData.user,
-      targetUserId: rawData.targetUserId || rawData.id
-    };
-  }
+// VE30PackageBuilder-based package (CONVERTED from property-based)
+export const userProfilePackage: VE30Package = {
+  entityType: 'userProfile',
+  validateSchema: (data: any, operation: string) => VE30PackageBuilder.validateSchema(data, operation, userProfileSchema),
+  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'userProfile'),
+  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, userProfileBusinessRules),
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, userProfileAssembly)
 };
 
 export type UserProfilePackage = typeof userProfilePackage;
