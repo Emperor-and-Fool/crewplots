@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAuth = async () => {
       try {
-        // Use centralized authentication endpoint - no fallbacks
-        const response = await fetch('/api/auth/me', {
+        // Use lightweight session check for refresh - avoids heavy authenticateUser middleware
+        const response = await fetch('/api/auth/session-check', {
           method: 'GET',
           credentials: 'include',
           headers: {
