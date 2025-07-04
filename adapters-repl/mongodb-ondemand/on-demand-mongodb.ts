@@ -8,7 +8,7 @@ export class OnDemandMongoService {
   private isStarting = false;
   private isReady = false;
   private keepaliveTimeout: NodeJS.Timeout | null = null;
-  private readonly keepaliveTime = 5 * 60 * 1000; // 5 minutes
+  private readonly keepaliveTime = 59 * 60 * 1000; // 5 minutes
   private readonly dockerMode = process.env.DOCKER_ENV === "true";
 
   constructor() {
