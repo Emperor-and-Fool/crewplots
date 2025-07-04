@@ -66,16 +66,38 @@ export class VE30PackageBuilder {
       return customPermissionMap[operation];
     }
 
-    // Standard permission patterns based on proven working packages
-    const basePermissions = ['schedule.read']; // Base read permission for all operations
+    // Standard permission patterns based on entity type and operation
+    let basePermissions: string[] = [];
+    let operationPermission: string = '';
+
+    // Entity-specific permission mapping
+    switch (entityType) {
+      case 'scheduleBlock':
+      case 'weekSchedule':
+      case 'shift':
+        basePermissions = ['schedule.read'];
+        operationPermission = `schedule.${operation}`;
+        break;
+      case 'motivationNote':
+      case 'userProfile':
+        basePermissions = ['user.read'];
+        operationPermission = `user.${operation}`;
+        break;
+      case 'messaging':
+        basePermissions = ['message.read'];
+        operationPermission = `message.${operation}`;
+        break;
+      default:
+        basePermissions = ['schedule.read'];
+        operationPermission = `schedule.${operation}`;
+        console.warn(`Unknown entity type '${entityType}', using default schedule permissions`);
+    }
     
     switch (operation) {
       case 'create':
-        return [...basePermissions, 'schedule.create'];
       case 'update':
-        return [...basePermissions, 'schedule.update'];
       case 'delete':
-        return [...basePermissions, 'schedule.delete'];
+        return [...basePermissions, operationPermission];
       case 'read':
         return basePermissions;
       default:

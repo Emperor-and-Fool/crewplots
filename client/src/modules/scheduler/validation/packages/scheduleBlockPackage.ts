@@ -1,9 +1,9 @@
 import { insertScheduleBlockSchema } from '@shared/schema';
+import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 
 /**
- * Schedule Block Validation Package
- * Extracted from server/services/validation-package-service.ts
- * Defines validation rules, permissions, and business logic for schedule blocks
+ * Schedule Block Validation Package - VE30PackageBuilder Standard
+ * Converted from function-based implementation to VE30PackageBuilder configuration
  */
 
 export interface ScheduleBlockData {
@@ -15,130 +15,71 @@ export interface ScheduleBlockData {
   createdBy?: number;
 }
 
-export interface ScheduleBlockPackage {
-  entityType: 'scheduleBlock';
-  
-  // Schema validation
-  validateSchema: (data: ScheduleBlockData, operation: 'create' | 'update') => {
-    isValid: boolean;
-    errors: string[];
-  };
-  
-  // Permission requirements
-  getRequiredPermissions: (operation: 'create' | 'update' | 'delete') => string[];
-  
-  // Business rule validation
-  validateBusinessRules: (data: ScheduleBlockData, context: ValidationContext) => Promise<{
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-  }>;
-  
-  // Package assembly
-  assemblePackage: (requestData: any, user: any, operation: 'create' | 'update' | 'delete') => Promise<any>;
-}
-
-export interface ValidationContext {
-  userId: number;
-  userRole: string;
-  permissions: string[];
-  locationAccess: number[] | 'all';
-  sessionId: string;
-}
-
-export const scheduleBlockPackage: ScheduleBlockPackage = {
-  entityType: 'scheduleBlock',
-  
-  validateSchema(data: ScheduleBlockData, operation: 'create' | 'update') {
-    const errors: string[] = [];
-    
-    try {
-      if (operation === 'create') {
-        const result = insertScheduleBlockSchema.safeParse(data);
-        if (!result.success) {
-          errors.push(...result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
-        }
-      } else {
-        const result = insertScheduleBlockSchema.partial().safeParse(data);
-        if (!result.success) {
-          errors.push(...result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
-        }
-      }
-    } catch (error) {
-      errors.push(`Schema validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  },
-  
-  getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
-    // Match legacy validation-package-service.ts permission structure (lines 601-615)
-    const basePermissions = ['schedule.read'];
-    
-    switch (operation) {
-      case 'create':
-        return [...basePermissions, 'schedule.create'];
-      case 'update':
-        return [...basePermissions, 'schedule.update'];
-      case 'delete':
-        return [...basePermissions, 'schedule.delete'];
-      default:
-        return basePermissions;
-    }
-  },
-  
-  async validateBusinessRules(data: ScheduleBlockData, context: ValidationContext) {
-    const errors: string[] = [];
+// Business rules for schedule blocks
+const scheduleBlockBusinessRules = [
+  (data: any) => {
     const warnings: string[] = [];
-    
-    // Location access validation
-    if (data.locationId && context.locationAccess !== 'all' && !context.locationAccess.includes(data.locationId)) {
-      errors.push('User does not have access to the specified location');
+    const errors: string[] = [];
+
+    // Name validation
+    if (!data.name || data.name.trim().length === 0) {
+      errors.push('Schedule block name is required');
+    } else if (data.name.length > 100) {
+      errors.push('Schedule block name must be 100 characters or less');
     }
-    
-    // Schedule name validation
-    if (!data.name || data.name.trim().length < 3) {
-      errors.push('Schedule name must be at least 3 characters long');
+
+    // Location validation
+    if (!data.locationId || typeof data.locationId !== 'number' || data.locationId <= 0) {
+      errors.push('Valid location ID is required');
     }
-    
-    // Active status validation
-    if (data.isActive === undefined) {
-      warnings.push('Schedule activation status not specified, defaulting to active');
+
+    // Description validation
+    if (data.description && data.description.length > 500) {
+      warnings.push('Description is quite long - consider being more concise');
     }
-    
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
+
+    return { warnings, errors };
   },
-  
-  async assemblePackage(requestData: any, user: any, operation: 'create' | 'update' | 'delete') {
-    // Extracted from validation-package-service.ts assemblePackageFromRequest method
-    const scheduleBlockData = {
-      ...requestData.scheduleBlock,
-      id: requestData.scheduleBlock?.id || undefined
-    };
-    
-    if (operation === 'create') {
-      scheduleBlockData.createdBy = user.id;
+
+  (data: any, context: any) => {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    // User permission validation
+    if (!context?.user) {
+      errors.push('User context required for schedule block operations');
+      return { warnings, errors };
     }
-    
-    return {
-      packageType: operation,
-      scheduleBlock: scheduleBlockData,
-      weekSchedules: requestData.weekSchedules || [],
-      shifts: requestData.shifts || [],
-      metadata: {
-        userId: user.id,
-        userRole: user.role,
-        requestedPermissions: scheduleBlockPackage.getRequiredPermissions(operation),
-        locationAccess: [], // Will be populated by service
-        timestamp: new Date()
-      }
-    };
+
+    // Active status validation
+    if (typeof data.isActive !== 'boolean') {
+      errors.push('Active status must be true or false');
+    }
+
+    return { warnings, errors };
   }
+];
+
+// Custom assembly function for schedule blocks
+const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
+  return {
+    name: rawData.name?.trim(),
+    description: rawData.description?.trim() || null,
+    locationId: parseInt(rawData.locationId) || rawData.locationId,
+    isActive: Boolean(rawData.isActive),
+    createdBy: user?.id || rawData.createdBy,
+    // Include ID for update operations
+    ...(operation === 'update' && rawData.id && { id: rawData.id })
+  };
 };
+
+// VE30PackageBuilder-based package (STANDARDIZED from working function-based)
+export const scheduleBlockPackage: VE30Package = {
+  entityType: 'scheduleBlock',
+  validateSchema: (data: any, operation: string) => VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema),
+  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
+  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
+};
+
+export type ScheduleBlockPackage = typeof scheduleBlockPackage;

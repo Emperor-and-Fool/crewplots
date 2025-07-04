@@ -1,9 +1,9 @@
 import { insertWeekScheduleSchema } from '@shared/schema';
+import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 
 /**
- * Week Schedule Validation Package
- * Extracted from server/services/validation-package-service.ts
- * Defines validation rules, permissions, and business logic for week schedules
+ * Week Schedule Validation Package - VE30PackageBuilder Standard
+ * Converted from function-based implementation to VE30PackageBuilder configuration
  */
 
 export interface WeekScheduleData {
@@ -14,130 +14,65 @@ export interface WeekScheduleData {
   createdBy?: number;
 }
 
-export interface WeekSchedulePackage {
-  entityType: 'weekSchedule';
-  
-  // Schema validation
-  validateSchema: (data: WeekScheduleData, operation: 'create' | 'update') => {
-    isValid: boolean;
-    errors: string[];
-  };
-  
-  // Permission requirements
-  getRequiredPermissions: (operation: 'create' | 'update' | 'delete') => string[];
-  
-  // Business rule validation
-  validateBusinessRules: (data: WeekScheduleData, context: ValidationContext) => Promise<{
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-  }>;
-  
-  // Package assembly for week schedules
-  assembleWeekSchedules: (weekSchedulesData: any[], user: any, operation: 'create' | 'update') => Promise<WeekScheduleData[]>;
-}
-
-export interface ValidationContext {
-  userId: number;
-  userRole: string;
-  permissions: string[];
-  locationAccess: number[] | 'all';
-  sessionId: string;
-}
-
-export const weekSchedulePackage: WeekSchedulePackage = {
-  entityType: 'weekSchedule',
-  
-  validateSchema(data: WeekScheduleData, operation: 'create' | 'update') {
-    const errors: string[] = [];
-    
-    try {
-      if (operation === 'create') {
-        // For creation, validate required fields but skip scheduleBlockId (assigned during transaction)
-        if (!data.weekNumber) {
-          errors.push('weekNumber: Required');
-        }
-        if (data.weekNumber && (data.weekNumber < 1 || data.weekNumber > 52)) {
-          errors.push('weekNumber: Must be between 1 and 52');
-        }
-      } else {
-        // For updates, validate all fields including IDs
-        const result = insertWeekScheduleSchema.partial().safeParse(data);
-        if (!result.success) {
-          errors.push(...result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
-        }
-      }
-    } catch (error) {
-      errors.push(`Schema validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  },
-  
-  getRequiredPermissions(operation: 'create' | 'update' | 'delete') {
-    // Match scheduleBlockPackage.ts permission structure
-    const basePermissions = ['schedule.read'];
-    
-    switch (operation) {
-      case 'create':
-        return [...basePermissions, 'schedule.create'];
-      case 'update':
-        return [...basePermissions, 'schedule.update'];
-      case 'delete':
-        return [...basePermissions, 'schedule.delete'];
-      default:
-        return basePermissions;
-    }
-  },
-  
-  async validateBusinessRules(data: WeekScheduleData, context: ValidationContext) {
-    const errors: string[] = [];
+// Business rules for week schedules
+const weekScheduleBusinessRules = [
+  (data: any) => {
     const warnings: string[] = [];
-    
-    // Location access validation - same pattern as scheduleBlockPackage
-    // Week schedules don't have direct locationId, but we still validate access context
-    if (context.locationAccess !== 'all' && Array.isArray(context.locationAccess) && context.locationAccess.length === 0) {
-      errors.push('User does not have access to any locations');
-    }
-    
+    const errors: string[] = [];
+
     // Week number validation
-    if (data.weekNumber && (data.weekNumber < 1 || data.weekNumber > 52)) {
-      errors.push('Week number must be between 1 and 52');
+    if (!data.weekNumber || typeof data.weekNumber !== 'number') {
+      errors.push('Week number is required and must be a number');
+    } else if (data.weekNumber < 1 || data.weekNumber > 53) {
+      errors.push('Week number must be between 1 and 53');
     }
-    
-    // Template validation
-    if (data.templateId && data.templateId < 1) {
-      errors.push('Invalid template ID');
+
+    // Schedule block validation for creation
+    if (!data.scheduleBlockId && data.id === undefined) {
+      errors.push('Schedule block ID is required for new week schedules');
     }
-    
-    // Parent relationship validation
-    if (data.scheduleBlockId && data.scheduleBlockId < 1) {
-      errors.push('Invalid schedule block ID');
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
+
+    return { warnings, errors };
   },
-  
-  async assembleWeekSchedules(weekSchedulesData: any[], user: any, operation: 'create' | 'update') {
-    // Extracted from validation-package-service.ts assemblePackageFromRequest method
-    return weekSchedulesData.map(ws => {
-      const weekScheduleData: WeekScheduleData = {
-        ...ws,
-        id: ws?.id || undefined
-      };
-      
-      if (operation === 'create') {
-        weekScheduleData.createdBy = user.id;
-      }
-      
-      return weekScheduleData;
-    });
+
+  (data: any, context: any) => {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    // User context validation
+    if (!context?.user) {
+      errors.push('User context required for week schedule operations');
+      return { warnings, errors };
+    }
+
+    // Template validation (optional)
+    if (data.templateId && (typeof data.templateId !== 'number' || data.templateId <= 0)) {
+      warnings.push('Invalid template ID provided - will proceed without template');
+    }
+
+    return { warnings, errors };
   }
+];
+
+// Custom assembly function for week schedules
+const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
+  return {
+    scheduleBlockId: parseInt(rawData.scheduleBlockId) || rawData.scheduleBlockId,
+    weekNumber: parseInt(rawData.weekNumber) || rawData.weekNumber,
+    templateId: rawData.templateId ? parseInt(rawData.templateId) : null,
+    createdBy: user?.id || rawData.createdBy,
+    // Include ID for update operations
+    ...(operation === 'update' && rawData.id && { id: rawData.id })
+  };
 };
+
+// VE30PackageBuilder-based package (STANDARDIZED from working function-based)
+export const weekSchedulePackage: VE30Package = {
+  entityType: 'weekSchedule',
+  validateSchema: (data: any, operation: string) => VE30PackageBuilder.validateSchema(data, operation, insertWeekScheduleSchema),
+  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'weekSchedule'),
+  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, weekScheduleBusinessRules),
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, weekScheduleAssembly)
+};
+
+export type WeekSchedulePackage = typeof weekSchedulePackage;
