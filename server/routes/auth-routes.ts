@@ -424,9 +424,9 @@ const logoutHandler = (req: Request, res: Response) => {
     }
 };
 
-// Support both POST and GET for logout
-router.post('/logout', logoutHandler);
-router.get('/logout', logoutHandler);
+// Support both POST and GET for logout with centralized authentication
+router.post('/logout', authenticateUser, logoutHandler);
+router.get('/logout', authenticateUser, logoutHandler);
 
 // Admin route to clear all sessions from the database
 router.post('/clear-sessions', authenticateUser, async (req: Request, res: Response) => {
