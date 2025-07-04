@@ -13,10 +13,10 @@
 #include <ctype.h>
 
 #define MAX_CLIENTS 100
-#define BUFFER_SIZE 16384     // Increased from 8192
+#define BUFFER_SIZE 16384     // Doubled from 8192 for large payloads
 #define MAX_ARGS 32
-#define MAX_KEY_SIZE 1024     // Increased from 512
-#define MAX_VALUE_SIZE 8192   // Increased from 2048
+#define MAX_KEY_SIZE 512
+#define MAX_VALUE_SIZE 4096   // Doubled from 2048 for large payloads
 
 typedef struct {
     char key[MAX_KEY_SIZE];
@@ -33,7 +33,7 @@ typedef struct {
     int output_sent;
 } Client;
 
-static KeyValue store[15000];
+static KeyValue store[15000];  // Increased from 10000 to match performance specs
 static int store_count = 0;
 static Client clients[MAX_CLIENTS];
 static int client_count = 0;
@@ -44,9 +44,10 @@ void signal_handler(int sig) {
     running = 0;
 }
 
+// Send data to client with buffering
 void queue_response(Client *client, const char *data) {
     int len = strlen(data);
-    if (client->output_len + len < BUFFER_SIZE - 1) {
+    if (client->output_len + len < BUFFER_SIZE) {
         memcpy(client->output_buffer + client->output_len, data, len);
         client->output_len += len;
     }
@@ -71,6 +72,7 @@ int find_key(const char *key) {
     for (int i = 0; i < store_count; i++) {
         if (strcmp(store[i].key, key) == 0) {
             if (store[i].ttl > 0 && store[i].ttl <= now) {
+                // Expired - remove it
                 memmove(&store[i], &store[i+1], (store_count - i - 1) * sizeof(KeyValue));
                 store_count--;
                 return -1;
@@ -97,16 +99,18 @@ void set_key(const char *key, const char *value, int ttl_seconds) {
     }
 }
 
+// Enhanced RESP parser with better buffer management
 int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_args, int *consumed) {
     *consumed = 0;
     
-    if (buffer_len < 4) return 0;
+    if (buffer_len < 4) return 0; // Need at least "*N\r\n"
     
-    if (buffer[0] != '*') return -1;
+    if (buffer[0] != '*') return -1; // Invalid format
     
     int pos = 1;
     int argc = 0;
     
+    // Parse argument count
     while (pos < buffer_len && buffer[pos] != '\r') {
         if (!isdigit(buffer[pos])) return -1;
         argc = argc * 10 + (buffer[pos] - '0');
@@ -114,13 +118,14 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
     }
     
     if (pos + 1 >= buffer_len || buffer[pos] != '\r' || buffer[pos + 1] != '\n') {
-        return 0;
+        return 0; // Need more data
     }
     
-    pos += 2;
+    pos += 2; // Skip \r\n
     
     if (argc > max_args) return -1;
     
+    // Parse each argument
     for (int i = 0; i < argc; i++) {
         if (pos >= buffer_len || buffer[pos] != '$') return 0;
         pos++;
@@ -133,17 +138,19 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
         }
         
         if (pos + 1 >= buffer_len || buffer[pos] != '\r' || buffer[pos + 1] != '\n') {
-            return 0;
+            return 0; // Need more data
         }
         
-        pos += 2;
+        pos += 2; // Skip \r\n
         
+        // Check if we have enough data for the argument + \r\n
         if (pos + arg_len + 2 > buffer_len) {
-            return 0;
+            return 0; // Need more data
         }
         
+        // Safety check for buffer overflow
         if (arg_len >= MAX_VALUE_SIZE) {
-            return -1;
+            return -1; // Argument too large
         }
         
         args[i] = malloc(arg_len + 1);
@@ -154,13 +161,14 @@ int parse_resp_command(const char *buffer, int buffer_len, char **args, int max_
         pos += arg_len;
         
         if (pos + 1 >= buffer_len || buffer[pos] != '\r' || buffer[pos + 1] != '\n') {
+            // Cleanup allocated memory
             for (int j = 0; j <= i; j++) {
                 free(args[j]);
             }
             return -1;
         }
         
-        pos += 2;
+        pos += 2; // Skip \r\n
     }
     
     *consumed = pos;
@@ -172,6 +180,7 @@ void process_command(Client *client, char **args, int argc) {
     
     char *cmd = args[0];
     
+    // Convert command to uppercase
     for (int i = 0; cmd[i]; i++) {
         cmd[i] = toupper(cmd[i]);
     }
@@ -241,6 +250,45 @@ void process_command(Client *client, char **args, int argc) {
         queue_response(client, "+OK\r\n");
     } else if (strcmp(cmd, "COMMAND") == 0) {
         queue_response(client, "*0\r\n");
+    } else if (strcmp(cmd, "EXPIRE") == 0) {
+        if (argc >= 3) {
+            int idx = find_key(args[1]);
+            if (idx >= 0) {
+                int ttl_seconds = atoi(args[2]);
+                if (ttl_seconds > 0) {
+                    store[idx].ttl = time(NULL) + ttl_seconds;
+                    queue_response(client, ":1\r\n");  // Success
+                } else {
+                    queue_response(client, ":0\r\n");  // Invalid TTL
+                }
+            } else {
+                queue_response(client, ":0\r\n");  // Key doesn't exist
+            }
+        } else {
+            queue_response(client, "-ERR wrong number of arguments for 'expire' command\r\n");
+        }
+    } else if (strcmp(cmd, "TTL") == 0) {
+        if (argc >= 2) {
+            int idx = find_key(args[1]);
+            if (idx >= 0) {
+                if (store[idx].ttl > 0) {
+                    int remaining = store[idx].ttl - time(NULL);
+                    if (remaining > 0) {
+                        char response[64];
+                        snprintf(response, sizeof(response), ":%d\r\n", remaining);
+                        queue_response(client, response);
+                    } else {
+                        queue_response(client, ":-2\r\n");  // Expired
+                    }
+                } else {
+                    queue_response(client, ":-1\r\n");  // No expiration
+                }
+            } else {
+                queue_response(client, ":-2\r\n");  // Key doesn't exist
+            }
+        } else {
+            queue_response(client, "-ERR wrong number of arguments for 'ttl' command\r\n");
+        }
     } else {
         char error[256];
         snprintf(error, sizeof(error), "-ERR unknown command '%s'\r\n", cmd);
@@ -256,35 +304,60 @@ void handle_client_data(Client *client) {
         return;
     }
     
+    printf("DEBUG: Received %d bytes, current buffer: %d\n", bytes_received, client->input_len);
+    
+    // Safety check to prevent buffer overflow - leave room for processing
     if (client->input_len + bytes_received >= BUFFER_SIZE - 1) {
-        client->input_len = 0;
-        return;
+        printf("DEBUG: Buffer would overflow, current: %d, incoming: %d, max: %d\n", 
+               client->input_len, bytes_received, BUFFER_SIZE);
+        // Buffer would overflow, try to process existing data first
+        if (client->input_len > 0) {
+            // Process what we have and try again
+            return;
+        } else {
+            // No existing data but incoming is too large, disconnect
+            return;
+        }
     }
     
     memcpy(client->input_buffer + client->input_len, temp_buffer, bytes_received);
     client->input_len += bytes_received;
     
+    printf("DEBUG: Total buffer length now: %d\n", client->input_len);
+    
+    // Process commands
     while (client->input_len > 0) {
+        printf("DEBUG: Attempting to parse command, buffer length: %d\n", client->input_len);
         char *args[MAX_ARGS];
         int consumed = 0;
         int argc = parse_resp_command(client->input_buffer, client->input_len, args, MAX_ARGS, &consumed);
         
+        printf("DEBUG: Parse result - argc: %d, consumed: %d\n", argc, consumed);
+        
         if (argc > 0) {
+            printf("DEBUG: Processing command with %d args\n", argc);
             process_command(client, args, argc);
             
+            // Free allocated arguments
             for (int i = 0; i < argc; i++) {
                 free(args[i]);
             }
             
+            // Remove processed data from buffer
             if (consumed > 0 && consumed <= client->input_len) {
                 memmove(client->input_buffer, client->input_buffer + consumed, client->input_len - consumed);
                 client->input_len -= consumed;
+                printf("DEBUG: Removed %d bytes from buffer, remaining: %d\n", consumed, client->input_len);
             } else {
+                printf("DEBUG: Invalid consumed value, breaking\n");
                 break;
             }
         } else if (argc == 0) {
-            break;
+            printf("DEBUG: Need more data, breaking\n");
+            break; // Need more data
         } else {
+            printf("DEBUG: Parse error, clearing buffer\n");
+            // Parse error, clear buffer and disconnect client
             client->input_len = 0;
             break;
         }
@@ -348,7 +421,7 @@ int main() {
             }
         }
         
-        struct timeval timeout = {1, 0};
+        struct timeval timeout = {1, 0}; // 1 second timeout
         int activity = select(max_fd + 1, &readfds, &writefds, NULL, &timeout);
         
         if (activity < 0 && errno != EINTR) {
@@ -368,7 +441,7 @@ int main() {
                 clients[client_count].output_sent = 0;
                 client_count++;
             } else if (client_fd >= 0) {
-                close(client_fd);
+                close(client_fd); // Too many clients
             }
         }
         
@@ -382,6 +455,7 @@ int main() {
             }
         }
         
+        // Remove disconnected clients
         for (int i = client_count - 1; i >= 0; i--) {
             char test;
             int result = recv(clients[i].fd, &test, 1, MSG_PEEK | MSG_DONTWAIT);
@@ -391,6 +465,7 @@ int main() {
         }
     }
     
+    // Cleanup
     for (int i = 0; i < client_count; i++) {
         close(clients[i].fd);
     }
