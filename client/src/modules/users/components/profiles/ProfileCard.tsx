@@ -24,7 +24,7 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          operation: 'read',
+          operation: 'orchestrate',
           entityType: 'authProfile',
           data: { userId },
           context: {
