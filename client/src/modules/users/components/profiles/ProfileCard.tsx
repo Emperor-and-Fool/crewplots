@@ -14,15 +14,36 @@ interface ProfileCardProps {
 
 export function ProfileCard({ userId, className }: ProfileCardProps) {
   const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['/api/users/profile', userId],
+    queryKey: ['/api/validation/v3/auth-profile', userId],
     queryFn: async () => {
-      const response = await fetch('/api/users/profile', {
-        credentials: 'include'
+      // Use ValidationEngine30 direct validation for profile data
+      const response = await fetch('/api/validation/v3/validate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'authProfile',
+          data: { userId },
+          context: {
+            userId: userId,
+            userRole: 'authenticated', // Basic role for auth validation
+            permissions: ['user.read'] // Basic permission for profile access
+          }
+        })
       });
       if (!response.ok) {
         throw new Error('Failed to fetch profile data');
       }
-      return response.json();
+      const result = await response.json();
+      
+      // Extract user data from ValidationEngine30 response structure
+      if (result.success && result.result?.user) {
+        return result.result.user;
+      }
+      throw new Error('Invalid profile data structure');
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });

@@ -346,7 +346,19 @@ export class ValidationEngine30 {
         } else if (entityType === 'shift' && operation === 'update') {
           transactionResult = await storage.updateShift(assembledData.id, assembledData);
           console.log('💾 Shift updated ID:', assembledData.id);
-        } else {
+        } 
+        // Handle authProfile operations - lightweight user data fetching
+        else if (entityType === 'authProfile' && operation === 'read') {
+          console.log('🔍 VALIDATION ENGINE 30: Reading auth profile for user:', assembledData.userId || context.userId);
+          const userId = assembledData.userId || context.userId;
+          const user = await storage.getUser(userId);
+          if (!user) {
+            throw new Error(`User not found: ${userId}`);
+          }
+          transactionResult = { user };
+          console.log('💾 Auth profile read completed for user:', user.username);
+        } 
+        else {
           throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);
         }
       } catch (error) {
