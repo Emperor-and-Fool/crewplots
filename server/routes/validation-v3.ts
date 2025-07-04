@@ -2,7 +2,7 @@ import express from 'express';
 import { dataAggregationEngine } from '../services/validation/DataAggregationEngine';
 import { validationEngine30 } from '../services/validation/ValidationEngine30';
 import { dataOrchestrator3 } from '../services/validation/DataOrchestrator3';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateUser, authenticateUserLazy } from '../middleware/auth';
 import type { DataAggregationTask } from '../services/validation/DataAggregationEngine';
 import type { User } from '@shared/schema';
 // Import messaging package from ValidationEngine30 registry
@@ -602,6 +602,45 @@ router.put('/motivation-notes/:userId', authenticateUser, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Lightweight auth endpoint for auth-context - uses lazy authentication
+router.get('/auth', authenticateUserLazy, async (req, res) => {
+  try {
+    console.log('🔐 AUTH PROFILE: Lightweight auth endpoint accessed');
+    
+    // Use ValidationEngine30 with authProfile package for minimal data
+    const result = await validationEngine30.validateAndExecute(
+      'read',
+      'authProfile',
+      {
+        id: (req.user as any)?.id,
+        username: (req.user as any)?.username,
+        role: (req.user as any)?.role,
+        workflowPermissions: (req.user as any)?.workflowPermissions || {},
+        blockedPermissions: (req.user as any)?.blockedPermissions || []
+      },
+      {
+        userId: (req.user as any)?.id || 0,
+        userRole: (req.user as any)?.role || 'guest'
+        // No aggregatedData - lightweight auth pattern
+      }
+    );
+    
+    res.json({
+      success: result.overall.isValid,
+      result,
+      pattern: 'lightweight-auth',
+      user: req.user,
+      performanceNote: "Lightweight auth using authenticateUserLazy middleware"
+    });
+  } catch (error) {
+    console.error('🚨 AUTH PROFILE ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Auth profile error'
     });
   }
 });

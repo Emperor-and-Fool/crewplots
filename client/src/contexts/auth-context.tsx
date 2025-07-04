@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAuth = async () => {
       try {
-        // Use centralized authentication endpoint - no fallbacks
-        const response = await fetch('/api/auth/me', {
+        // Use lightweight ValidationEngine30 auth endpoint - no fallbacks
+        const response = await fetch('/api/validation/v3/auth', {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (response.ok) {
           const authData = await response.json();
-          if (authData?.authenticated && authData.user) {
+          // ValidationEngine30 response structure: { success, result, user }
+          if (authData?.success && authData.user) {
             setUser(authData.user);
           } else {
             setUser(null);
