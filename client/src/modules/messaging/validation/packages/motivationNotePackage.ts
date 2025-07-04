@@ -1,13 +1,5 @@
 import { z } from 'zod';
-
-// Motivation note validation package interface
-interface ValidationPackage30 {
-  packageType: string;
-  schema: z.ZodSchema<any>;
-  permissions: string[];
-  businessRules: Array<(data: any) => { warnings: string[]; errors: string[]; }>;
-  assembleData: (rawData: any) => any;
-}
+import { VE30PackageBuilder, createVE30Package, type VE30Package } from '../../../../../server/services/validation/VE30PackageBuilder';
 
 // Motivation note validation schema
 const motivationNoteSchema = z.object({
