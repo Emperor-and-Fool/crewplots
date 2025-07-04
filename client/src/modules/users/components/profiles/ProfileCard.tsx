@@ -40,8 +40,8 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
       const result = await response.json();
       
       // Extract user data from ValidationEngine30 response structure
-      if (result.success && result.result?.user) {
-        return result.result.user;
+      if (result.threads?.transaction?.success && result.threads.transaction.data?.user) {
+        return result.threads.transaction.data.user;
       }
       throw new Error('Invalid profile data structure');
     },
