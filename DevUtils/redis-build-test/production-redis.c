@@ -250,6 +250,45 @@ void process_command(Client *client, char **args, int argc) {
         queue_response(client, "+OK\r\n");
     } else if (strcmp(cmd, "COMMAND") == 0) {
         queue_response(client, "*0\r\n");
+    } else if (strcmp(cmd, "EXPIRE") == 0) {
+        if (argc >= 3) {
+            int idx = find_key(args[1]);
+            if (idx >= 0) {
+                int ttl_seconds = atoi(args[2]);
+                if (ttl_seconds > 0) {
+                    store[idx].ttl = time(NULL) + ttl_seconds;
+                    queue_response(client, ":1\r\n");  // Success
+                } else {
+                    queue_response(client, ":0\r\n");  // Invalid TTL
+                }
+            } else {
+                queue_response(client, ":0\r\n");  // Key doesn't exist
+            }
+        } else {
+            queue_response(client, "-ERR wrong number of arguments for 'expire' command\r\n");
+        }
+    } else if (strcmp(cmd, "TTL") == 0) {
+        if (argc >= 2) {
+            int idx = find_key(args[1]);
+            if (idx >= 0) {
+                if (store[idx].ttl > 0) {
+                    int remaining = store[idx].ttl - time(NULL);
+                    if (remaining > 0) {
+                        char response[64];
+                        snprintf(response, sizeof(response), ":%d\r\n", remaining);
+                        queue_response(client, response);
+                    } else {
+                        queue_response(client, ":-2\r\n");  // Expired
+                    }
+                } else {
+                    queue_response(client, ":-1\r\n");  // No expiration
+                }
+            } else {
+                queue_response(client, ":-2\r\n");  // Key doesn't exist
+            }
+        } else {
+            queue_response(client, "-ERR wrong number of arguments for 'ttl' command\r\n");
+        }
     } else {
         char error[256];
         snprintf(error, sizeof(error), "-ERR unknown command '%s'\r\n", cmd);
