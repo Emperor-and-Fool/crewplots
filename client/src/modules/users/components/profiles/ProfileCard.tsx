@@ -17,7 +17,7 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
     queryKey: ['/api/validation/v3/auth-profile', userId],
     queryFn: async () => {
       // Use ValidationEngine30 direct validation for profile data
-      const response = await fetch('/api/validation/v3/validate', {
+      const response = await fetch('/api/validation/v3/orchestrate', {
         method: 'POST',
         credentials: 'include',
         headers: {
