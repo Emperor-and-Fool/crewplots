@@ -199,7 +199,7 @@ export class OnDemandRedisService {
     // Create Redis client
     const client = new Redis({
       host: '127.0.0.1',
-      port: 6379,
+      port: 6380,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
       connectTimeout: 5000,
