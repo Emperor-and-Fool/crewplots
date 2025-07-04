@@ -273,7 +273,7 @@ export class OnDemandRedisService {
       // Test connection
       const testClient = new Redis({
         host: '127.0.0.1',
-        port: 6379,
+        port: 6380,
         connectTimeout: 2000,
         lazyConnect: true
       });
