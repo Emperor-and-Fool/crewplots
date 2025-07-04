@@ -3,7 +3,7 @@ import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30Pac
 
 // Auth profile INPUT validation schema - validates request parameters
 const authProfileSchema = z.object({
-  userId: z.string().min(1, "User ID is required")
+  userId: z.number().positive("User ID must be a positive number")
 });
 
 // Minimal business rules for auth input validation
