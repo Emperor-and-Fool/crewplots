@@ -335,34 +335,6 @@ router.get('/me', authenticateUser, async (req, res) => {
     }
 });
 
-// Lightweight session check for page refresh - bypasses heavy authenticateUser middleware
-router.get('/session-check', async (req, res) => {
-    try {
-        // Fast session check without database queries or heavy middleware
-        if (!req.session?.passport?.user) {
-            return res.status(200).json({
-                authenticated: false,
-                user: null
-            });
-        }
-        
-        // Return session user data directly from session
-        const sessionUser = req.session.passport.user;
-        
-        return res.status(200).json({
-            authenticated: true,
-            user: sessionUser
-        });
-    } catch (error) {
-        console.error('Error in session-check:', error);
-        return res.status(200).json({
-            authenticated: false,
-            user: null,
-            error: 'Session check failed'
-        });
-    }
-});
-
 // Centralized auth logout handler - support both POST and GET
 const logoutHandler = (req: Request, res: Response) => {
     console.log('🔴 LOGOUT DEBUG: Backend logout handler started');
