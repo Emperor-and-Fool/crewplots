@@ -3,6 +3,7 @@ import { messageStorageService } from '../message-storage-service';
 import { hybridCacheService, HybridCacheService } from '../hybrid-cache-service-v2';
 import type { CacheOptions } from '../hybrid-cache-service-v2';
 import type { User } from '@shared/schema';
+import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 
 /**
  * DataAggregationTask Interface - Based on 049 Architecture Decision #2
@@ -223,7 +224,7 @@ export class DataAggregationEngine {
     if (task.requiredData.mongodb?.includes('notes')) {
       try {
         console.log(`[DataAggregationEngine] Fetching notes from MongoDB for user: ${entityId}`);
-        const notes = await messageStorageService.getNoteRefsByUser(entityId);
+        const notes = await this.withMongoDBRetry(() => messageStorageService.getNoteRefsByUser(entityId));
         
         mongoData.aggregatedNotes = notes.length > 0 ? {
           exists: true,
@@ -339,6 +340,64 @@ export class DataAggregationEngine {
     }
     
     return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * MongoDB retry wrapper with on-demand service integration (copied from working routes)
+   */
+  private async withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: number = 2): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        lastError = error;
+        
+        // Check if this is a MongoDB connection error
+        const isConnectionError = error?.message?.includes('ECONNREFUSED') || 
+                                 error?.code === 'ECONNREFUSED' ||
+                                 error?.cause?.code === 'ECONNREFUSED';
+        
+        if (isConnectionError && attempt < maxRetries) {
+          console.log(`🔄 MongoDB connection failed (attempt ${attempt + 1}/${maxRetries + 1}), starting on-demand service...`);
+          
+          await this.startMongoDBOnDemand();
+          
+          // Wait before retry
+          await this.sleep(3000);
+          console.log(`⏳ Retrying MongoDB operation...`);
+        } else {
+          break;
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+
+  /**
+   * On-demand MongoDB service management
+   */
+  private async startMongoDBOnDemand(): Promise<boolean> {
+    console.log('🚀 Starting MongoDB on-demand service...');
+    
+    const result = await onDemandMongoService.ensureReady();
+    
+    if (result) {
+      console.log('✅ MongoDB on-demand service started');
+    } else {
+      console.log('❌ MongoDB on-demand service failed to start');
+    }
+    
+    return result;
+  }
+
+  /**
+   * Sleep utility
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
