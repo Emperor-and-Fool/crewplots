@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { RegistrationFormProps } from "../../types/auth-ui.types";
-// import { CountryCodeSelect } from "@/components/ui/country-code-select"; // Not needed with unified phone format
+import { CountryCodeSelect } from "@/components/ui/country-code-select";
 
 import {
   Form,
@@ -200,18 +200,11 @@ export const RegistrationForm = ({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="phoneNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone Number</FormLabel>
-              <FormControl>
-                <Input placeholder="+31 6 12345678" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <CountryCodeSelect 
+          form={form} 
+          name="phoneNumber" 
+          label="Phone Number" 
+          required={true} 
         />
 
         <FormField
