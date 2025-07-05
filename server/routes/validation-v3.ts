@@ -135,6 +135,44 @@ router.delete('/cache/:entityType/:entityId', authenticateUser, async (req, res)
   }
 });
 
+/**
+ * ValidationEngine30 Direct Execution Endpoint
+ * POST /api/validation/v3/execute
+ * 
+ * Validates request and executes database operations directly
+ * Simple validate + execute pattern for data retrieval
+ */
+router.post('/execute', authenticateUser, async (req, res) => {
+  try {
+    const { operation, entityType, data, context } = req.body;
+    
+    console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
+    
+    // Use ValidationEngine30 direct validation + execution
+    const result = await validationEngine30.validateAndExecute(
+      operation || 'read',
+      entityType,
+      data,
+      {
+        userId: (req.user as any)?.id,
+        userRole: (req.user as any)?.role,
+        permissions: context?.permissions || [],
+        ...context
+      }
+    );
+    
+    res.json(result);
+    
+  } catch (error) {
+    console.error('🚨 VALIDATION ENGINE 30: Direct execution failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Direct execution failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Test ValidationEngine30 direct validation
 router.post('/validation30/test', authenticateUser, async (req, res) => {
   try {

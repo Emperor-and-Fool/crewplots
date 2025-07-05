@@ -17,14 +17,14 @@ export function ProfileCard({ userId, className }: ProfileCardProps) {
     queryKey: ['/api/validation/v3/auth-profile', userId],
     queryFn: async () => {
       // Use ValidationEngine30 direct validation for profile data
-      const response = await fetch('/api/validation/v3/orchestrate', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          operation: 'orchestrate',
+          operation: 'read',
           entityType: 'authProfile',
           data: { userId },
           context: {
