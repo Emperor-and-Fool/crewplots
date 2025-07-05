@@ -362,6 +362,16 @@ export class ValidationEngine30 {
           transactionResult = { user };
           console.log('💾 Auth profile read completed for user:', user.username);
         } 
+        // Handle userRegistration validation-only (Plan 057 hybrid architecture)
+        else if (entityType === 'userRegistration' && operation === 'create') {
+          console.log('🔐 VALIDATION ENGINE 30: User registration validation completed (no DB transaction - handled by auth-routes)');
+          transactionResult = { 
+            validated: true, 
+            message: 'Registration data validated - ready for auth-routes processing',
+            username: assembledData.username,
+            email: assembledData.email 
+          };
+        }
         else {
           throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);
         }
