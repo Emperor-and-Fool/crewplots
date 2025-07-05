@@ -81,10 +81,22 @@ Migration of user registration endpoint from direct database operations in auth-
 ### Phase 1: VE30 Public Endpoint Foundation (15 minutes)
 **Objective:** Create public VE30 endpoint without authentication requirement
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to next phase, verify:
+- Current phase objectives achieved per 057 evidence criteria  
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification  
+- Reference Document 057 for architectural questions
+
 **Tasks:**
 1. Add `/api/validation/v3/public` route to `validation-v3.ts`
 2. Implement public validation handler (no `authenticateUser` middleware)
 3. Add request logging and security headers for public endpoint
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Architecture questions arise (check 057 evidence)  
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)  
+- Performance targets unclear (reference specific 057 metrics)
 
 **Completion Criteria:**
 - Endpoint responds to POST requests without authentication
@@ -98,6 +110,12 @@ Migration of user registration endpoint from direct database operations in auth-
 ### Phase 2: User Registration Package Development (30 minutes)
 **Objective:** Create comprehensive userRegistrationPackage for VE30 validation
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to next phase, verify:
+- Current phase objectives achieved per 057 evidence criteria  
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification  
+- Reference Document 057 for architectural questions
+
 **Location:** `client/src/modules/users/validation/packages/userRegistrationPackage.ts`
 
 **Package Components:**
@@ -106,6 +124,17 @@ Migration of user registration endpoint from direct database operations in auth-
 - **Permissions:** Empty array (public operation)
 - **Assembly Function:** Prepare data for `storage.createUser()`
 - **Transaction Handler:** Database user creation with role assignment
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Architecture questions arise (check 057 evidence)  
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)  
+- Performance targets unclear (reference specific 057 metrics)
+
+📋 **DECISION VALIDATION:** Confirm this choice aligns with:
+- Plan 057 phase objectives and evidence sources  
+- Document 057 architectural decisions and safety measures  
+- Zero Risk Implementation strategy (parallel development)
 
 **Completion Criteria:**
 - Package validates all registration fields correctly
@@ -121,6 +150,12 @@ Migration of user registration endpoint from direct database operations in auth-
 ### Phase 3: Auth-Routes Integration (20 minutes)
 **Objective:** Modify registration endpoint to use VE30 hybrid approach
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to next phase, verify:
+- Current phase objectives achieved per 057 evidence criteria  
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification  
+- Reference Document 057 for architectural questions
+
 **Modification:** `server/routes/auth-routes.ts` POST `/register`
 
 **New Implementation Flow:**
@@ -128,6 +163,17 @@ Migration of user registration endpoint from direct database operations in auth-
 2. **Password hashing** (bcrypt - remains in auth layer)
 3. **VE30 public call** with hashed password and user data
 4. **Response forwarding** (VE30 standardized format)
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Architecture questions arise (check 057 evidence)  
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)  
+- Performance targets unclear (reference specific 057 metrics)
+
+📋 **DECISION VALIDATION:** Confirm this choice aligns with:
+- Plan 057 phase objectives and evidence sources  
+- Document 057 architectural decisions and safety measures  
+- Zero Risk Implementation strategy (parallel development)
 
 **Completion Criteria:**
 - Registration creates users successfully via VE30
@@ -144,11 +190,23 @@ Migration of user registration endpoint from direct database operations in auth-
 ### Phase 4: Frontend Integration Verification (15 minutes)
 **Objective:** Ensure frontend registration flow works with hybrid backend
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to next phase, verify:
+- Current phase objectives achieved per 057 evidence criteria  
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification  
+- Reference Document 057 for architectural questions
+
 **Verification Points:**
 - `RegistrationPage.tsx` continues working without changes
 - Error messages display VE30 validation details
 - Success flow redirects correctly with user data
 - Toast notifications show appropriate feedback
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Architecture questions arise (check 057 evidence)  
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)  
+- Performance targets unclear (reference specific 057 metrics)
 
 **Completion Criteria:**
 - Frontend registration form submits successfully
@@ -164,11 +222,22 @@ Migration of user registration endpoint from direct database operations in auth-
 ### Phase 5: Production Integration Testing (10 minutes)
 **Objective:** Comprehensive testing of complete registration system
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to cleanup, verify:
+- Current phase objectives achieved per 057 evidence criteria  
+- Architecture decisions from this plan still being followed  
+- Any deviations documented with evidence justification  
+- Reference Document 057 for architectural questions
+
 **Test Scenarios:**
 1. **Valid Registration:** Complete user creation with all fields
 2. **Duplicate Prevention:** Username/email uniqueness enforcement
 3. **Validation Errors:** Invalid email, weak password, missing fields
 4. **System Integration:** Database consistency, role assignment, session handling
+
+📋 **DECISION VALIDATION:** Confirm this choice aligns with:
+- Plan 057 phase objectives and evidence sources  
+- Document 057 architectural decisions and safety measures  
+- Zero Risk Implementation strategy (parallel development)
 
 **Completion Criteria:**
 - All test scenarios pass successfully
