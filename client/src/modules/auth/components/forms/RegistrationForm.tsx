@@ -61,7 +61,8 @@ export const RegistrationForm = ({
     setIsLookingUpAddress(true);
     try {
       console.log("Looking up address:", address);
-      const response = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?q=${encodeURIComponent(address)}&fq=type:adres&rows=5`, {
+      // Use the free endpoint which provides complete address data including postal codes
+      const response = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(address)}&fq=type:adres&rows=5`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -82,7 +83,7 @@ export const RegistrationForm = ({
             return `${streetName} ${houseNumber}, ${postalCode} ${cityName}`;
           }
           
-          // Fallback to weergavenaam if components missing
+          // Fallback to weergavenaam if components missing (should now have proper postal codes)
           return doc.weergavenaam;
         }) || [];
         setAddressSuggestions(suggestions);
