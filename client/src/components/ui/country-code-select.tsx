@@ -118,7 +118,7 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
                   value={countryCodeValue}
                   onValueChange={handleCountryCodeChange}
                 >
-                  <SelectTrigger className="h-10 border-0 !bg-transparent w-[100px] pl-3 pr-0 focus:ring-0">
+                  <SelectTrigger className="h-10 border-0 !bg-transparent w-[70px] pl-3 pr-1 focus:ring-0">
                     <div className="flex items-center space-x-1 text-xs font-medium">
                       <span className="text-lg">{selectedCountry?.flag}</span>
                       <span className="ml-1">{selectedCountry?.dialCode}</span>
@@ -154,7 +154,7 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
               <FormControl>
                 <Input
                   placeholder="612345678"
-                  className="pl-[90px] h-10"
+                  className="pl-[75px] h-10"
                   value={phoneValue}
                   onChange={handlePhoneChange}
                   onBlur={field.onBlur}
