@@ -42,8 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Use session consolidation pattern to resolve browser context session isolation
-  // This bridges the gap between frontend session (9HbafBUU...) and working backend session (vYD0dYtt...)
+  // Session validation with graceful fallback for clean session states
   useEffect(() => {
     // Skip auth check on login page - no need to verify what we already know
     if (window.location.pathname === '/login') {
@@ -53,6 +52,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Skip auth check if we're in the middle of logging out
     if (isLoggingOut) {
+      return;
+    }
+
+    // Check if any session cookies exist before making auth request
+    const hasCookies = document.cookie.includes('connect.sid') || 
+                      document.cookie.includes('session') ||
+                      document.cookie.length > 0;
+
+    if (!hasCookies) {
+      // No session cookies present - user needs to login
+      console.log('🔒 No session cookies found - redirecting to login');
+      setUser(null);
+      setIsLoading(false);
       return;
     }
 
@@ -78,10 +90,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } else {
             setUser(null);
           }
+        } else if (response.status === 401) {
+          // Session expired or invalid - clear state and allow redirect to login
+          console.log('🔒 Session invalid - clearing auth state');
+          setUser(null);
         } else {
           setUser(null);
         }
       } catch (error) {
+        console.log('🔒 Auth check failed - clearing auth state');
         setUser(null);
       } finally {
         setIsLoading(false);
