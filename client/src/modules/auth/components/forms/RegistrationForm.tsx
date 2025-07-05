@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { useAuthValidation, type RegistrationData } from "../../hooks/useAuthValidation";
 import { RegistrationFormProps } from "../../types/auth-ui.types";
 // import { CountryCodeSelect } from "@/components/ui/country-code-select"; // Not needed with unified phone format
 
@@ -36,7 +35,6 @@ export const RegistrationForm = ({
   const [isLookingUpAddress, setIsLookingUpAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const { register } = useAuth();
-  const { validateRegistration, isValidating } = useAuthValidation();
 
   // Form definition
   const form = useForm<Register>({
@@ -89,35 +87,8 @@ export const RegistrationForm = ({
       setIsLoading(true);
       console.log("🔄 Registration form submission starting:", data);
       
-      // Step 1: VE30 Validation (Plan 057 hybrid architecture)
-      console.log("🔍 VE30: Starting registration validation...");
-      const validationData: RegistrationData = {
-        username: data.username,
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phoneNumber: data.phoneNumber,
-        address: data.address
-      };
-      
-      const validationResult = await validateRegistration(validationData);
-      
-      if (!validationResult.isValid) {
-        console.log("❌ VE30: Validation failed:", validationResult.errors);
-        const errorMessage = validationResult.errors.join(", ");
-        onError?.(errorMessage);
-        return;
-      }
-      
-      console.log("✅ VE30: Validation passed");
-      if (validationResult.warnings.length > 0) {
-        console.log("⚠️ VE30: Warnings:", validationResult.warnings);
-      }
-      
-      // Step 2: Auth-routes registration (password hashing + database creation)
-      console.log("🔐 AUTH: Starting secure registration...");
+      // Plan 057 Secure Architecture: Direct to auth-routes
+      console.log("🔐 AUTH: Starting secure registration with VE30 validation...");
       const success = await register(data);
       console.log("✅ AUTH: Registration result:", success);
       
@@ -293,14 +264,9 @@ export const RegistrationForm = ({
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || isValidating}
+          disabled={isLoading}
         >
-          {isValidating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Validating...
-            </>
-          ) : isLoading ? (
+          {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Creating account...

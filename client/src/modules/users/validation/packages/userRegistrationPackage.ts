@@ -40,13 +40,24 @@ const userRegistrationBusinessRules = [
       errors.push('Invalid email format');
     }
 
-    // Password strength validation
-    if (data.password && data.password.length < 6) {
-      errors.push('Password must be at least 6 characters long');
-    }
+    // Password validation - handle both plaintext and hashed passwords (Plan 057 hybrid)
+    if (data.password) {
+      // Check if password is already hashed (bcrypt format: $2b$XX$...)
+      const isBcryptHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(data.password);
+      
+      if (isBcryptHash) {
+        // Password is already hashed - skip plaintext validation
+        console.log("🔐 VE30: Detected hashed password, skipping plaintext validation");
+      } else {
+        // Plaintext password - apply strength validation
+        if (data.password.length < 6) {
+          errors.push('Password must be at least 6 characters long');
+        }
 
-    if (data.password && !/(?=.*[a-z])(?=.*[A-Z])|(?=.*\d)/.test(data.password)) {
-      warnings.push('Password should contain uppercase, lowercase, and numbers for better security');
+        if (!/(?=.*[a-z])(?=.*[A-Z])|(?=.*\d)/.test(data.password)) {
+          warnings.push('Password should contain uppercase, lowercase, and numbers for better security');
+        }
+      }
     }
 
     // Phone number validation (Dutch format - flexible spacing)

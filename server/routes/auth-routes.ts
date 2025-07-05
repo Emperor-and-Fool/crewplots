@@ -42,9 +42,49 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'Email already exists' });
         }
 
-        // Hash password
+        // Hash password (security-critical, direct)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(data.password, salt);
+
+        // Call VE30 with hashed password (Plan 057 hybrid architecture)
+        console.log("🔐 AUTH-ROUTES: Calling VE30 with hashed password for validation...");
+        
+        // Import ValidationEngine30 for internal validation
+        const { ValidationEngine30 } = await import('../services/validation/ValidationEngine30');
+        const validationEngine30 = new ValidationEngine30();
+        
+        // Prepare data for VE30 validation with hashed password
+        const validationData = {
+            ...data,
+            password: hashedPassword, // Send hashed password to VE30
+            confirmPassword: hashedPassword // For validation consistency
+        };
+        
+        // Validate through VE30 (Plan 057: validation only, not execution)
+        const validationResult = await validationEngine30.validateAndExecute(
+            'create',
+            'userRegistration',
+            validationData,
+            {
+                userId: 0, // Public registration context
+                userRole: 'public',
+                permissions: [] // Public context has no permissions
+            }
+        );
+        
+        if (!validationResult.overall.isValid) {
+            console.log("❌ VE30: Registration validation failed:", validationResult.overall.errors);
+            return res.status(400).json({ 
+                message: 'Registration validation failed', 
+                errors: validationResult.overall.errors,
+                result: validationResult
+            });
+        }
+        
+        console.log("✅ VE30: Registration validation passed");
+        if (validationResult.overall.warnings?.length > 0) {
+            console.log("⚠️ VE30: Warnings:", validationResult.overall.warnings);
+        }
 
         // Remove confirmPassword before saving
         const { confirmPassword, ...userDataWithoutConfirm } = data;
