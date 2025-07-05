@@ -122,7 +122,6 @@ export function CountryCodeSelect({ form, name, label = "Phone Number", required
                     <div className="flex items-center space-x-1 text-xs font-medium">
                       <span className="text-lg">{selectedCountry?.flag}</span>
                       <span className="ml-1">{selectedCountry?.dialCode}</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
                     </div>
                   </SelectTrigger>
                   <SelectContent>
