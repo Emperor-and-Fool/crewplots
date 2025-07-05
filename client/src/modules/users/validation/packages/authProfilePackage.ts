@@ -12,13 +12,13 @@ const authProfileBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // Validate userId parameter format
-    if (data.userId && typeof data.userId !== 'string') {
-      errors.push('User ID must be a string');
+    // Validate userId parameter format (must be number, matching schema)
+    if (data.userId && typeof data.userId !== 'number') {
+      errors.push('User ID must be a number');
     }
 
-    if (data.userId && data.userId.trim().length === 0) {
-      errors.push('User ID cannot be empty');
+    if (data.userId && data.userId <= 0) {
+      errors.push('User ID must be positive');
     }
 
     return { warnings, errors };
