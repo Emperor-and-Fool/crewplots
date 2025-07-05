@@ -189,15 +189,25 @@ export default function Dashboard() {
                   New Shift
                 </Button>
                 {user?.role === 'administrator' && (
-                  <Button 
-                    variant="destructive" 
-                    className="ml-3"
-                    onClick={clearAllSessions}
-                    disabled={isClearing}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {isClearing ? "Clearing..." : "Clear Sessions"}
-                  </Button>
+                  <>
+                    <Button 
+                      variant="destructive" 
+                      className="ml-3"
+                      onClick={clearAllSessions}
+                      disabled={isClearing}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {isClearing ? "Clearing..." : "Clear Sessions"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="ml-3"
+                      onClick={() => window.location.href = "/api/auth/dev-logout"}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Logout (Debug)
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
