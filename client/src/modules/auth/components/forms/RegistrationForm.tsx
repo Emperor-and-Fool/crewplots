@@ -71,21 +71,30 @@ export const RegistrationForm = ({
 
       if (response.ok) {
         const data = await response.json();
-        const suggestions = data.response?.docs?.map((doc: any) => {
-          // Extract proper address components from PDOK response
+        
+        // Filter and deduplicate addresses to show main addresses with postal codes
+        const uniqueAddresses = new Map();
+        
+        data.response?.docs?.forEach((doc: any) => {
           const streetName = doc.straatnaam || '';
           const houseNumber = doc.huis_nlt || '';
           const postalCode = doc.postcode || '';
           const cityName = doc.woonplaatsnaam || '';
           
-          // Format as: Street HouseNumber, PostalCode City
           if (streetName && houseNumber && postalCode && cityName) {
-            return `${streetName} ${houseNumber}, ${postalCode} ${cityName}`;
+            // Create a key for the main address (without building codes)
+            const mainAddressKey = `${streetName} ${houseNumber}, ${postalCode} ${cityName}`;
+            
+            // Only add if we haven't seen this main address yet
+            // This filters out building codes (G1, G2, etc.) and shows clean address
+            if (!uniqueAddresses.has(mainAddressKey)) {
+              uniqueAddresses.set(mainAddressKey, mainAddressKey);
+            }
           }
-          
-          // Fallback to weergavenaam if components missing (should now have proper postal codes)
-          return doc.weergavenaam;
-        }) || [];
+        });
+        
+        // Convert to array and limit results
+        const suggestions = Array.from(uniqueAddresses.values()).slice(0, 5);
         setAddressSuggestions(suggestions);
       }
     } catch (error) {
