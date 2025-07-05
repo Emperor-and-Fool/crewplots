@@ -105,12 +105,14 @@ export class OnDemandRedisService {
         const opTime = Date.now() - opStart;
         console.log(`[OnDemand] 🔄 REUSE DEBUG: Operation completed for "${connectionId}" in ${opTime}ms`);
         
-        existingConnection.isInUse = false;
         return result;
       } catch (error) {
         console.log(`[OnDemand] 🚨 REUSE ERROR: Connection "${connectionId}" failed - ${error.message}`);
-        existingConnection.isInUse = false;
         throw error;
+      } finally {
+        // CRITICAL: Always release connection regardless of success/failure
+        existingConnection.isInUse = false;
+        console.log(`[OnDemand] 🔄 REUSE DEBUG: Connection "${connectionId}" released (isInUse: false)`);
       }
     }
 
