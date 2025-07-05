@@ -31,8 +31,8 @@ const userRegistrationBusinessRules = [
       errors.push('Username must be at least 3 characters long');
     }
 
-    if (data.username && !/^[a-zA-Z0-9_-]+$/.test(data.username)) {
-      errors.push('Username can only contain letters, numbers, underscores, and hyphens');
+    if (data.username && !/^[a-zA-Z0-9._-]+$/.test(data.username)) {
+      errors.push('Username can only contain letters, numbers, dots, underscores, and hyphens');
     }
 
     // Email validation
@@ -49,9 +49,9 @@ const userRegistrationBusinessRules = [
       warnings.push('Password should contain uppercase, lowercase, and numbers for better security');
     }
 
-    // Phone number validation (Dutch format)
-    if (data.phoneNumber && !/^\+\d{1,4}\s\d{5,12}$/.test(data.phoneNumber)) {
-      errors.push('Phone number must be in format +xx xxxxxxx');
+    // Phone number validation (Dutch format - flexible spacing)
+    if (data.phoneNumber && !/^\+\d{1,4}\s?\d{5,12}$/.test(data.phoneNumber)) {
+      errors.push('Phone number must be in format +xx xxxxxxx or +xx xxxxxxx');
     }
 
     // Required fields validation
