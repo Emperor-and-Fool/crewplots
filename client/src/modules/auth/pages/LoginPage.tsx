@@ -42,7 +42,8 @@ export const LoginPage = () => {
           // Network error - clear flag silently, no banner
           sessionStorage.removeItem('logout-success');
         });
-    }, 3000);
+      }, 3000);
+    }  
   }, [toast]);
 
   const handleLoginSuccess = (user: any) => {
