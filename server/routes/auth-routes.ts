@@ -265,8 +265,9 @@ router.get('/user', authenticateUser, (req, res) => {
     }
 });
 
+// PIEP-SYSTEEM TEST: /me endpoint temporarily commented out to test dependencies
 // Enhanced /me endpoint that uses Passport's isAuthenticated
-router.get('/me', authenticateUser, async (req, res) => {
+/* router.get('/me', authenticateUser, async (req, res) => {
     try {
         console.time("me:total");
         // Enable CORS for all origins in development
@@ -333,7 +334,7 @@ router.get('/me', authenticateUser, async (req, res) => {
             } 
         });
     }
-});
+}); */
 
 // Centralized auth logout handler - support both POST and GET
 const logoutHandler = (req: Request, res: Response) => {
