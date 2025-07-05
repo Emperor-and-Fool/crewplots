@@ -70,7 +70,21 @@ export const RegistrationForm = ({
 
       if (response.ok) {
         const data = await response.json();
-        const suggestions = data.response?.docs?.map((doc: any) => doc.weergavenaam) || [];
+        const suggestions = data.response?.docs?.map((doc: any) => {
+          // Extract proper address components from PDOK response
+          const streetName = doc.straatnaam || '';
+          const houseNumber = doc.huis_nlt || '';
+          const postalCode = doc.postcode || '';
+          const cityName = doc.woonplaatsnaam || '';
+          
+          // Format as: Street HouseNumber, PostalCode City
+          if (streetName && houseNumber && postalCode && cityName) {
+            return `${streetName} ${houseNumber}, ${postalCode} ${cityName}`;
+          }
+          
+          // Fallback to weergavenaam if components missing
+          return doc.weergavenaam;
+        }) || [];
         setAddressSuggestions(suggestions);
       }
     } catch (error) {
