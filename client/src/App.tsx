@@ -442,12 +442,10 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              {/* DEFAULT ROUTE */}
+              {/* DEFAULT ROUTE - Simplified Authentication Flow */}
               <Route path="/">
                 {isAuthenticated ? 
-                  (user?.role === 'applicant' ? 
-                    <Redirect to="/applicant-portal" /> : 
-                    <Redirect to="/dashboard" />) : 
+                  <Redirect to={user?.role === 'applicant' ? '/applicant-portal' : '/dashboard'} /> : 
                   <Redirect to="/login" />}
               </Route>
               
