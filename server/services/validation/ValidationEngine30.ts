@@ -22,6 +22,9 @@ import { userProfilePackage } from '../../../client/src/modules/users/validation
 // Import auth profile validation package
 import { authProfilePackage } from '../../../client/src/modules/users/validation/packages/authProfilePackage';
 
+// Import user registration validation package
+import { userRegistrationPackage } from '../../../client/src/modules/users/validation/packages/userRegistrationPackage';
+
 /**
  * ValidationEngine30.ts - Enhanced Validation Engine
  * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
@@ -49,7 +52,8 @@ const enhancedPackageRegistry = {
   messaging: messagingPackage,
   motivationNote: motivationNotePackage,
   userProfile: userProfilePackage,
-  authProfile: authProfilePackage
+  authProfile: authProfilePackage,
+  userRegistration: userRegistrationPackage
 } as const;
 
 export interface ValidationRequest30 {

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type Register } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { useAuthValidation, type RegistrationData } from "../../hooks/useAuthValidation";
 import { RegistrationFormProps } from "../../types/auth-ui.types";
 // import { CountryCodeSelect } from "@/components/ui/country-code-select"; // Not needed with unified phone format
 
@@ -35,6 +36,7 @@ export const RegistrationForm = ({
   const [isLookingUpAddress, setIsLookingUpAddress] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const { register } = useAuth();
+  const { validateRegistration, isValidating } = useAuthValidation();
 
   // Form definition
   const form = useForm<Register>({
@@ -81,21 +83,49 @@ export const RegistrationForm = ({
     }
   };
 
-  // Form submission handler
+  // Form submission handler with VE30 validation
   const onSubmit = async (data: Register) => {
     try {
       setIsLoading(true);
       console.log("🔄 Registration form submission starting:", data);
-      console.log("🔄 Form validation errors:", form.formState.errors);
       
+      // Step 1: VE30 Validation (Plan 057 hybrid architecture)
+      console.log("🔍 VE30: Starting registration validation...");
+      const validationData: RegistrationData = {
+        username: data.username,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber,
+        address: data.address
+      };
+      
+      const validationResult = await validateRegistration(validationData);
+      
+      if (!validationResult.isValid) {
+        console.log("❌ VE30: Validation failed:", validationResult.errors);
+        const errorMessage = validationResult.errors.join(", ");
+        onError?.(errorMessage);
+        return;
+      }
+      
+      console.log("✅ VE30: Validation passed");
+      if (validationResult.warnings.length > 0) {
+        console.log("⚠️ VE30: Warnings:", validationResult.warnings);
+      }
+      
+      // Step 2: Auth-routes registration (password hashing + database creation)
+      console.log("🔐 AUTH: Starting secure registration...");
       const success = await register(data);
-      console.log("✅ Registration result:", success);
+      console.log("✅ AUTH: Registration result:", success);
       
       if (success) {
-        console.log("✅ Registration successful, calling onSuccess");
+        console.log("✅ COMPLETE: Registration successful");
         onSuccess?.(data);
       } else {
-        console.log("❌ Registration failed");
+        console.log("❌ AUTH: Registration failed");
         onError?.("Registration failed - please check your information");
       }
     } catch (error) {
@@ -263,9 +293,14 @@ export const RegistrationForm = ({
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading}
+          disabled={isLoading || isValidating}
         >
-          {isLoading ? (
+          {isValidating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Validating...
+            </>
+          ) : isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Creating account...

@@ -729,4 +729,70 @@ router.get('/auth', authenticateUserLazy, async (req, res) => {
   }
 });
 
+// POST /api/validation/v3/public - Public validation endpoint (no authentication required)
+router.post('/public', async (req, res) => {
+  try {
+    console.log('🔓 VE30 PUBLIC ENDPOINT: Processing unauthenticated request');
+    
+    // Enable CORS for all origins in development
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    const { operation, entityType, data } = req.body;
+    
+    // Security validation for public endpoint
+    if (!operation || !entityType || !data) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: operation, entityType, data'
+      });
+    }
+    
+    // Restrict public endpoint to user registration only
+    if (entityType !== 'userRegistration') {
+      return res.status(403).json({
+        success: false,
+        error: 'Public endpoint only supports userRegistration operations'
+      });
+    }
+    
+    if (operation !== 'create') {
+      return res.status(403).json({
+        success: false,
+        error: 'Public endpoint only supports create operations'
+      });
+    }
+    
+    // Process public validation request through ValidationEngine30
+    const result = await validationEngine30.validateAndExecute(
+      operation,
+      entityType,
+      data,
+      {
+        userId: 0, // Anonymous user
+        userRole: 'public' // Public role for unauthenticated requests
+      }
+    );
+    
+    res.json({
+      success: result.overall.isValid,
+      result,
+      pattern: 'public-validation',
+      metadata: {
+        operation,
+        entityType,
+        timestamp: new Date().toISOString(),
+        publicEndpoint: true
+      }
+    });
+  } catch (error) {
+    console.error('🚨 PUBLIC VALIDATION ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Public validation failed'
+    });
+  }
+});
+
 export default router;
