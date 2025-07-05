@@ -15,9 +15,17 @@ export const LoginPage = () => {
     const logoutSuccess = sessionStorage.getItem('logout-success');
     if (logoutSuccess === 'true') {
       // Step 1: Flag exists - user came from logout action
-      
+      setTimeout(() => {
       // Step 2: Verify server-side session destruction
-      fetch('/api/auth/me', { credentials: 'include' })
+        fetch('/api/validation/v3/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            operation: 'authProfile',
+            data: {}
+          })
+        })
         .then(response => {
           if (response.status === 401) {
             // Step 3a: Session destroyed - show success banner
@@ -34,7 +42,7 @@ export const LoginPage = () => {
           // Network error - clear flag silently, no banner
           sessionStorage.removeItem('logout-success');
         });
-    }
+    }, 3000);
   }, [toast]);
 
   const handleLoginSuccess = (user: any) => {
