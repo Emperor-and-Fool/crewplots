@@ -713,13 +713,23 @@ router.get('/auth', authenticateUserLazy, async (req, res) => {
       }
     );
     
-    res.json({
-      success: result.overall.isValid,
-      result,
-      pattern: 'lightweight-auth',
-      user: req.user,
-      performanceNote: "Lightweight auth using authenticateUserLazy middleware"
-    });
+    // Return same structure as /api/auth/me for frontend compatibility
+    if (result.overall.isValid && req.user) {
+      res.json({
+        authenticated: true,
+        user: {
+          id: (req.user as any).id,
+          username: (req.user as any).username,
+          role: (req.user as any).role,
+          loggedIn: true
+        }
+      });
+    } else {
+      res.status(401).json({
+        authenticated: false,
+        error: 'Authentication validation failed'
+      });
+    }
   } catch (error) {
     console.error('🚨 AUTH PROFILE ERROR:', error);
     res.status(500).json({
