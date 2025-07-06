@@ -305,7 +305,75 @@ router.get('/user', authenticateUser, (req, res) => {
     }
 });
 
-
+// Enhanced /me endpoint that uses Passport's isAuthenticated
+router.get('/me', authenticateUser, async (req, res) => {
+    try {
+        console.time("me:total");
+        // Enable CORS for all origins in development
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+        
+        console.log('Session data:', req.session);
+        console.log('Session ID:', req.sessionID || 'none');
+        console.log('Is authenticated (Passport):', req.isAuthenticated());
+        console.log('User object from Passport:', req.user ? `User: ${req.user.username}` : 'None');
+        console.timeLog("me:total", "after initial auth check");
+        
+        // Set debug cookie for testing - use SameSite=None for cross-domain cookies
+        res.cookie('debug-auth-check', 'was-checked', { 
+            maxAge: 3600000, 
+            httpOnly: true,
+            sameSite: 'none',
+            secure: false // Important: Allow insecure cookies in development
+        });
+        
+        // Force cookie to be visible in response
+        res.header('Set-Cookie', `connect.sid-refreshed=${req.sessionID || 'no-session'}; Path=/; HttpOnly; SameSite=None; Max-Age=3600`);
+        
+        // Use same authentication logic as working middleware
+        if (!req.session?.passport?.user) {
+            console.log('Not authenticated - no passport session data found');
+            console.timeLog("me:total", "authentication check failed");
+            return res.status(200).json({ 
+                authenticated: false,
+                debug: {
+                    sessionExists: !!req.session,
+                    sessionId: req.sessionID || 'none',
+                    hasPassportSession: !!(req.session && req.session.passport),
+                    hasPassportUser: !!(req.session && req.session.passport && req.session.passport.user),
+                    cookieHeader: req.headers.cookie || 'none'
+                }
+            });
+        }
+        console.timeLog("me:total", "after session authentication check");
+        
+        // Return lightweight session data only (proper separation of concerns)
+        const sessionUser = req.session.passport.user;
+        
+        console.log(`Get /me - returning authenticated session user: ${sessionUser.username}`);
+        console.timeEnd("me:total");
+        
+        return res.status(200).json({
+            authenticated: true,
+            user: sessionUser
+        });
+    } catch (error) {
+        console.error('Error in /me endpoint:', error);
+        console.timeEnd("me:total");
+        
+        // Return a more detailed error response for debugging
+        return res.status(200).json({ 
+            authenticated: false,
+            error: {
+                message: 'Error checking authentication status',
+                hasSession: !!req.session,
+                sessionID: req.sessionID || 'none',
+                isPassportInitialized: !!req.isAuthenticated
+            } 
+        });
+    }
+});
 
 // Centralized auth logout handler - support both POST and GET
 const logoutHandler = (req: Request, res: Response) => {
