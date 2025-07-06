@@ -47,14 +47,19 @@ export const LoginPage = () => {
   }, [toast]);
 
   const handleLoginSuccess = (user: any) => {
-    console.log("Login successful, navigating to dashboard");
+    console.log("Login successful, determining redirect destination");
     toast({
       title: "Welcome back!", 
       description: "You have been logged in successfully.",
     });
+    
+    // Centralized role-based routing logic - single source of truth
+    const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+    console.log(`Redirecting ${user.role} to ${destination}`);
+    
     // Give a moment for state to update then navigate
     setTimeout(() => {
-      navigate('/dashboard');
+      navigate(destination);
     }, 100);
   };
 
