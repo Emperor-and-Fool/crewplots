@@ -309,16 +309,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
-      // Use standard fetch without cache-busting to allow proper caching
-      const response = await fetch('/api/auth/me', {
-        credentials: "include"
+      // Use ValidationEngine30 auth endpoint - same as initial auth check
+      const response = await fetch('/api/validation/v3/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({})
       });
       
       if (response.ok) {
-        const data = await response.json();
-        
-        if (data && data.authenticated && data.user) {
-          setUser(data.user);
+        const authData = await response.json();
+        // ValidationEngine30 response structure: { success, result, user }
+        if (authData?.success && authData.user) {
+          setUser(authData.user);
           setIsLoading(false);
           return true;
         } else {
