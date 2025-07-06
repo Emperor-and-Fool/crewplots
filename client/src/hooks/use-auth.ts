@@ -1,3 +1,2 @@
-// REMOVED: Duplicate useAuth export - use the one from @/contexts/auth-context instead
-// This file is kept for backward compatibility but no longer exports useAuth
-export {};
+// Re-export useAuth from auth-context to maintain backward compatibility
+export { useAuth } from "@/contexts/auth-context";
