@@ -744,30 +744,4 @@ router.get('/clear-all-sessions', async (req, res) => {
     }
 });
 
-// Simple session validation endpoint
-router.get('/me', async (req, res) => {
-    try {
-        // Check if user has valid session
-        if (!req.session?.passport?.user) {
-            return res.status(401).json({ 
-                authenticated: false,
-                message: 'No valid session found'
-            });
-        }
-
-        // Return session user data
-        const sessionUser = req.session.passport.user;
-        return res.status(200).json({
-            authenticated: true,
-            user: sessionUser
-        });
-    } catch (error) {
-        console.error('Error in /me endpoint:', error);
-        return res.status(500).json({ 
-            authenticated: false,
-            message: 'Internal server error' 
-        });
-    }
-});
-
 export default router;
