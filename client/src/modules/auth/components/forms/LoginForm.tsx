@@ -57,7 +57,10 @@ export const LoginForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={(e) => {
+        console.log("🔍 FORM DEBUG: Form submission triggered");
+        return form.handleSubmit(onSubmit)(e);
+      }} className="space-y-4">
         <FormField
           control={form.control}
           name="username"
@@ -88,6 +91,7 @@ export const LoginForm = ({
           type="submit"
           className="w-full"
           disabled={isLoading}
+          onClick={() => console.log("🔍 BUTTON DEBUG: Submit button clicked")}
         >
           {isLoading ? (
             <>
