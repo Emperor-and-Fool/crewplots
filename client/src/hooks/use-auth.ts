@@ -51,22 +51,21 @@ export const useAuth = (): AuthState => {
 
     const checkAuth = async () => {
       try {
-        // Use ValidationEngine30 auth endpoint - simplified authentication check
-        const response = await fetch('/api/validation/v3/auth', {
-          method: 'POST',
+        // Use traditional auth endpoint for session validation
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          },
-          body: JSON.stringify({})
+          }
         });
         
         if (response.ok) {
           const authData = await response.json();
-          // ValidationEngine30 response structure: { success, result, user }
-          if (authData?.success && authData.user) {
+          // Traditional auth response structure: { authenticated, user }
+          if (authData?.authenticated && authData.user) {
             setUser(authData.user);
           } else {
             setUser(null);

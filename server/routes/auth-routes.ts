@@ -305,8 +305,8 @@ router.get('/user', authenticateUser, (req, res) => {
     }
 });
 
-// Enhanced /login endpoint that uses Passport's isAuthenticated (renamed for clear endpoint separation)
-router.get('/login', authenticateUser, async (req, res) => {
+// Enhanced /me endpoint that uses Passport's isAuthenticated (restored original endpoint name)
+router.get('/me', authenticateUser, async (req, res) => {
     try {
         console.time("me:total");
         // Enable CORS for all origins in development
