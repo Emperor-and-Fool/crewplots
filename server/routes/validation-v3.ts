@@ -348,50 +348,24 @@ router.post('/validate', authenticateUser, async (req, res) => {
   }
 });
 
-// POST /api/validation/v3/auth - Authentication validation endpoint
-router.post('/auth', authenticateUser, async (req, res) => {
-  try {
-    console.log('🔐 AUTH VALIDATION: User session check');
-    
-    // For auth validation, we just need to confirm the user is authenticated
-    // The authenticateUser middleware already validated the session
-    const user = req.user as any;
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
-    }
-    
-    // Return user data in ValidationEngine30 format
-    res.json({
-      success: true,
-      result: {
-        isValid: true,
-        user: user,
-        authProfile: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          workflowPermissions: user.workflowPermissions || {}
-        }
-      },
-      user: user,
-      metadata: {
-        operation: 'auth-check',
-        entityType: 'authProfile',
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error('[ValidationEngine 3.0] Auth validation error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Authentication validation failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+// POST /api/validation/v3/auth - PROXY to centralized /api/auth/me endpoint
+router.post('/auth', (req, res) => {
+  // Log request source for debugging session loops
+  console.log('🔀 PROXY: /api/validation/v3/auth request from:', {
+    userAgent: req.headers['user-agent'],
+    referer: req.headers.referer,
+    origin: req.headers.origin,
+    ip: req.ip,
+    sessionId: req.sessionID,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Forward to centralized auth endpoint using Express internal routing
+  req.app._router.handle(
+    { ...req, url: '/api/auth/me', method: 'GET' }, 
+    res, 
+    () => {}
+  );
 });
 
 // POST /api/validation/v3/orchestrate (aggregate-then-validate - comprehensive path)
