@@ -52,7 +52,7 @@ export const useAuth = (): AuthState => {
     const checkAuth = async () => {
       try {
         // Use traditional auth endpoint for session validation
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('/api/auth/login', {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -276,7 +276,7 @@ export const useAuth = (): AuthState => {
     
     try {
       // Use ValidationEngine30 auth endpoint - same as initial auth check
-      const response = await fetch('/api/validation/v3/auth', {
+      const response = await fetch('/api/validation/v3/auth/me', {
         method: 'POST',
         credentials: 'include',
         headers: {
