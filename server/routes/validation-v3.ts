@@ -723,7 +723,7 @@ router.get('/auth', authenticateUserLazy, async (req, res) => {
       }
     );
     
-    // Return same structure as /api/auth/me for frontend compatibility
+    // Return session validation structure for frontend compatibility
     if (result.overall.isValid && req.user) {
       res.json({
         authenticated: true,

@@ -60,7 +60,7 @@ export default function EndpointTestPage() {
       }
 
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('/api/validation/v3/auth/me', {
           method: 'GET',
           credentials: 'include',
         });
@@ -280,7 +280,7 @@ export default function EndpointTestPage() {
               </select>
               
               <Input
-                placeholder="Enter endpoint (e.g., /api/auth/me, /api/profile-data)"
+                placeholder="Enter endpoint (e.g., /api/validation/v3/auth/me, /api/profile-data)"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 className="flex-1"
@@ -362,7 +362,7 @@ export default function EndpointTestPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {[
-                '/api/auth/me',
+                '/api/validation/v3/auth/me',
                 '/api/profile-data', 
                 '/api/users',
                 '/api/locations',
