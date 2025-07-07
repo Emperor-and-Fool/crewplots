@@ -36,10 +36,10 @@ export const LoginForm = ({
     try {
       setIsLoading(true);
       
-      const success = await login(data.username, data.password);
+      const result = await login(data.username, data.password);
       
-      if (success && user) {
-        onSuccess?.(user); // Pass user object from auth context
+      if (result.success && result.user) {
+        onSuccess?.(result.user); // Pass fresh user object from login response
       } else {
         onError?.("Login failed - invalid credentials");
       }

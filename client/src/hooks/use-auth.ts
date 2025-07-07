@@ -89,7 +89,7 @@ export const useAuth = (): AuthState => {
   }, [location, isLoggingOut]); // Fixed dependencies
 
   // Login function using URLSearchParams for reliable authentication
-  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; user?: any }> => {
     try {
       setIsLoading(true);
 
@@ -122,7 +122,7 @@ export const useAuth = (): AuthState => {
           
           // Invalidate all queries to ensure fresh data
           queryClient.invalidateQueries();
-          return true;
+          return { success: true, user: data.user };
         } else {
           console.error("Login response missing user data:", data);
           toast({
@@ -130,7 +130,7 @@ export const useAuth = (): AuthState => {
             description: "Authentication successful but user data unavailable",
             variant: "destructive",
           });
-          return false;
+          return { success: false };
         }
       } else {
         console.error("Login failed with status:", response.status);
@@ -148,7 +148,7 @@ export const useAuth = (): AuthState => {
             variant: "destructive",
           });
         }
-        return false;
+        return { success: false };
       }
     } catch (fetchError) {
       console.error("Login fetch error:", fetchError);
@@ -157,7 +157,7 @@ export const useAuth = (): AuthState => {
         description: "Could not connect to the server. Please check your network connection.",
         variant: "destructive",
       });
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
