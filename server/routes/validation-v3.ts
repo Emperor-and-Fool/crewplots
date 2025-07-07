@@ -348,21 +348,57 @@ router.post('/validate', authenticateUser, async (req, res) => {
   }
 });
 
-// POST /api/validation/v3/auth - PROXY to centralized /api/auth/me endpoint
+// POST /api/validation/v3/auth/me - Session validation endpoint (RESTful standard)
+router.post('/auth/me', authenticateUser, async (req, res) => {
+  try {
+    console.log('🔐 VE30 AUTH: Session validation request');
+    
+    // Enable CORS for all origins in development
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    // User is already authenticated by middleware
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({ 
+        authenticated: false, 
+        error: 'Authentication required' 
+      });
+    }
+
+    // Return authenticated user data
+    res.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        locationId: user.locationId,
+        phoneNumber: user.phoneNumber,
+        uniqueCode: user.uniqueCode
+      }
+    });
+  } catch (error) {
+    console.error('❌ VE30 AUTH: Session validation error:', error);
+    res.status(500).json({ 
+      authenticated: false, 
+      error: 'Session validation failed' 
+    });
+  }
+});
+
+// POST /api/validation/v3/auth - PROXY to /api/validation/v3/auth/me (internal routing)
 router.post('/auth', (req, res) => {
   // Log request source for debugging session loops
-  console.log('🔀 PROXY: /api/validation/v3/auth request from:', {
-    userAgent: req.headers['user-agent'],
-    referer: req.headers.referer,
-    origin: req.headers.origin,
-    ip: req.ip,
-    sessionId: req.sessionID,
-    timestamp: new Date().toISOString()
-  });
+  console.log('🔀 PROXY: /api/validation/v3/auth → /api/validation/v3/auth/me');
   
-  // Forward to centralized auth endpoint using Express internal routing
+  // Forward to RESTful endpoint using Express internal routing
   req.app._router.handle(
-    { ...req, url: '/api/auth/me', method: 'GET' }, 
+    { ...req, url: '/api/validation/v3/auth/me', method: 'POST' }, 
     res, 
     () => {}
   );
