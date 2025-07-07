@@ -9,13 +9,17 @@ export const LoginPage = () => {
   const { toast } = useToast();
 
   const handleLoginSuccess = (user: any) => {
+    console.log("🔍 REDIRECT DEBUG: handleLoginSuccess called with user:", user);
+    
     toast({
       title: "Welcome back!", 
       description: "You have been logged in successfully.",
     });
     
     const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+    console.log("🔍 REDIRECT DEBUG: Redirecting to:", destination);
     setLocation(destination);
+    console.log("🔍 REDIRECT DEBUG: setLocation called");
   };
 
   const handleLoginError = (error: string) => {

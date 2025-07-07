@@ -37,13 +37,17 @@ export const LoginForm = ({
       setIsLoading(true);
       
       const result = await login(data.username, data.password);
+      console.log("🔍 LOGIN DEBUG: Result from login():", result);
       
       if (result.success && result.user) {
+        console.log("🔍 LOGIN DEBUG: Calling onSuccess with user:", result.user);
         onSuccess?.(result.user); // Pass fresh user object from login response
       } else {
+        console.log("🔍 LOGIN DEBUG: Login failed - result:", result);
         onError?.("Login failed - invalid credentials");
       }
     } catch (error) {
+      console.log("🔍 LOGIN DEBUG: Exception caught:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       onError?.(errorMessage);
     } finally {
