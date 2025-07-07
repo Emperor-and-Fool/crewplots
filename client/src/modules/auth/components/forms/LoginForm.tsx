@@ -19,14 +19,11 @@ import { Loader2 } from "lucide-react";
 
 export const LoginForm = ({ 
   onSuccess, 
-  onError, 
-  showAutoLogin = true, 
-  showDebugForm = true 
+  onError 
 }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
-  // Form definition
   const form = useForm<Login>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -35,24 +32,18 @@ export const LoginForm = ({
     },
   });
 
-  // Form submission handler
   const onSubmit = async (data: Login) => {
     try {
       setIsLoading(true);
-      console.log("Login form submission:", data);
       
       const success = await login(data.username, data.password);
-      console.log("Login result:", success);
       
-      if (success) {
-        console.log("Login successful, calling onSuccess");
-        onSuccess?.(data); // Pass the login data since auth context doesn't return user object
+      if (success && user) {
+        onSuccess?.(user); // Pass user object from auth context
       } else {
-        console.log("Login failed");
         onError?.("Login failed - invalid credentials");
       }
     } catch (error) {
-      console.error("Login submission error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       onError?.(errorMessage);
     } finally {

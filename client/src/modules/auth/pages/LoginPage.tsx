@@ -3,64 +3,19 @@ import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
 import { AuthPageLayout } from "../components/layouts/AuthPageLayout";
 import { Link } from "wouter";
-import { useEffect } from "react";
 
 export const LoginPage = () => {
   const [, setLocation] = useLocation();
-  const navigate = (to: string) => setLocation(to);
   const { toast } = useToast();
 
-  // Dual verification: Check logout flag + verify server session destruction
-  useEffect(() => {
-    const logoutSuccess = sessionStorage.getItem('logout-success');
-    if (logoutSuccess === 'true') {
-      // Step 1: Flag exists - user came from logout action
-      setTimeout(() => {
-      // Step 2: Verify server-side session destruction
-        fetch('/api/validation/v3/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            operation: 'authProfile',
-            data: {}
-          })
-        })
-        .then(response => {
-          if (response.status === 401) {
-            // Step 3a: Session destroyed - show success banner
-            toast({
-              title: "Logged out successfully",
-              description: "You have been logged out and your session has been cleared.",
-            });
-          }
-          // Step 3b: Session exists or other status - silent failure, no banner
-          // Always clear flag regardless of server response
-          sessionStorage.removeItem('logout-success');
-        })
-        .catch(() => {
-          // Network error - clear flag silently, no banner
-          sessionStorage.removeItem('logout-success');
-        });
-      }, 3000);
-    }  
-  }, [toast]);
-
   const handleLoginSuccess = (user: any) => {
-    console.log("Login successful, determining redirect destination");
     toast({
       title: "Welcome back!", 
       description: "You have been logged in successfully.",
     });
     
-    // Centralized role-based routing logic - single source of truth
     const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
-    console.log(`Redirecting ${user.role} to ${destination}`);
-    
-    // Give a moment for state to update then navigate
-    setTimeout(() => {
-      navigate(destination);
-    }, 100);
+    setLocation(destination);
   };
 
   const handleLoginError = (error: string) => {
