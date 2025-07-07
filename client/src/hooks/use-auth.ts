@@ -120,6 +120,9 @@ export const useAuth = (): AuthState => {
             description: `Welcome back, ${data.user?.name || username}!`,
           });
           
+          // Trigger immediate auth refresh to re-check cookies and session
+          await refreshAuth();
+          
           // Invalidate all queries to ensure fresh data
           queryClient.invalidateQueries();
           return { success: true, user: data.user };
@@ -275,16 +278,15 @@ export const useAuth = (): AuthState => {
     setIsLoading(true);
     
     try {
-      // Use ValidationEngine30 auth endpoint - same as initial auth check
-      const response = await fetch('/api/validation/v3/auth/me', {
-        method: 'POST',
+      // Use auth login-session endpoint - same as initial auth check
+      const response = await fetch('/api/auth/login-session', {
+        method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({})
+        }
       });
       
       if (response.ok) {
