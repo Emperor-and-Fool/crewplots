@@ -17,9 +17,11 @@ export const LoginPage = () => {
     });
     
     const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
-    console.log("🔍 REDIRECT DEBUG: Redirecting to:", destination);
-    setLocation(destination);
-    console.log("🔍 REDIRECT DEBUG: setLocation called");
+    console.log("🔍 REDIRECT DEBUG: Using window.location.replace for reliable cookie timing");
+    
+    // Use window.location.replace to ensure cookies are fully processed
+    // This eliminates SPA timing issues where useAuth runs before cookies are ready
+    window.location.replace(destination);
   };
 
   const handleLoginError = (error: string) => {

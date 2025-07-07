@@ -120,9 +120,7 @@ export const useAuth = (): AuthState => {
             description: `Welcome back, ${data.user?.name || username}!`,
           });
           
-          // Trigger immediate auth refresh to re-check cookies and session
-          await refreshAuth();
-          
+          // No need for refreshAuth since window.location.replace will handle page reload
           // Invalidate all queries to ensure fresh data
           queryClient.invalidateQueries();
           return { success: true, user: data.user };
