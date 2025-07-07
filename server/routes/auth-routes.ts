@@ -305,7 +305,31 @@ router.get('/user', authenticateUser, (req, res) => {
     }
 });
 
+// Session validation endpoint for authentication checks
+router.get('/login-session', async (req, res) => {
+    try {
+        // Check if user has valid session
+        if (!req.session?.passport?.user) {
+            return res.status(401).json({ 
+                authenticated: false,
+                message: 'No valid session found'
+            });
+        }
 
+        // Return session user data
+        const sessionUser = req.session.passport.user;
+        return res.status(200).json({
+            authenticated: true,
+            user: sessionUser
+        });
+    } catch (error) {
+        console.error('Error in /login-session endpoint:', error);
+        return res.status(500).json({ 
+            authenticated: false,
+            message: 'Internal server error' 
+        });
+    }
+});
 
 // Centralized auth logout handler - support both POST and GET
 const logoutHandler = (req: Request, res: Response) => {
