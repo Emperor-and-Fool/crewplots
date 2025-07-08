@@ -117,15 +117,20 @@ const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
-  // Request logging middleware - only log API calls, not static assets
+  // Track logged browser connections to only log first connection
+  const loggedConnections = new Set();
+  
+  // Request logging middleware - only log first connection from each browser
   app.use((req, res, next) => {
-    // Only log API routes and main page loads, skip Vite development assets
-    if (req.path.startsWith('/api/') || req.path === '/' || req.path.startsWith('/dashboard') || req.path.startsWith('/login')) {
-      const userAgent = req.get('User-Agent') || 'unknown';
-      const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
-                         userAgent.includes('Chrome') ? 'Chrome' : 
-                         userAgent.includes('Firefox') ? 'Firefox' : 'Other';
-      console.log(`🌐 ${req.method} ${req.path} - ${browserInfo}`);
+    const userAgent = req.get('User-Agent') || 'unknown';
+    const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
+                       userAgent.includes('Chrome') ? 'Chrome' : 
+                       userAgent.includes('Firefox') ? 'Firefox' : 'Other';
+    
+    // Only log the first request from each unique browser
+    if (!loggedConnections.has(userAgent)) {
+      console.log(`🌐 First connection from ${browserInfo}`);
+      loggedConnections.add(userAgent);
     }
     next();
   });
