@@ -266,9 +266,20 @@ router.post('/login', upload.none(), async (req, res, next) => {
         
         // Return success with user data (excluding password)
         const { password: userPasswordField, ...userWithoutPassword } = user;
+        
+        // Redirect service function for atomic server-controlled navigation
+        function getRedirectForUser(user: any) {
+            if (!user?.role) return '/register';
+            return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+        }
+        
+        const redirectUrl = getRedirectForUser(userWithoutPassword);
+        
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
+            redirectScript: `window.location.replace('${redirectUrl}');`,
+            redirectUrl: redirectUrl,
             debug: {
                 sessionId: req.sessionID,
                 timestamp: new Date().toISOString()

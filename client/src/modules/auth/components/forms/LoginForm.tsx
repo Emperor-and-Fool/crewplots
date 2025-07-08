@@ -40,8 +40,8 @@ export const LoginForm = ({
       console.log("🔍 LOGIN DEBUG: Result from login():", result);
       
       if (result.success && result.user) {
-        console.log("🔍 LOGIN DEBUG: Calling onSuccess with user:", result.user);
-        onSuccess?.(result.user); // Pass fresh user object from login response
+        console.log("🔍 ATOMIC LOGIN: Calling onSuccess with complete result:", result);
+        onSuccess?.(result); // Pass complete response with redirectScript
       } else {
         console.log("🔍 LOGIN DEBUG: Login failed - result:", result);
         onError?.("Login failed - invalid credentials");

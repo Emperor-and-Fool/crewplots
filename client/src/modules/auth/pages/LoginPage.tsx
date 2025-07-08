@@ -8,20 +8,19 @@ export const LoginPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const handleLoginSuccess = (user: any) => {
-    console.log("🔍 REDIRECT DEBUG: handleLoginSuccess called with user:", user);
+  const handleLoginSuccess = (loginResponse: any) => {
+    console.log("🔍 ATOMIC REDIRECT: handleLoginSuccess called with loginResponse:", loginResponse);
     
     toast({
       title: "Welcome back!", 
       description: "You have been logged in successfully.",
     });
     
-    const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
-    console.log("🔍 REDIRECT DEBUG: Using window.location.replace for reliable cookie timing");
-    
-    // Use window.location.replace to ensure cookies are fully processed
-    // This eliminates SPA timing issues where useAuth runs before cookies are ready
-    window.location.replace(destination);
+    // Execute server's redirect script (cookies already processed)
+    if (loginResponse.redirectScript) {
+        console.log("🔍 ATOMIC REDIRECT: Executing server redirect script:", loginResponse.redirectScript);
+        eval(loginResponse.redirectScript);
+    }
   };
 
   const handleLoginError = (error: string) => {
