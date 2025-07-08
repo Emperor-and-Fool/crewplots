@@ -44,11 +44,18 @@ export const useAuth = (): AuthState => {
 
     console.log('🔍 AUTH CHECK: Current cookies:', document.cookie);
     console.log('🔍 AUTH CHECK: Has cookies:', hasCookies);
+    console.log('🔍 AUTH CHECK: Current location:', location);
 
     if (!hasCookies) {
       console.log('🔒 No session cookies found - redirecting to login');
       setUser(null);
       setIsLoading(false);
+      
+      // Only redirect if not already on login page
+      if (location !== '/login') {
+        console.log('🔄 Redirecting to login page');
+        setLocation('/login');
+      }
       return;
     }
 
