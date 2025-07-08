@@ -1,8 +1,13 @@
-import { createContext, ReactNode, useContext } from "react";
-import { useAuth as useAuthImplementation } from "@/hooks/use-auth";
+import { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { User, Register } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { hasAdminBypass } from "@shared/utils/permissions";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
-  user: any | null;
+  user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isSuperuser: boolean;
@@ -12,21 +17,354 @@ type AuthContextType = {
   refreshAuth: () => Promise<boolean>;
 };
 
-// Context is pure infrastructure - all logic is in useAuth hook
-export const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  isSuperuser: false,
+  login: async () => false,
+  logout: async () => {},
+  register: async () => false,
+  refreshAuth: async () => false,
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Get all auth state and operations from the hook
-  const authState = useAuthImplementation();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
+  // Compute isAuthenticated from user state
+  const isAuthenticated = Boolean(user);
+  
+  // Compute superuser status
+  const isSuperuser = hasAdminBypass(user);
+
+  // Session validation with graceful fallback for clean session states
+  useEffect(() => {
+    // Skip auth check on login page - no need to verify what we already know
+    if (window.location.pathname === '/login') {
+      setIsLoading(false);
+      return;
+    }
+
+    // Skip auth check if we're in the middle of logging out
+    if (isLoggingOut) {
+      return;
+    }
+
+    // Check if any session cookies exist before making auth request
+    const hasCookies = document.cookie.includes('connect.sid') || 
+                      document.cookie.includes('session') ||
+                      document.cookie.length > 0;
+
+    if (!hasCookies) {
+      // No session cookies present - user needs to login
+      console.log('🔒 No session cookies found - redirecting to login');
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const checkAuth = async () => {
+      try {
+        // Use ValidationEngine30 auth endpoint - simplified authentication check
+        const response = await fetch('/api/validation/v3/auth', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify({})
+        });
+        
+        if (response.ok) {
+          const authData = await response.json();
+          // ValidationEngine30 response structure: { success, result, user }
+          if (authData?.success && authData.user) {
+            setUser(authData.user);
+          } else {
+            setUser(null);
+          }
+        } else if (response.status === 401) {
+          // Session expired or invalid - clear state and allow redirect to login
+          console.log('🔒 Session invalid - clearing auth state');
+          setUser(null);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.log('🔒 Auth check failed - clearing auth state');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [isLoggingOut]); // Add dependency array to prevent infinite loops
+
+  // Login function using URLSearchParams for reliable authentication
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+
+      
+      // Use URLSearchParams for reliable form data submission
+      const urlencoded = new URLSearchParams();
+      urlencoded.append('username', username);
+      urlencoded.append('password', password);
+      
+      // Use fetch with proper content type
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: urlencoded.toString(),
+          credentials: 'include' // Important for cookies
+        });
+        
+
+        
+        if (response.ok) {
+          const data = await response.json();
+
+          
+          if (data && data.user) {
+            setUser(data.user);
+            
+            // Show success toast
+            toast({
+              title: "Login successful",
+              description: `Welcome back, ${data.user?.name || username}!`,
+            });
+            
+            // Invalidate all queries to ensure fresh data
+            queryClient.invalidateQueries();
+            setIsLoading(false);
+            return true;
+          } else {
+            console.error("Login response missing user data:", data);
+            toast({
+              title: "Login failed",
+              description: "Authentication successful but user data unavailable",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return false;
+          }
+        } else {
+          console.error("Login failed with status:", response.status);
+          try {
+            const errorData = await response.json();
+            toast({
+              title: "Login failed",
+              description: errorData.message || "Invalid username or password",
+              variant: "destructive",
+            });
+          } catch (e) {
+            toast({
+              title: "Login failed",
+              description: "An unexpected error occurred",
+              variant: "destructive",
+            });
+          }
+          setIsLoading(false);
+          return false;
+        }
+      } catch (fetchError) {
+        console.error("Login fetch error:", fetchError);
+        toast({
+          title: "Connection error",
+          description: "Could not connect to the server. Please check your network connection.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // Optimistic logout function - immediate UI response with background cleanup
+  const logout = async (): Promise<void> => {
+    // Phase 1: Immediate optimistic logout
+    setUser(null);
+    setIsLoading(false);
+    queryClient.clear();
+    
+    // Set logout success flag for login page
+    sessionStorage.setItem('logout-success', 'true');
+    
+    // Navigate immediately to login page using React router (preserves context)
+    setLocation('/login');
+    
+    // Phase 2: Background server cleanup (fire and forget)
+    backgroundSessionCleanup();
+  };
+
+  // Background session cleanup - silent failure handling
+  const backgroundSessionCleanup = async (): Promise<void> => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      // Silent failure - user is already logged out locally
+    }
+  };
+
+  // Register function
+  const register = async (userData: Register): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+
+      
+      // Return a Promise to handle asynchronous XMLHttpRequest
+      return new Promise<boolean>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/auth/register", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        
+        xhr.onreadystatechange = function() {
+
+          
+          if (xhr.readyState === 4) {
+            setIsLoading(false);
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+              // Registration successful
+              toast({
+                title: "Registration successful",
+                description: "Your account has been created. You can now login.",
+              });
+              resolve(true);
+            } else {
+              // Registration failed
+              try {
+                const errorData = JSON.parse(xhr.responseText);
+                toast({
+                  title: "Registration failed",
+                  description: errorData.message || "Unable to create account",
+                  variant: "destructive",
+                });
+              } catch (e) {
+                toast({
+                  title: "Registration failed",
+                  description: "An unexpected error occurred. Please try again.",
+                  variant: "destructive",
+                });
+                console.error("Error parsing registration error response:", e);
+              }
+              resolve(false);
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error("Registration request failed");
+          toast({
+            title: "Registration failed",
+            description: "Network error. Please check your connection and try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          resolve(false);
+        };
+        
+        // Send the request
+        xhr.send(JSON.stringify(userData));
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // Optimized refreshAuth function using React Query for deduplication
+  const refreshAuth = async (): Promise<boolean> => {
+
+    setIsLoading(true);
+    
+    try {
+      // Use ValidationEngine30 auth endpoint - same as initial auth check
+      const response = await fetch('/api/validation/v3/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({})
+      });
+      
+      if (response.ok) {
+        const authData = await response.json();
+        // ValidationEngine30 response structure: { success, result, user }
+        if (authData?.success && authData.user) {
+          setUser(authData.user);
+          setIsLoading(false);
+          return true;
+        } else {
+          setUser(null);
+          setIsLoading(false);
+          return false;
+        }
+      } else {
+        setUser(null);
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error refreshing authentication:", error);
+      setUser(null);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={authState}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        isSuperuser,
+        login,
+        logout,
+        register,
+        refreshAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Clean interface for components to access auth
+// Export useAuth hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
