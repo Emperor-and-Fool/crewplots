@@ -35,12 +35,9 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         // Mark this request as using centralized authentication
         (req as any).usedCentralizedAuth = true;
         
-        // Fast-path: Skip expensive processing for obviously empty sessions
-        if (!req.session || !req.session.passport) {
-            console.log("Fast-path: No session or passport data found");
-            res.status(401).json({ message: "Unauthorized - Please log in" });
-            return;
-        }
+        // REMOVED BROKEN FAST-PATH: This was checking session before session middleware populated it
+        // Fast-path was causing immediate 401 responses before session store could load session data
+        // Session middleware needs time to populate req.session from database/Redis
         
         console.log("Auth middleware - Checking session authentication");
         console.log("Auth middleware - Session ID:", req.sessionID || 'none');
