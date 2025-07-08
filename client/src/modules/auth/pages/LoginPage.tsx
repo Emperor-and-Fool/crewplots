@@ -30,7 +30,9 @@ export const LoginPage = () => {
   };
 
   const handleLoginError = (error: string) => {
-    console.error("Login error:", error);
+    console.error("🚨 BANNER DEBUG: handleLoginError called with:", error);
+    console.error("🚨 BANNER DEBUG: Stack trace:", new Error().stack);
+    console.error("🚨 BANNER DEBUG: Current timestamp:", new Date().toISOString());
     toast({
       title: "Login error", 
       description: error || "An unexpected error occurred. Please try again.",
