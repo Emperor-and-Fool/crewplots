@@ -125,10 +125,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     session({
       cookie: { 
         maxAge: 86400000, // 24 hours
-        secure: process.env.NODE_ENV === 'production', // Dynamic: HTTPS in production, HTTP allowed in development
+        secure: false, // FORCED FALSE for Replit development - cookies must work over HTTP
         httpOnly: true,
         sameSite: 'lax', // More compatible and secure than 'none'
-        path: '/'
+        path: '/',
+        domain: undefined // Let browser handle domain automatically
       },
       store: hybridSessionStore,
       secret: process.env.SESSION_SECRET || "crewplots-dev-static-key-2025",

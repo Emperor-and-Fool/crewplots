@@ -257,10 +257,11 @@ router.post('/login', upload.none(), async (req, res, next) => {
         console.log('Centralized auth login successful for user:', user.username);
         console.log('Session established with ID:', req.sessionID);
         
-        // Set a regular cookie for debugging
+        // Set a regular cookie for debugging - FORCED INSECURE FOR DEVELOPMENT
         res.cookie('login-timestamp', new Date().toISOString(), { 
             maxAge: 86400000,
-            httpOnly: true,
+            httpOnly: false, // ALLOW CLIENT-SIDE ACCESS FOR DEBUGGING
+            secure: false,   // FORCE HTTP COMPATIBILITY
             sameSite: 'lax'
         });
         
