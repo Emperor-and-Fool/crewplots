@@ -133,8 +133,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: urlencoded.toString(),
-          credentials: 'include' // Important for cookies
-          console.log("🔍 BANNER DEBUG: response processed:",
+          credentials: 'include', // Important for cookies
+          
         });
         
 
@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const data = await response.json();
 
           // 🔍 BANNER DEBUG: Log complete response data structure
-          console.log("🔍 BANNER DEBUG: Location in code reached:", 
+          console.log("🔍 BANNER DEBUG: Location in code reached:"); 
           
           if (data && data.user) {
             setUser(data.user);
