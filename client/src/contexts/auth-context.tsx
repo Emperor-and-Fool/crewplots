@@ -134,9 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
           body: urlencoded.toString(),
           credentials: 'include', // Important for cookies
-          
         });
-        
+        console.log("🔍 BANNER DEBUG: response processed:");
 
         
         if (response.ok) {
