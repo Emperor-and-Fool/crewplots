@@ -39,9 +39,9 @@ export const LoginForm = ({
       const result = await login(data.username, data.password);
       console.log("🔍 LOGIN DEBUG: Result from login():", result);
       
-      if (result) {
-        console.log("🔍 ATOMIC LOGIN: Login successful, calling onSuccess with user from context");
-        onSuccess?.(user); // Pass user from useAuth hook
+      if (result && result.user) {
+        console.log("🔍 ATOMIC LOGIN: Login successful, calling onSuccess with complete result");
+        onSuccess?.(result); // Pass complete login response with redirectScript
       } else {
         console.log("🔍 LOGIN DEBUG: Login failed - result:", result);
         onError?.("Login failed - invalid credentials");
