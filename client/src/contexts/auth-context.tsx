@@ -1,3 +1,9 @@
+// CHECK BEFORE MODIFYING CODE HERE  
+// Imports:
+// [ - @tanstack/react-query, @/lib/queryClient, @shared/schema, @/hooks/use-toast, @shared/utils/permissions, wouter, @/client/src/modules/locations/LocationsContext]
+// Exports:
+// [ - AuthContext, AuthProvider, useAuth]
+
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
