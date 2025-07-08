@@ -215,8 +215,17 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 redirectScript: `
                     console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
                     console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
                     setTimeout(() => {
                         console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
+                        if (!document.cookie.includes('connect.sid')) {
+                            console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+                            console.log('🔄 Trying manual cookie refresh...');
+                            window.location.reload();
+                            return;
+                        }
                         window.location.replace('${redirectUrl}');
                     }, 1000);
                 `,
@@ -303,8 +312,17 @@ router.post('/login', upload.none(), async (req, res, next) => {
             redirectScript: `
                 console.log('🔍 SERVER REDIRECT: About to execute redirect to ${redirectUrl}');
                 console.log('🔍 SERVER REDIRECT: Current cookies before redirect:', document.cookie);
+                console.log('🔍 SERVER REDIRECT: Expected session cookie: connect.sid');
+                console.log('🔍 SERVER REDIRECT: Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
                 setTimeout(() => {
                     console.log('🔍 SERVER REDIRECT: Cookies after 1 second:', document.cookie);
+                    console.log('🔍 SERVER REDIRECT: Session cookie check:', document.cookie.includes('connect.sid'));
+                    if (!document.cookie.includes('connect.sid')) {
+                        console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+                        console.log('🔄 Trying manual cookie refresh...');
+                        window.location.reload();
+                        return;
+                    }
                     window.location.replace('${redirectUrl}');
                 }, 1000);
             `,
