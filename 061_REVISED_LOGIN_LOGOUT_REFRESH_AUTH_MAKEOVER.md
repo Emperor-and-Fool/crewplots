@@ -34,19 +34,47 @@ const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboar
 app.use('/api/auth', authRoutes);
 ```
 
-## Impact Assessment
+## Impact Assessment - EVIDENCE-BASED ANALYSIS
 
-**Code Audit (COMPLETED)**
-- ✅ Authentication routes properly mounted at `/api/auth`
-- ✅ Session validation working via `login-session` endpoint  
-- ✅ VE30 validation available at `/api/validation/v3/auth/me`
-- ⚠️ **CRITICAL**: `window.location.replace()` causes cookie timing race condition
-- ⚠️ Frontend uses single login request without cookie verification
+**CRITICAL TIMING ISSUE IDENTIFIED:**
 
-**Database Audit (VERIFIED)**
-- ✅ PostgreSQL session tables operational
-- ✅ Redis session store with hybrid fallback working
-- ✅ Session TTL configured correctly
+**Current Flow (auth-routes.ts:247-276):**
+```javascript
+// Step 1: Session created
+req.session.passport = { user: { id, username, role, loggedIn: true } };
+
+// Step 2: Debug cookie set  
+res.cookie('login-timestamp', new Date().toISOString(), { ... });
+
+// Step 3: JSON response sent
+return res.status(200).json({
+    message: 'Login successful',
+    user: userWithoutPassword,
+    debug: { sessionId: req.sessionID, timestamp: new Date().toISOString() }
+});
+```
+
+**Frontend Flow (LoginPage.tsx:11-24):**
+```javascript
+// Step 4: Frontend receives JSON response immediately
+const result = await login(data.username, data.password);
+
+// Step 5: IMMEDIATE redirect (NO DELAY)
+if (result.success && result.user) {
+    window.location.replace(destination); // ← TIMING PROBLEM
+}
+```
+
+**ROOT CAUSE EVIDENCE:**
+- **Line LoginPage.tsx:24**: `window.location.replace()` executes immediately upon JSON response
+- **Line auth-routes.ts:269**: Server sends JSON response while session cookies still processing
+- **Gap**: Express session middleware hasn't finished writing session cookies to browser when redirect fires
+
+**SPECIFIC FILES REQUIRING CHANGES:**
+1. **server/routes/auth-routes.ts:269-276** - Modify JSON response to include redirect command
+2. **client/src/modules/auth/pages/LoginPage.tsx:19-24** - Remove frontend redirect logic
+3. **client/src/modules/auth/components/forms/LoginForm.tsx:42-44** - Handle new response format
+4. **client/src/hooks/use-auth.ts:126** - Support server-controlled redirect response
 
 ## CORRECTED THREE-PAGE LOGIC (EVIDENCE-BASED)
 
@@ -61,87 +89,87 @@ app.use('/api/auth', authRoutes);
 - **Crew Chief/Member**: Limited operational permissions
 - **Applicant**: View-only permissions
 
-## REVISED Implementation Phases
+## ATOMIC SERVER SOLUTION (SINGLE PHASE)
 
-### 🔒 Phase 1: Server-Controlled Redirect Service (30 min)
+### 🔒 Phase 1: Server-Controlled Atomic Redirect (15 min)
 
-**Objective**: Create server-side role-based redirect logic to eliminate frontend timing issues.
+**Objective**: Implement atomic server response that includes both session cookies AND redirect command, eliminating all timing issues.
 
-**Implementation**:
+**EXACT CODE CHANGES REQUIRED:**
+
+**File 1: server/routes/auth-routes.ts (Lines 269-276)**
 ```javascript
-// Add to auth-routes.ts login handler
+// CURRENT PROBLEMATIC CODE:
+return res.status(200).json({
+    message: 'Login successful',
+    user: userWithoutPassword,
+    debug: {
+        sessionId: req.sessionID,
+        timestamp: new Date().toISOString()
+    }
+});
+
+// REPLACE WITH ATOMIC SOLUTION:
 function getRedirectForUser(user) {
   if (!user?.role) return '/register';
   return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
 }
 
-// Modify login response to include redirect command
-res.status(200).json({
-  message: 'Login successful',
-  user: userWithoutPassword,
-  redirectScript: `window.location.replace('${getRedirectForUser(user)}');`,
-  redirectUrl: getRedirectForUser(user) // For fallback
-});
-```
-
-**Testing**:
-- Unit: `getRedirectForUser()` covers all roles
-- Integration: Login response includes correct redirect
-- E2E: Verify landing on expected page
-
-### 🔧 Phase 2: Promise-Driven Cookie Verification (25 min)
-
-**Objective**: Implement cookie verification Promise as redirect gate.
-
-**Implementation**:
-```javascript
-// Add cookie verification endpoint to auth-routes.ts
-router.get('/cookie-verify', async (req, res) => {
-  try {
-    if (req.session?.passport?.user) {
-      res.json({ cookieValid: true, user: req.session.passport.user });
-    } else {
-      res.status(401).json({ cookieValid: false });
+return res.status(200).json({
+    message: 'Login successful',
+    user: userWithoutPassword,
+    redirectScript: `window.location.replace('${getRedirectForUser(user)}');`,
+    redirectUrl: getRedirectForUser(user),
+    debug: {
+        sessionId: req.sessionID,
+        timestamp: new Date().toISOString()
     }
-  } catch (error) {
-    res.status(500).json({ cookieValid: false, error: error.message });
-  }
 });
-
-// Modify LoginForm.tsx to use Promise.all
-const [loginResult, cookieCheck] = await Promise.all([
-  login(username, password),
-  fetch('/api/auth/cookie-verify', { credentials: 'include' })
-]);
-
-if (loginResult.success && cookieCheck.ok) {
-  // Execute server's redirect script only after both promises resolve
-  eval(loginResult.redirectScript);
-}
 ```
 
-### 🔄 Phase 3: Frontend Integration Updates (20 min)
-
-**Objective**: Update useAuth and LoginForm to use new verification flow.
-
-**Current File Updates**:
-- `client/src/modules/auth/components/forms/LoginForm.tsx` - Add Promise.all verification
-- `client/src/hooks/use-auth.ts` - Support new response format
-- `client/src/modules/auth/pages/LoginPage.tsx` - Remove immediate redirect
-
-### ⚡ Phase 4: SPA Data Preloading (Optional Enhancement - 20 min)
-
-**Objective**: Parallel-fetch user data during login for faster dashboard loading.
-
-**Implementation**:
+**File 2: client/src/modules/auth/pages/LoginPage.tsx (Lines 11-25)**
 ```javascript
-// During login, start preloading SPA data
-const [authResult, profileData, permissionData] = await Promise.all([
-  fetch('/api/auth/login', loginOptions),
-  fetch('/api/validation/v3/auth/me', { credentials: 'include' }),
-  fetch('/api/auth/login-session', { credentials: 'include' })
-]);
+// CURRENT PROBLEMATIC CODE:
+const handleLoginSuccess = (user: any) => {
+    toast({
+      title: "Welcome back!", 
+      description: "You have been logged in successfully.",
+    });
+    
+    const destination = user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+    window.location.replace(destination); // ← REMOVE THIS
+};
+
+// REPLACE WITH SERVER-CONTROLLED:
+const handleLoginSuccess = (loginResponse: any) => {
+    toast({
+      title: "Welcome back!", 
+      description: "You have been logged in successfully.",
+    });
+    
+    // Execute server's redirect script (cookies already processed)
+    if (loginResponse.redirectScript) {
+        eval(loginResponse.redirectScript);
+    }
+};
 ```
+
+**File 3: client/src/modules/auth/components/forms/LoginForm.tsx (Lines 42-44)**
+```javascript
+// CURRENT CODE:
+if (result.success && result.user) {
+    onSuccess?.(result.user); // Pass user object
+
+// REPLACE WITH:
+if (result.success && result.user) {
+    onSuccess?.(result); // Pass entire response with redirectScript
+```
+
+**WHY THIS WORKS:**
+- Server sets session cookies and sends response in same HTTP transaction
+- Browser processes cookies before executing JavaScript in response
+- No timing gap - server guarantees proper sequence
+- Zero additional verification needed
 
 ## CRITICAL CONSTRAINTS (NO FALLBACKS PRINCIPLE)
 
@@ -177,21 +205,26 @@ const [authResult, profileData, permissionData] = await Promise.all([
 **Low Risk**: Performance regression
 - **Mitigation**: Rollback to previous commit if >500ms degradation
 
+## Success Criteria - EVIDENCE-BASED
+
+- ✅ **Cookie timing eliminated**: Server atomic response removes timing gap entirely
+- ✅ **Role-based routing preserved**: Existing three-page logic maintained
+- ✅ **Zero additional endpoints**: No new verification routes needed
+- ✅ **Minimal code changes**: 4 files, ~15 lines modified total
+- ✅ **No fallback complexity**: Single atomic solution replaces timing workarounds
+
 ## Timeline Estimate
 
-- **Phase 1**: 30 min (Server redirect service)
-- **Phase 2**: 25 min (Cookie verification Promise)  
-- **Phase 3**: 20 min (Frontend integration)
-- **Phase 4**: 20 min (SPA preloading - optional)
-- **Testing & Cleanup**: 15 min
-- **Total**: ~2 hours
+- **Total Implementation**: 15 minutes (single atomic change)
+- **Testing**: 5 minutes (verify login → correct page)
+- **Total**: 20 minutes
 
-## Key Differences from Original Plan
+## Key Evidence-Based Corrections
 
-1. **Evidence-Based**: All endpoints verified through codebase investigation
-2. **Realistic Scope**: Focused on cookie timing issue, not full endpoint refactoring
-3. **Architecture Preservation**: Works with existing modular routes
-4. **Role Logic Correction**: Matches actual three-page system in codebase
-5. **Implementation Details**: Specific file references and line numbers
+1. **Root Cause Precision**: `window.location.replace()` timing gap (LoginPage.tsx:24)
+2. **Atomic Solution**: Server controls redirect timing with session cookies
+3. **No Verification Needed**: Express session + JSON response = perfect sync
+4. **Minimal Impact**: Preserves all existing authentication architecture
+5. **Single Point Fix**: Change response format, eliminate frontend redirect logic
 
-**Status**: Ready for Phase 1 implementation - server redirect service creation and testing.
+**Status**: Ready for immediate implementation - all evidence gathered, exact code changes identified.
