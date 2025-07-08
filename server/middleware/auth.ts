@@ -41,6 +41,14 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         
         console.log("Auth middleware - Checking session authentication");
         console.log("Auth middleware - Session ID:", req.sessionID || 'none');
+        
+        // CRITICAL: Check session existence WITHOUT accessing req.session (prevents phantom session creation)
+        if (!req.sessionID) {
+            console.log("Auth middleware - No session ID present, user not authenticated");
+            res.status(401).json({ message: "Unauthorized - Please log in" });
+            return;
+        }
+        
         console.log("Auth middleware - Session data:", req.session);
         
         // Check if user is logged in via Passport session

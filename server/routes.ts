@@ -146,8 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Legacy authentication detection middleware - DISABLED (causes session flood)
-  // app.use(detectLegacyAuth);
+  // Legacy authentication detection middleware - monitors session access patterns
+  app.use(detectLegacyAuth);
 
   // Authentication middleware logging handled directly in middleware functions
 
