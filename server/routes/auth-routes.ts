@@ -196,15 +196,37 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 sameSite: 'lax'
             });
             
+            // BYPASS REDIS HANG BY RESPONDING IMMEDIATELY WITHOUT WAITING FOR CACHE
+            console.log('🚀 BYPASSING Redis cache save for immediate response');
+            
             // Return success with user data (excluding password)
             const { password, ...userWithoutPassword } = adminUser;
+            
+            // Redirect service function for atomic server-controlled navigation
+            function getRedirectForUser(user: any) {
+                if (!user?.role) return '/register';
+                return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+            }
+            
+            const redirectUrl = getRedirectForUser(userWithoutPassword);
+            
             return res.status(200).json({
                 message: 'Login successful',
                 user: userWithoutPassword,
+                redirectScript: `
+                    console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+                    setTimeout(() => {
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+                        window.location.replace('${redirectUrl}');
+                    }, 1000);
+                `,
+                redirectUrl: redirectUrl,
                 debug: {
                     adminBypass: true,
                     sessionId: req.sessionID,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    cookieSet: true
                 }
             });
         }
