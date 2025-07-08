@@ -173,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const errorData = await response.json();
             toast({
               title: "Login failed",
-              description: errorData.message || "Invalid username or password",
+              description: errorData.message || "this is not the location of this banner",
               variant: "destructive",
             });
           } catch (e) {
