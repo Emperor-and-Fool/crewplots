@@ -15,8 +15,6 @@
 
 **Implementation:** Place at top of context files to guide developers in maintaining modular architecture patterns.
 
-**NOTE:** This file has been moved to project root as `DEVELOPMENT_GUIDELINES.md` for easier access during development.
-
 ## MongoDB Integration Requirements
 
 **NEVER FALL BACK TO POSTGRESQL FOR NOTE STORAGE**
@@ -42,3 +40,15 @@ No silent degradation to PostgreSQL storage.
 ## User Requirement: Visible Failures Only
 
 The system architecture prioritizes data integrity over availability. MongoDB unavailability should result in clear, visible failures rather than silent fallbacks that could compromise data consistency.
+
+## Architectural Constraints
+
+### NO FALLBACKS PRINCIPLE
+**CRITICAL**: Authentication, validation, and business logic must NEVER use fallback patterns.
+
+**ALLOWED**: Infrastructure fallbacks for reliability (Redis→PostgreSQL for sessions, cache layers)
+**PROHIBITED**: Business logic fallbacks (authentication endpoints, validation schemas, API routes)
+
+**Why**: Fallback patterns in business logic create timing issues, session conflicts, and debugging nightmares. The 19-hour authentication bug was caused by competing fallback authentication methods.
+
+**Evidence**: Authentication centralization eliminated logout issues by removing dual endpoint fallbacks.
