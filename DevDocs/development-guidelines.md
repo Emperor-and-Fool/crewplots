@@ -1,5 +1,20 @@
 # Critical Development Guidelines
 
+## Code Modification Protocol
+
+**BEFORE MODIFYING ANY CONTEXT FILE:**
+```
+// CHECK BEFORE MODIFYING CODE HERE
+// Imports:
+// [ - list of /paths/filenames]
+// Exports:
+// [ - list of /paths/filenames]
+```
+
+**Purpose:** Add this comment header to context files (auth-context.tsx, LocationContext.tsx, etc.) to prevent duplicate imports and maintain module boundaries. Check existing import/export structure before adding new context logic.
+
+**Implementation:** Place at top of context files to guide developers in maintaining modular architecture patterns.
+
 ## MongoDB Integration Requirements
 
 **NEVER FALL BACK TO POSTGRESQL FOR NOTE STORAGE**
