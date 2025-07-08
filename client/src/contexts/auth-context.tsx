@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
           body: urlencoded.toString(),
           credentials: 'include' // Important for cookies
+          console.log("🔍 BANNER DEBUG: response processed:",
         });
         
 
@@ -142,15 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const data = await response.json();
 
           // 🔍 BANNER DEBUG: Log complete response data structure
-          console.log("🔍 BANNER DEBUG: Login response received:", {
-            status: response.status,
-            statusText: response.statusText,
-            dataKeys: Object.keys(data || {}),
-            fullData: data,
-            hasUser: !!(data && data.user),
-            userKeys: data?.user ? Object.keys(data.user) : null,
-            timestamp: new Date().toISOString()
-          });
+          console.log("🔍 BANNER DEBUG: Location in code reached:", 
           
           if (data && data.user) {
             setUser(data.user);
