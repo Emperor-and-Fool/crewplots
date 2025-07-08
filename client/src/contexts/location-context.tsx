@@ -18,19 +18,24 @@ const LocationContext = createContext<LocationContextType | undefined>(undefined
 export function LocationProvider({ children }: { children: ReactNode }) {
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
 
-  // Fetch all locations to get location details
-  const { data: locations, isLoading } = useQuery({
-    queryKey: ['/api/locations'],
-    queryFn: async () => {
-      const response = await fetch('/api/locations', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-      return response.json() as Location[];
-    },
-  });
+  // DISABLED: Mock return to prevent phantom session creation
+  console.error('🚨 RED ALERT: LocationContext attempting to load locations - MOCK ACTIVE');
+  const locations: Location[] = [
+    {
+      id: 999,
+      name: '🚨 MOCK LOCATION - AUTH DEBUG MODE',
+      address: 'Mock Address',
+      public_id: 'mock-999',
+      contactEmail: 'mock@test.com',
+      contactPhone: '+31000000000',
+      status: 'active',
+      logoUrl: null,
+      description: 'Mock location for debugging session issues',
+      createdAt: new Date(),
+      settings: {}
+    }
+  ];
+  const isLoading = false;
 
   // Get the currently selected location object
   const selectedLocation = selectedLocationId && locations 
