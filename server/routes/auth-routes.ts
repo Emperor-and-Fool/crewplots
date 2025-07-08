@@ -139,7 +139,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Handle login with multiple content types (JSON, urlencoded, multipart)
 router.post('/login', upload.none(), async (req, res, next) => {
     try {
-        // Safer logging that doesn't expose any sensitive data
+        // Browser and request logging - show what browser is connecting
+        const userAgent = req.get('User-Agent') || 'unknown';
+        const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
+                           userAgent.includes('Chrome') ? 'Chrome' : 
+                           userAgent.includes('Firefox') ? 'Firefox' : 'Other';
+        console.log(`🔐 LOGIN via ${browserInfo} - ${userAgent.slice(0, 80)}...`);
         console.log('Login attempt received');
         console.log('Session ID:', req.sessionID || 'none');
         console.log('Content type:', req.get('Content-Type') || 'none');
