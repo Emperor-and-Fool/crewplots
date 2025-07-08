@@ -68,16 +68,17 @@ function App() {
   const [showEmergencyLogout, setShowEmergencyLogout] = React.useState(false);
   
   // Handle role-based redirects after authentication is complete
-  React.useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.role === 'applicant') {
-      if (window.location.pathname !== '/applicant-portal' &&
-          window.location.pathname !== '/login' &&
-          window.location.pathname !== '/register' &&
-          window.location.pathname !== '/registration-success') {
-        window.location.href = '/applicant-portal';
-      }
-    }
-  }, [isLoading, isAuthenticated, user]);
+  // COMMENTED OUT TO TEST NEW LOGIN WITH REDIRECT SCRIPT
+  // React.useEffect(() => {
+  //   if (!isLoading && isAuthenticated && user?.role === 'applicant') {
+  //     if (window.location.pathname !== '/applicant-portal' &&
+  //         window.location.pathname !== '/login' &&
+  //         window.location.pathname !== '/register' &&
+  //         window.location.pathname !== '/registration-success') {
+  //       window.location.href = '/applicant-portal';
+  //     }
+  //   }
+  // }, [isLoading, isAuthenticated, user]);
 
   // Emergency logout key combination (Ctrl+Shift+L)
   React.useEffect(() => {
