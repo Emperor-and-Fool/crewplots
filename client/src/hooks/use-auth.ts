@@ -31,6 +31,14 @@ export const useAuth = (): AuthState => {
 
   // Session validation with proper dependencies
   useEffect(() => {
+    // DISABLED AUTH FLOOD: This useEffect was causing request cascades  
+    // Auth checks now handled by individual components when needed
+    console.log('🚫 AUTH FLOOD PREVENTION: Skipping automatic auth check');
+    setIsLoading(false);
+    return;
+
+    // ORIGINAL CODE COMMENTED OUT TO STOP AUTH FLOODS:
+    /*
     // Skip auth check on login page and during logout
     if (location === '/login' || isLoggingOut) {
       setIsLoading(false);
@@ -95,7 +103,8 @@ export const useAuth = (): AuthState => {
       }
     };
 
-    checkAuth();
+    // checkAuth(); DISABLED TO STOP AUTH FLOODS
+    */
   }, [location, isLoggingOut]); // Fixed dependencies
 
   // Login function for atomic solution - returns complete response including redirectScript
