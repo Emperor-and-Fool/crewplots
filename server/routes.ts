@@ -117,6 +117,16 @@ const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
+  // Request logging middleware - show all browser connections
+  app.use((req, res, next) => {
+    const userAgent = req.get('User-Agent') || 'unknown';
+    const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
+                       userAgent.includes('Chrome') ? 'Chrome' : 
+                       userAgent.includes('Firefox') ? 'Firefox' : 'Other';
+    console.log(`🌐 ${req.method} ${req.path} - ${browserInfo} (${userAgent.slice(0, 50)}...)`);
+    next();
+  });
+
   // Setup session middleware
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
