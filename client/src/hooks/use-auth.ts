@@ -42,6 +42,9 @@ export const useAuth = (): AuthState => {
                       document.cookie.includes('session') ||
                       document.cookie.length > 0;
 
+    console.log('🔍 AUTH CHECK: Current cookies:', document.cookie);
+    console.log('🔍 AUTH CHECK: Has cookies:', hasCookies);
+
     if (!hasCookies) {
       console.log('🔒 No session cookies found - redirecting to login');
       setUser(null);
