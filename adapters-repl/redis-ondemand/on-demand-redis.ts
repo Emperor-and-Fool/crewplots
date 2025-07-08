@@ -86,25 +86,14 @@ export class OnDemandRedisService {
     // Check for existing connection
     const existingConnection = this.activeConnections.get(connectionId);
     if (existingConnection) {
-      console.log(`[OnDemand] 🔄 REUSE DEBUG: Attempting to reuse connection "${connectionId}"`);
-      console.log(`[OnDemand] 🔄 REUSE DEBUG: Connection age: ${Date.now() - existingConnection.lastUsed}ms, inUse: ${existingConnection.isInUse}`);
-      
+      // Silent reuse - only log errors
       existingConnection.lastUsed = Date.now();
       existingConnection.isInUse = true;
       
       try {
         // Test connection health before reuse
-        console.log(`[OnDemand] 🔄 REUSE DEBUG: Testing connection health for "${connectionId}"`);
-        const healthStart = Date.now();
         await existingConnection.client.ping();
-        const healthTime = Date.now() - healthStart;
-        console.log(`[OnDemand] 🔄 REUSE DEBUG: Health check passed for "${connectionId}" in ${healthTime}ms`);
-        
-        const opStart = Date.now();
         const result = await operation(existingConnection.client);
-        const opTime = Date.now() - opStart;
-        console.log(`[OnDemand] 🔄 REUSE DEBUG: Operation completed for "${connectionId}" in ${opTime}ms`);
-        
         return result;
       } catch (error) {
         console.log(`[OnDemand] 🚨 REUSE ERROR: Connection "${connectionId}" failed - ${error.message}`);
@@ -112,7 +101,6 @@ export class OnDemandRedisService {
       } finally {
         // CRITICAL: Always release connection regardless of success/failure
         existingConnection.isInUse = false;
-        console.log(`[OnDemand] 🔄 REUSE DEBUG: Connection "${connectionId}" released (isInUse: false)`);
       }
     }
 
