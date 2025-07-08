@@ -196,8 +196,7 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 sameSite: 'lax'
             });
             
-            // BYPASS REDIS HANG BY RESPONDING IMMEDIATELY WITHOUT WAITING FOR CACHE
-            console.log('🚀 BYPASSING Redis cache save for immediate response');
+
             
             // Return success with user data (excluding password)
             const { password, ...userWithoutPassword } = adminUser;
