@@ -117,13 +117,16 @@ const PgStore = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
-  // Request logging middleware - show all browser connections
+  // Request logging middleware - only log API calls, not static assets
   app.use((req, res, next) => {
-    const userAgent = req.get('User-Agent') || 'unknown';
-    const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
-                       userAgent.includes('Chrome') ? 'Chrome' : 
-                       userAgent.includes('Firefox') ? 'Firefox' : 'Other';
-    console.log(`🌐 ${req.method} ${req.path} - ${browserInfo} (${userAgent.slice(0, 50)}...)`);
+    // Only log API routes and main page loads, skip Vite development assets
+    if (req.path.startsWith('/api/') || req.path === '/' || req.path.startsWith('/dashboard') || req.path.startsWith('/login')) {
+      const userAgent = req.get('User-Agent') || 'unknown';
+      const browserInfo = userAgent.includes('Edg') ? 'Edge' : 
+                         userAgent.includes('Chrome') ? 'Chrome' : 
+                         userAgent.includes('Firefox') ? 'Firefox' : 'Other';
+      console.log(`🌐 ${req.method} ${req.path} - ${browserInfo}`);
+    }
     next();
   });
 
