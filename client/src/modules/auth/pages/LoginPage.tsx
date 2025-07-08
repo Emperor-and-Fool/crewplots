@@ -16,16 +16,13 @@ export const LoginPage = () => {
       description: "You have been logged in successfully.",
     });
     
-    // Execute server's redirect script with longer delay to ensure cookies are fully processed
+    // Execute server's redirect script with delay
     if (loginResponse.redirectScript) {
-        console.log("🔍 ATOMIC REDIRECT: Executing server redirect script:", loginResponse.redirectScript);
+        console.log("🔍 ATOMIC REDIRECT: Executing server redirect script");
         console.log("🔍 ATOMIC REDIRECT: Current cookies:", document.cookie);
         
-        // Longer delay to ensure cookies are written before redirect
-        setTimeout(() => {
-            console.log("🔍 ATOMIC REDIRECT: Cookies before redirect:", document.cookie);
-            eval(loginResponse.redirectScript);
-        }, 500); // 500ms delay for cookie processing
+        // Execute the server's redirect script (includes its own timing)
+        eval(loginResponse.redirectScript);
     }
   };
 

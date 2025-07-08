@@ -278,11 +278,19 @@ router.post('/login', upload.none(), async (req, res, next) => {
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
-            redirectScript: `window.location.replace('${redirectUrl}');`,
+            redirectScript: `
+                console.log('🔍 SERVER REDIRECT: About to execute redirect to ${redirectUrl}');
+                console.log('🔍 SERVER REDIRECT: Current cookies before redirect:', document.cookie);
+                setTimeout(() => {
+                    console.log('🔍 SERVER REDIRECT: Cookies after 1 second:', document.cookie);
+                    window.location.replace('${redirectUrl}');
+                }, 1000);
+            `,
             redirectUrl: redirectUrl,
             debug: {
                 sessionId: req.sessionID,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                cookieSet: true
             }
         });
     } catch (error) {
