@@ -88,49 +88,37 @@ export const useAuth = (): AuthState => {
     checkAuth();
   }, [location, isLoggingOut]); // Fixed dependencies
 
-  // Login function using URLSearchParams for reliable authentication
-  const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; user?: any }> => {
+  // Login function for atomic solution - returns complete response including redirectScript
+  const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; user?: any; redirectScript?: string }> => {
     try {
       setIsLoading(true);
 
-      // Use URLSearchParams for reliable form data submission
-      const urlencoded = new URLSearchParams();
-      urlencoded.append('username', username);
-      urlencoded.append('password', password);
-      
-      // Use fetch with proper content type
+      // Use JSON format to match server atomic login endpoint
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: urlencoded.toString(),
+        body: JSON.stringify({ username, password }),
         credentials: 'include'
       });
       
       if (response.ok) {
         const data = await response.json();
+        console.log("🔍 USE-AUTH LOGIN: Server response:", data);
         
         if (data && data.user) {
           setUser(data.user);
           
-          // Show success toast
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${data.user?.name || username}!`,
-          });
-          
-          // No need for refreshAuth since window.location.replace will handle page reload
-          // Invalidate all queries to ensure fresh data
-          queryClient.invalidateQueries();
-          return { success: true, user: data.user };
+          // Return complete response for atomic solution
+          return { 
+            success: true, 
+            user: data.user,
+            redirectScript: data.redirectScript,
+            redirectUrl: data.redirectUrl
+          };
         } else {
           console.error("Login response missing user data:", data);
-          toast({
-            title: "Login failed",
-            description: "Authentication successful but user data unavailable",
-            variant: "destructive",
-          });
           return { success: false };
         }
       } else {
