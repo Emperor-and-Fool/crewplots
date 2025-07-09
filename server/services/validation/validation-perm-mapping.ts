@@ -56,6 +56,14 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
     console.log('🔐 MAPPER: Added location permissions from workflow');
   }
   
+  // Package: Messaging validation packages
+  if (workflowPerms.application) {
+    if (workflowPerms.application.includes('view')) validationPermissions.push('message.read');
+    if (workflowPerms.application.includes('edit')) validationPermissions.push('message.update');
+    if (workflowPerms.application.includes('delete')) validationPermissions.push('message.delete');
+    console.log('🔐 MAPPER: Added messaging permissions from workflow');
+  }
+  
   // BLOCK 3: ROLE-BASED PERMISSION ADDITIONS
   // Source: Hard-coded role logic for specific validation packages
   
@@ -69,6 +77,15 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
   // Package: Location validation packages (admin override)
   if (user.role === 'administrator') {
     validationPermissions.push('location.access_all');
+  }
+  
+  // Package: Messaging validation packages (role-based)
+  if (user.role === 'administrator' || user.role === 'owner') {
+    validationPermissions.push('message.read', 'message.create', 'message.update', 'message.delete');
+  } else if (user.role === 'app_manager' || user.role === 'crew_chief') {
+    validationPermissions.push('message.read', 'message.create', 'message.update');
+  } else if (user.role === 'crew_member' || user.role === 'applicant') {
+    validationPermissions.push('message.read', 'message.create');
   }
   
   // BLOCK 4: DEDUPLICATION
@@ -108,7 +125,11 @@ export function getRolePermissions(userRole: string): string[] {
       'location.access_all',
       'user.read',
       'user.manage',
-      'user.create'
+      'user.create',
+      'message.read',
+      'message.create',
+      'message.update',
+      'message.delete'
     ],
     owner: [
       'schedule.create',
@@ -120,7 +141,11 @@ export function getRolePermissions(userRole: string): string[] {
       'scheduler_development.execute',
       'location.access_assigned',
       'user.read',
-      'user.manage'
+      'user.manage',
+      'message.read',
+      'message.create',
+      'message.update',
+      'message.delete'
     ],
     app_manager: [
       'schedule.read',
@@ -128,18 +153,25 @@ export function getRolePermissions(userRole: string): string[] {
       'scheduler_development.read',
       'scheduler_development.write',
       'location.access_assigned',
-      'user.read'
+      'user.read',
+      'message.read',
+      'message.create',
+      'message.update'
     ],
     crew_chief: [
       'schedule.read',
       'scheduler_development.read',
-      'location.access_assigned'
+      'location.access_assigned',
+      'message.read',
+      'message.create'
     ],
     crew_member: [
       'schedule.read',
-      'location.access_assigned'
+      'location.access_assigned',
+      'message.read',
+      'message.create'
     ]
   };
 
-  return rolePermissions[userRole] || ['schedule.read'];
+  return rolePermissions[userRole] || ['schedule.read', 'message.read'];
 }

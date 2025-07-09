@@ -4,6 +4,7 @@ import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from '
 import { MessageService } from '../message-storage-service';
 import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
+import { mapWorkflowToValidationPermissions } from './validation-perm-mapping';
 
 // Import proven validation packages from existing ValidationEngine.ts
 import { scheduleBlockPackage } from '../../../client/src/modules/scheduler/validation/packages/scheduleBlockPackage';
