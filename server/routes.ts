@@ -623,14 +623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 6. SERVER SETUP
   // ===================================================================================================
 
-  // Serve static files from client/dist
-  app.use(express.static(path.join(process.cwd(), "client", "dist")));
-
-  // Catch-all handler for SPA routing
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "client", "dist", "index.html"));
-  });
-
-  const server = createServer(app);
-  return server;
+  // Create HTTP server
+  const httpServer = createServer(app);
+  return httpServer;
 }
