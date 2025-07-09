@@ -1,4 +1,2 @@
-// CHECK BEFORE MODIFYING CODE HERE  
-// ALL LOGIC IN auth-context
 // Re-export useAuth from auth-context to maintain backward compatibility
 export { useAuth } from "@/contexts/auth-context";
