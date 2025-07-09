@@ -14,38 +14,57 @@ export function useUserManagement(initialFilters: UserListFilters = {}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // User list query with filtering
+  // User list query with filtering - VE30 MIGRATION
   const {
     data: users = [],
     isLoading,
     error
   } = useQuery<User[]>({
-    queryKey: ['/api/users', initialFilters],
+    queryKey: ['/api/validation/v3/execute', 'userList', initialFilters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (initialFilters.role) params.append('role', initialFilters.role);
-      if (initialFilters.location) params.append('location', initialFilters.location.toString());
-      if (initialFilters.searchTerm) params.append('search', initialFilters.searchTerm);
-      
-      const response = await fetch(`/api/users?${params}`);
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'userList',
+          data: {
+            filters: {
+              role: initialFilters.role,
+              locationId: initialFilters.location,
+              searchTerm: initialFilters.searchTerm
+            }
+          }
+        })
+      });
       if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
+      const result = await response.json();
+      return result.data || [];
     }
   });
 
-  // Create user mutation
+  // Create user mutation - VE30 MIGRATION
   const createUserMutation = useMutation({
     mutationFn: async (userData: InsertUser) => {
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          operation: 'create',
+          entityType: 'userManagement',
+          data: {
+            userData: userData
+          }
+        })
       });
       if (!response.ok) throw new Error('Failed to create user');
-      return response.json();
+      const result = await response.json();
+      return result.data;
     },
     onSuccess: (newUser) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
       toast({ title: 'User created successfully', description: `${newUser.name} has been added to the system.` });
     },
     onError: (error) => {
@@ -53,20 +72,29 @@ export function useUserManagement(initialFilters: UserListFilters = {}) {
     }
   });
 
-  // Update user mutation
+  // Update user mutation - VE30 MIGRATION
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertUser> }) => {
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'PATCH',
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          operation: 'update',
+          entityType: 'userManagement',
+          data: {
+            id: id,
+            userData: data
+          }
+        })
       });
       if (!response.ok) throw new Error('Failed to update user');
-      return response.json();
+      const result = await response.json();
+      return result.data;
     },
     onSuccess: (updatedUser) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userSingle'] });
       toast({ title: 'User updated successfully', description: `${updatedUser.name}'s information has been updated.` });
     },
     onError: (error) => {
@@ -74,17 +102,27 @@ export function useUserManagement(initialFilters: UserListFilters = {}) {
     }
   });
 
-  // Delete user mutation
+  // Delete user mutation - VE30 MIGRATION
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'delete',
+          entityType: 'userManagement',
+          data: {
+            id: userId
+          }
+        })
       });
       if (!response.ok) throw new Error('Failed to delete user');
-      return response.json();
+      const result = await response.json();
+      return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
       toast({ title: 'User deleted successfully' });
     },
     onError: (error) => {
@@ -92,26 +130,36 @@ export function useUserManagement(initialFilters: UserListFilters = {}) {
     }
   });
 
-  // Bulk operations mutation
+  // Bulk operations mutation - VE30 MIGRATION
   const bulkOperationMutation = useMutation({
     mutationFn: async ({ operation, userIds, data }: { 
       operation: string; 
       userIds: number[]; 
       data?: any 
     }) => {
-      const response = await fetch('/api/users/bulk', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ operation, userIds, data })
+        body: JSON.stringify({
+          operation: 'update',
+          entityType: 'userBulk',
+          data: {
+            operation: operation,
+            userIds: userIds,
+            data: data
+          }
+        })
       });
       if (!response.ok) throw new Error('Bulk operation failed');
-      return response.json();
+      const result = await response.json();
+      return result.data;
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
       toast({ 
         title: 'Bulk operation completed', 
-        description: `Successfully processed ${result.count} users.` 
+        description: `Successfully processed ${result.count || result.length || 'multiple'} users.` 
       });
     },
     onError: (error) => {
@@ -137,7 +185,7 @@ export function useUserManagement(initialFilters: UserListFilters = {}) {
     isDeleting: deleteUserMutation.isPending,
     isBulkProcessing: bulkOperationMutation.isPending,
     
-    // Utilities
-    refetch: () => queryClient.invalidateQueries({ queryKey: ['/api/users'] })
+    // Utilities - VE30 MIGRATION
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] })
   };
 }

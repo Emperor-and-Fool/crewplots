@@ -12,10 +12,16 @@
 // Import non-core validation packages for external registry
 import { messagingPackage } from './packages/messagingPackage';
 import { motivationNotePackage } from './packages/motivationNotePackage';
-import { userListPackage } from './packages/userListPackage';
+import { userListPackage as legacyUserListPackage } from './packages/userListPackage';
 import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
 import { weekSchedulePackage } from './packages/weekSchedulePackage';
 import { shiftPackage } from './packages/shiftPackage';
+
+// Import new user validation packages (migrated to modules)
+import { userListPackage } from '../../modules/users/validation/userListPackage';
+import { userManagementPackage } from '../../modules/users/validation/userManagementPackage';
+import { userBulkPackage } from '../../modules/users/validation/userBulkPackage';
+import { userSinglePackage } from '../../modules/users/validation/userSinglePackage';
 
 // Import email packages
 import { emailVerificationPackage } from '../../modules/email/validation/emailVerificationPackage';
@@ -34,8 +40,11 @@ export const packageRegistry30 = {
   weekSchedule: weekSchedulePackage,
   shift: shiftPackage,
   
-  // User management (non-auth)
+  // User management (non-auth) - NEW VE30 PACKAGES
   userList: userListPackage,
+  userManagement: userManagementPackage,
+  userBulk: userBulkPackage,
+  userSingle: userSinglePackage,
   
   // Email system packages
   emailVerification: emailVerificationPackage,
