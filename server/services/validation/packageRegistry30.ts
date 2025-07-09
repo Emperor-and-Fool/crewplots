@@ -9,12 +9,40 @@
 // TODO: Export PackageRegistry30Type for type safety
 // TODO: Export production engine instance
 
-// Import messaging package for test
+// Import non-core validation packages for external registry
 import { messagingPackage } from './packages/messagingPackage';
+import { motivationNotePackage } from './packages/motivationNotePackage';
+import { userListPackage } from './packages/userListPackage';
+import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
+import { weekSchedulePackage } from './packages/weekSchedulePackage';
+import { shiftPackage } from './packages/shiftPackage';
+
+// Import email packages
+import { emailVerificationPackage } from '../../modules/email/validation/emailVerificationPackage';
+import { emailVerificationStatusPackage } from '../../modules/email/validation/emailVerificationStatusPackage';
+import { emailTemplateInitializationPackage } from '../../modules/email/validation/emailTemplateInitializationPackage';
+import { emailTokenValidationPackage } from '../../modules/email/validation/emailTokenValidationPackage';
+import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
 
 export const packageRegistry30 = {
-  // Production packages will be registered here
+  // Messaging and communication packages
   messaging: messagingPackage,
+  motivationNote: motivationNotePackage,
+  
+  // Scheduler packages
+  scheduleBlock: scheduleBlockPackage,
+  weekSchedule: weekSchedulePackage,
+  shift: shiftPackage,
+  
+  // User management (non-auth)
+  userList: userListPackage,
+  
+  // Email system packages
+  emailVerification: emailVerificationPackage,
+  emailVerificationStatus: emailVerificationStatusPackage,
+  emailTemplateInitialization: emailTemplateInitializationPackage,
+  emailTokenValidation: emailTokenValidationPackage,
+  emailConfig: emailConfigPackage,
 };
 
 export type PackageRegistry30Type = typeof packageRegistry30;

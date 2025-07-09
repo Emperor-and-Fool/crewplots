@@ -11,16 +11,8 @@ import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
 import { mapWorkflowToValidationPermissions } from './validation-perm-mapping';
 
-// Import proven validation packages from server packages
-import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
-import { weekSchedulePackage } from './packages/weekSchedulePackage';
-import { shiftPackage } from './packages/shiftPackage';
-
-// Import messaging validation package
-import { messagingPackage } from './packages/messagingPackage';
-
-// Import motivation note validation package
-import { motivationNotePackage } from './packages/motivationNotePackage';
+// CORE AUTH PACKAGES - remain as direct imports for security
+// (Authentication packages stay in engine for security isolation)
 
 // Import user profile validation package
 import { userProfilePackage } from '../../modules/users/validation/userProfilePackage';
@@ -31,17 +23,7 @@ import { authProfilePackage } from '../../modules/users/validation/authProfilePa
 // Import user registration validation package
 import { userRegistrationPackage } from '../../modules/users/validation/userRegistrationPackage';
 
-// Import user list validation package
-import { userListPackage } from './packages/userListPackage';
-
-// Import email verification validation packages
-import { emailVerificationPackage } from '../../modules/email/validation/emailVerificationPackage';
-import { emailVerificationStatusPackage } from '../../modules/email/validation/emailVerificationStatusPackage';
-import { emailTemplateInitializationPackage } from '../../modules/email/validation/emailTemplateInitializationPackage';
-import { emailTokenValidationPackage } from '../../modules/email/validation/emailTokenValidationPackage';
-
-// Import email configuration validation packages
-import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
+// DEVELOPMENT PACKAGES - remain as direct imports for development workflow
 import { emailTestPackage } from '../../modules/development/validation/packages/emailTestPackage';
 
 /**
@@ -65,28 +47,19 @@ import { emailTestPackage } from '../../modules/development/validation/packages/
 import { packageRegistry30 } from './packageRegistry30';
 
 /**
- * Enhanced Package Registry - HYBRID: uses external registry + fallback for backwards compatibility
- * TEST: Trying messaging from external registry
+ * Enhanced Package Registry - HYBRID: external registry + core auth packages
+ * ARCHITECTURE: Non-core packages moved to external registry, auth packages remain for security
  */
 const enhancedPackageRegistry = {
-  // HYBRID PATTERN: External registry packages take priority
+  // EXTERNAL REGISTRY: Non-core packages managed externally (prevents engine changes)
   ...packageRegistry30,
   
-  // FALLBACK PATTERN: Direct imports for backwards compatibility
-  scheduleBlock: scheduleBlockPackage,
-  weekSchedule: weekSchedulePackage,
-  shift: shiftPackage,
-  // messaging: messagingPackage, // DISABLED: Using external registry version
-  motivationNote: motivationNotePackage,
+  // CORE AUTH PACKAGES: Direct imports for security isolation
   userProfile: userProfilePackage,
   authProfile: authProfilePackage,
   userRegistration: userRegistrationPackage,
-  userList: userListPackage,
-  emailVerification: emailVerificationPackage,
-  emailVerificationStatus: emailVerificationStatusPackage,
-  emailTemplateInitialization: emailTemplateInitializationPackage,
-  emailTokenValidation: emailTokenValidationPackage,
-  emailConfig: emailConfigPackage,
+  
+  // DEVELOPMENT PACKAGES: Direct imports for development workflow
   emailTest: emailTestPackage
 } as const;
 
