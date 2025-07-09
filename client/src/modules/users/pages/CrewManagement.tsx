@@ -19,15 +19,25 @@ import { CrewMemberForm } from "@/modules/users/components/crew";
 export default function CrewManagement() {
   const [showForm, setShowForm] = useState(false);
   
-  // Fetch all users from existing profile data endpoint
+  // Fetch all users via ValidationEngine30
   const { data: users, isLoading, error } = useQuery<User[]>({
-    queryKey: ['/api/profile-data'],
+    queryKey: ['/api/validation/v3/execute', 'userList', 'list'],
     queryFn: async () => {
-      const response = await fetch('/api/profile-data');
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'list',
+          entityType: 'userList',
+          data: {}
+        })
+      });
       if (!response.ok) {
-        throw new Error('Failed to fetch profile data');
+        throw new Error('Failed to fetch user list');
       }
-      return response.json();
+      const result = await response.json();
+      return result.data; // ValidationEngine30 returns data in .data field
     },
     staleTime: 2 * 60 * 1000,
   });
