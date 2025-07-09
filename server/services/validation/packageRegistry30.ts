@@ -30,6 +30,12 @@ import { emailTemplateInitializationPackage } from '../../modules/email/validati
 import { emailTokenValidationPackage } from '../../modules/email/validation/emailTokenValidationPackage';
 import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
 
+// Import entity validation packages
+import { locationPackage } from '../../modules/locations/validation/locationPackage';
+import { competencyPackage } from '../../modules/competencies/validation/competencyPackage';
+import { kbCategoryPackage } from '../../modules/knowledge-base/validation/kbCategoryPackage';
+import { kbArticlePackage } from '../../modules/knowledge-base/validation/kbArticlePackage';
+
 export const packageRegistry30 = {
   // Messaging and communication packages
   messaging: messagingPackage,
@@ -45,6 +51,12 @@ export const packageRegistry30 = {
   userManagement: userManagementPackage,
   userBulk: userBulkPackage,
   userSingle: userSinglePackage,
+  
+  // Entity management packages
+  location: locationPackage,
+  competency: competencyPackage,
+  kbCategory: kbCategoryPackage,
+  kbArticle: kbArticlePackage,
   
   // Email system packages
   emailVerification: emailVerificationPackage,
