@@ -317,7 +317,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
-      // Use ValidationEngine30 auth endpoint - same as initial auth check
+      // Use ValidationEngine30 auth endpoint 
       const response = await fetch('/api/validation/v3/auth', {
         method: 'POST',
         credentials: 'include',
