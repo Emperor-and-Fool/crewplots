@@ -177,17 +177,15 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
             
-            // Use centralized auth compatible session format
-            req.session.passport = {
-                user: { 
-                    id: adminUser.id,
-                    username: adminUser.username,
-                    role: adminUser.role,
-                    loggedIn: true
+            // Use Passport login method which will handle both session and user serialization
+            req.login(adminUser, (err) => {
+                if (err) {
+                    console.error('Error during Passport login:', err);
+                    return res.status(500).json({ message: 'Error during login process' });
                 }
-            };
-            
-            console.log('Admin login successful, session established with ID:', req.sessionID);
+                
+                console.log('Passport login successful for admin');
+                console.log('Session ID after login:', req.sessionID);
             
             // Set a debug cookie to test cookie functionality
             res.cookie('admin-login', new Date().toISOString(), { 
