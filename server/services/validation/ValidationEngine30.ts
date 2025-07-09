@@ -276,7 +276,7 @@ export class ValidationEngine30 {
       // USER OPERATIONS
       user: {
         create: (data: any) => storage.createUser(data.userData),
-        read: (data: any) => storage.getUser(data.id),
+        read: (data: any) => storage.getUser(data.id || data.userId),
         update: (data: any) => storage.updateUser(data.id, data.userData),
         delete: (data: any) => storage.deleteUser(data.id),
         list: () => storage.getUsers()
