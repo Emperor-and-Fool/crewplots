@@ -26,6 +26,15 @@ export const updateNoteSchema = z.object({
   isPrivate: z.boolean().optional()
 });
 
+export const readNoteSchema = z.object({
+  userId: z.number().optional(),
+  workflow: z.enum(['application', 'crew', 'location', 'scheduling', 'knowledge', 'statistics']).default('application'),
+  readOnlyMode: z.boolean().default(false),
+  targetUserId: z.number().optional(),
+  locationId: z.number().optional(),
+  ownerId: z.number().optional()
+});
+
 // Business rules for messaging operations
 const messagingBusinessRules = [
   (data: any, context: any) => {
@@ -167,7 +176,14 @@ export const messagingPackage: VE30Package = {
   entityType: 'messaging',
   validateSchema: (data: any, operation: string) => {
     // Use appropriate schema based on operation
-    const schema = operation === 'update' ? updateNoteSchema : createNoteSchema;
+    let schema;
+    if (operation === 'update') {
+      schema = updateNoteSchema;
+    } else if (operation === 'read') {
+      schema = readNoteSchema;
+    } else {
+      schema = createNoteSchema;
+    }
     return VE30PackageBuilder.validateSchema(data, operation, schema);
   },
   getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'messaging'),

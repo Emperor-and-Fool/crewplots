@@ -143,6 +143,8 @@ class HybridTransactionHandler {
       // For messaging operations, delegate to MessageService hybrid storage patterns
       if (request.operation === 'create') {
         return await this.handleMessagingCreate(request.data, request.context);
+      } else if (request.operation === 'read') {
+        return await this.handleMessagingRead(request.data, request.context);
       } else if (request.operation === 'update') {
         return await this.handleMessagingUpdate(request.data, request.context);
       } else if (request.operation === 'delete') {
@@ -182,6 +184,24 @@ class HybridTransactionHandler {
       isValid: true,
       errors: [],
       data: result
+    };
+  }
+
+  private async handleMessagingRead(data: any, context: any): Promise<any> {
+    console.log(`[HybridTransactionHandler] Reading messages for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Read data:`, JSON.stringify(data, null, 2));
+    
+    // For read operations, use MessageService to fetch notes
+    // Map readOnlyMode to appropriate user ID for applicant notes
+    const targetUserId = data.readOnlyMode ? data.userId : context.userId;
+    console.log(`[HybridTransactionHandler] Target user ID for read operation: ${targetUserId}`);
+    
+    const notes = await this.messageService.getNoteRefsByUser(targetUserId);
+    
+    return {
+      isValid: true,
+      errors: [],
+      data: notes
     };
   }
 

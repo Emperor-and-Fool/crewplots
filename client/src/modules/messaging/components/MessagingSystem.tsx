@@ -161,13 +161,27 @@ export function MessagingSystem({
     return isNoteMode ? '/api/messaging/notes' : '/api/messaging/messages';
   };
 
-  // Fetch data via proper hybrid architecture - PostgreSQL first, then MongoDB content
+  // Fetch data via ValidationEngine30 - centralized authentication and hybrid storage
   const { data: messages = [], isLoading, error, refetch } = useQuery<Message[]>({
-    queryKey: [getNotesEndpoint(), userId],
+    queryKey: ['/api/validation/v3/execute', 'messaging', userId],
     queryFn: async () => {
-      const endpoint = getNotesEndpoint();
-      const response = await fetch(endpoint, {
-        credentials: 'include'
+      // Use ValidationEngine30 for centralized authentication and hybrid storage
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'messaging',
+          data: {
+            operation: 'read',
+            userId: userId,
+            workflow: 'application', // Default workflow for messaging
+            readOnlyMode: readOnlyMode || false
+          }
+        })
       });
       
       if (!response.ok) {
@@ -177,28 +191,23 @@ export function MessagingSystem({
         throw new Error(`Failed to fetch ${isNoteMode ? 'notes' : 'messages'}: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log(`${isNoteMode ? 'Notes' : 'Messages'} fetched via hybrid architecture:`, data);
+      const result = await response.json();
+      console.log(`${isNoteMode ? 'Notes' : 'Messages'} fetched via ValidationEngine30:`, result);
       
-      // Check for Redis fallback notifications in headers
-      const cacheStatus = response.headers.get('X-Cache-Status');
-      const debugMessage = response.headers.get('X-Debug-Message');
+      // Extract data from ValidationEngine30 response format
+      const validationData = result.threads?.transaction?.data || result.data || [];
       
-      if (cacheStatus === 'postgres-fallback') {
-        console.warn('🚨 REDIS FAILED: Redis cache unavailable, fell back to PostgreSQL');
-        console.log('💾 FALLBACK ACTIVE:', debugMessage);
+      // ValidationEngine30 provides structured validation metadata
+      if (result.overall?.metadata?.engine === 'ValidationEngine30') {
+        console.log('✅ ValidationEngine30 validation completed:', result.overall.metadata);
         
-        // Show toast notification to user
-        toast({
-          title: "Redis Cache failing",
-          description: "Fall back to default",
-          variant: "destructive"
-        });
-      } else if (cacheStatus === 'redis-hit') {
-        console.log('⚡ REDIS SUCCESS:', debugMessage);
+        // Show any validation warnings to user
+        if (result.overall.warnings?.length > 0) {
+          console.warn('⚠️ Validation warnings:', result.overall.warnings);
+        }
       }
       
-      return data;
+      return validationData;
     },
     enabled: !!userId,
     refetchOnMount: true,
@@ -208,12 +217,22 @@ export function MessagingSystem({
 
 
 
-  // Delete message mutation
+  // Delete message mutation via ValidationEngine30
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: number): Promise<void> => {
-      const response = await fetch(`/api/messaging/notes/${messageId}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
+        body: JSON.stringify({
+          operation: 'delete',
+          entityType: 'messaging',
+          data: {
+            id: messageId
+          }
+        })
       });
 
       if (!response.ok) {
@@ -221,8 +240,8 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, deletedMessageId) => {
-      // Update cache using the correct query key
-      const currentQueryKey = [getNotesEndpoint(), userId];
+      // Update cache using ValidationEngine30 query key
+      const currentQueryKey = ['/api/validation/v3/execute', 'messaging', userId];
       queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
         return old.filter(msg => msg.id !== deletedMessageId);
       });
@@ -245,16 +264,23 @@ export function MessagingSystem({
     },
   });
 
-  // Edit message mutation
+  // Edit message mutation via ValidationEngine30
   const editMessageMutation = useMutation({
     mutationFn: async ({ messageId, content }: { messageId: number, content: string }): Promise<void> => {
-      const response = await fetch(`/api/messaging/notes/${messageId}`, {
-        method: 'PUT',
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          operation: 'update',
+          entityType: 'messaging',
+          data: {
+            id: messageId,
+            content: content
+          }
+        })
       });
 
       if (!response.ok) {
@@ -262,8 +288,8 @@ export function MessagingSystem({
       }
     },
     onSuccess: (_, { messageId, content }) => {
-      // Update cache using the correct query key
-      const currentQueryKey = [getNotesEndpoint(), userId];
+      // Update cache using ValidationEngine30 query key
+      const currentQueryKey = ['/api/validation/v3/execute', 'messaging', userId];
       queryClient.setQueryData<Message[]>(currentQueryKey, (old = []) => {
         return old.map(msg => 
           msg.id === messageId 
@@ -294,34 +320,41 @@ export function MessagingSystem({
     },
   });
 
-  // Create message mutation - use applicant-specific endpoint
+  // Create message mutation via ValidationEngine30
   const createMessageMutation = useMutation({
     mutationFn: async (data: MessageFormData): Promise<Message> => {
-      const messageData = {
-        content: data.content,
-        priority: data.priority,
-        isPrivate: data.isPrivate,
-      };
-
-      const response = await fetch('/api/messaging/notes', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
+        body: JSON.stringify({
+          operation: 'create',
+          entityType: 'messaging',
+          data: {
+            content: data.content,
+            priority: data.priority,
+            isPrivate: data.isPrivate,
+            workflow: 'application',
+            messageType: 'rich-text'
+          }
+        })
       });
 
       if (!response.ok) {
         throw new Error(`Failed to create message: ${response.statusText}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      return result.threads?.transaction?.data || result.data;
     },
     onSuccess: async (newMessage) => {
       // Set the flag to indicate a message was created
       setHasCreatedMessage(true);
       
       // Directly update cache with server response (setQueryData strategy)
-      queryClient.setQueryData<Message[]>(['/api/messaging/notes', userId], (old = []) => {
+      queryClient.setQueryData<Message[]>(['/api/validation/v3/execute', 'messaging', userId], (old = []) => {
         return [...(old || []), newMessage];
       });
       
@@ -350,24 +383,29 @@ export function MessagingSystem({
     },
   });
 
-  // Auto-save draft mutation - handles both note and message modes
+  // Auto-save draft mutation via ValidationEngine30
   const autoSaveDraftMutation = useMutation({
     mutationFn: async (content: string): Promise<Message> => {
-      const messageData = {
-        content,
-        priority: 'normal' as const,
-        isPrivate: false,
-      };
-
-      // Always POST - server handles upsert logic (client-side prevention disabled)
       console.log(`🐛 AUTO-SAVE DEBUG: Starting auto-save, content length=${content.length}`);
-      console.log(`🐛 AUTO-SAVE DEBUG: Using POST request - server will handle upsert`);
+      console.log(`🐛 AUTO-SAVE DEBUG: Using ValidationEngine30 - server will handle upsert`);
       
-      const response = await fetch('/api/messaging/notes', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
+        body: JSON.stringify({
+          operation: 'create',
+          entityType: 'messaging',
+          data: {
+            content,
+            priority: 'normal',
+            isPrivate: false,
+            workflow: 'application',
+            messageType: 'rich-text'
+          }
+        })
       });
 
       if (!response.ok) {
@@ -375,8 +413,9 @@ export function MessagingSystem({
       }
 
       const result = await response.json();
-      console.log(`🐛 AUTO-SAVE DEBUG: POST request completed, returned message ID=${result.id}`);
-      return result;
+      const messageData = result.threads?.transaction?.data || result.data;
+      console.log(`🐛 AUTO-SAVE DEBUG: ValidationEngine30 completed, returned message ID=${messageData.id}`);
+      return messageData;
     },
     onMutate: () => {
       console.log(`🐛 AUTO-SAVE DEBUG: onMutate - server-side upsert mode`);
