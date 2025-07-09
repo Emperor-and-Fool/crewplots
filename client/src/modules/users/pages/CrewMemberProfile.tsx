@@ -50,7 +50,7 @@ export default function CrewMemberProfile() {
         body: JSON.stringify({
           operation: 'read',
           entityType: 'userSingle',
-          data: { userId: parseInt(userId!) }
+          data: { id: parseInt(userId!) }
         })
       });
       if (!response.ok) {
