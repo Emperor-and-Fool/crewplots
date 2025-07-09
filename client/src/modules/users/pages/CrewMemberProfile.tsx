@@ -39,15 +39,25 @@ export default function CrewMemberProfile() {
   const [motivationNote, setMotivationNote] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Fetch user profile with Redis caching
+  // Fetch user profile via ValidationEngine30
   const { data: user, isLoading: userLoading, error: userError } = useQuery({
-    queryKey: ['/api/users', userId],
+    queryKey: ['/api/validation/v3/execute', 'userSingle', 'read', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}`);
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'userSingle',
+          data: { userId: parseInt(userId!) }
+        })
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch user');
       }
-      return response.json();
+      const result = await response.json();
+      return result.threads.transaction.data;
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
