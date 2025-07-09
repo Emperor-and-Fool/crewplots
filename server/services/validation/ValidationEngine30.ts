@@ -265,6 +265,97 @@ export class ValidationEngine30 {
   }
 
   /**
+   * Generic CRUD transaction executor for all entity types
+   * Enables ANY entity to use VE30 validation with standardized CRUD operations
+   * Implementation of Plan 063: VE30 Generic CRUD Interface
+   */
+  async executeGenericCrud(entityType: string, operation: string, assembledData: any): Promise<any> {
+    console.log(`🔄 GENERIC CRUD: Executing ${operation} for ${entityType}`);
+    
+    const entityMethods = {
+      // USER OPERATIONS
+      user: {
+        create: (data: any) => storage.createUser(data.userData),
+        read: (data: any) => storage.getUser(data.id),
+        update: (data: any) => storage.updateUser(data.id, data.userData),
+        delete: (data: any) => storage.deleteUser(data.id),
+        list: () => storage.getUsers()
+      },
+      // LOCATION OPERATIONS  
+      location: {
+        create: (data: any) => storage.createLocation(data.locationData),
+        read: (data: any) => storage.getLocation(data.id),
+        update: (data: any) => storage.updateLocation(data.id, data.locationData),
+        delete: (data: any) => storage.deleteLocation(data.id),
+        list: () => storage.getLocations()
+      },
+      // COMPETENCY OPERATIONS
+      competency: {
+        create: (data: any) => storage.createCompetency(data.competencyData),
+        read: (data: any) => storage.getCompetency(data.id),
+        update: (data: any) => storage.updateCompetency(data.id, data.competencyData),
+        delete: (data: any) => storage.deleteCompetency(data.id),
+        list: () => storage.getCompetencies()
+      },
+      // SCHEDULE BLOCK OPERATIONS
+      scheduleBlock: {
+        create: (data: any) => storage.createScheduleBlock(data),
+        read: (data: any) => storage.getScheduleBlock(data.id),
+        update: (data: any) => storage.updateScheduleBlock(data.id, data),
+        delete: (data: any) => storage.deleteScheduleBlock(data.id),
+        list: () => storage.getScheduleBlocks()
+      },
+      // WEEK SCHEDULE OPERATIONS
+      weekSchedule: {
+        create: (data: any) => storage.createWeekSchedule(data),
+        read: (data: any) => storage.getWeekSchedule(data.id),
+        update: (data: any) => storage.updateWeekSchedule(data.id, data),
+        delete: (data: any) => storage.deleteWeekSchedule(data.id),
+        list: () => storage.getWeekSchedules()
+      },
+      // SHIFT OPERATIONS
+      shift: {
+        create: (data: any) => storage.createShift(data),
+        read: (data: any) => storage.getShift(data.id),
+        update: (data: any) => storage.updateShift(data.id, data),
+        delete: (data: any) => storage.deleteShift(data.id),
+        list: () => storage.getShifts()
+      },
+      // KNOWLEDGE BASE OPERATIONS
+      kbCategory: {
+        create: (data: any) => storage.createKbCategory(data.categoryData),
+        read: (data: any) => storage.getKbCategory(data.id),
+        update: (data: any) => storage.updateKbCategory(data.id, data.categoryData),
+        delete: (data: any) => storage.deleteKbCategory(data.id),
+        list: () => storage.getKbCategories()
+      },
+      kbArticle: {
+        create: (data: any) => storage.createKbArticle(data.articleData),
+        read: (data: any) => storage.getKbArticle(data.id),
+        update: (data: any) => storage.updateKbArticle(data.id, data.articleData),
+        delete: (data: any) => storage.deleteKbArticle(data.id),
+        list: () => storage.getKbArticles()
+      }
+    };
+    
+    const entityOps = entityMethods[entityType as keyof typeof entityMethods];
+    if (!entityOps) {
+      throw new Error(`Entity type '${entityType}' not supported for generic CRUD operations`);
+    }
+    
+    const method = entityOps[operation as keyof typeof entityOps];
+    if (!method) {
+      throw new Error(`Operation '${operation}' not supported for entity '${entityType}'`);
+    }
+    
+    console.log(`🔄 GENERIC CRUD: Calling storage.${entityType}.${operation}`);
+    const result = await method(assembledData);
+    console.log(`🔄 GENERIC CRUD: ${operation} completed for ${entityType}`, result?.id ? `ID: ${result.id}` : '');
+    
+    return result;
+  }
+
+  /**
    * Get validation package for entity type (proven pattern from ValidationEngine.ts)
    */
   private getPackage(entityType: string) {
@@ -424,6 +515,41 @@ export class ValidationEngine30 {
             username: assembledData.username,
             email: assembledData.email 
           };
+        }
+        // Handle userManagement operations via generic CRUD (Plan 063)
+        else if (entityType === 'userManagement') {
+          console.log('👤 VALIDATION ENGINE 30: Using generic CRUD for user management');
+          transactionResult = await this.executeGenericCrud('user', operation, assembledData);
+        }
+        // Handle userBulk operations via generic CRUD (Plan 063)
+        else if (entityType === 'userBulk') {
+          console.log('👥 VALIDATION ENGINE 30: Using generic CRUD for user bulk operations');
+          // For bulk operations, we need special handling
+          if (operation === 'delete' && assembledData.userIds?.length > 0) {
+            const deleteResults = [];
+            for (const userId of assembledData.userIds) {
+              const result = await this.executeGenericCrud('user', 'delete', { id: userId });
+              deleteResults.push(result);
+            }
+            transactionResult = { deletedUsers: deleteResults, count: deleteResults.length };
+          } else if (operation === 'update' && assembledData.userIds?.length > 0) {
+            const updateResults = [];
+            for (const userId of assembledData.userIds) {
+              const result = await this.executeGenericCrud('user', 'update', { 
+                id: userId, 
+                userData: assembledData.data 
+              });
+              updateResults.push(result);
+            }
+            transactionResult = { updatedUsers: updateResults, count: updateResults.length };
+          } else {
+            throw new Error(`Bulk operation ${operation} not implemented`);
+          }
+        }
+        // Handle userSingle operations via generic CRUD (Plan 063)
+        else if (entityType === 'userSingle') {
+          console.log('👤 VALIDATION ENGINE 30: Using generic CRUD for single user operations');
+          transactionResult = await this.executeGenericCrud('user', operation, assembledData);
         }
         // Handle userList operations - get all users
         else if (entityType === 'userList' && operation === 'read') {
