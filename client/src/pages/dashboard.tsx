@@ -17,7 +17,7 @@ import LocationHeader from "@/modules/locations/components/LocationHeader";
 // Dashboard module components (sophisticated restoration)
 import { StatsCard, StaffOverview, CashManagementSummary, useAdminActions, WeeklyCalendarPreview } from "@/modules/dashboard";
 import { ApplicantsSummary } from "@/modules/users/components/workflows/ApplicantsSummary";
-import { ValidationEngine30Test } from "@/components/ValidationEngine30Test";
+import { ValidationEngine30Test } from "@server/services/validation/ValidationEngine30.ts";
 
 
 export default function Dashboard() {
