@@ -271,7 +271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all profile data (unified data endpoint) - optimized for messaging system
+  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
+  // Original: GET /api/profile-data (unified data endpoint)
+  // Replaced by: POST /api/validation/v3/validate with entityType: "authProfile"
+  // Migration reason: ValidationEngine30 provides unified validation + hybrid storage integration
+  /*
   app.get("/api/profile-data", authenticateUser, async (req, res) => {
     try {
       console.log(`🔍 API DEBUG: /api/profile-data request received for user: ${req.user.username}`);
@@ -287,6 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch profile data" });
     }
   });
+  */
 
   // ⚠️ LEGACY USER ENDPOINTS - MIGRATED TO MODULAR ROUTES ⚠️
   // Original: GET /api/users (with client-side filtering - Plan 048 inefficiency)
@@ -319,7 +324,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   */
 
-  // Legacy endpoint for backward compatibility
+  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
+  // Original: GET /api/applicants (role filtering endpoint)
+  // Replaced by: POST /api/validation/v3/validate with entityType: "userManagement" + role filtering
+  // Migration reason: ValidationEngine30 provides unified validation + permission checking + hybrid storage
+  /*
   app.get("/api/applicants", async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
@@ -331,6 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch applicants" });
     }
   });
+  */
 
   // Get all locations with default query function support
   app.get("/api/locations", authenticateUser, async (req, res) => {
@@ -856,7 +866,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api', dashboardRoutes);
   app.use('/api/scheduler', schedulerRoutes);
-  app.use('/api/users', userRoutes);
+  // ⚠️ LEGACY MODULAR ROUTES - REPLACED BY VALIDATIONENGINE30 ⚠️
+  // Original: /api/users modular routes (management, profile, workflows)
+  // Replaced by: /api/validation/v3/validate with appropriate entityType
+  // Migration reason: ValidationEngine30 provides unified validation + permission + hybrid storage
+  // app.use('/api/users', userRoutes);
   app.use('/api/validation/v3', validationV3Routes);
   
   // 🚀 LAZY AUTH: Plan 052 Phase 2 test routes
@@ -892,7 +906,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current user profile (detailed view) - uses Redis cache via ProfileFetcher
+  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
+  // Original: GET /api/profile (detailed user profile with Redis caching)
+  // Replaced by: POST /api/validation/v3/validate with entityType: "authProfile"
+  // Migration reason: ValidationEngine30 provides unified validation + hybrid storage + ProfileCard integration
+  /*
   app.get("/api/profile", async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -942,6 +960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch profile" });
     }
   });
+  */
 
   // QR Code Route - returns the URL for registration
   app.get("/api/qr-code-url", (req, res) => {
