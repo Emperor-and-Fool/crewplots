@@ -1,4 +1,4 @@
-import { z, ZodSchema, ZodError } from 'zod';
+//ATTENTION! VE30PackageBuilder.ts uses centralized server/services/validation/validation-perm-mapping.ts
 
 /**
  * VE30PackageBuilder - ValidationEngine 3.0 Package Builder Standard
@@ -10,6 +10,9 @@ import { z, ZodSchema, ZodError } from 'zod';
  * Created: July 03, 2025
  * Standard: ValidationEngine v3.0 and above package standard
  */
+
+import { z, ZodSchema, ZodError } from 'zod';
+
 
 export interface VE30Package {
   entityType: string;

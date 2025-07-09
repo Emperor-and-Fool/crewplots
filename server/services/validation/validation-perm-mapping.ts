@@ -1,3 +1,5 @@
+//ATTENTION! This code directly supports: shared/validation/VE30PackageBuilder.ts
+
 /**
  * CENTRALIZED PERMISSION MAPPING SERVICE
  * Consolidates all permission mapping logic for ValidationEngine30
