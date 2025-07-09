@@ -1,86 +1,9 @@
 import { Router } from 'express';
 import { ValidationEngine } from '../../services/validation/ValidationEngine';
 import { authenticateUser } from '../../middleware/auth';
+import { mapWorkflowToValidationPermissions } from '../../services/validation/validation-perm-mapping';
 
-/**
- * Map workflow permissions to validation permissions
- */
-function mapWorkflowToValidationPermissions(user: any): string[] {
-  console.log('🧪 MAPPER DEBUG: Starting permission mapping for user:', user.username);
-  console.log('🧪 MAPPER DEBUG: User role:', user.role);
-  console.log('🧪 MAPPER DEBUG: User permissions type:', typeof user.permissions);
-  console.log('🧪 MAPPER DEBUG: User permissions:', user.permissions);
-  console.log('🧪 MAPPER DEBUG: User workflowPermissions type:', typeof user.workflowPermissions);
-  console.log('🧪 MAPPER DEBUG: User workflowPermissions:', user.workflowPermissions);
-  
-  const validationPermissions: string[] = [];
-  
-  // Use database permissions if available (from role_permissions table)
-  if (user.permissions && Array.isArray(user.permissions)) {
-    console.log('🧪 MAPPER DEBUG: Adding database permissions:', user.permissions.length);
-    user.permissions.forEach((perm: string) => {
-      console.log('🧪 MAPPER DEBUG: Adding database perm:', perm);
-      validationPermissions.push(perm);
-    });
-  } else {
-    console.log('🧪 MAPPER DEBUG: No database permissions found or not array');
-  }
-  
-  // Map workflow permissions to validation permissions
-  const workflowPerms = user.workflowPermissions || {};
-  console.log('🧪 MAPPER DEBUG: Workflow permissions extracted:', workflowPerms);
-  
-  if (workflowPerms.scheduling) {
-    console.log('🧪 MAPPER DEBUG: Processing scheduling permissions:', workflowPerms.scheduling);
-    if (workflowPerms.scheduling.includes('create')) {
-      console.log('🧪 MAPPER DEBUG: Adding schedule.create');
-      validationPermissions.push('schedule.create');
-    }
-    if (workflowPerms.scheduling.includes('view')) {
-      console.log('🧪 MAPPER DEBUG: Adding schedule.read');
-      validationPermissions.push('schedule.read');
-    }
-    if (workflowPerms.scheduling.includes('edit')) {
-      console.log('🧪 MAPPER DEBUG: Adding schedule.update');
-      validationPermissions.push('schedule.update');
-    }
-    if (workflowPerms.scheduling.includes('delete')) {
-      console.log('🧪 MAPPER DEBUG: Adding schedule.delete');
-      validationPermissions.push('schedule.delete');
-    }
-  } else {
-    console.log('🧪 MAPPER DEBUG: No scheduling workflow permissions found');
-  }
-  
-  if (workflowPerms.location) {
-    console.log('🧪 MAPPER DEBUG: Processing location permissions:', workflowPerms.location);
-    if (workflowPerms.location.includes('view')) {
-      console.log('🧪 MAPPER DEBUG: Adding location.access_assigned');
-      validationPermissions.push('location.access_assigned');
-    }
-    if (user.role === 'administrator') {
-      console.log('🧪 MAPPER DEBUG: Adding location.access_all for administrator');
-      validationPermissions.push('location.access_all');
-    }
-  } else {
-    console.log('🧪 MAPPER DEBUG: No location workflow permissions found');
-  }
-  
-  console.log('🧪 MAPPER DEBUG: Before deduplication:', validationPermissions);
-  
-  // Remove duplicates manually (ES5 compatible)
-  const uniquePermissions: string[] = [];
-  validationPermissions.forEach((perm: string) => {
-    if (!uniquePermissions.includes(perm)) {
-      uniquePermissions.push(perm);
-    }
-  });
-  
-  console.log('🧪 MAPPER DEBUG: Final mapped permissions:', uniquePermissions);
-  console.log('🧪 MAPPER DEBUG: Total permission count:', uniquePermissions.length);
-  
-  return uniquePermissions;
-}
+// Centralized permission mapping imported from service
 
 const router = Router();
 const validationEngine = new ValidationEngine();

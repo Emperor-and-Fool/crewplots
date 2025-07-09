@@ -148,21 +148,20 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
     
-    // Map user role and workflow permissions to validation permissions
-    const userRole = (req.user as any)?.role;
-    const workflowPermissions = (req.user as any)?.workflowPermissions || {};
+    // Use centralized permission mapping service
+    const { mapWorkflowToValidationPermissions } = await import('../../services/validation/validation-perm-mapping.js');
     
-    // Build permission array from role and workflow permissions
-    let permissions = context?.permissions || [];
+    const userContext = {
+      id: (req.user as any)?.id,
+      username: (req.user as any)?.username,
+      role: (req.user as any)?.role,
+      permissions: (req.user as any)?.permissions,
+      workflowPermissions: (req.user as any)?.workflowPermissions
+    };
     
-    // Add role-based permissions for user data access
-    if (userRole === 'administrator' || userRole === 'owner') {
-      permissions = [...permissions, 'user.read', 'user.manage', 'user.create'];
-    } else if (userRole === 'app_manager') {
-      permissions = [...permissions, 'user.read'];
-    }
+    const permissions = mapWorkflowToValidationPermissions(userContext);
     
-    console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, permissions:`, permissions);
+    console.log(`🔐 VALIDATION ENGINE 30: Centralized mapping - Role: ${userContext.role}, permissions:`, permissions);
 
     // Use ValidationEngine30 direct validation + execution
     const result = await validationEngine30.validateAndExecute(
