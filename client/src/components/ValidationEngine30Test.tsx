@@ -1,3 +1,9 @@
+//VALIDATION ENGINE30 IS DEVELOPMENT TESTING INFRASTRUCTURE
+//PURPOSE:
+//Development tool for testing ValidationEngine30 backend validation service
+//Not production feature - used during development and debugging
+//Located in Dashboard for admin accessibility during development
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
