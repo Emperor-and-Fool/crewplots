@@ -48,71 +48,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Compute superuser status
   const isSuperuser = hasAdminBypass(user);
 
-  // Session validation with graceful fallback for clean session states
+  // Initialize loading state
   useEffect(() => {
-    // Skip auth check on login page - no need to verify what we already know
-    if (window.location.pathname === '/login') {
-      setIsLoading(false);
-      return;
-    }
-
-    // Skip auth check if we're in the middle of logging out
-    if (isLoggingOut) {
-      return;
-    }
-
-    // Check if any session cookies exist before making auth request
-    const hasCookies = document.cookie.includes('connect.sid') || 
-                      document.cookie.includes('session') ||
-                      document.cookie.length > 0;
-
-    if (!hasCookies) {
-      // No session cookies present - user needs to login
-      console.log('🔒 No session cookies found - redirecting to login');
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
-    const checkAuth = async () => {
-      try {
-        // Use ValidationEngine30 auth endpoint - simplified authentication check
-        const response = await fetch('/api/validation/v3/auth', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          body: JSON.stringify({})
-        });
-        
-        if (response.ok) {
-          const authData = await response.json();
-          // ValidationEngine30 response structure: { success, result, user }
-          if (authData?.success && authData.user) {
-            setUser(authData.user);
-          } else {
-            setUser(null);
-          }
-        } else if (response.status === 401) {
-          // Session expired or invalid - clear state and allow redirect to login
-          console.log('🔒 Session invalid - clearing auth state');
-          setUser(null);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.log('🔒 Auth check failed - clearing auth state');
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [isLoggingOut]); // Add dependency array to prevent infinite loops
+    setIsLoading(false);
+  }, []);
 
   // Login function using URLSearchParams for reliable authentication
   const login = async (username: string, password: string): Promise<boolean> => {
