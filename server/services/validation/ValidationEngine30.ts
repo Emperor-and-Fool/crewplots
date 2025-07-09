@@ -11,16 +11,16 @@ import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
 import { mapWorkflowToValidationPermissions } from './validation-perm-mapping';
 
-// Import proven validation packages from existing ValidationEngine.ts
-import { scheduleBlockPackage } from '../../../client/src/modules/scheduler/validation/packages/scheduleBlockPackage';
-import { weekSchedulePackage } from '../../../client/src/modules/scheduler/validation/packages/weekSchedulePackage';
-import { shiftPackage } from '../../../client/src/modules/scheduler/validation/packages/shiftPackage';
+// Import proven validation packages from server packages
+import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
+import { weekSchedulePackage } from './packages/weekSchedulePackage';
+import { shiftPackage } from './packages/shiftPackage';
 
 // Import messaging validation package
-import { messagingPackage } from '../../../client/src/modules/messaging/validation/packages/messagingPackage';
+import { messagingPackage } from './packages/messagingPackage';
 
 // Import motivation note validation package
-import { motivationNotePackage } from '../../../client/src/modules/messaging/validation/packages/motivationNotePackage';
+import { motivationNotePackage } from './packages/motivationNotePackage';
 
 // Import user profile validation package
 import { userProfilePackage } from '../../modules/users/validation/userProfilePackage';
@@ -383,7 +383,8 @@ export class ValidationEngine30 {
 
       // THREAD 4: Enhanced Business Rule Validation
       console.log('📋 VALIDATION ENGINE 30: Starting enhanced business rule validation');
-      const businessRuleResult = await pkg.validateBusinessRules(assembledData, context);
+      const enrichedContext = { ...context, operation }; // Add operation to context for business rules
+      const businessRuleResult = await pkg.validateBusinessRules(assembledData, enrichedContext);
       if (!businessRuleResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, businessRuleResult.errors, !!context.aggregatedData);
       }

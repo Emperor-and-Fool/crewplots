@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 
-// Import extracted validation packages
-import { scheduleBlockPackage } from '../../../client/src/modules/scheduler/validation/packages/scheduleBlockPackage';
-import { weekSchedulePackage } from '../../../client/src/modules/scheduler/validation/packages/weekSchedulePackage';
-import { shiftPackage } from '../../../client/src/modules/scheduler/validation/packages/shiftPackage';
+// Import extracted validation packages from server packages
+import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
+import { weekSchedulePackage } from './packages/weekSchedulePackage';
+import { shiftPackage } from './packages/shiftPackage';
 
 /**
  * Package Registry for Validation Engine

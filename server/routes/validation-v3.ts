@@ -344,7 +344,11 @@ router.post('/validate', authenticateUser, async (req, res) => {
       data,
       {
         userId: (req.user as any)?.id || 0,
-        userRole: (req.user as any)?.role || 'guest'
+        userRole: (req.user as any)?.role || 'guest',
+        username: (req.user as any)?.username,
+        role: (req.user as any)?.role,
+        permissions: (req.user as any)?.permissions || [],
+        workflowPermissions: (req.user as any)?.workflowPermissions || {}
         // No aggregatedData - direct validation pattern
       },
       entityId
