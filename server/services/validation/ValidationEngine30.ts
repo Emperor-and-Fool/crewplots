@@ -160,83 +160,99 @@ class HybridTransactionHandler {
   }
 
   private async handleMessagingCreate(data: any, context: any): Promise<any> {
-    // Use MessageService createNoteRef for hybrid storage transaction
-    console.log(`[HybridTransactionHandler] Creating messaging note for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Creating messaging note via hybrid storage for user ${context.userId}`);
     console.log(`[HybridTransactionHandler] Input data:`, JSON.stringify(data, null, 2));
     
-    // Map validation data to InsertNoteRef schema fields
+    // Use MessageService hybrid storage pattern: PostgreSQL noteRef + MongoDB content + Redis cache
+    // Map validation data to InsertNoteRef schema fields following hybrid storage architecture
     const noteRefData = {
       userId: context.userId,
       content: data.content || '',
-      messageType: data.messageType || 'rich-text', // Correct field name from schema
+      messageType: data.messageType || 'rich-text',
       workflow: data.workflow || 'application',
       priority: data.priority || 'normal',
       isPrivate: data.isPrivate || false,
-      receiverId: data.targetUserId || null, // Map targetUserId to receiverId
-      noteType: 'message' // Default note type for messaging
+      receiverId: data.targetUserId || null,
+      noteType: 'message'
     };
     
-    console.log(`[HybridTransactionHandler] Mapped note data:`, JSON.stringify(noteRefData, null, 2));
+    console.log(`[HybridTransactionHandler] Mapped hybrid storage data:`, JSON.stringify(noteRefData, null, 2));
     
-    const result = await this.messageService.createNoteRef(noteRefData);
+    // Direct integration with proven hybrid storage createNoteRef
+    // This handles: PostgreSQL metadata + MongoDB content + Redis cache invalidation
+    const hybridResult = await this.messageService.createNoteRef(noteRefData);
+    
+    console.log(`[HybridTransactionHandler] Hybrid storage create result:`, hybridResult);
 
     return {
       isValid: true,
       errors: [],
-      data: result
+      data: hybridResult
     };
   }
 
   private async handleMessagingRead(data: any, context: any): Promise<any> {
-    console.log(`[HybridTransactionHandler] Reading messages for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Reading messages for user ${context.userId} via hybrid storage`);
     console.log(`[HybridTransactionHandler] Read data:`, JSON.stringify(data, null, 2));
     
-    // For read operations, use MessageService to fetch notes
+    // Use hybrid storage pattern: PostgreSQL metadata + MongoDB content + Redis cache
     // Map readOnlyMode to appropriate user ID for applicant notes
     const targetUserId = data.readOnlyMode ? data.userId : context.userId;
-    console.log(`[HybridTransactionHandler] Target user ID for read operation: ${targetUserId}`);
+    console.log(`[HybridTransactionHandler] Target user ID for hybrid read operation: ${targetUserId}`);
     
-    const notes = await this.messageService.getNoteRefsByUser(targetUserId);
+    // Direct integration with MessageService hybrid patterns
+    // This uses the proven hybrid storage: PostgreSQL noteRefs + MongoDB content + Redis cache
+    const hybridNotes = await this.messageService.getNoteRefsByUser(targetUserId);
+    
+    console.log(`[HybridTransactionHandler] Hybrid storage returned ${hybridNotes?.length || 0} notes`);
     
     return {
       isValid: true,
       errors: [],
-      data: notes
+      data: hybridNotes || []
     };
   }
 
   private async handleMessagingUpdate(data: any, context: any): Promise<any> {
-    console.log(`[HybridTransactionHandler] Updating messaging note ${data.id} for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Updating messaging note ${data.id} via hybrid storage for user ${context.userId}`);
     
     if (!data.id) {
-      throw new Error('Note ID required for update operation');
+      throw new Error('Note ID required for hybrid storage update operation');
     }
 
-    const result = await this.messageService.updateNoteRef(
+    // Use MessageService hybrid storage pattern for updates
+    // This handles: PostgreSQL metadata update + MongoDB content update + Redis cache invalidation
+    const hybridUpdateResult = await this.messageService.updateNoteRef(
       data.id,
       { content: data.content || '' }
     );
 
+    console.log(`[HybridTransactionHandler] Hybrid storage update result:`, hybridUpdateResult);
+
     return {
       isValid: true,
       errors: [],
-      data: result
+      data: hybridUpdateResult
     };
   }
 
   private async handleMessagingDelete(data: any, context: any): Promise<any> {
-    console.log(`[HybridTransactionHandler] Deleting messaging note ${data.id} for user ${context.userId}`);
+    console.log(`[HybridTransactionHandler] Deleting messaging note ${data.id} via hybrid storage for user ${context.userId}`);
     
     if (!data.id) {
-      throw new Error('Note ID required for delete operation');
+      throw new Error('Note ID required for hybrid storage delete operation');
     }
 
-    const result = await this.messageService.deleteNoteRef(data.id);
-    
+    // Use MessageService hybrid storage pattern for deletion
+    // This handles: PostgreSQL metadata deletion + MongoDB content cleanup + Redis cache invalidation
+    const hybridDeleteResult = await this.messageService.deleteNoteRef(data.id);
+
+    console.log(`[HybridTransactionHandler] Hybrid storage delete result:`, hybridDeleteResult);
+
     return {
       isValid: true,
       errors: [],
-      data: { deleted: result, id: data.id }
+      data: hybridDeleteResult
     };
   }
 
