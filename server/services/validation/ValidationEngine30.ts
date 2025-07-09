@@ -1,3 +1,8 @@
+//ATTENTION: ALL Registration Packages are registered in external Registries!
+//Production-Registry: server/services/validation/packageRegistry30.ts
+//Development-Registry: server/modules/development/validation/packageRegistryDev.ts
+//Packages use 
+
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from './DataAggregationEngine';
