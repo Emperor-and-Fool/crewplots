@@ -141,26 +141,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
 
-          // 🔍 BANNER DEBUG: Log complete response data structure
-          console.log("🔍 BANNER DEBUG: Location in code reached:"); 
+          // 🔍 DEBUG: Log complete data structure
+          console.log("🔍 DATA DEBUG: Complete response data:", data);
+          console.log("🔍 DATA DEBUG: data exists:", !!data);
+          console.log("🔍 DATA DEBUG: data.user exists:", !!(data && data.user));
+          console.log("🔍 DATA DEBUG: data.user value:", data?.user);
+          console.log("🔍 DATA DEBUG: typeof data:", typeof data);
+          console.log("🔍 DATA DEBUG: typeof data.user:", typeof data?.user);
           
-          // 3-second timer test for timing issue
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              if (data && data.user) {
-                setUser(data.user);
-                
-                // Invalidate all queries to ensure fresh data
-                queryClient.invalidateQueries();
-                setIsLoading(false);
-                resolve(data);
-              } else {
-                console.error("Login response missing user data:", data);
-                setIsLoading(false);
-                resolve(false);
-              }
-            }, 3000);
-          });
+          if (data && data.user) {
+            console.log("🔍 DATA DEBUG: CONDITION PASSED - Setting user");
+            setUser(data.user);
+            
+            // Invalidate all queries to ensure fresh data
+            queryClient.invalidateQueries();
+            setIsLoading(false);
+            return data;
+          } else {
+            console.log("🔍 DATA DEBUG: CONDITION FAILED - Returning false");
+            console.error("Login response missing user data:", data);
+            setIsLoading(false);
+            return false;
+          }
         } else {
           console.error("Login failed with status:", response.status);
           try {
