@@ -21,7 +21,7 @@ export default function CrewManagement() {
   
   // Fetch all users via ValidationEngine30
   const { data: users, isLoading, error } = useQuery<User[]>({
-    queryKey: ['/api/validation/v3/execute', 'userList', 'list'],
+    queryKey: ['/api/validation/v3/execute', 'userList', 'read'],
     queryFn: async () => {
       const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
