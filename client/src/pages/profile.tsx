@@ -10,15 +10,23 @@ import { User } from '@shared/schema';
 export default function Profile() {
   const [, navigate] = useLocation();
   const { data: profile, isLoading, error } = useQuery<User>({
-    queryKey: ['/api/profile'],
+    queryKey: ['/api/validation/v3/execute', 'authProfile'],
     queryFn: async () => {
-      const response = await fetch('/api/profile', {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'authProfile',
+          data: {}
+        })
       });
       if (!response.ok) {
         throw new Error('Failed to fetch profile');
       }
-      return response.json();
+      const result = await response.json();
+      return result.threads?.transaction?.data || result.data;
     },
   });
 

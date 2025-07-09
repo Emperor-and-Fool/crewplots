@@ -81,47 +81,58 @@ export function ApplicantForm({ showForm, onClose, editingApplicant }: Applicant
     }
   });
 
-  // Create or update applicant mutation
+  // Create or update applicant mutation - VE30 MIGRATION
   const mutation = useMutation({
     mutationFn: async (data: InsertUser) => {
       if (editingApplicant) {
-        const response = await fetch(`/api/users/${editingApplicant.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch('/api/validation/v3/execute', {
+          method: 'POST',
           credentials: 'include',
-          body: JSON.stringify(data)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'update',
+            entityType: 'userManagement',
+            data: {
+              id: editingApplicant.id,
+              userData: data
+            }
+          })
         });
         if (!response.ok) throw new Error('Failed to update applicant');
-        return response.json();
+        const result = await response.json();
+        return result.data;
       } else {
-        const response = await fetch('/api/users', {
+        const response = await fetch('/api/validation/v3/execute', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(data)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'create',
+            entityType: 'userManagement',
+            data: {
+              userData: data
+            }
+          })
         });
         if (!response.ok) throw new Error('Failed to create applicant');
-        return response.json();
+        const result = await response.json();
+        return result.data;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
+    onSuccess: (newUser) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
       toast({
-        title: editingApplicant ? "Applicant Updated" : "Applicant Created",
-        description: editingApplicant 
-          ? "The applicant has been updated successfully." 
-          : "A new applicant has been added to the system.",
+        title: editingApplicant ? 'Applicant updated' : 'Applicant created',
+        description: `${newUser.name || newUser.username} has been ${editingApplicant ? 'updated' : 'added to the system'}.`,
       });
       onClose();
       form.reset();
     },
-    onError: (error: any) => {
-      console.error('Error saving applicant:', error);
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save applicant. Please try again.",
-        variant: "destructive",
+        title: editingApplicant ? 'Failed to update applicant' : 'Failed to create applicant',
+        description: error.message,
+        variant: 'destructive',
       });
     },
   });
