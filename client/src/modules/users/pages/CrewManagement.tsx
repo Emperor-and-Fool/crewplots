@@ -28,7 +28,7 @@ export default function CrewManagement() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          operation: 'list',
+          operation: 'read',
           entityType: 'userList',
           data: {}
         })
@@ -37,7 +37,7 @@ export default function CrewManagement() {
         throw new Error('Failed to fetch user list');
       }
       const result = await response.json();
-      return result.data; // ValidationEngine30 returns data in .data field
+      return result.threads.transaction.data.users; // ValidationEngine30 returns users in transaction.data.users
     },
     staleTime: 2 * 60 * 1000,
   });
