@@ -51,18 +51,18 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         
         console.log("Auth middleware - Session data:", req.session);
         
-        // Check if user is logged in via Passport session
+        // Check if user is logged in via manual session (no Passport)
         console.log("Auth middleware - req.session exists:", !!req.session);
         console.log("Auth middleware - req.session.passport exists:", !!(req.session && req.session.passport));
         console.log("Auth middleware - req.session.passport.user exists:", !!(req.session && req.session.passport && req.session.passport.user));
         
         if (!req.session?.passport?.user) {
-            console.log("No active session found - no passport.user");
+            console.log("No active session found - no passport.user (manual session format)");
             res.status(401).json({ message: "Unauthorized - Please log in" });
             return;
         }
 
-        // Get user from storage using session userId
+        // Get user from storage using session userId (manual format, not Passport)
         const sessionUser = req.session.passport.user;
         console.log("Found session user:", sessionUser);
         

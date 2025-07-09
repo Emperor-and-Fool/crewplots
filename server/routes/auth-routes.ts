@@ -132,11 +132,11 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Enhanced login endpoint using Passport.js with multer for multipart form handling
+// Enhanced login endpoint with multer for multipart form handling
 import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Handle login with multiple content types (JSON, urlencoded, multipart)
+// Handle login with multiple content types (JSON, urlencoded, multipart) - NO PASSPORT
 router.post('/login', upload.none(), async (req, res, next) => {
     try {
         // Simplified login logging
@@ -163,10 +163,10 @@ router.post('/login', upload.none(), async (req, res, next) => {
         
         const identifier = username;
         
-        // For email login, we'll handle the lookup ourselves and then pass to Passport
+        // For email login, we'll handle the lookup ourselves 
         console.log('Login identifier type check:', identifier.includes('@') ? 'email format' : 'username format');
         
-        // Special case for admin development login
+        // Special case for admin development login - use same auth system as normal users
         if (identifier === 'admin' && submittedPassword === 'adminpass123') {
             console.log('Admin login detected using development credentials');
             
@@ -177,62 +177,64 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
             
-            // Use Passport login method which will handle both session and user serialization
-            req.login(adminUser, (err) => {
-                if (err) {
-                    console.error('Error during Passport login:', err);
-                    return res.status(500).json({ message: 'Error during login process' });
+            // Use same manual session creation as normal users (no Passport.js)
+            req.session.passport = {
+                user: { 
+                    id: adminUser.id,
+                    username: adminUser.username,
+                    role: adminUser.role,
+                    loggedIn: true
                 }
-                
-                console.log('Passport login successful for admin');
-                console.log('Session ID after login:', req.sessionID);
-                
-                // Set a debug cookie to test cookie functionality
-                res.cookie('admin-login', new Date().toISOString(), { 
-                    maxAge: 86400000,
-                    httpOnly: true,
-                    sameSite: 'lax'
-                });
-                
-                // Return success with user data (excluding password)
-                const { password, ...userWithoutPassword } = adminUser;
-                
-                // Redirect service function for atomic server-controlled navigation
-                function getRedirectForUser(user: any) {
-                    if (!user?.role) return '/register';
-                    return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+            };
+            
+            console.log('Admin login successful using centralized auth system');
+            console.log('Session established with ID:', req.sessionID);
+            
+            // Set a debug cookie to test cookie functionality
+            res.cookie('admin-login', new Date().toISOString(), { 
+                maxAge: 86400000,
+                httpOnly: true,
+                sameSite: 'lax'
+            });
+            
+            // Return success with user data (excluding password)
+            const { password, ...userWithoutPassword } = adminUser;
+            
+            // Redirect service function for atomic server-controlled navigation
+            function getRedirectForUser(user: any) {
+                if (!user?.role) return '/register';
+                return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
+            }
+            
+            const redirectUrl = getRedirectForUser(userWithoutPassword);
+            
+            return res.status(200).json({
+                message: 'Login successful',
+                user: userWithoutPassword,
+                redirectScript: `
+                    console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
+                    console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
+                    setTimeout(() => {
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
+                        if (!document.cookie.includes('connect.sid')) {
+                            console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+                            console.log('🔄 Trying manual cookie refresh...');
+                            window.location.reload();
+                            return;
+                        }
+                        window.location.replace('${redirectUrl}');
+                    }, 1000);
+                `,
+                redirectUrl: redirectUrl,
+                debug: {
+                    adminBypass: true,
+                    sessionId: req.sessionID,
+                    timestamp: new Date().toISOString(),
+                    cookieSet: true
                 }
-                
-                const redirectUrl = getRedirectForUser(userWithoutPassword);
-                
-                return res.status(200).json({
-                    message: 'Login successful',
-                    user: userWithoutPassword,
-                    redirectScript: `
-                        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-                        setTimeout(() => {
-                            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
-                            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
-                            if (!document.cookie.includes('connect.sid')) {
-                                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-                                console.log('🔄 Trying manual cookie refresh...');
-                                window.location.reload();
-                                return;
-                            }
-                            window.location.replace('${redirectUrl}');
-                        }, 1000);
-                    `,
-                    redirectUrl: redirectUrl,
-                    debug: {
-                        adminBypass: true,
-                        sessionId: req.sessionID,
-                        timestamp: new Date().toISOString(),
-                        cookieSet: true
-                    }
-                });
             });
         }
         

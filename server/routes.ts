@@ -44,8 +44,6 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import session from "express-session";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { hybridSessionStore } from "./services/hybrid-session-store";
@@ -160,98 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  // Initialize Passport and restore authentication state from session
-  app.use(passport.initialize());
-  app.use(passport.session());
-
   // Legacy authentication detection middleware - monitors session access patterns
   app.use(detectLegacyAuth);
-
-  // Authentication middleware logging handled directly in middleware functions
-
-  // Configure passport local strategy
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
-        }
-        
-        // For testing with admin account (hash comparison bypassed)
-        if (username === 'admin' && password === 'adminpass123') {
-          return done(null, user);
-        }
-        
-        // Normal password comparison
-        const bcrypt = require('bcryptjs');
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-        
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  // Serialize and deserialize user for session
-  // This tells Passport.js how to store the user in the session
-  passport.serializeUser((user: any, done) => {
-    console.log("Serializing user with ID:", user.id, "Type:", typeof user.id);
-    
-    // Store essential user data in session to avoid database queries on every auth check
-    done(null, { 
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      loggedIn: true
-    });
-  });
-
-  // This tells Passport.js how to retrieve the user from the session
-  passport.deserializeUser(async (sessionData: { id: number, loggedIn: boolean, username?: string, role?: string }, done) => {
-    try {
-      console.log("Deserializing session data:", sessionData);
-      
-      // If we don't have both id and loggedIn flag, authentication fails
-      if (!sessionData || !sessionData.id || !sessionData.loggedIn) {
-        console.log("Invalid session data during deserialization");
-        return done(null, false);
-      }
-      
-      // ALWAYS query database to get current role data - no caching for role updates
-      // This ensures role changes are immediately reflected in authentication
-      
-      // Fallback: Look up the user by ID with timeout
-      console.log("Cache miss, querying database for user ID:", sessionData.id);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 5000)
-      );
-      
-      const userPromise = storage.getUser(sessionData.id);
-      const user = await Promise.race([userPromise, timeoutPromise]);
-      
-      if (!user) {
-        console.log("User not found during deserialization, ID:", sessionData.id);
-        return done(null, false);
-      }
-      
-      console.log("User deserialized successfully:", user.username);
-      done(null, user);
-    } catch (err) {
-      console.error("Error deserializing user:", err);
-      // Don't fail auth on database errors, use cached data if possible
-      if (sessionData && sessionData.id && sessionData.loggedIn) {
-        console.log("Database error, falling back to minimal session data");
-        const fallbackUser = { id: sessionData.id, username: 'user', role: 'user' };
-        return done(null, fallbackUser);
-      }
-      done(err);
-    }
-  });
 
   // Register API endpoints FIRST before other routes to prevent conflicts
   
