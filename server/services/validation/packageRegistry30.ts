@@ -9,8 +9,12 @@
 // TODO: Export PackageRegistry30Type for type safety
 // TODO: Export production engine instance
 
+// Import messaging package for test
+import { messagingPackage } from './packages/messagingPackage';
+
 export const packageRegistry30 = {
   // Production packages will be registered here
+  messaging: messagingPackage,
 };
 
 export type PackageRegistry30Type = typeof packageRegistry30;

@@ -61,14 +61,22 @@ import { emailTestPackage } from '../../modules/development/validation/packages/
  * - Dual-use patterns (with/without aggregation)
  */
 
+// Import external registries 
+import { packageRegistry30 } from './packageRegistry30';
+
 /**
- * Enhanced Package Registry - builds on proven ValidationEngine.ts registry
+ * Enhanced Package Registry - HYBRID: uses external registry + fallback for backwards compatibility
+ * TEST: Trying messaging from external registry
  */
 const enhancedPackageRegistry = {
+  // HYBRID PATTERN: External registry packages take priority
+  ...packageRegistry30,
+  
+  // FALLBACK PATTERN: Direct imports for backwards compatibility
   scheduleBlock: scheduleBlockPackage,
   weekSchedule: weekSchedulePackage,
   shift: shiftPackage,
-  messaging: messagingPackage,
+  // messaging: messagingPackage, // DISABLED: Using external registry version
   motivationNote: motivationNotePackage,
   userProfile: userProfilePackage,
   authProfile: authProfilePackage,
