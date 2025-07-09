@@ -19,11 +19,16 @@ const userManagementBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
+    console.log('🔍 USER MANAGEMENT BUSINESS RULES: Validating data:', JSON.stringify(data, null, 2));
+
     // Authentication required
     if (!data.user) {
+      console.log('🚨 USER MANAGEMENT: No user found in data, failing authentication check');
       errors.push('Authentication required for user management');
       return { warnings, errors };
     }
+
+    console.log('✅ USER MANAGEMENT: User found in data:', data.user);
 
     // Role-based access validation
     const allowedRoles = ['administrator', 'owner', 'app_manager'];

@@ -456,7 +456,22 @@ export class ValidationEngine30 {
       // THREAD 4: Enhanced Business Rule Validation
       console.log('📋 VALIDATION ENGINE 30: Starting enhanced business rule validation');
       const enrichedContext = { ...context, operation }; // Add operation to context for business rules
-      const businessRuleResult = await pkg.validateBusinessRules(assembledData, enrichedContext);
+      
+      // ENHANCEMENT: Add user context to data for business rule validation (userManagement package expects data.user)
+      const businessRuleData = {
+        ...assembledData,
+        user: {
+          id: context.userId,
+          username: context.username,
+          role: context.role,
+          permissions: context.permissions,
+          workflowPermissions: context.workflowPermissions
+        },
+        operation: operation
+      };
+      
+      console.log('📋 VALIDATION ENGINE 30: Business rule data with user context:', JSON.stringify(businessRuleData, null, 2));
+      const businessRuleResult = await pkg.validateBusinessRules(businessRuleData, enrichedContext);
       if (!businessRuleResult.isValid) {
         return this.createFailureResult(packageId, operation, entityType, businessRuleResult.errors, !!context.aggregatedData);
       }

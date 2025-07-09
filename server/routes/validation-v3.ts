@@ -171,7 +171,8 @@ router.post('/execute', authenticateUser, async (req, res) => {
       data,
       {
         userId: (req.user as any)?.id,
-        userRole: userRole,
+        username: (req.user as any)?.username,
+        role: userRole,
         permissions: validationPermissions,
         workflowPermissions: workflowPermissions,
         ...context
