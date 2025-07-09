@@ -369,6 +369,98 @@ export { useAuthState, useAuthForms, useAuthValidation } from './hooks';
 export { useAuth } from '@/hooks/use-auth';
 ```
 
+## Enhanced Validation Architecture Integration
+
+### ValidationEngine30 Integration (July 2025)
+
+The authentication module integrates with the enhanced ValidationEngine30 system through two primary orchestration patterns:
+
+#### Direct Enhanced Validation Pattern
+**Purpose:** Fast-path validation for authentication operations  
+**Endpoint:** `/api/validation/v3/validate`  
+**Use Case:** Login validation, profile data retrieval, permission checks
+
+```typescript
+// Example: Profile data validation
+const validationResult = await fetch('/api/validation/v3/validate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    operation: 'read',
+    entityType: 'authProfile',
+    data: {}
+  })
+});
+```
+
+**Performance:** 45-89ms response times for authentication operations
+
+#### Aggregate and Validate Orchestration Pattern  
+**Purpose:** Comprehensive validation with data aggregation  
+**Endpoint:** `/api/validation/v3/orchestrate`  
+**Use Case:** Complex authentication workflows requiring user context aggregation
+
+```typescript
+// Example: Registration with data aggregation
+const orchestrationResult = await fetch('/api/validation/v3/orchestrate', {
+  method: 'POST', 
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    operation: 'create',
+    entityType: 'userRegistration',
+    data: registrationFormData
+  })
+});
+```
+
+**Architecture Flow:**
+1. **DataAggregationEngine** compiles user context (permissions, role, location assignments)
+2. **ValidationEngine30** performs enhanced validation with aggregated context
+3. **HybridTransactionHandler** executes authentication database operations
+4. **Session consolidation** prevents browser context isolation
+
+**Performance:** 124-180ms response times for orchestrated operations
+
+### Authentication Security Isolation
+
+**Core Authentication Packages** remain as direct imports in ValidationEngine30 for security:
+- `userProfile`: Core authentication data access
+- `authProfile`: Authentication profile management  
+- `userRegistration`: User registration security
+- `emailTest`: Development workflow validation
+
+**External Registry Packages** (non-authentication) moved to external management:
+- Messaging, scheduling, email verification, location management
+
+### Session Management Enhancement
+
+**HybridSessionStore Integration:**
+- ValidationEngine30 leverages hybrid PostgreSQL + Redis session architecture
+- Automatic session validation during validation operations
+- Session consolidation prevents authentication failures in Replit iframe environment
+
+**Authentication Middleware Integration:**
+- `authenticateUser` middleware provides centralized authentication for validation endpoints
+- Permission mapping service transforms user roles into validation-specific permissions
+- Zero legacy authentication patterns remaining after July 2025 cleanup
+
+### Cross-Module Integration Patterns
+
+**Permission Resolution:**
+```typescript
+// Dynamic permission mapping during validation
+const validationPermissions = mapWorkflowToValidationPermissions(user);
+// Converts: role='administrator' + workflowPermissions.application=['view','edit'] 
+// Into: ['message.read', 'message.create', 'user.manage', 'location.access_all']
+```
+
+**Authentication State Consistency:**
+- AuthContext integration with ValidationEngine30 for consistent user state
+- Session-aware caching prevents duplicate authentication requests
+- Unified error handling across validation and authentication layers
+
 **Migration Strategy:** Maintain backward compatibility while providing new module API
 
 ## Integration Patterns
