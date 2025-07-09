@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isLoggingOut]); // Add dependency array to prevent infinite loops
 
   // Login function using URLSearchParams for reliable authentication
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<any> => {
     try {
       setIsLoading(true);
 
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Invalidate all queries to ensure fresh data
             queryClient.invalidateQueries();
             setIsLoading(false);
-            return true;
+            return data;
           } else {
             console.error("Login response missing user data:", data);
             toast({
