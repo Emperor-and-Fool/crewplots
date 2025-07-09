@@ -68,6 +68,7 @@ import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
 import emailRoutes from './routes/email';
 import schedulerRoutes from './routes/scheduler';
+// TODO: MIGRATE TO MODULES - Remove after modules/users integration complete
 import userRoutes from './routes/users';
 import validationRoutes from './routes/validation';
 import validationV3Routes from './routes/validation-v3';
@@ -163,6 +164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Original: /api/users modular routes (management, profile, workflows)
   // Replaced by: /api/validation/v3/validate with appropriate entityType
   // Migration reason: ValidationEngine30 provides unified validation + permission + hybrid storage
+  // TODO: MIGRATE TO MODULES - Remove after modules/users integration complete
+  // COPIED TO: server/modules/users/index.ts (July 9, 2025)
   // app.use('/api/users', userRoutes);
 
   // ===================================================================================================
