@@ -149,7 +149,7 @@ router.post('/execute', authenticateUser, async (req, res) => {
     console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
     
     // Use centralized permission mapping service
-    const { mapWorkflowToValidationPermissions } = await import('../../services/validation/validation-perm-mapping.js');
+    const { mapWorkflowToValidationPermissions } = await import('../services/validation/validation-perm-mapping.js');
     
     const userContext = {
       id: (req.user as any)?.id,
