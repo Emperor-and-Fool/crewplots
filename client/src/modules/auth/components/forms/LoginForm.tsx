@@ -39,12 +39,18 @@ export const LoginForm = ({
       const result = await login(data.username, data.password);
       console.log("🔍 LOGIN DEBUG: Result from login():", result);
       
-      if (result.success && result.user) {
+      if (result.error) {
+        console.log("🔍 LOGIN DEBUG: Auth context returned error:", result.error);
+        onSuccess?.(result); // Pass error to page for toast handling
+      } else if (result.success && result.user) {
         console.log("🔍 ATOMIC LOGIN: Calling onSuccess with complete result:", result);
         onSuccess?.(result); // Pass complete response with redirectScript
+      } else if (result === false) {
+        console.log("🔍 LOGIN DEBUG: Login failed - boolean false result");
+        onSuccess?.({ error: "Login failed - invalid credentials" });
       } else {
-        console.log("🔍 LOGIN DEBUG: Login failed - result:", result);
-        onError?.("Login failed - invalid credentials");
+        console.log("🔍 LOGIN DEBUG: Login failed - unexpected result:", result);
+        onSuccess?.({ error: "Login failed - invalid credentials" });
       }
     } catch (error) {
       console.log("🔍 LOGIN DEBUG: Exception caught:", error);

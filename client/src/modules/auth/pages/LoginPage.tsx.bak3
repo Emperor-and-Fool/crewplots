@@ -11,43 +11,21 @@ export const LoginPage = () => {
   const handleLoginSuccess = (loginResponse: any) => {
     console.log("🔍 ATOMIC REDIRECT: handleLoginSuccess called with loginResponse:", loginResponse);
     
-    // Handle error responses from auth-context
-    if (loginResponse.error) {
-      console.error("🚨 LOGIN ERROR: Auth context returned error:", loginResponse.error);
-      toast({
-        title: "Login failed",
-        description: loginResponse.error,
-        variant: "destructive",
-      });
-      return;
-    }
+    toast({
+      title: "Welcome back!", 
+      description: "You have been logged in successfully.",
+    });
     
-    // Handle successful login with user data
-    if (loginResponse.success && loginResponse.user) {
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${loginResponse.user?.name || loginResponse.user?.username}!`,
-      });
-      
-      // Execute server's redirect script with delay
-      if (loginResponse.redirectScript) {
-          console.log("🔍 ATOMIC REDIRECT: Executing server redirect script");
-          console.log("🔍 ATOMIC REDIRECT: Current cookies:", document.cookie);
-          console.log("🔍 ATOMIC REDIRECT: Login response:", loginResponse);
-          
-          // Execute the server's redirect script (includes its own timing)
-          eval(loginResponse.redirectScript);
-      } else {
-          console.error("❌ NO REDIRECT SCRIPT in login response:", loginResponse);
-      }
+    // Execute server's redirect script with delay
+    if (loginResponse.redirectScript) {
+        console.log("🔍 ATOMIC REDIRECT: Executing server redirect script");
+        console.log("🔍 ATOMIC REDIRECT: Current cookies:", document.cookie);
+        console.log("🔍 ATOMIC REDIRECT: Login response:", loginResponse);
+        
+        // Execute the server's redirect script (includes its own timing)
+        eval(loginResponse.redirectScript);
     } else {
-      // Handle missing user data
-      console.error("🚨 LOGIN ERROR: Authentication successful but user data unavailable");
-      toast({
-        title: "Login failed",
-        description: "Authentication successful but user data unavailable",
-        variant: "destructive",
-      });
+        console.error("❌ NO REDIRECT SCRIPT in login response:", loginResponse);
     }
   };
 
