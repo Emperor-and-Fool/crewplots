@@ -98,6 +98,49 @@
 - Rate limiting per user/session
 - Content validation and sanitization
 
+### 9. Dynamic Import Module Resolution Configuration
+**Priority**: Low
+**Effort**: Medium
+**Risk**: ValidationEngine30 functionality limited
+
+**Problem**: TypeScript/Node.js ESM dynamic import resolution ignores project directory structure. Dynamic imports resolve to `/workspace/services/` instead of `/workspace/server/services/` while static imports work correctly.
+
+**Evidence**: 
+- Static imports: `import { func } from '../services/validation/file'` ✅ Working
+- Dynamic imports: `await import('../services/validation/file')` ❌ Failed (wrong path resolution)
+- Error: `Cannot find module '/home/runner/workspace/services/validation/file.js'`
+
+**Impact**: 
+- ValidationEngine30 /api/validation/v3/execute endpoint broken
+- Applicants page data loading fails
+- Permission mapping centralization blocked
+
+**Solution Requirements**:
+- Investigate tsx/Vite ESM module resolution configuration
+- Fix dynamic import path resolution to respect server/ directory
+- Alternative: Refactor to static imports with conditional loading patterns
+
+### 10. Permission Mapping Architecture Code Duplication
+**Priority**: Medium
+**Effort**: Low
+
+**Problem**: Permission mapping logic duplicated across validation routes despite centralized service creation.
+
+**Evidence**:
+- Centralized service: `server/services/validation/validation-perm-mapping.ts` ✅ Created
+- Static imports working: `validation/test.ts` and `validation/engine.ts` ✅ Using service
+- Dynamic import broken: `validation-v3.ts` ❌ Cannot import service
+
+**Current State**:
+- 2 files use centralized service successfully
+- 1 file reverted to duplicated logic due to dynamic import failure
+- Architecture partially implemented
+
+**Solution Requirements**:
+- Resolve dynamic import issue (see #9)
+- Complete migration to centralized permission mapping
+- Eliminate remaining duplicate permission logic
+
 ## Implementation Notes
 
 **Testing Strategy**:
