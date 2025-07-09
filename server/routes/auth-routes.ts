@@ -186,54 +186,53 @@ router.post('/login', upload.none(), async (req, res, next) => {
                 
                 console.log('Passport login successful for admin');
                 console.log('Session ID after login:', req.sessionID);
-            
-            // Set a debug cookie to test cookie functionality
-            res.cookie('admin-login', new Date().toISOString(), { 
-                maxAge: 86400000,
-                httpOnly: true,
-                sameSite: 'lax'
-            });
-            
-
-            
-            // Return success with user data (excluding password)
-            const { password, ...userWithoutPassword } = adminUser;
-            
-            // Redirect service function for atomic server-controlled navigation
-            function getRedirectForUser(user: any) {
-                if (!user?.role) return '/register';
-                return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
-            }
-            
-            const redirectUrl = getRedirectForUser(userWithoutPassword);
-            
-            return res.status(200).json({
-                message: 'Login successful',
-                user: userWithoutPassword,
-                redirectScript: `
-                    console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-                    setTimeout(() => {
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
-                        if (!document.cookie.includes('connect.sid')) {
-                            console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-                            console.log('🔄 Trying manual cookie refresh...');
-                            window.location.reload();
-                            return;
-                        }
-                        window.location.replace('${redirectUrl}');
-                    }, 1000);
-                `,
-                redirectUrl: redirectUrl,
-                debug: {
-                    adminBypass: true,
-                    sessionId: req.sessionID,
-                    timestamp: new Date().toISOString(),
-                    cookieSet: true
+                
+                // Set a debug cookie to test cookie functionality
+                res.cookie('admin-login', new Date().toISOString(), { 
+                    maxAge: 86400000,
+                    httpOnly: true,
+                    sameSite: 'lax'
+                });
+                
+                // Return success with user data (excluding password)
+                const { password, ...userWithoutPassword } = adminUser;
+                
+                // Redirect service function for atomic server-controlled navigation
+                function getRedirectForUser(user: any) {
+                    if (!user?.role) return '/register';
+                    return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
                 }
+                
+                const redirectUrl = getRedirectForUser(userWithoutPassword);
+                
+                return res.status(200).json({
+                    message: 'Login successful',
+                    user: userWithoutPassword,
+                    redirectScript: `
+                        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
+                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
+                        setTimeout(() => {
+                            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+                            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
+                            if (!document.cookie.includes('connect.sid')) {
+                                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+                                console.log('🔄 Trying manual cookie refresh...');
+                                window.location.reload();
+                                return;
+                            }
+                            window.location.replace('${redirectUrl}');
+                        }, 1000);
+                    `,
+                    redirectUrl: redirectUrl,
+                    debug: {
+                        adminBypass: true,
+                        sessionId: req.sessionID,
+                        timestamp: new Date().toISOString(),
+                        cookieSet: true
+                    }
+                });
             });
         }
         
