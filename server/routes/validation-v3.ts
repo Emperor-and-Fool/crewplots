@@ -7,6 +7,7 @@ import type { DataAggregationTask } from '../services/validation/DataAggregation
 import type { User } from '@shared/schema';
 // Import messaging package from ValidationEngine30 registry
 import { messagingPackage } from '../../client/src/modules/messaging/validation/packages/messagingPackage';
+import { mapWorkflowToValidationPermissions } from '../services/validation/validation-perm-mapping';
 
 const router = express.Router();
 
@@ -148,21 +149,20 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
     
-    // Map user role and workflow permissions to validation permissions
+    // Use centralized permission mapper to convert user context to validation permissions
     const userRole = (req.user as any)?.role;
     const workflowPermissions = (req.user as any)?.workflowPermissions || {};
     
-    // Build permission array from role and workflow permissions
-    let permissions = context?.permissions || [];
+    // Map user context to validation permissions using centralized mapper
+    const validationPermissions = mapWorkflowToValidationPermissions({
+      id: (req.user as any)?.id,
+      username: (req.user as any)?.username,
+      role: userRole,
+      permissions: context?.permissions || [],
+      workflowPermissions: workflowPermissions
+    });
     
-    // Add role-based permissions for user data access
-    if (userRole === 'administrator' || userRole === 'owner') {
-      permissions = [...permissions, 'user.read', 'user.manage', 'user.create'];
-    } else if (userRole === 'app_manager') {
-      permissions = [...permissions, 'user.read'];
-    }
-    
-    console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, permissions:`, permissions);
+    console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, mapped permissions:`, validationPermissions);
 
     // Use ValidationEngine30 direct validation + execution
     const result = await validationEngine30.validateAndExecute(
@@ -172,7 +172,8 @@ router.post('/execute', authenticateUser, async (req, res) => {
       {
         userId: (req.user as any)?.id,
         userRole: userRole,
-        permissions: permissions,
+        permissions: validationPermissions,
+        workflowPermissions: workflowPermissions,
         ...context
       }
     );

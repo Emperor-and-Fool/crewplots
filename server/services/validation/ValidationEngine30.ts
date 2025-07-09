@@ -346,27 +346,35 @@ export class ValidationEngine30 {
         return this.createFailureResult(packageId, operation, entityType, schemaResult.errors, false);
       }
 
-      // THREAD 3: Enhanced Permission Validation
+      // THREAD 3: Enhanced Permission Validation with Centralized Mapper
       console.log('🔐 VALIDATION ENGINE 30: Starting enhanced permission validation');
-      let userPermissions: string[];
       
-      if (context.aggregatedData?.aggregatedPermissions?.rolePermissions) {
-        // ENHANCEMENT: Use aggregated permissions
-        userPermissions = context.aggregatedData.aggregatedPermissions.rolePermissions || [];
-        console.log('🔐 ENHANCEMENT: Using aggregated permissions:', userPermissions);
-      } else {
-        // PROVEN FALLBACK: Use context permissions
-        userPermissions = context.permissions || [];
-        console.log('🔐 PROVEN: Using context permissions:', userPermissions);
-      }
+      // Use centralized permission mapper to convert user context to validation permissions
+      const validationPermissions = mapWorkflowToValidationPermissions({
+        id: context.userId,
+        username: context.username || 'unknown',
+        role: context.role,
+        permissions: context.permissions,
+        workflowPermissions: context.workflowPermissions
+      });
       
+      console.log('🔐 VALIDATION ENGINE 30: Mapped validation permissions:', validationPermissions);
+      
+      // Get required permissions from package (VE30PackageBuilder handles messaging permissions)
       const requiredPermissions = pkg.getRequiredPermissions(operation as any);
-      const hasPermissions = requiredPermissions.every(perm => userPermissions.includes(perm));
+      console.log('🔐 VALIDATION ENGINE 30: Required permissions for', operation, ':', requiredPermissions);
+      
+      const hasPermissions = requiredPermissions.every(perm => validationPermissions.includes(perm));
       
       if (!hasPermissions) {
-        const missingPermissions = requiredPermissions.filter(perm => !userPermissions.includes(perm));
+        const missingPermissions = requiredPermissions.filter(perm => !validationPermissions.includes(perm));
+        console.log('🔐 VALIDATION ENGINE 30: Missing permissions:', missingPermissions);
+        console.log('🔐 VALIDATION ENGINE 30: Available permissions:', validationPermissions);
         return this.createFailureResult(packageId, operation, entityType, [`Missing permissions: ${missingPermissions.join(', ')}`], !!context.aggregatedData);
       }
+      
+      console.log('🔐 VALIDATION ENGINE 30: Permission validation passed');
+      
 
       // THREAD 4: Enhanced Business Rule Validation
       console.log('📋 VALIDATION ENGINE 30: Starting enhanced business rule validation');
