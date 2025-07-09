@@ -1,4 +1,4 @@
-//VALIDATION ENGINE30 IS DEVELOPMENT TESTING INFRASTRUCTURE
+//VALIDATION ENGINE30TEST IS DEVELOPMENT TESTING INFRASTRUCTURE
 //PURPOSE:
 //Development tool for testing ValidationEngine30 backend validation service
 //Not production feature - used during development and debugging
