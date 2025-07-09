@@ -27,17 +27,30 @@ function ApplicantDetail() {
   const applicantId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
 
-  // Fetch applicant data using profile-data endpoint
+  // Fetch applicant data using ValidationEngine30
   const { data: profileData, isLoading } = useQuery({
-    queryKey: ['/api/profile-data'],
+    queryKey: ['/api/validation/v3/execute', 'userList'],
     queryFn: async () => {
-      const response = await fetch('/api/profile-data', {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'read',
+          entityType: 'userList',
+          data: {
+            operation: 'userList',
+            filters: {}
+          }
+        })
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch profile data');
+        throw new Error('Failed to fetch user list via ValidationEngine30');
       }
-      return response.json();
+      const result = await response.json();
+      return result.threads?.transaction?.data?.users || [];
     },
     enabled: !!applicantId,
   });

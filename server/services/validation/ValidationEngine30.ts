@@ -25,6 +25,9 @@ import { authProfilePackage } from '../../modules/users/validation/authProfilePa
 // Import user registration validation package
 import { userRegistrationPackage } from '../../modules/users/validation/userRegistrationPackage';
 
+// Import user list validation package
+import { userListPackage } from './packages/userListPackage';
+
 // Import email verification validation packages
 import { emailVerificationPackage } from '../../modules/email/validation/emailVerificationPackage';
 import { emailVerificationStatusPackage } from '../../modules/email/validation/emailVerificationStatusPackage';
@@ -64,6 +67,7 @@ const enhancedPackageRegistry = {
   userProfile: userProfilePackage,
   authProfile: authProfilePackage,
   userRegistration: userRegistrationPackage,
+  userList: userListPackage,
   emailVerification: emailVerificationPackage,
   emailVerificationStatus: emailVerificationStatusPackage,
   emailTemplateInitialization: emailTemplateInitializationPackage,
@@ -388,6 +392,13 @@ export class ValidationEngine30 {
             username: assembledData.username,
             email: assembledData.email 
           };
+        }
+        // Handle userList operations - get all users
+        else if (entityType === 'userList' && operation === 'read') {
+          console.log('👥 VALIDATION ENGINE 30: Reading user list');
+          const users = await storage.getUsers();
+          console.log(`💾 Retrieved ${users.length} users for profile data`);
+          transactionResult = { users };
         }
         // Handle email configuration operations
         else if (entityType === 'emailConfig' && operation === 'read') {

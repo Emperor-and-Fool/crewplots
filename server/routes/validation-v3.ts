@@ -148,6 +148,22 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
     
+    // Map user role and workflow permissions to validation permissions
+    const userRole = (req.user as any)?.role;
+    const workflowPermissions = (req.user as any)?.workflowPermissions || {};
+    
+    // Build permission array from role and workflow permissions
+    let permissions = context?.permissions || [];
+    
+    // Add role-based permissions for user data access
+    if (userRole === 'administrator' || userRole === 'owner') {
+      permissions = [...permissions, 'user.read', 'user.manage', 'user.create'];
+    } else if (userRole === 'app_manager') {
+      permissions = [...permissions, 'user.read'];
+    }
+    
+    console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, permissions:`, permissions);
+
     // Use ValidationEngine30 direct validation + execution
     const result = await validationEngine30.validateAndExecute(
       operation || 'read',
@@ -155,8 +171,8 @@ router.post('/execute', authenticateUser, async (req, res) => {
       data,
       {
         userId: (req.user as any)?.id,
-        userRole: (req.user as any)?.role,
-        permissions: context?.permissions || [],
+        userRole: userRole,
+        permissions: permissions,
         ...context
       }
     );
