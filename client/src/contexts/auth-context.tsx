@@ -144,18 +144,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // 🔍 BANNER DEBUG: Log complete response data structure
           console.log("🔍 BANNER DEBUG: Location in code reached:"); 
           
-          if (data && data.user) {
-            setUser(data.user);
-            
-            // Invalidate all queries to ensure fresh data
-            queryClient.invalidateQueries();
-            setIsLoading(false);
-            return data;
-          } else {
-            console.error("Login response missing user data:", data);
-            setIsLoading(false);
-            return false;
-          }
+          // 3-second timer test for timing issue
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              if (data && data.user) {
+                setUser(data.user);
+                
+                // Invalidate all queries to ensure fresh data
+                queryClient.invalidateQueries();
+                setIsLoading(false);
+                resolve(data);
+              } else {
+                console.error("Login response missing user data:", data);
+                setIsLoading(false);
+                resolve(false);
+              }
+            }, 3000);
+          });
         } else {
           console.error("Login failed with status:", response.status);
           try {
