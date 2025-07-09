@@ -10,12 +10,12 @@
 // TODO: Export production engine instance
 
 // Import non-core validation packages for external registry
-import { messagingPackage } from './packages/messagingPackage';
-import { motivationNotePackage } from './packages/motivationNotePackage';
-import { userListPackage as legacyUserListPackage } from './packages/userListPackage';
-import { scheduleBlockPackage } from './packages/scheduleBlockPackage';
-import { weekSchedulePackage } from './packages/weekSchedulePackage';
-import { shiftPackage } from './packages/shiftPackage';
+import { messagingPackage } from '../../modules/messaging/validation/messagingPackage';
+import { motivationNotePackage } from '../../modules/messaging/validation/motivationNotePackage';
+import { userListPackage as legacyUserListPackage } from '../../modules/users/validation/userListPackage';
+import { scheduleBlockPackage } from '../../modules/scheduler/validation/scheduleBlockPackage';
+import { weekSchedulePackage } from '../../modules/scheduler/validation/weekSchedulePackage';
+import { shiftPackage } from '../../modules/scheduler/validation/shiftPackage';
 
 // Import new user validation packages (migrated to modules)
 import { userListPackage } from '../../modules/users/validation/userListPackage';

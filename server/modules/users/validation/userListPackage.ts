@@ -1,62 +1,89 @@
 /**
  * User List Validation Package
- * Migrated from services/validation/packages/ to modules/users/validation/
  * Handles validation for retrieving all users data
  */
 
 import { z } from 'zod';
-import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
+import { User } from '@shared/schema';
 
 // Request schema for user list operations
 export const userListRequestSchema = z.object({
+  operation: z.literal('userList'),
   filters: z.object({
     role: z.string().optional(),
     status: z.string().optional(),
-    locationId: z.number().optional(),
-    searchTerm: z.string().optional()
+    locationId: z.number().optional()
   }).optional()
 });
 
-// Business rules for user list operations
-const userListBusinessRules = [
-  (data: any) => {
-    const warnings: string[] = [];
-    const errors: string[] = [];
+// Response schema for user list operations
+export const userListResponseSchema = z.array(z.object({
+  id: z.number(),
+  public_id: z.string(),
+  username: z.string(),
+  email: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  name: z.string(),
+  role: z.enum(['administrator', 'owner', 'app_manager', 'crew_chief', 'crew_member', 'applicant']),
+  locationId: z.number().nullable(),
+  phoneNumber: z.string().nullable(),
+  status: z.string(),
+  resumeUrl: z.string().nullable(),
+  notes: z.string().nullable(),
+  workflowPermissions: z.record(z.array(z.string())).nullable(),
+  blockedPermissions: z.array(z.string()).nullable(),
+  createdAt: z.string()
+}));
 
-    // Authentication required
-    if (!data.user) {
-      errors.push('Authentication required for user list access');
-      return { warnings, errors };
+export type UserListRequest = z.infer<typeof userListRequestSchema>;
+export type UserListResponse = z.infer<typeof userListResponseSchema>;
+
+export const userListPackage = {
+  // Schema validation - matches ValidationEngine30 interface
+  validateSchema: async (data: any, operation: 'create' | 'update' | 'delete' | 'read') => {
+    try {
+      if (operation === 'read') {
+        const validatedData = userListRequestSchema.parse(data);
+        return { isValid: true, errors: [], data: validatedData };
+      }
+      return { isValid: false, errors: ['Invalid operation for userList package'] };
+    } catch (error: any) {
+      return { isValid: false, errors: [error.message] };
     }
+  },
 
-    // Role-based access validation
-    const allowedRoles = ['administrator', 'owner', 'app_manager', 'crew_chief'];
-    if (!allowedRoles.includes(data.user.role)) {
-      errors.push('Insufficient permissions for user list access');
-    }
-
-    return { warnings, errors };
-  }
-];
-
-// Assembly function for user list requests
-const userListAssembly = (rawData: any, user: any, operation: string) => {
-  return {
-    filters: rawData.filters || {},
-    user: user,
-    operation: operation
-  };
-};
-
-// VE30PackageBuilder-based user list package
-export const userListPackage: VE30Package = {
-  entityType: 'userList',
-  validateSchema: (data: any, operation: string) => VE30PackageBuilder.validateSchema(data, operation, userListRequestSchema),
-  getRequiredPermissions: (operation: string) => {
+  // Permission requirements - matches ValidationEngine30 interface
+  getRequiredPermissions: (operation: 'create' | 'update' | 'delete' | 'read') => {
     return ['user.read'];
   },
-  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, userListBusinessRules),
-  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, userListAssembly)
-};
 
-export type UserListPackage = typeof userListPackage;
+  // Business rule validation - matches ValidationEngine30 interface
+  validateBusinessRules: async (data: UserListRequest, context: any) => {
+    const issues: string[] = [];
+
+    // Validate operation
+    if (data.operation !== 'userList') {
+      issues.push('Invalid operation for user list package');
+    }
+
+    // Validate user has permission to read user data
+    if (!context.userId) {
+      issues.push('Authentication required for user list access');
+    }
+
+    return {
+      isValid: issues.length === 0,
+      errors: issues,
+      warnings: []
+    };
+  },
+
+  // Package assembly
+  assemblePackage: (requestData: any) => {
+    return {
+      operation: 'userList',
+      filters: requestData.filters || {}
+    };
+  }
+};
