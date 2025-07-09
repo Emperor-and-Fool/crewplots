@@ -129,7 +129,7 @@ function ApplicantDetail() {
   }, [userLocations, isLoadingLocations]);
 
   const goBack = () => {
-    navigate('/dashboard');
+    navigate('/applicants');
   };
 
   // Status update mutation
@@ -339,7 +339,7 @@ function ApplicantDetail() {
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="sm" onClick={goBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Applicants
           </Button>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -355,7 +355,7 @@ function ApplicantDetail() {
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={goBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Applicants
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Applicant Details</h1>
