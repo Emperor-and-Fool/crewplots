@@ -26,26 +26,26 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Debug hanging requests - log ALL activity during load
-app.use((req, res, next) => {
-  const start = process.hrtime.bigint();
-  const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
+// Debug hanging requests - DISABLED general logging
+// app.use((req, res, next) => {
+//   const start = process.hrtime.bigint();
+//   const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
 
-  // Log everything to find hanging request
-  console.log(`⏱️ [${timestamp}] START: ${req.method} ${req.path}`);
+//   // Log everything to find hanging request
+//   console.log(`⏱️ [${timestamp}] START: ${req.method} ${req.path}`);
 
-  res.on("finish", () => {
-    const duration = Number(process.hrtime.bigint() - start) / 1000000;
-    console.log(`✅ [${timestamp}] DONE: ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
-  });
+//   res.on("finish", () => {
+//     const duration = Number(process.hrtime.bigint() - start) / 1000000;
+//     console.log(`✅ [${timestamp}] DONE: ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
+//   });
 
-  res.on("close", () => {
-    const duration = Number(process.hrtime.bigint() - start) / 1000000;
-    console.log(`❌ [${timestamp}] CLOSED: ${req.method} ${req.path} after ${duration.toFixed(0)}ms`);
-  });
+//   res.on("close", () => {
+//     const duration = Number(process.hrtime.bigint() - start) / 1000000;
+//     console.log(`❌ [${timestamp}] CLOSED: ${req.method} ${req.path} after ${duration.toFixed(0)}ms`);
+//   });
 
-  next();
-});
+//   next();
+// });
 
 (async () => {
   const server = await registerRoutes(app);
