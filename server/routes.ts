@@ -56,7 +56,7 @@ function hasPermission(userRole: User['role'], permission: string): boolean {
 }
 
 import { assignDefaultPermissionsToExistingUsers } from './utils/assign-default-permissions';
-import { authenticateUser, detectLegacyAuth } from './middleware/auth';
+import { authenticateUser } from './middleware/auth';
 import path from "path";
 
 // Route module imports
@@ -68,12 +68,9 @@ import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
 import emailRoutes from './routes/email';
 import schedulerRoutes from './routes/scheduler';
-// TODO: MIGRATE TO MODULES - Remove after modules/users integration complete
-import userRoutes from './routes/users';
-import validationRoutes from './routes/validation';
+
 import validationV3Routes from './routes/validation-v3';
 import securityRoutes from './routes/security';
-import lazyLoadingTestRoutes from './routes/lazy-loading-test';
 import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 // Monitor route imports
@@ -141,8 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  // Legacy authentication detection middleware - monitors session access patterns
-  app.use(detectLegacyAuth);
+
 
   // ===================================================================================================
   // 3. CORE API MODULES (ACTIVE)
@@ -160,13 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/mongodb', mongodbMessagesRoutes);
   app.use('/api/messaging/notes', notesRoutes);
 
-  // ⚠️ LEGACY MODULAR ROUTES - REPLACED BY VALIDATIONENGINE30 ⚠️
-  // Original: /api/users modular routes (management, profile, workflows)
-  // Replaced by: /api/validation/v3/validate with appropriate entityType
-  // Migration reason: ValidationEngine30 provides unified validation + permission + hybrid storage
-  // TODO: MIGRATE TO MODULES - Remove after modules/users integration complete
-  // COPIED TO: server/modules/users/index.ts (July 9, 2025)
-  // app.use('/api/users', userRoutes);
+
 
   // ===================================================================================================
   // 4. FEATURE-SPECIFIC ROUTES
@@ -176,8 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/email', emailRoutes);
   app.use('/api/security', securityRoutes);
   
-  // Test and development routes
-  app.use('/api/lazy-test', lazyLoadingTestRoutes);
+
   
   // Monitor routes
   app.use('/api/redis-monitor', redisMonitorRoutes);
@@ -491,136 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ url: registerUrl });
   });
 
-  // ===================================================================================================
-  // 5. LEGACY ENDPOINTS (COMMENTED) - REPLACED BY VALIDATIONENGINE30
-  // ===================================================================================================
 
-  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
-  // Original: GET /api/profile-data (unified data endpoint)
-  // Replaced by: POST /api/validation/v3/validate with entityType: "authProfile"
-  // Migration reason: ValidationEngine30 provides unified validation + hybrid storage integration
-  /*
-  app.get("/api/profile-data", authenticateUser, async (req, res) => {
-    try {
-      console.log(`🔍 API DEBUG: /api/profile-data request received for user: ${req.user.username}`);
-      
-      // Return ALL USERS array (restored original behavior)
-      const allUsers = await storage.getUsers();
-      
-      console.log(`🔍 API DEBUG: Retrieved ${allUsers.length} users for profile data`);
-      
-      res.json(allUsers);
-    } catch (error) {
-      console.error("🔍 API DEBUG: Error in /api/profile-data:", error);
-      res.status(500).json({ error: "Failed to fetch profile data" });
-    }
-  });
-  */
-
-  // ⚠️ LEGACY USER ENDPOINTS - MIGRATED TO MODULAR ROUTES ⚠️
-  // Original: GET /api/users (with client-side filtering - Plan 048 inefficiency)
-  // Migrated to: server/routes/users/management.ts - GET /api/users/management?role=X
-  // Migration reason: Plan 048 - Eliminate full table scans + client filtering
-  /*
-  app.get("/api/users", async (req, res) => {
-    try {
-      const allUsers = await storage.getUsers();
-      console.log(`[USERS API] Returning ${allUsers.length} user profiles`);
-      res.json(allUsers);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
-
-  // Get users by role - unified endpoint
-  app.get("/api/users/role/:role", async (req, res) => {
-    try {
-      const role = req.params.role;
-      const allUsers = await storage.getUsers();
-      const filteredUsers = allUsers.filter(user => user.role === role);
-      console.log(`[USERS API] Returning ${filteredUsers.length} users with role '${role}' (filtered from ${allUsers.length} total users)`);
-      res.json(filteredUsers);
-    } catch (error) {
-      console.error("Error fetching users by role:", error);
-      res.status(500).json({ error: "Failed to fetch users by role" });
-    }
-  });
-  */
-
-  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
-  // Original: GET /api/applicants (role filtering endpoint)
-  // Replaced by: POST /api/validation/v3/validate with entityType: "userManagement" + role filtering
-  // Migration reason: ValidationEngine30 provides unified validation + permission checking + hybrid storage
-  /*
-  app.get("/api/applicants", async (req, res) => {
-    try {
-      const allUsers = await storage.getUsers();
-      const applicants = allUsers.filter(user => user.role === 'applicant');
-      console.log(`[LEGACY API] Returning ${applicants.length} applicants (filtered from ${allUsers.length} total users)`);
-      res.json(applicants);
-    } catch (error) {
-      console.error("Error fetching applicants:", error);
-      res.status(500).json({ error: "Failed to fetch applicants" });
-    }
-  });
-  */
-
-  // ⚠️ LEGACY ENDPOINT - REPLACED BY VALIDATIONENGINE30 ⚠️
-  // Original: GET /api/profile (detailed user profile with Redis caching)
-  // Replaced by: POST /api/validation/v3/validate with entityType: "authProfile"
-  // Migration reason: ValidationEngine30 provides unified validation + hybrid storage + ProfileCard integration
-  /*
-  app.get("/api/profile", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const userId = req.user.id;
-      
-      // For applicants, use the ProfileFetcher service with Redis caching
-      if (req.user.role === 'applicant') {
-        const { profileFetcherService } = await import('./services/profile-fetcher-service');
-        const profileData = await profileFetcherService.getProfileData(userId);
-        
-        if (!profileData) {
-          return res.status(404).json({ error: "Profile not found" });
-        }
-        
-        return res.json(profileData);
-      }
-      
-      // For managers, crew members, and administrators, get basic user data and cache it using the same pattern
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      // Remove password from response and format for consistency
-      const { password: _password, ...userProfile } = user;
-      
-      // Add notes metadata (empty for non-applicants)
-      const profileData = {
-        ...userProfile,
-        notes: {
-          exists: false,
-          documentId: null,
-          wordCount: 0,
-          characterCount: 0,
-          lastUpdated: null,
-          workflow: null
-        }
-      };
-      
-      res.json(profileData);
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      res.status(500).json({ error: "Failed to fetch profile" });
-    }
-  });
-  */
 
   // ===================================================================================================
   // 6. SERVER SETUP

@@ -1,3 +1,4 @@
+//ATTENTION: All routers of 'modules' are TO BE SET in their own index.ts files in the root of each module folder
 import express from 'express';
 import scheduleBlocksRoutes from './schedule-blocks';
 import weekSchedulesRoutes from './week-schedules';
