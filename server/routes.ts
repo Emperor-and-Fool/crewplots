@@ -67,7 +67,7 @@ import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import notesRoutes from './routes/messages/notes';
 import emailRoutes from './routes/email';
-import schedulerRoutes from './routes/scheduler';
+import schedulerRoutes from './modules/scheduler';
 
 import validationV3Routes from './routes/validation-v3';
 import securityRoutes from './routes/security';
