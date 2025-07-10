@@ -29,9 +29,9 @@ export class HybridSessionStore extends session.Store {
    * Get session: Redis cache → PostgreSQL fallback → Redis repopulation
    */
   get(sid: string, callback: (err?: any, session?: session.SessionData | null) => void): void {
-    // TRACK CALLER: Log stack trace to find anonymous session requester
-    const stack = new Error().stack?.split('\n').slice(1, 6).map(line => line.trim()).join(' | ') || 'unknown';
-    console.log(`[SESSION-TRACE] Session request for ${sid.substring(0, 8)}... from: ${stack}`);
+    // TRACK CALLER: Log stack trace to find anonymous session requester (DISABLED TO TEST FLOOD)
+    // const stack = new Error().stack?.split('\n').slice(1, 6).map(line => line.trim()).join(' | ') || 'unknown';
+    // console.log(`[SESSION-TRACE] Session request for ${sid.substring(0, 8)}... from: ${stack}`);
     
     // Try Redis cache first
     this.getFromRedis(sid, (redisErr, redisSession) => {
