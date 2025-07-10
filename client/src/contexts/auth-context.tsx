@@ -97,9 +97,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(null);
           }
         } else if (response.status === 401) {
-          // Session expired or invalid - clear state and allow redirect to login
-          console.log('🔒 Session invalid - clearing auth state');
+          // Session expired or invalid - clear ghost cookies and redirect to login
+          console.log('🔒 Session invalid - clearing ghost cookies and auth state');
+          document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           setUser(null);
+          setLocation('/login');
         } else {
           setUser(null);
         }
@@ -211,8 +214,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: 'POST',
         credentials: 'include'
       });
+      // Clear all session cookies after server logout
+      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     } catch (error) {
       // Silent failure - user is already logged out locally
+      // Still clear cookies even if server request fails
+      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     }
   };
 
