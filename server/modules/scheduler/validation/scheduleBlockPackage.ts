@@ -1,9 +1,9 @@
 import { insertScheduleBlockSchema } from '@shared/schema';
-import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
+import { createVE30Package } from '@shared/validation/VE30PackageBuilder';
 
 /**
- * Schedule Block Validation Package - VE30PackageBuilder Standard
- * Converted from function-based implementation to VE30PackageBuilder configuration
+ * Schedule Block Validation Package - VE30PackageBuilder Standard Compliant
+ * Uses createVE30Package utility for standardized package creation
  */
 
 export interface ScheduleBlockData {
@@ -15,27 +15,21 @@ export interface ScheduleBlockData {
   createdBy?: number;
 }
 
-// Business rules for schedule blocks
+// Business rules for schedule blocks (operation-agnostic)
 const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
-    
-    // Skip field validation for list and read operations
-    const operation = context?.operation || 'unknown';
-    if (operation === 'list' || operation === 'read') {
-      return { warnings, errors };
-    }
 
-    // Name validation (only for create/update operations)
-    if (!data.name || data.name.trim().length === 0) {
-      errors.push('Schedule block name is required');
-    } else if (data.name.length > 100) {
+    // Name validation
+    if (data.name && data.name.trim().length === 0) {
+      errors.push('Schedule block name cannot be empty');
+    } else if (data.name && data.name.length > 100) {
       errors.push('Schedule block name must be 100 characters or less');
     }
 
-    // Location validation (only for create/update operations)
-    if (!data.locationId || typeof data.locationId !== 'number' || data.locationId <= 0) {
+    // Location validation
+    if (data.locationId && (typeof data.locationId !== 'number' || data.locationId <= 0)) {
       errors.push('Valid location ID is required');
     }
 
@@ -50,22 +44,11 @@ const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
-    
-    // Skip validation for list operations
-    const operation = context?.operation || 'unknown';
-    if (operation === 'list') {
-      return { warnings, errors };
-    }
 
-    // User permission validation
-    if (!context?.user) {
-      errors.push('User context required for schedule block operations');
-      return { warnings, errors };
-    }
-
-    // Active status validation (only for create/update operations)
-    if (operation === 'create' || operation === 'update') {
-      if (typeof data.isActive !== 'boolean') {
+    // User context validation
+    if (context?.user && context.operation !== 'list' && context.operation !== 'read') {
+      // Active status validation
+      if (data.hasOwnProperty('isActive') && typeof data.isActive !== 'boolean') {
         errors.push('Active status must be true or false');
       }
     }
@@ -87,19 +70,13 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   };
 };
 
-// VE30PackageBuilder-based package (STANDARDIZED from working function-based)
-export const scheduleBlockPackage: VE30Package = {
-  entityType: 'scheduleBlock',
-  validateSchema: (data: any, operation: string) => {
-    // Skip schema validation for list and read operations
-    if (operation === 'list' || operation === 'read') {
-      return { isValid: true, errors: [] };
-    }
-    return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
-  },
-  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
-  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
-  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
-};
+// VE30PackageBuilder-compliant package using standard utility
+export const scheduleBlockPackage = createVE30Package(
+  'scheduleBlock',
+  insertScheduleBlockSchema,
+  scheduleBlockBusinessRules,
+  undefined, // Use default permission mapping
+  scheduleBlockAssembly
+);
 
 export type ScheduleBlockPackage = typeof scheduleBlockPackage;
