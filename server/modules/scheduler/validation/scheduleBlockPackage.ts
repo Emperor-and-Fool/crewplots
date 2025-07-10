@@ -1,9 +1,10 @@
 import { insertScheduleBlockSchema } from '@shared/schema';
-import { createVE30Package } from '@shared/validation/VE30PackageBuilder';
+import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 
 /**
- * Schedule Block Validation Package - VE30PackageBuilder Standard Compliant
- * Uses createVE30Package utility for standardized package creation
+ * Schedule Block Validation Package - Operation-Aware Schema Validation
+ * Manually configured VE30Package with custom schema validation logic
+ * Fixes list operation validation by skipping schema validation for read/list operations
  */
 
 export interface ScheduleBlockData {
@@ -70,13 +71,23 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   };
 };
 
-// VE30PackageBuilder-compliant package using standard utility
-export const scheduleBlockPackage = createVE30Package(
-  'scheduleBlock',
-  insertScheduleBlockSchema,
-  scheduleBlockBusinessRules,
-  undefined, // Use default permission mapping
-  scheduleBlockAssembly
-);
+// Manual VE30Package configuration with operation-aware schema validation
+export const scheduleBlockPackage: VE30Package = {
+  entityType: 'scheduleBlock',
+  
+  // Operation-aware schema validation - skip validation for list/read operations
+  validateSchema: (data: any, operation: string) => {
+    // Skip schema validation for list and read operations
+    if (operation === 'list' || operation === 'read') {
+      return { isValid: true, errors: [] };
+    }
+    // Apply full schema validation for create/update/delete operations
+    return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
+  },
+  
+  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
+  validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
+};
 
 export type ScheduleBlockPackage = typeof scheduleBlockPackage;
