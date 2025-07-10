@@ -1,6 +1,6 @@
 import express from 'express';
-import { storage } from '../../storage';
-import { authenticateUser } from '../../middleware/auth';
+import { storage } from '../../../storage';
+import { authenticateUser } from '../../../middleware/auth';
 import { insertWeekScheduleSchema, insertShiftSchema, updateShiftSchema } from '@shared/schema';
 
 const router = express.Router();

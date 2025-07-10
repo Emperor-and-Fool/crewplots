@@ -1,11 +1,11 @@
 //ATTENTION: All routers of 'modules' are TO BE SET in their own index.ts files in the root of each module folder
 import express from 'express';
-import scheduleBlocksRoutes from './schedule-blocks';
-import weekSchedulesRoutes from './week-schedules';
-import shiftsRoutes from './shifts';
-import requirementsRoutes from './requirements';
-import assignmentsRoutes from './assignments';
-import packagesRoutes from './packages';
+import scheduleBlocksRoutes from './routes/schedule-blocks';
+import weekSchedulesRoutes from './routes/week-schedules';
+import shiftsRoutes from './routes/shifts';
+import requirementsRoutes from './routes/requirements';
+import assignmentsRoutes from './routes/assignments';
+import packagesRoutes from './routes/packages';
 
 const router = express.Router();
 

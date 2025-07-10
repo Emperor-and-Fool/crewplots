@@ -1,7 +1,7 @@
 import express from 'express';
-import { validationPackageService } from '../../services/validation-package-service';
-import { authenticateUser } from '../../middleware/auth';
-import { db } from '../../db';
+import { validationPackageService } from '../../../services/validation-package-service';
+import { authenticateUser } from '../../../middleware/auth';
+import { db } from '../../../db';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { scheduleBlocks, weekSchedules, shifts } from '@shared/schema';
 
