@@ -17,18 +17,24 @@ export interface ScheduleBlockData {
 
 // Business rules for schedule blocks
 const scheduleBlockBusinessRules = [
-  (data: any) => {
+  (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
+    
+    // Skip field validation for list and read operations
+    const operation = context?.operation || 'unknown';
+    if (operation === 'list' || operation === 'read') {
+      return { warnings, errors };
+    }
 
-    // Name validation
+    // Name validation (only for create/update operations)
     if (!data.name || data.name.trim().length === 0) {
       errors.push('Schedule block name is required');
     } else if (data.name.length > 100) {
       errors.push('Schedule block name must be 100 characters or less');
     }
 
-    // Location validation
+    // Location validation (only for create/update operations)
     if (!data.locationId || typeof data.locationId !== 'number' || data.locationId <= 0) {
       errors.push('Valid location ID is required');
     }
@@ -44,6 +50,12 @@ const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
+    
+    // Skip validation for list operations
+    const operation = context?.operation || 'unknown';
+    if (operation === 'list') {
+      return { warnings, errors };
+    }
 
     // User permission validation
     if (!context?.user) {
@@ -51,9 +63,11 @@ const scheduleBlockBusinessRules = [
       return { warnings, errors };
     }
 
-    // Active status validation
-    if (typeof data.isActive !== 'boolean') {
-      errors.push('Active status must be true or false');
+    // Active status validation (only for create/update operations)
+    if (operation === 'create' || operation === 'update') {
+      if (typeof data.isActive !== 'boolean') {
+        errors.push('Active status must be true or false');
+      }
     }
 
     return { warnings, errors };

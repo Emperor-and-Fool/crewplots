@@ -32,29 +32,48 @@ export const locationPackage: VE30Package = {
   validateBusinessRules: async (data: any, context: any) => {
     console.log(`📋 LOCATION PACKAGE: Business rules validation`);
     
-    const rules = {
-      // Location names must be unique within organization
-      uniqueLocationName: (data: any) => {
-        if (!data.name) return { isValid: false, message: 'Location name is required' };
-        return { isValid: true, message: 'Location name provided' };
-      },
-      
-      // Location must have valid address for public locations
-      validAddress: (data: any) => {
+    const rules = [
+      (data: any, context: any) => {
+        const warnings: string[] = [];
+        const errors: string[] = [];
+        
+        // Skip field validation for list and read operations
+        const operation = context?.operation || 'unknown';
+        if (operation === 'list' || operation === 'read') {
+          return { warnings, errors };
+        }
+        
+        // Location names must be unique within organization
+        if (!data.name) {
+          errors.push('Location name is required');
+        }
+        
+        // Location must have valid address for public locations
         if (data.isPublic && !data.address) {
-          return { isValid: false, message: 'Public locations require a valid address' };
+          errors.push('Public locations require a valid address');
         }
-        return { isValid: true, message: 'Address validation passed' };
+        
+        return { warnings, errors };
       },
       
-      // User must have location management permissions
-      userCanManageLocation: (data: any, context: any) => {
-        if (!context.userId) {
-          return { isValid: false, message: 'User authentication required for location management' };
+      (data: any, context: any) => {
+        const warnings: string[] = [];
+        const errors: string[] = [];
+        
+        // Skip validation for list operations
+        const operation = context?.operation || 'unknown';
+        if (operation === 'list') {
+          return { warnings, errors };
         }
-        return { isValid: true, message: 'User authorized for location management' };
+        
+        // User must have location management permissions
+        if (!context?.user) {
+          errors.push('User authentication required for location management');
+        }
+        
+        return { warnings, errors };
       }
-    };
+    ];
     
     return VE30PackageBuilder.validateBusinessRules(data, context, rules);
   },
