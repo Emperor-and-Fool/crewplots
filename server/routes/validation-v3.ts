@@ -416,7 +416,12 @@ router.post('/auth/me', authenticateUser, async (req, res) => {
 */
 
 // POST /api/validation/v3/auth - Direct implementation (no proxy)
-router.post('/auth', authenticateUser, async (req, res) => {
+router.post('/auth', async (req, res) => {
+  console.log('🔍 VE30 AUTH: REQUEST RECEIVED - Starting auth check without middleware');
+  console.log('🔍 VE30 AUTH: Session ID present:', !!req.sessionID);
+  console.log('🔍 VE30 AUTH: Cookies:', req.headers.cookie || 'none');
+  
+  // Manual authentication check to avoid circular dependency
   try {
     console.log('🔐 VE30 AUTH STANDALONE: Session validation request (no proxy)');
     
