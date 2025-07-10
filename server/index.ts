@@ -26,20 +26,22 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Focused API monitoring (disable file serving noise)
+// Debug hanging requests - log ALL activity during load
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
+  const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
 
-  // Only log API requests to prevent module serving flood
-  if (req.path.startsWith("/api")) {
-    console.log(`🔍 API: ${req.method} ${req.path}`);
-  }
+  // Log everything to find hanging request
+  console.log(`⏱️ [${timestamp}] START: ${req.method} ${req.path}`);
 
   res.on("finish", () => {
     const duration = Number(process.hrtime.bigint() - start) / 1000000;
-    if (req.path.startsWith("/api")) {
-      console.log(`✅ API: ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
-    }
+    console.log(`✅ [${timestamp}] DONE: ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
+  });
+
+  res.on("close", () => {
+    const duration = Number(process.hrtime.bigint() - start) / 1000000;
+    console.log(`❌ [${timestamp}] CLOSED: ${req.method} ${req.path} after ${duration.toFixed(0)}ms`);
   });
 
   next();
