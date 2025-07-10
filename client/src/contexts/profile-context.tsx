@@ -37,7 +37,15 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
     setError(null);
     try {
       // First check authentication status
-      const authResponse = await fetch('/api/validation/v3/auth/me');
+      const authResponse = await fetch('/api/validation/v3/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
       if (!authResponse.ok) {
         throw new Error(`Authentication check failed: ${authResponse.status}`);
       }

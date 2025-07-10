@@ -54,9 +54,14 @@ export function Sidebar({ className }: SidebarProps) {
   useEffect(() => {
     const checkServerAuth = async () => {
       try {
-        const response = await fetch('/api/validation/v3/auth/me', {
+        const response = await fetch('/api/validation/v3/auth', {
+          method: 'POST',
           credentials: 'include',
-          cache: 'no-store'
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({})
         });
         
         if (response.ok) {
