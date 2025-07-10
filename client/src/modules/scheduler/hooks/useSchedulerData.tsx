@@ -7,7 +7,9 @@ export const useWeekSchedules = () => {
   return useQuery({
     queryKey: ['/api/scheduler/week-schedules'],
     queryFn: async () => {
-      const response = await fetch('/api/scheduler/week-schedules');
+      const response = await fetch('/api/scheduler/week-schedules', {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch week schedules');
       return response.json();
     }
@@ -19,7 +21,9 @@ export const useWeekSchedule = (id: number | null) => {
     queryKey: ['/api/scheduler/week-schedules', id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await fetch(`/api/scheduler/week-schedules/${id}`);
+      const response = await fetch(`/api/scheduler/week-schedules/${id}`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch week schedule');
       return response.json();
     },
@@ -32,7 +36,9 @@ export const useWeekScheduleShifts = (weekScheduleId: number | null) => {
     queryKey: ['/api/scheduler/week-schedules', weekScheduleId, 'shifts'],
     queryFn: async () => {
       if (!weekScheduleId) return [];
-      const response = await fetch(`/api/scheduler/week-schedules/${weekScheduleId}/shifts`);
+      const response = await fetch(`/api/scheduler/week-schedules/${weekScheduleId}/shifts`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch shifts');
       return response.json();
     },

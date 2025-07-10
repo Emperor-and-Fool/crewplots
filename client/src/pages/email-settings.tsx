@@ -63,7 +63,9 @@ export default function EmailSettings() {
 
   const loadCurrentConfig = async () => {
     try {
-      const response = await fetch('/api/email/config');
+      const response = await fetch('/api/email/config', {
+        credentials: 'include'
+      });
       if (response.ok) {
         const config = await response.json();
         if (config) {
@@ -86,7 +88,9 @@ export default function EmailSettings() {
 
   const loadSentEmails = async () => {
     try {
-      const response = await fetch('/api/email/sent');
+      const response = await fetch('/api/email/sent', {
+        credentials: 'include'
+      });
       if (response.ok) {
         const emails = await response.json();
         setSentEmails(emails);
@@ -113,6 +117,7 @@ export default function EmailSettings() {
 
       const response = await fetch('/api/email/config', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -143,7 +148,8 @@ export default function EmailSettings() {
     setIsLoading(true);
     try {
       const response = await fetch('/api/email/test-connection', {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
 
       const result = await response.json();
@@ -177,7 +183,8 @@ export default function EmailSettings() {
   const clearSentEmails = async () => {
     try {
       const response = await fetch('/api/email/sent', {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
 
       if (response.ok) {

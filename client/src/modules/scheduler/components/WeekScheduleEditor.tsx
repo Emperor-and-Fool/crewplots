@@ -38,7 +38,9 @@ export default function WeekScheduleEditor({
   const { data: locations } = useQuery({
     queryKey: ['/api/locations'],
     queryFn: async () => {
-      const response = await fetch('/api/locations');
+      const response = await fetch('/api/locations', {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch locations');
       return response.json();
     }

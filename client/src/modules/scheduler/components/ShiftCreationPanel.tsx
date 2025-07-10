@@ -70,7 +70,9 @@ export default function ShiftCreationPanel({ weekSchedule, onShiftCreated }: Shi
   const { data: competencies } = useQuery({
     queryKey: ['/api/competencies'],
     queryFn: async () => {
-      const response = await fetch('/api/competencies');
+      const response = await fetch('/api/competencies', {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch competencies');
       return response.json();
     }

@@ -30,7 +30,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/dashboard-data');
+      const response = await fetch('/api/dashboard-data', {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch dashboard data: ${response.status}`);
