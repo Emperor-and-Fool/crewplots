@@ -3,10 +3,18 @@ import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30Pac
 import { z } from 'zod';
 
 /**
- * Schedule Block Validation Package - Operation-Aware Schema Validation
- * Manually configured VE30Package with custom schema validation logic
- * Fixes list operation validation by skipping schema validation for read/list operations
+ * Schedule Block Validation Package - VE30PackageBuilder Standard
+ * COMPLIANT with userListPackage pattern using operation-appropriate schemas
  */
+
+// List operations schema - handles empty data objects like userListPackage
+export const scheduleBlockListSchema = z.object({
+  filters: z.object({
+    locationId: z.number().optional(),
+    isActive: z.boolean().optional(),
+    searchTerm: z.string().optional()
+  }).optional()
+});
 
 export interface ScheduleBlockData {
   id?: number;
@@ -17,7 +25,7 @@ export interface ScheduleBlockData {
   createdBy?: number;
 }
 
-// Business rules for schedule blocks (operation-agnostic)
+// Business rules for schedule blocks
 const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -59,7 +67,7 @@ const scheduleBlockBusinessRules = [
   }
 ];
 
-// Custom assembly function for schedule blocks
+// Assembly function for schedule blocks
 const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   return {
     name: rawData.name?.trim(),
@@ -72,22 +80,27 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   };
 };
 
-// Manual VE30Package configuration with operation-aware schema validation
+// VE30PackageBuilder-based schedule block package (COMPLIANT like userListPackage)
 export const scheduleBlockPackage: VE30Package = {
   entityType: 'scheduleBlock',
   
-  // Operation-aware schema validation - skip validation for list/read operations
+  // Operation-appropriate schema validation like userListPackage
   validateSchema: (data: any, operation: string) => {
-    // Skip schema validation for list and read operations
+    // Use list schema for list/read operations (handles empty data {})
     if (operation === 'list' || operation === 'read') {
-      return { isValid: true, errors: [] };
+      return VE30PackageBuilder.validateSchema(data, operation, scheduleBlockListSchema);
     }
-    // Apply full schema validation for create/update/delete operations
+    // Use insert schema for create/update operations
     return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
   },
   
+  // Standard VE30PackageBuilder permission mapping
   getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
+  
+  // Standard VE30PackageBuilder business rules
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
+  
+  // Standard VE30PackageBuilder assembly
   assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
 };
 
