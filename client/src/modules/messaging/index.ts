@@ -5,7 +5,6 @@
 export { MessagingSystem } from './components/MessagingSystem';
 export { RichTextEditor } from './components/RichTextEditor';
 export { MessageDisplay } from './components/MessageDisplay';
-export { MessageComposer } from './components/MessageComposer';
 
 // Phase 3 - Hook exports  
 export { useMessaging } from './hooks/useMessaging';
