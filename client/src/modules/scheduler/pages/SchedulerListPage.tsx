@@ -19,25 +19,55 @@ export default function SchedulerListPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch existing schedule blocks using unified validation system
+  // Fetch existing schedule blocks using ValidationEngine30
   const { data: scheduleBlocks, isLoading } = useQuery({
-    queryKey: ['/api/scheduler/schedule-blocks'],
+    queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'list'],
     queryFn: async () => {
-      const response = await fetch('/api/scheduler/schedule-blocks', {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch schedule blocks');
-      return response.json();
+      const validationData = {
+        operation: "list",
+        entityType: "scheduleBlock",
+        entityId: null,
+        data: {}
+      };
+      
+      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to fetch schedule blocks');
+      }
+      
+      if (result.success && result.data) {
+        return result.data;
+      }
+      
+      throw new Error('Schedule blocks validation failed');
     }
   });
 
-  // Fetch locations for display
+  // Fetch locations using ValidationEngine30
   const { data: locations } = useQuery({
-    queryKey: ['/api/locations'],
+    queryKey: ['/api/validation/v3/execute', 'location', 'list'],
     queryFn: async () => {
-      const response = await fetch('/api/locations');
-      if (!response.ok) throw new Error('Failed to fetch locations');
-      return response.json();
+      const validationData = {
+        operation: "list",
+        entityType: "location",
+        entityId: null,
+        data: {}
+      };
+      
+      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to fetch locations');
+      }
+      
+      if (result.success && result.data) {
+        return result.data;
+      }
+      
+      throw new Error('Locations validation failed');
     }
   });
 
@@ -68,7 +98,7 @@ export default function SchedulerListPage() {
         }
       };
       
-      const response = await apiRequest('POST', '/api/validation/execute', validationData);
+      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
       const result = await response.json();
       
       // Check for HTTP errors first
@@ -106,7 +136,7 @@ export default function SchedulerListPage() {
       }
       
       // Invalidate the schedule list to show the new schedule
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'list'] });
       
       // Add a small delay to ensure database consistency before navigation
       setTimeout(() => {
@@ -135,10 +165,28 @@ export default function SchedulerListPage() {
     navigate(`/scheduler/edit/${scheduleId}`);
   };
 
-  // Delete schedule mutation
+  // Delete schedule mutation using ValidationEngine30
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
-      return apiRequest('DELETE', `/api/scheduler/packages/delete/${scheduleId}`);
+      const validationData = {
+        operation: "delete",
+        entityType: "scheduleBlock",
+        entityId: scheduleId,
+        data: { id: scheduleId }
+      };
+      
+      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to delete schedule');
+      }
+      
+      if (!result.success) {
+        throw new Error('Schedule deletion validation failed');
+      }
+      
+      return result;
     }
   });
 
@@ -146,7 +194,7 @@ export default function SchedulerListPage() {
     deleteScheduleMutation.mutate(scheduleId, {
       onSuccess: () => {
         closeDialog();
-        queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'list'] });
         toast({
           title: "Schedule deleted successfully",
           description: "The schedule and all its shifts have been permanently removed"
@@ -167,13 +215,30 @@ export default function SchedulerListPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     
     const deletionInfoQuery = useQuery({
-      queryKey: ['/api/scheduler/packages/delete-info', schedule.id],
+      queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'delete-info', schedule.id],
       queryFn: async () => {
-        const response = await fetch(`/api/scheduler/packages/delete-info/${schedule.id}`, {
-          credentials: 'include'
-        });
-        if (!response.ok) throw new Error('Failed to fetch deletion info');
-        return response.json();
+        const validationData = {
+          operation: "read",
+          entityType: "scheduleBlock",
+          entityId: schedule.id,
+          data: { id: schedule.id, includeDeleteInfo: true }
+        };
+        
+        const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch deletion info');
+        }
+        
+        if (result.success && result.data) {
+          return {
+            weekSchedulesCount: result.data.weekSchedulesCount || 0,
+            shiftsCount: result.data.shiftsCount || 0
+          };
+        }
+        
+        return { weekSchedulesCount: 0, shiftsCount: 0 };
       },
       enabled: dialogOpen // Only fetch when dialog is open
     });
