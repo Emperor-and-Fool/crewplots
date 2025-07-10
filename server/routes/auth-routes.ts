@@ -432,21 +432,18 @@ const logoutHandler = (req: Request, res: Response) => {
             
             console.log('🔴 LOGOUT DEBUG: Session destroyed successfully');
             
-            // Clear only authentication-related cookies (targeted approach)
-            const authCookies = [
-                'connect.sid',
-                'login-timestamp', 
-                'debug-auth-check',
-                'admin-login',
-                'crewplots.sid',
-                'connect.sid-refreshed'
-            ];
+            // Clear cookies using proper Set-Cookie headers with matching attributes
+            // Main session cookie - MUST match original attributes exactly
+            res.setHeader('Set-Cookie', [
+                'connect.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                'login-timestamp=; Path=/; SameSite=Lax; Max-Age=0', 
+                'debug-auth-check=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                'admin-login=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                'crewplots.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+                'connect.sid-refreshed=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
+            ]);
             
-            console.log('🔴 LOGOUT DEBUG: Clearing authentication cookies:', authCookies);
-            authCookies.forEach(cookieName => {
-                res.clearCookie(cookieName);
-                console.log('🔴 LOGOUT DEBUG: Cleared cookie:', cookieName);
-            });
+            console.log('🔴 LOGOUT DEBUG: Set proper cookie deletion headers with Max-Age=0');
             
             console.log('🔴 LOGOUT DEBUG: All cookies cleared');
             
@@ -457,12 +454,17 @@ const logoutHandler = (req: Request, res: Response) => {
             }
             
             console.log('🔴 LOGOUT DEBUG: POST request - returning JSON response');
+            // Add CORS headers for cross-origin logout requests
+            res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+            
             // For POST requests, return JSON
             const successResponse = {
                 message: 'Logged out successfully',
                 debug: {
                     method: 'centralized_auth',
                     sessionDestroyed: true,
+                    cookiesCleared: true,
                     timestamp: new Date().toISOString()
                 }
             };

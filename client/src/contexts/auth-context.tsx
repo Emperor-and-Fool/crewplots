@@ -207,21 +207,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     backgroundSessionCleanup();
   };
 
-  // Background session cleanup - silent failure handling
+  // Background session cleanup - relies on server Set-Cookie headers only
   const backgroundSessionCleanup = async (): Promise<void> => {
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
-      // Clear all session cookies after server logout
-      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      // Server handles cookie deletion via Set-Cookie headers with Max-Age=0
+      // No manual cookie manipulation needed - HttpOnly cookies cannot be cleared by JS
+      console.log('🔴 Frontend: Server logout completed, cookies cleared by Set-Cookie headers');
     } catch (error) {
       // Silent failure - user is already logged out locally
-      // Still clear cookies even if server request fails
-      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      console.log('🔴 Frontend: Logout request failed, but user locally logged out');
     }
   };
 
