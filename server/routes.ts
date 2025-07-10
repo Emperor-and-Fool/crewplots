@@ -113,30 +113,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Setup session middleware
+  // Setup session middleware - RESTRICTED TO API ROUTES ONLY
   app.set('trust proxy', 1); // Trust first proxy, important for proper cookie handling
   
-  // Configure session middleware with smart session creation
-  app.use(
-    session({
-      cookie: { 
-        maxAge: 86400000, // 24 hours
-        secure: false, // FORCED FALSE for Replit development - cookies must work over HTTP
-        httpOnly: true,
-        sameSite: 'lax', // More compatible and secure than 'none'
-        path: '/',
-        domain: undefined // Let browser handle domain automatically
-      },
-      store: hybridSessionStore,
-      secret: process.env.SESSION_SECRET || "crewplots-dev-static-key-2025",
-      resave: false, // Don't save session on each request unless modified
-      saveUninitialized: false, // Don't create sessions for unauthenticated requests
-      name: 'connect.sid', // Use default session name
-      rolling: false, // Don't force cookies on every response to reduce overhead
-      // Note: Removed custom genid to prevent client-side execution issues
-      // Session creation is controlled by saveUninitialized: false instead
-    })
-  );
+  // Create session middleware instance
+  const sessionMiddleware = session({
+    cookie: { 
+      maxAge: 86400000, // 24 hours
+      secure: false, // FORCED FALSE for Replit development - cookies must work over HTTP
+      httpOnly: true,
+      sameSite: 'lax', // More compatible and secure than 'none'
+      path: '/',
+      domain: undefined // Let browser handle domain automatically
+    },
+    store: hybridSessionStore,
+    secret: process.env.SESSION_SECRET || "crewplots-dev-static-key-2025",
+    resave: false, // Don't save session on each request unless modified
+    saveUninitialized: false, // Don't create sessions for unauthenticated requests
+    name: 'connect.sid', // Use default session name
+    rolling: false, // Don't force cookies on every response to reduce overhead
+    // Note: Removed custom genid to prevent client-side execution issues
+    // Session creation is controlled by saveUninitialized: false instead
+  });
+  
+  // Apply session middleware ONLY to API routes - prevents Redis flooding from static files
+  app.use('/api', sessionMiddleware);
 
 
 
