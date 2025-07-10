@@ -41,8 +41,7 @@ export default function Dashboard() {
         throw new Error('Failed to fetch week schedules');
       }
       return response.json();
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    }
   });
 
   // Get active week schedule for current location
@@ -88,12 +87,10 @@ export default function Dashboard() {
       }
       const result = await response.json();
       return result.threads?.transaction?.data?.users || [];
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    enabled: !!weekSchedules, // Wait for week schedules first
+    }
   });
 
-  // Fetch user's assigned locations for role-based filtering  
+  // Fetch user's assigned locations for role-based filtering
   const { data: userLocations } = useQuery({
     queryKey: ['/api/user-locations', user?.id],
     queryFn: async () => {
@@ -107,8 +104,7 @@ export default function Dashboard() {
       }
       return response.json();
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
-    enabled: !!user?.id && !!profileData, // Wait for user and profile data first
+    enabled: !!user?.id && (user?.role === 'crew_chief')
   });
 
   // Get assigned location IDs for role-based filtering
