@@ -1,5 +1,6 @@
 import { insertScheduleBlockSchema } from '@shared/schema';
 import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
+import { z } from 'zod';
 
 /**
  * Schedule Block Validation Package - Operation-Aware Schema Validation
