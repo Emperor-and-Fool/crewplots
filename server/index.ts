@@ -26,22 +26,19 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Enhanced request monitoring for frontend debugging
+// Focused API monitoring (disable file serving noise)
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
-  const userAgent = req.get('User-Agent') || 'unknown';
-  const isFromBrowser = userAgent.includes('Chrome') || userAgent.includes('Firefox') || userAgent.includes('Safari');
-  const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
 
-  // Log ALL frontend requests during login testing
-  if (isFromBrowser || req.path.startsWith("/api")) {
-    console.log(`📡 [${timestamp}] ${req.method} ${req.path} - ${userAgent.split(' ')[0] || 'Unknown'}`);
+  // Only log API requests to prevent module serving flood
+  if (req.path.startsWith("/api")) {
+    console.log(`🔍 API: ${req.method} ${req.path}`);
   }
 
   res.on("finish", () => {
     const duration = Number(process.hrtime.bigint() - start) / 1000000;
-    if (isFromBrowser || req.path.startsWith("/api")) {
-      console.log(`✅ [${timestamp}] ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
+    if (req.path.startsWith("/api")) {
+      console.log(`✅ API: ${req.method} ${req.path} ${res.statusCode} in ${duration.toFixed(0)}ms`);
     }
   });
 

@@ -56,7 +56,7 @@ export class HybridSessionStore extends session.Store {
           return callback(null, pgSession);
         }
 
-        console.log(`[HybridSessionStore] Session not found: ${sid.substring(0, 8)}...`);
+        // Session not found - silent (prevents Vite module serving flood)
         callback(null, null);
       });
     });
