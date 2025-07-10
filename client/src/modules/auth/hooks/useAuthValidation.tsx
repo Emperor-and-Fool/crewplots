@@ -47,6 +47,7 @@ export const useAuthValidation = () => {
     mutationFn: async (data: RegistrationData): Promise<ValidationResult> => {
       const response = await fetch('/api/validation/v3/public', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
