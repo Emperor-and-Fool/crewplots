@@ -573,6 +573,20 @@ export class ValidationEngine30 {
           console.log(`💾 Retrieved ${users.length} users for profile data`);
           transactionResult = { users };
         }
+        // Handle scheduleBlock list operations - get all schedule blocks
+        else if (entityType === 'scheduleBlock' && operation === 'list') {
+          console.log('📅 VALIDATION ENGINE 30: Reading schedule blocks list');
+          const scheduleBlocks = await storage.getScheduleBlocks();
+          console.log(`💾 Retrieved ${scheduleBlocks.length} schedule blocks`);
+          transactionResult = scheduleBlocks;
+        }
+        // Handle location list operations - get all locations  
+        else if (entityType === 'location' && operation === 'list') {
+          console.log('📍 VALIDATION ENGINE 30: Reading locations list');
+          const locations = await storage.getLocations();
+          console.log(`💾 Retrieved ${locations.length} locations`);
+          transactionResult = locations;
+        }
         // Handle email configuration operations
         else if (entityType === 'emailConfig' && operation === 'read') {
           console.log('📧 VALIDATION ENGINE 30: Reading email configuration');

@@ -13,6 +13,11 @@ export const locationPackage: VE30Package = {
   validateSchema: (data: any, operation: string) => {
     console.log(`📝 LOCATION PACKAGE: Schema validation for ${operation}`);
     
+    // Skip schema validation for list and read operations
+    if (operation === 'list' || operation === 'read') {
+      return { isValid: true, errors: [] };
+    }
+    
     const schema = operation === 'create' ? insertLocationSchema : insertLocationSchema.partial();
     return VE30PackageBuilder.validateSchema(data.locationData || data, operation, schema);
   },

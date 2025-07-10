@@ -90,7 +90,13 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
 // VE30PackageBuilder-based package (STANDARDIZED from working function-based)
 export const scheduleBlockPackage: VE30Package = {
   entityType: 'scheduleBlock',
-  validateSchema: (data: any, operation: string) => VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema),
+  validateSchema: (data: any, operation: string) => {
+    // Skip schema validation for list and read operations
+    if (operation === 'list' || operation === 'read') {
+      return { isValid: true, errors: [] };
+    }
+    return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
+  },
   getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
   assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
