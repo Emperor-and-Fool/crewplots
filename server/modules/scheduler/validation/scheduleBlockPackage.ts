@@ -94,8 +94,14 @@ export const scheduleBlockPackage: VE30Package = {
     return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
   },
   
-  // Standard VE30PackageBuilder permission mapping
-  getRequiredPermissions: (operation: string) => VE30PackageBuilder.getRequiredPermissions(operation, 'scheduleBlock'),
+  // Custom permissions like userListPackage (bypasses centralized mapper)
+  getRequiredPermissions: (operation: string) => {
+    if (operation === 'list' || operation === 'read') return ['schedule.read'];
+    if (operation === 'create') return ['schedule.read', 'schedule.create'];
+    if (operation === 'update') return ['schedule.read', 'schedule.update'];
+    if (operation === 'delete') return ['schedule.read', 'schedule.delete'];
+    return ['schedule.read'];
+  },
   
   // Standard VE30PackageBuilder business rules
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
