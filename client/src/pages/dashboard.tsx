@@ -97,21 +97,33 @@ export default function Dashboard() {
     staleTime: 3 * 60 * 1000, // 3 minutes cache
   });
 
-  // 4. Fourth: Load user locations last
+  // 4. Fourth: Load user locations via ValidationEngine30
   const { data: userLocations } = useQuery({
-    queryKey: ['/api/user-locations', user?.id],
+    queryKey: ['/api/validation/v3/execute', 'userLocations', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const response = await fetch(`/api/user-locations/${user.id}`, {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'list',
+          entityType: 'userLocations',
+          data: {
+            userId: user.id
+          }
+        })
       });
       if (!response.ok) {
         if (response.status === 404) return []; // No assignments
-        throw new Error('Failed to fetch user locations');
+        throw new Error('Failed to fetch user locations via ValidationEngine30');
       }
-      return response.json();
+      const result = await response.json();
+      return result.threads?.transaction?.data?.userLocations || [];
     },
-    enabled: !!user?.id && (user?.role === 'crew_chief')
+    enabled: !!user?.id && (user?.role === 'crew_chief') && !schedulesLoading
   });
 
   // Get assigned location IDs for role-based filtering
