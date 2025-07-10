@@ -30,33 +30,7 @@ export function MobileNavbar() {
     user: null
   });
   
-  // Direct server-side check for user data to ensure we have accurate role information
-  useEffect(() => {
-    const checkServerAuth = async () => {
-      try {
-        const response = await fetch('/api/validation/v3/auth', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({})
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.authenticated && data.user) {
-            setServerAuthData(data);
-          }
-        }
-      } catch (error) {
-        console.error("Error checking server auth in mobile navbar:", error);
-      }
-    };
-    
-    checkServerAuth();
-  }, []);
+  // REMOVED: Direct server auth check to eliminate cascade - use AuthContext instead
   
   // Use server auth data for role checks
   const effectiveUser = serverAuthData.user || user;

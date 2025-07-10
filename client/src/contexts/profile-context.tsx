@@ -77,10 +77,7 @@ export function ProfileScraperInit({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Always fetch fresh profile data to ensure status is up-to-date
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  // REMOVED: Auto-fetch to eliminate cascade - call manually when needed
 
   // Save profile to sessionStorage whenever it changes
   useEffect(() => {
