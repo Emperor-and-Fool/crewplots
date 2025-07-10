@@ -34,7 +34,7 @@ export class HybridSessionStore extends session.Store {
     // Try Redis cache first
     this.getFromRedis(sid, (redisErr, redisSession) => {
       if (redisSession && !redisErr) {
-        console.log(`[HybridSessionStore] Redis cache hit for session: ${sid.substring(0, 8)}...`);
+        // Session found in Redis cache - silent success to prevent log flooding
         return callback(null, redisSession);
       }
 

@@ -30,8 +30,10 @@ export default function Dashboard() {
   // Admin actions from dashboard module
   const { clearAllSessions, isClearing } = useAdminActions();
 
-  // Fetch week schedules
-  const { data: weekSchedules } = useQuery({
+  // SEQUENTIAL LOADING: Prevent session flooding by loading data in sequence
+  
+  // 1. First: Load week schedules (base data)
+  const { data: weekSchedules, isLoading: schedulesLoading } = useQuery({
     queryKey: ['/api/scheduler/week-schedules'],
     queryFn: async () => {
       const response = await fetch('/api/scheduler/week-schedules', {
@@ -41,7 +43,8 @@ export default function Dashboard() {
         throw new Error('Failed to fetch week schedules');
       }
       return response.json();
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Get active week schedule for current location
@@ -49,7 +52,7 @@ export default function Dashboard() {
     (!selectedLocationId || ws.locationId === selectedLocationId) && ws.isActive
   );
 
-  // Fetch shifts for the active week schedule
+  // 2. Second: Load shifts only after schedules loaded
   const { data: shifts } = useQuery({
     queryKey: ['/api/scheduler/week-schedules', activeWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
@@ -61,9 +64,11 @@ export default function Dashboard() {
       }
       return response.json();
     },
-    enabled: !!activeWeekSchedule?.id,
+    enabled: !!activeWeekSchedule?.id && !schedulesLoading,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
   });
 
+  // 3. Third: Load users only after schedules complete
   const { data: profileData } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'userList'],
     queryFn: async () => {
@@ -87,10 +92,12 @@ export default function Dashboard() {
       }
       const result = await response.json();
       return result.threads?.transaction?.data?.users || [];
-    }
+    },
+    enabled: !schedulesLoading,
+    staleTime: 3 * 60 * 1000, // 3 minutes cache
   });
 
-  // Fetch user's assigned locations for role-based filtering
+  // 4. Fourth: Load user locations last
   const { data: userLocations } = useQuery({
     queryKey: ['/api/user-locations', user?.id],
     queryFn: async () => {
