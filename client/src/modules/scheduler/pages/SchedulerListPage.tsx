@@ -37,8 +37,9 @@ export default function SchedulerListPage() {
         throw new Error(result.message || 'Failed to fetch schedule blocks');
       }
       
-      if (result.success && result.data) {
-        return result.data;
+      // ValidationEngine30 response structure: result.overall.isValid && result.threads.transaction.data
+      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
+        return result.threads.transaction.data;
       }
       
       throw new Error('Schedule blocks validation failed');
@@ -63,8 +64,9 @@ export default function SchedulerListPage() {
         throw new Error(result.message || 'Failed to fetch locations');
       }
       
-      if (result.success && result.data) {
-        return result.data;
+      // ValidationEngine30 response structure: result.overall.isValid && result.threads.transaction.data
+      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
+        return result.threads.transaction.data;
       }
       
       throw new Error('Locations validation failed');
@@ -106,17 +108,17 @@ export default function SchedulerListPage() {
         throw new Error(result.message || 'Validation execution failed');
       }
       
-      // Extract the schedule block ID from the unified validation response
-      // The validation engine returns the created record in result.data directly
-      if (result.success && result.data && result.data.id) {
-        console.log('✅ FRONTEND: Schedule creation successful, ID:', result.data.id);
-        return { id: result.data.id };
+      // Extract the schedule block ID from ValidationEngine30 response
+      // ValidationEngine30 returns created record in result.threads.transaction.data
+      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data && result.threads.transaction.data.id) {
+        console.log('✅ FRONTEND: Schedule creation successful, ID:', result.threads.transaction.data.id);
+        return { id: result.threads.transaction.data.id };
       }
       
       console.error('❌ FRONTEND: Schedule creation failed:', { 
-        success: result.success, 
-        hasData: !!result.data, 
-        dataHasId: result.data?.id,
+        isValid: result.overall?.isValid, 
+        hasTransactionData: !!result.threads?.transaction?.data, 
+        dataHasId: result.threads?.transaction?.data?.id,
         fullResult: result 
       });
       throw new Error('Failed to create schedule - validation passed but no database record created');
@@ -182,7 +184,8 @@ export default function SchedulerListPage() {
         throw new Error(result.message || 'Failed to delete schedule');
       }
       
-      if (!result.success) {
+      // ValidationEngine30 response structure for delete operations
+      if (!result.overall || !result.overall.isValid) {
         throw new Error('Schedule deletion validation failed');
       }
       
@@ -231,10 +234,12 @@ export default function SchedulerListPage() {
           throw new Error(result.message || 'Failed to fetch deletion info');
         }
         
-        if (result.success && result.data) {
+        // ValidationEngine30 response structure for read operations
+        if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
+          const data = result.threads.transaction.data;
           return {
-            weekSchedulesCount: result.data.weekSchedulesCount || 0,
-            shiftsCount: result.data.shiftsCount || 0
+            weekSchedulesCount: data.weekSchedulesCount || 0,
+            shiftsCount: data.shiftsCount || 0
           };
         }
         
