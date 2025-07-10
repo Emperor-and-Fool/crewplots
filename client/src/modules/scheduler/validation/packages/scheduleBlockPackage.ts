@@ -17,18 +17,24 @@ export interface ScheduleBlockData {
 
 // Business rules for schedule blocks
 const scheduleBlockBusinessRules = [
-  (data: any) => {
+  (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // Name validation
+    // Skip field validation for list and read operations
+    const operation = context?.operation || 'unknown';
+    if (operation === 'list' || operation === 'read') {
+      return { warnings, errors };
+    }
+
+    // Name validation (only for create/update operations)
     if (!data.name || data.name.trim().length === 0) {
       errors.push('Schedule block name is required');
     } else if (data.name.length > 100) {
       errors.push('Schedule block name must be 100 characters or less');
     }
 
-    // Location validation
+    // Location validation (only for create/update operations)
     if (!data.locationId || typeof data.locationId !== 'number' || data.locationId <= 0) {
       errors.push('Valid location ID is required');
     }
@@ -45,13 +51,19 @@ const scheduleBlockBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
+    // Skip validation for list operations
+    const operation = context?.operation || 'unknown';
+    if (operation === 'list' || operation === 'read') {
+      return { warnings, errors };
+    }
+
     // User permission validation
     if (!context?.user) {
       errors.push('User context required for schedule block operations');
       return { warnings, errors };
     }
 
-    // Active status validation
+    // Active status validation (only for create/update operations)
     if (typeof data.isActive !== 'boolean') {
       errors.push('Active status must be true or false');
     }

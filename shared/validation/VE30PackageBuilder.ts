@@ -81,6 +81,10 @@ export class VE30PackageBuilder {
         basePermissions = ['schedule.read'];
         operationPermission = `schedule.${operation}`;
         break;
+      case 'location':
+        basePermissions = ['location.read'];
+        operationPermission = `location.${operation}`;
+        break;
       case 'motivationNote':
       case 'userProfile':
         basePermissions = ['user.read'];
@@ -102,6 +106,7 @@ export class VE30PackageBuilder {
       case 'delete':
         return [...basePermissions, operationPermission];
       case 'read':
+      case 'list':
         return basePermissions;
       default:
         console.warn(`Unknown operation '${operation}' for entity '${entityType}', returning base permissions`);

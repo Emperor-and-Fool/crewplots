@@ -78,7 +78,7 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
   
   // Package: Location validation packages (admin override)
   if (user.role === 'administrator') {
-    validationPermissions.push('location.access_all');
+    validationPermissions.push('location.access_all', 'location.read');
   }
   
   // Package: Messaging validation packages (role-based)
