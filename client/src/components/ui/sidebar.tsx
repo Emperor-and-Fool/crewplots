@@ -50,6 +50,9 @@ export function Sidebar({ className }: SidebarProps) {
     user: null
   });
   
+  // State to control accordion collapse on navigation
+  const [accordionResetKey, setAccordionResetKey] = useState(0);
+  
   // REMOVED: Direct server auth check to eliminate cascade - use AuthContext instead
   
   // Use server auth data for role checks
@@ -75,6 +78,18 @@ export function Sidebar({ className }: SidebarProps) {
     ).join(" ");
   };
   
+  // Enhanced navigation handler that closes accordions
+  const handleNavigate = (path: string) => {
+    console.log('🎯 Sidebar navigation to:', path);
+    navigate(path);
+    
+    // Force accordion reset by changing key - this closes all expanded sections
+    if (path === '/' || path === '/dashboard') {
+      console.log('📁 Resetting accordions for dashboard navigation');
+      setAccordionResetKey(prev => prev + 1);
+    }
+  };
+
   // Direct server-side logout that bypasses the React state issues
   const handleLogout = () => {
     console.log("Using direct server-side logout");
@@ -90,7 +105,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="p-4 flex items-center border-b border-primary-700">
         <h1 
           className="text-xl font-bold cursor-pointer hover:text-primary-200 transition-colors"
-          onClick={() => navigate("/")}
+          onClick={() => handleNavigate("/")}
         >
           Crew Plots Pro
         </h1>
@@ -98,12 +113,14 @@ export function Sidebar({ className }: SidebarProps) {
       
       <div className="overflow-y-auto flex-grow scrollbar-hide">
         <nav className="mt-5 px-2">
-          <NavigationRenderer
-            layout="desktop"
-            onNavigate={navigate}
-            currentPath={location}
-            serverAuthData={serverAuthData}
-          />
+          <div key={accordionResetKey}>
+            <NavigationRenderer
+              layout="desktop"
+              onNavigate={handleNavigate}
+              currentPath={location}
+              serverAuthData={serverAuthData}
+            />
+          </div>
         </nav>
       </div>
       
