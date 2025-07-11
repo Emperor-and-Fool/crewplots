@@ -104,63 +104,9 @@ const upload = multer({
   }
 });
 
-// Middleware to check if user is an applicant
-const isApplicant = async (req: any, res: any, next: any) => {
-  console.log('🔒 isApplicant middleware called for:', req.method, req.path);
-  console.log('- isAuthenticated:', req.isAuthenticated());
-  console.log('- user:', req.user);
-  
-  if (!req.isAuthenticated()) {
-    console.log('❌ Authentication failed in middleware');
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  // Check if user has applicant role
-  if (req.user.role !== 'applicant') {
-    console.log('❌ Role check failed in middleware - role:', req.user.role);
-    return res.status(403).json({ error: 'Access denied. Only applicants can access this resource.' });
-  }
-
-  console.log('✅ Middleware passed, calling next()');
-  next();
-};
 
 
 
-// Schema for updating messages
-const updateNoteRefSchema = z.object({
-  message: z.string().max(2000, 'Message must be less than 2000 characters')
-});
-
-// Update additional message for applicant
-router.put('/message', isApplicant, async (req: any, res) => {
-  try {
-    // Validate input
-    const validatedData = updateNoteRefSchema.parse(req.body);
-    
-    // Get the applicant
-    const applicant = await storage.getApplicantByUserId(req.user.id);
-    
-    if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
-    }
-    
-    // Update the message
-    const updatedApplicant = await storage.updateApplicant(applicant.id, {
-      extraMessage: validatedData.message
-    });
-    
-    res.json({ success: true, applicant: updatedApplicant });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const validationError = fromZodError(error);
-      return res.status(400).json({ error: validationError.message });
-    }
-    
-    console.error('Error updating applicant message:', error);
-    res.status(500).json({ error: 'Failed to update message' });
-  }
-});
 
 /* MESSAGE ROUTES MOVED TO server/routes/notes.ts FOR REUSABILITY
 // Get messages for applicant (using service layer)
@@ -289,130 +235,10 @@ router.delete('/messages/:id', isApplicant, async (req: any, res) => {
 });
 */
 
-// Upload document
-router.post('/documents', isApplicant, upload.single('document'), async (req: any, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    
-    // Get the applicant
-    const applicant = await storage.getApplicantByUserId(req.user.id);
-    
-    if (!applicant) {
-      // Clean up the uploaded file if applicant not found
-      if (req.file.path && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      return res.status(404).json({ error: 'Applicant profile not found' });
-    }
-    
-    // Save document reference to database
-    const documentUrl = `/uploads/documents/${req.file.filename}`;
-    const document = await storage.createApplicantDocument({
-      applicantId: applicant.id,
-      documentName: req.body.documentName || req.file.originalname,
-      documentUrl: documentUrl,
-      fileType: req.file.mimetype
-    });
-    
-    res.status(201).json({ success: true, document });
-  } catch (error) {
-    console.error('Error uploading document:', error);
-    // Clean up file if there was an error
-    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    res.status(500).json({ error: 'Failed to upload document' });
-  }
-});
 
-// Get documents for the logged-in applicant
-router.get('/documents', isApplicant, async (req: any, res) => {
-  try {
-    console.log('Fetching documents for user ID:', req.user.id);
-    
-    // Add a small delay to ensure database connection is ready (helps with race conditions)
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const applicant = await storage.getApplicantByUserId(req.user.id);
-    
-    if (!applicant) {
-      console.log('No applicant profile found for user ID when fetching documents:', req.user.id);
-      return res.status(404).json({ 
-        error: 'Applicant profile not found',
-        message: 'Your user account exists but no applicant profile is linked to it.' 
-      });
-    }
-    
-    console.log('Fetching documents for applicant ID:', applicant.id);
-    
-    const documents = await storage.getApplicantDocuments(applicant.id);
-    
-    console.log(`Successfully retrieved ${documents.length} documents for applicant ID ${applicant.id}`);
-    
-    // Send document data
-    res.json(documents);
-  } catch (error) {
-    console.error('Error fetching applicant documents:', error);
-    
-    // More detailed error response
-    res.status(500).json({ 
-      error: 'Failed to fetch documents',
-      message: 'There was a problem retrieving your documents. Please try again later.',
-      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-    });
-  }
-});
 
-// Delete document
-router.delete('/documents/:id', isApplicant, async (req: any, res) => {
-  try {
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) {
-      return res.status(400).json({ error: 'Invalid document ID' });
-    }
-    
-    // Get the applicant
-    const applicant = await storage.getApplicantByUserId(req.user.id);
-    
-    if (!applicant) {
-      return res.status(404).json({ error: 'Applicant profile not found' });
-    }
-    
-    // Fetch the document to check ownership
-    const document = await storage.getApplicantDocument(documentId);
-    
-    if (!document) {
-      return res.status(404).json({ error: 'Document not found' });
-    }
-    
-    // Check if the document belongs to the current applicant
-    if (document.applicantId !== applicant.id) {
-      return res.status(403).json({ error: 'You do not have permission to delete this document' });
-    }
-    
-    // Extract filename from documentUrl
-    const filename = path.basename(document.documentUrl);
-    const filePath = path.join(uploadsDir, filename);
-    
-    // Delete the physical file if it exists
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    
-    // Delete document record from database
-    const success = await storage.deleteApplicantDocument(documentId);
-    
-    if (success) {
-      res.json({ success: true, message: 'Document deleted successfully' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete document record' });
-    }
-  } catch (error) {
-    console.error('Error deleting document:', error);
-    res.status(500).json({ error: 'Failed to delete document' });
-  }
-});
+
+
+
 
 export default router;
