@@ -2,7 +2,8 @@
 **Migration from Legacy Routes to Modular ValidationEngine30 Architecture**
 
 Date: July 11, 2025  
-Project: CrewPlots Pro Email System Modernization
+Project: CrewPlots Pro Email System Modernization  
+**Scope Document:** 064_1_EMAIL_SYSTEM_MIGRATION_SCOPE.md
 
 ## IMPACT ASSESSMENT
 
@@ -79,7 +80,7 @@ router.post('/test-send', async (req, res) => { // Line 128
 ## ROLLBACK STRATEGY
 
 📋 **DECISION VALIDATION: Confirm rollback strategy aligns with:**
-- Plan 051 evidence-based rollback patterns and safety measures
+- Plan 064_1 scope boundaries and safety measures
 - ValidationEngine30 parallel development strategy (zero risk implementation)
 - Email system architectural decisions documented in this plan
 
@@ -94,11 +95,11 @@ router.post('/test-send', async (req, res) => { // Line 128
 - SMTP configuration loss
 - Database connection errors
 
-⚠️ **IMPLEMENTATION CHECKPOINT: Return to rollback strategy if:**
-- Any phase implementation deviates from planned approach (document why)
-- Multiple rollback approaches seem possible (follow plan decisions)
-- Performance targets unclear (reference specific plan metrics)
-- Architecture questions arise (check this plan evidence)
+🚧 **SCOPE BOUNDARY VALIDATION: Before rollback implementation, verify:**
+- File modifications within Plan 064_1 defined scope boundaries
+- No Core API Modules affected (Categories 1-3 protected per 064_1)
+- Backup files created (.bak, .bak1, .bak2) for core system modifications
+- Rollback aligns with 064_1 architectural isolation requirements
 
 ## IMPLEMENTATION PHASES
 
@@ -158,9 +159,9 @@ curl -X GET http://localhost:5000/api/email/sent -H "Cookie: connect.sid=..."
 - Frontend email-settings.tsx loads configuration without errors
 - Service configuration persistence maintained
 - No regression in email sending functionality
-- Current phase objectives achieved per email migration evidence criteria
-- Architecture decisions from this plan still being followed
-- Any deviations documented with evidence justification
+- Current phase objectives achieved per Plan 064 evidence criteria
+- Scope boundaries maintained (no protected system modifications per 064_1)
+- Reference Plan 064_1 scope document for architectural questions
 
 ### PHASE 2: VE30 ENDPOINT MIGRATION
 **Objective:** Migrate legacy routes to ValidationEngine30 system
@@ -246,10 +247,9 @@ await fetch('/api/validation/v3/execute', {
 - Email permissions exist in database and role assignments
 - ValidationEngine30 handles email operations without TODO placeholders
 - VE30 endpoints return data compatible with frontend expectations
-- Current phase objectives achieved per email migration evidence criteria
-- Architecture decisions from this plan still being followed
-- Any deviations documented with evidence justification
-- Reference this plan for VE30 architectural questions
+- Current phase objectives achieved per Plan 064 evidence criteria
+- Scope boundaries maintained (no protected system modifications per 064_1)
+- Reference Plan 064_1 scope document for VE30 architectural questions
 
 ### PHASE 3: FRONTEND INTEGRATION
 **Objective:** Complete frontend migration to VE30 endpoints
@@ -282,15 +282,15 @@ await fetch('/api/validation/v3/execute', {
 🔄 **PLAN CHECK REMINDER:** Before proceeding to Phase 4, verify:
 - Email settings page loads and functions identically to legacy version
 - All VE30 endpoints responding correctly with proper data formats
-- Architecture decisions from this plan still being followed
-- Any deviations documented with evidence justification
+- Current phase objectives achieved per Plan 064 evidence criteria
+- Scope boundaries maintained (no protected system modifications per 064_1)
 
 ### PHASE 4: VERIFICATION & APPROVAL
 **Objective:** Comprehensive system testing and user approval
 **Duration:** 15 minutes
 
 📋 **DECISION VALIDATION: Confirm verification approach aligns with:**
-- Plan 051 evidence-based testing patterns and completion criteria
+- Plan 064_1 scope boundaries and testing constraints
 - Email system migration objectives documented in this plan
 - ValidationEngine30 integration success metrics and performance targets
 
@@ -318,7 +318,7 @@ await fetch('/api/validation/v3/execute', {
 **Requires User Approval**
 
 📋 **DECISION VALIDATION: Confirm cleanup approach aligns with:**
-- Plan 051 evidence-based component removal patterns and safety measures
+- Plan 064_1 scope boundaries and component removal constraints
 - Email system migration completion criteria documented in this plan
 - Zero risk implementation strategy (functionality proven working before removal)
 
@@ -366,7 +366,7 @@ export class EmailService { ... } // Same implementation as modern EmailService
 **Requires User Approval**
 
 📋 **DECISION VALIDATION: Confirm final cleanup approach aligns with:**
-- Plan 051 evidence-based modular architecture patterns and cleanup standards
+- Plan 064_1 scope boundaries and modular architecture constraints
 - Email system migration completion objectives documented in this plan
 - ValidationEngine30 integration requirements and import standardization goals
 
@@ -383,8 +383,8 @@ export class EmailService { ... } // Same implementation as modern EmailService
 **Impact:** Streamlines import structure and removes transitional artifacts
 
 🔄 **FINAL PLAN CHECK REMINDER:** Upon completion, verify:
-- All email system objectives achieved per migration evidence criteria
-- Architecture decisions from this plan successfully implemented
+- All email system objectives achieved per Plan 064 evidence criteria
+- All scope boundaries maintained per Plan 064_1 throughout implementation
 - All cognitive anchors followed throughout implementation process
 - Zero regressions in email functionality or user workflows
 - Plan completion criteria documented with evidence justification

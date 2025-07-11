@@ -1,9 +1,10 @@
 # EMAIL SYSTEM MIGRATION SCOPE & BOUNDARIES
-**Evidence-Based Architectural Isolation Analysis**
+**Scope Document for Plan 064 - Email System Migration**
 
 **Plan:** 064 - Email System Migration  
 **Date:** July 11, 2025  
-**Project:** CrewPlots Pro Email System Modernization
+**Project:** CrewPlots Pro Email System Modernization  
+**Purpose:** Define scope boundaries and architectural isolation for Plan 064 implementation
 
 ## CURRENT ARCHITECTURE INVESTIGATION
 
@@ -58,6 +59,12 @@ else if (entityType === 'emailConfig' && operation === 'read') {
 
 ### MIGRATION BOUNDARIES (ZERO DISRUPTION)
 
+🚧 **SCOPE BOUNDARY VALIDATION: All Plan 064 modifications must verify:**
+- File is within included scope (check lists below)
+- No Core API Modules affected (Categories 1-3 protected)
+- Backup files created (.bak, .bak1, .bak2) for any core system modification
+- Change aligns with architectural isolation requirements
+
 #### INCLUDED IN SCOPE (Safe Zone)
 1. **Email Route Layer:** `server/routes/email.ts` (156 lines, isolated)
 2. **Email Service Layer:** `server/modules/email/services/LegacyEmailService.ts` (172 lines, identical to modern)
@@ -65,7 +72,7 @@ else if (entityType === 'emailConfig' && operation === 'read') {
 4. **VE30 Email Operations:** Lines 591-622 in ValidationEngine30.ts (TODO completion)
 5. **Email Module Routes:** `server/modules/email/routes/index.ts` (connection activation)
 
-#### EXCLUDED FROM SCOPE (Protected Zone)
+#### EXCLUDED FROM SCOPE (Protected Zone - NO MODIFICATIONS)
 1. **Core API Modules:** `/api/auth`, `/api/validation/v3`, `/api/scheduler` (Lines 143-145)
 2. **Core Infrastructure:** Session middleware, authentication, storage layer
 3. **Other Feature Modules:** All 11 other modules in server/modules/
@@ -180,6 +187,14 @@ app.use('/api/messaging/notes', notesRoutes);
 5. **Mock Mode Default:** Email system runs in test mode by default, no production email impact
 
 ### EMERGENCY PROCEDURES
+
+🚨 **SCOPE VIOLATION DETECTED: If Plan 064 implementation exceeds boundaries:**
+- STOP immediately and return to this scope definition
+- Document what caused the scope expansion need
+- Reassess migration approach within original boundaries
+- Do NOT proceed without explicit scope boundary revision
+- Maintain zero-disruption guarantee to working application
+
 ```bash
 # Complete rollback in under 60 seconds
 cp server/routes/email.ts.bak server/routes/email.ts
@@ -188,4 +203,4 @@ cp client/src/pages/email-settings.tsx.bak client/src/pages/email-settings.tsx
 # Application immediately returns to pre-migration state
 ```
 
-This scope definition provides **absolute architectural isolation** ensuring the email system migration cannot disrupt any currently working functionality in the CrewPlots Pro application.
+This scope definition provides **absolute architectural isolation** ensuring Plan 064 email system migration cannot disrupt any currently working functionality in the CrewPlots Pro application.
