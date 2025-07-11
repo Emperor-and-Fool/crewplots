@@ -62,7 +62,12 @@ export function MobileNavbar() {
 
   return (
     <div className="md:hidden bg-primary-800 text-white p-4 flex justify-between items-center">
-      <h1 className="text-xl font-bold">Crew Plots Pro</h1>
+      <h1 
+        className="text-xl font-bold cursor-pointer hover:text-primary-200 transition-colors"
+        onClick={() => navigateTo("/")}
+      >
+        Crew Plots Pro
+      </h1>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="text-white">
@@ -72,7 +77,12 @@ export function MobileNavbar() {
         <SheetContent side="left" className="p-0 bg-primary-800 text-white border-r border-primary-700">
           <div className="flex flex-col h-full">
             <div className="p-4 flex items-center justify-between border-b border-primary-700">
-              <h1 className="text-xl font-bold">Crew Plots Pro</h1>
+              <h1 
+                className="text-xl font-bold cursor-pointer hover:text-primary-200 transition-colors"
+                onClick={() => navigateTo("/")}
+              >
+                Crew Plots Pro
+              </h1>
               <Button variant="ghost" size="icon" className="text-white" onClick={() => setOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
