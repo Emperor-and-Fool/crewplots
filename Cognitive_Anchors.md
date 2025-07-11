@@ -44,6 +44,7 @@
 🚧 SCOPE BOUNDARY VALIDATION: Before any file modification, verify:
 - File is within defined migration scope (check included/excluded lists)
 - No Core API Modules affected (Categories 1-3 protected)
+- BACKUP FILES CREATED (.bak, .bak1, .bak2) for ANY core system modification
 - No unplanned dependencies introduced
 - Rollback capability maintained (backup files created)
 - Change aligns with architectural isolation requirements
@@ -82,9 +83,9 @@
 
 ## SCOPE BOUNDARY PROTECTION
 
-### **Protected Systems (Never Modify):**
+### **Protected Systems (Backup Required Before ANY Modification):**
 ```typescript
-// Core API Modules (Categories 1-3) - PROTECTED
+// Core API Modules (Categories 1-3) - BACKUP REQUIRED
 app.use('/api/auth', authRoutes);
 app.use('/api/validation/v3', validationV3Routes);
 app.use('/api/scheduler', schedulerRoutes);
@@ -93,6 +94,17 @@ app.use('/api/applicant-portal', applicantPortalRoutes);
 app.use('/api/mongodb', mongodbMessagesRoutes);
 app.use('/api/messaging/notes', notesRoutes);
 ```
+
+### **MANDATORY BACKUP PROTOCOL:**
+```bash
+# Before modifying ANY core system file, create backup:
+cp filename.ts filename.bak       # First backup
+cp filename.ts filename.bak1      # If .bak exists
+cp filename.ts filename.bak2      # If .bak1 exists
+# Continue sequence as needed (.bak3, .bak4, etc.)
+```
+
+**⚠️ CRITICAL RULE:** Core elements can ONLY be modified AFTER creating .bak, .bak1, .bak2, etc. backups. NO EXCEPTIONS.
 
 ### **Migration Touch Points (Minimal Changes Only):**
 ```typescript
