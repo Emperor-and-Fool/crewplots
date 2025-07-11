@@ -22,7 +22,7 @@ import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
 import Applicants from "@/pages/applicants";
 import ApplicantDetail from "@/pages/applicant-detail";
 import { Profile } from "@/modules/users/pages";
-import KnowledgeBase from "@/pages/knowledge-base";
+import { KnowledgeBase } from "@/modules/knowledge-base";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import EmailSettings from "@/pages/email-settings";
