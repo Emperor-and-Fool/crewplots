@@ -29,6 +29,7 @@ import { emailVerificationStatusPackage } from '../../modules/email/validation/e
 import { emailTemplateInitializationPackage } from '../../modules/email/validation/emailTemplateInitializationPackage';
 import { emailTokenValidationPackage } from '../../modules/email/validation/emailTokenValidationPackage';
 import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
+import { emailSentPackage } from '../../modules/email/validation/emailSentPackage';
 
 // Import entity validation packages
 import { locationPackage } from '../../modules/locations/validation/locationPackage';
@@ -64,6 +65,7 @@ export const packageRegistry30 = {
   emailTemplateInitialization: emailTemplateInitializationPackage,
   emailTokenValidation: emailTokenValidationPackage,
   emailConfig: emailConfigPackage,
+  emailSent: emailSentPackage,
 };
 
 export type PackageRegistry30Type = typeof packageRegistry30;

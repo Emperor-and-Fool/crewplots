@@ -54,6 +54,13 @@ export const administrationSection: NavigationSection = {
           path: '/validation-engine-3-test',
           icon: TestTube,
           permission: { role: 'administrator' }
+        },
+        {
+          id: 'messaging-validation-test',
+          label: 'Messaging Validation Test',
+          path: '/messaging-validation-test',
+          icon: TestTube,
+          permission: { role: 'administrator' }
         }
       ]
     }
