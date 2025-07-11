@@ -136,12 +136,8 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Enhanced login endpoint with multer for multipart form handling
-import multer from 'multer';
-const upload = multer({ storage: multer.memoryStorage() });
-
-// Handle login with multiple content types (JSON, urlencoded, multipart) - NO PASSPORT
-router.post('/login', upload.none(), async (req, res, next) => {
+// Login endpoint with Express native body parsing - NO PASSPORT
+router.post('/login', async (req, res, next) => {
     try {
         // Simplified login logging
         console.log('🔐 LOGIN attempt received');
