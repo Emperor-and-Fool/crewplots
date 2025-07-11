@@ -1,5 +1,5 @@
 import { storage } from '../../storage';
-import { messageStorageService } from '../message-storage-service';
+import { messageStorageService } from '../../modules/messaging';
 import { hybridCacheService, HybridCacheService } from '../hybrid-cache-service-v2';
 import type { CacheOptions } from '../hybrid-cache-service-v2';
 import type { User } from '@shared/schema';
