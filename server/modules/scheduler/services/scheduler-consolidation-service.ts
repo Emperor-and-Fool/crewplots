@@ -1,5 +1,5 @@
-import { storage } from '../storage';
-import { hybridCacheService } from './hybrid-cache-service-v2';
+import { storage } from '../../../storage';
+import { hybridCacheService } from '../../../services/hybrid-cache-service-v2';
 
 export interface SchedulerEditData {
   schedule: any | null;
