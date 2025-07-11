@@ -380,17 +380,7 @@ export const kbArticles = pgTable("kb_articles", {
 
 
 
-// Uploaded Files
-export const uploadedFiles = pgTable("uploaded_files", {
-  id: serial("id").primaryKey(),
-  filename: text("filename").notNull(),
-  originalName: text("original_name").notNull(),
-  mimeType: text("mime_type").notNull(),
-  size: integer("size").notNull(),
-  path: text("path").notNull(),
-  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+
 
 // Document Attachments - Feature not implemented yet
 // TODO: Implement document attachment system when adding file management
@@ -546,7 +536,7 @@ export const insertNoteRefSchema = createInsertSchema(noteRefs).omit({ id: true,
 export const insertNoteFileSchema = createInsertSchema(noteFiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisCacheSchema = createInsertSchema(redisCache).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRedisSessionSchema = createInsertSchema(redisSessions).omit({ createdAt: true, updatedAt: true });
-export const insertUploadedFileSchema = createInsertSchema(uploadedFiles).omit({ id: true, createdAt: true });
+
 // export const insertNoteAttachmentSchema = createInsertSchema(documentAttachments).omit({ id: true, createdAt: true }); // near-future-removal: Feature not implemented yet
 
 // Login schema
@@ -668,7 +658,7 @@ export type SchedulingWindow = typeof schedulingWindows.$inferSelect;
 export type CashCount = typeof cashCounts.$inferSelect;
 export type KbCategory = typeof kbCategories.$inferSelect;
 export type KbArticle = typeof kbArticles.$inferSelect;
-export type UploadedFile = typeof uploadedFiles.$inferSelect;
+
 // Document attachment types - Feature not implemented yet
 // TODO: Add DocumentAttachment and related types when implementing file management
 export type Message = typeof noteRefs.$inferSelect;

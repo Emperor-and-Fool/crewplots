@@ -2,19 +2,19 @@ import {
   users, locations, competencies, userLocations, userCompetencies,
   scheduleTemplates, templateShifts, scheduleBlocks, weekSchedules, shifts, shiftRequirements,
   shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
-  kbCategories, kbArticles, uploadedFiles, noteRefs, hybridCache,
+  kbCategories, kbArticles, noteRefs, hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
   type ScheduleTemplate, type TemplateShift, type ScheduleBlock,
   type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
   type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
-  type UploadedFile, type HybridCache, type UserModulePermissions, type SchedulerModulePermissions,
+  type HybridCache, type UserModulePermissions, type SchedulerModulePermissions,
   type LocationModulePermissions,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertScheduleTemplate,
   type InsertTemplateShift, type InsertScheduleBlock, type InsertWeekSchedule, type InsertShift,
   type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
   type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
-  type InsertKbArticle, type InsertNoteRef, type InsertUploadedFile, 
+  type InsertKbArticle, type InsertNoteRef, 
   generatePublicId
 } from "@shared/schema";
 
@@ -1292,84 +1292,9 @@ class DatabaseStorage {
     return true;
   }
 
-  // Uploaded Files
-  async getUploadedFile(id: number): Promise<UploadedFile | undefined> {
-    const [file] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, id));
-    return file;
-  }
 
-  async getUploadedFiles(): Promise<UploadedFile[]> {
-    return await db.select().from(uploadedFiles);
-  }
 
-  async createUploadedFile(file: InsertUploadedFile): Promise<UploadedFile> {
-    const [createdFile] = await db.insert(uploadedFiles).values(file).returning();
-    return createdFile;
-  }
 
-  async updateUploadedFile(id: number, file: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined> {
-    const [updatedFile] = await db
-      .update(uploadedFiles)
-      .set(file)
-      .where(eq(uploadedFiles.id, id))
-      .returning();
-    return updatedFile;
-  }
-
-  async deleteUploadedFile(id: number): Promise<boolean> {
-    // near-future-removal: deleteDocumentAttachmentsByFile method not implemented yet
-    // await this.deleteDocumentAttachmentsByFile(id);
-    await db.delete(uploadedFiles).where(eq(uploadedFiles.id, id));
-    return true;
-  }
-
-  // near-future-removal: DocumentAttachment feature not developed yet
-  /*
-  async getDocumentAttachment(id: number): Promise<DocumentAttachment | undefined> {
-    const [attachment] = await db.select().from(documentAttachments).where(eq(documentAttachments.id, id));
-    return attachment;
-  }
-
-  async getDocumentAttachments(): Promise<DocumentAttachment[]> {
-    return await db.select().from(documentAttachments);
-  }
-
-  async getDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<DocumentAttachment[]> {
-    return await db.select().from(documentAttachments)
-      .where(and(
-        eq(documentAttachments.entityType, entityType),
-        eq(documentAttachments.entityId, entityId)
-      ));
-  }
-
-  async getDocumentAttachmentsByFile(fileId: number): Promise<DocumentAttachment[]> {
-    return await db.select().from(documentAttachments).where(eq(documentAttachments.fileId, fileId));
-  }
-
-  async createDocumentAttachment(attachment: InsertDocumentAttachment): Promise<DocumentAttachment> {
-    const [createdAttachment] = await db.insert(documentAttachments).values(attachment).returning();
-    return createdAttachment;
-  }
-
-  async deleteDocumentAttachment(id: number): Promise<boolean> {
-    await db.delete(documentAttachments).where(eq(documentAttachments.id, id));
-    return true;
-  }
-
-  async deleteDocumentAttachmentsByEntity(entityType: string, entityId: number): Promise<boolean> {
-    await db.delete(documentAttachments)
-      .where(and(
-        eq(documentAttachments.entityType, entityType),
-        eq(documentAttachments.entityId, entityId)
-      ));
-    return true;
-  }
-
-  async deleteDocumentAttachmentsByFile(fileId: number): Promise<boolean> {
-    await db.delete(documentAttachments).where(eq(documentAttachments.fileId, fileId));
-    return true;
-  }
-  */
 
   // Message operations
   async getNoteRef(id: number): Promise<NoteRef | undefined> {

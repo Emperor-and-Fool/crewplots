@@ -61,7 +61,7 @@ import path from "path";
 
 // Route module imports
 import authRoutes from './modules/auth';
-import uploadRoutes from './routes/uploads';
+
 import { applicantPortalRoutes } from './modules/users';
 import dashboardRoutes from './modules/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
@@ -152,7 +152,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', dashboardRoutes);
   
   // Messaging and content routes
-  app.use('/api/uploads', uploadRoutes);
   app.use('/api/applicant-portal', applicantPortalRoutes);
   app.use('/api/mongodb', mongodbMessagesRoutes);
   app.use('/api/messaging/notes', notesRoutes);
