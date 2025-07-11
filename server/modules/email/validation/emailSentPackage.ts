@@ -4,40 +4,39 @@
  */
 
 import { z } from 'zod';
+import { VE30PackageBuilder } from '@shared/validation/VE30PackageBuilder';
 
 // Schema for email sent operations (minimal - mostly read/delete operations)
 const emailSentSchema = z.object({
   operation: z.enum(['read', 'delete']).optional(),
 }).optional();
 
+/**
+ * Email Sent Package - VE30-compliant package using VE30PackageBuilder
+ */
 export const emailSentPackage = {
   entityType: 'emailSent',
-  
-  // Schema validation
-  schema: emailSentSchema,
-  
-  // Permission requirements
-  permissions: {
-    base: [],
-    operations: {
-      read: [], // No special permissions needed
-      delete: [] // No special permissions needed
-    }
+
+  // Standard VE30 schema validation method
+  validateSchema: (data: any, operation: string) => 
+    VE30PackageBuilder.validateSchema(data, operation, emailSentSchema),
+
+  // Permission requirements for operations
+  getRequiredPermissions: (operation: string): string[] => {
+    return ['email.read']; // Base permission for all email sent operations
   },
-  
-  // Business rules
-  businessRules: {
-    validate: (data: any, context: any) => {
-      return {
-        isValid: true,
-        errors: [],
-        warnings: []
-      };
-    }
+
+  // Business rules validation  
+  validateBusinessRules: async (data: any, context: any) => {
+    return {
+      isValid: true,
+      errors: [],
+      warnings: []
+    };
   },
-  
-  // Assembly logic
-  assembleData: (data: any, context: any) => {
+
+  // Package assembly with user context
+  assemblePackage: async (data: any, user: any, operation: string) => {
     return data || {};
   }
 };

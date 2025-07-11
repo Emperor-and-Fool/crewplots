@@ -634,7 +634,7 @@ export class ValidationEngine30 {
           console.log('💾 Email config update completed');
         }
         // Handle email test operations  
-        else if (entityType === 'emailTest' && operation === 'create') {
+        else if (entityType === 'emailTest' && (operation === 'create' || operation === 'send')) {
           console.log('📧 VALIDATION ENGINE 30: Testing email connection');
           const { emailService } = await import('../../modules/email/services/EmailService.js');
           const testResult = await emailService.testConnection();

@@ -221,9 +221,9 @@ export default function EmailSettings() {
           entityType: 'emailTest',
           operation: 'send',
           data: {
-            to: 'test@example.com',
-            subject: 'Test Email from CrewPlots',
-            content: 'This is a test email to verify your SMTP configuration is working correctly.'
+            recipientEmail: 'test@example.com',
+            templateType: 'test',
+            testMode: true
           }
         })
       });

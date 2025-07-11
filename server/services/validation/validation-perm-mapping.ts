@@ -92,9 +92,9 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
   
   // Package: Email validation packages (role-based)
   if (user.role === 'administrator' || user.role === 'owner') {
-    validationPermissions.push('email.send', 'email.admin', 'email.verify', 'development.testing');
+    validationPermissions.push('email.send', 'email.admin', 'email.verify', 'email.read', 'development.testing');
   } else if (user.role === 'app_manager') {
-    validationPermissions.push('email.send', 'email.verify');
+    validationPermissions.push('email.send', 'email.verify', 'email.read');
   }
   
   // BLOCK 4: DEDUPLICATION
