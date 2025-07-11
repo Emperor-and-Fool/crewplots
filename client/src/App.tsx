@@ -15,6 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import { ApplicantPortal } from "@/modules/users";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
+import { CashManagement } from "@/modules/cashcount";
 
 import ViewCalendar from "@/pages/view-calendar";
 import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
@@ -219,6 +220,16 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
+              <Route path="/cash-management">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={CashManagement} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
 
               
               <Route path="/scheduler">

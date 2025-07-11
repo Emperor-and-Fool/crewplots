@@ -4,9 +4,10 @@
  * Page exports for the cashcount module
  */
 
-// TODO: Add cashcount page exports as they are created
-// Example exports (will be implemented):
-// export { CashCountDashboard } from './CashCountDashboard';
+export { default as CashManagement } from './CashManagement';
+
+// TODO: Add additional cashcount page exports as they are created
+// Example future exports:
 // export { DailyReconciliation } from './DailyReconciliation';
 // export { TransactionHistory } from './TransactionHistory';
 // export { FinancialReports } from './FinancialReports';

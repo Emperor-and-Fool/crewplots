@@ -36,7 +36,7 @@ import { CashCountForm } from "@/components/cash/cash-count-form";
 import { PlusCircle, Pencil, Trash2, DollarSign, CalendarRange, Download, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CashCount, Location } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 
@@ -419,100 +419,84 @@ export default function CashManagement() {
                               <TableHead>Count Type</TableHead>
                               <TableHead>Time</TableHead>
                               <TableHead>Cash</TableHead>
-                              <TableHead>Card</TableHead>
-                              <TableHead>Float</TableHead>
+                              <TableHead>Cards</TableHead>
+                              <TableHead>Total</TableHead>
                               <TableHead>Discrepancy</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {filteredCashCounts.map((count) => {
-                              const isDiscrepancy = count.discrepancy && Math.abs(Number(count.discrepancy)) > 10;
-                              const location = locations?.find(l => l.id === count.locationId);
-                              
-                              return (
-                                <TableRow key={count.id}>
-                                  <TableCell className="font-medium">
-                                    {formatCountType(count.countType)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {format(new Date(count.createdAt), 'h:mm a')}
-                                  </TableCell>
-                                  <TableCell>{formatCurrency(count.cashAmount)}</TableCell>
-                                  <TableCell>{formatCurrency(count.cardAmount)}</TableCell>
-                                  <TableCell>{formatCurrency(count.floatAmount)}</TableCell>
-                                  <TableCell className={isDiscrepancy ? 'text-red-500' : ''}>
+                            {filteredCashCounts.map((count) => (
+                              <TableRow key={count.id}>
+                                <TableCell className="font-medium">
+                                  {formatCountType(count.countType)}
+                                </TableCell>
+                                <TableCell>
+                                  {format(new Date(count.createdAt), 'HH:mm')}
+                                </TableCell>
+                                <TableCell>
+                                  {formatCurrency(count.cashAmount)}
+                                </TableCell>
+                                <TableCell>
+                                  {formatCurrency(count.cardAmount)}
+                                </TableCell>
+                                <TableCell>
+                                  {formatCurrency(Number(count.cashAmount) + Number(count.cardAmount))}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={`${Number(count.discrepancy || 0) === 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatCurrency(count.discrepancy || 0)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {!isDiscrepancy ? (
-                                      <span className="inline-flex items-center text-green-700">
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Balanced
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center text-red-600">
-                                        <AlertCircle className="h-4 w-4 mr-1" />
-                                        Discrepancy
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end space-x-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEdit(count)}
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="sr-only">Edit</span>
-                                      </Button>
-                                      {isManager && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-red-500 hover:text-red-600"
-                                          onClick={() => handleDelete(count)}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">Delete</span>
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEdit(count)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDelete(count)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
                           </TableBody>
                         </Table>
                       ) : (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">No cash counts found for this date</p>
-                          <Button 
-                            variant="outline" 
-                            className="mt-4"
-                            onClick={() => {
+                        <div className="text-center py-8">
+                          <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+                          <h3 className="mt-2 text-sm font-medium text-gray-900">No cash counts</h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            Get started by creating a new cash count.
+                          </p>
+                          <div className="mt-6">
+                            <Button onClick={() => {
                               setSelectedCashCount(null);
                               setShowForm(true);
-                            }}
-                          >
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            Record cash count
-                          </Button>
+                            }}>
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              New Cash Count
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </CardContent>
                   </Card>
                 ) : (
                   <Card>
-                    <CardContent className="p-8 text-center">
-                      <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-lg font-medium text-gray-900">
-                        Select a Location
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Please select a location to view cash management data
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <CalendarRange className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Location</h3>
+                      <p className="text-sm text-gray-500 text-center max-w-sm">
+                        Choose a location from the dropdown above to view cash counts and manage financial data.
                       </p>
                     </CardContent>
                   </Card>
@@ -522,15 +506,14 @@ export default function CashManagement() {
           </div>
         </main>
       </div>
-      
+
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Cash Count</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this cash count from {format(new Date(selectedCashCount?.countDate || new Date()), 'MMMM d, yyyy')}? 
-              This action cannot be undone.
+              Are you sure you want to delete this cash count? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
