@@ -772,29 +772,7 @@ DELETE /api/applicants/:id
 
 ## Applicant Portal
 
-### Get My Profile
-```http
-GET /api/applicant-portal/my-profile
-```
-
-**Authentication:** Requires applicant role
-
-**Response:**
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "+1-555-0123",
-  "status": "short-listed",
-  "resumeUrl": "/uploads/john_doe_resume.pdf",
-  "notes": null,
-  "extraMessage": "Available weekends",
-  "locationId": 1,
-  "userId": 2,
-  "createdAt": "2025-01-15T10:30:00.000Z"
-}
-```
+*Note: Applicant portal functionality now uses ValidationEngine30 endpoints instead of dedicated routes.*
 
 ## Message Management
 
@@ -1020,8 +998,13 @@ const loginResponse = await fetch('/api/auth/login', {
   body: 'username=applicant123&password=userpass'
 });
 
-// 2. Get own profile
-const profileResponse = await fetch('/api/applicant-portal/my-profile');
+// 2. Get own profile (via ValidationEngine30)
+const profileResponse = await fetch('/api/validation/v3/execute', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({ entityType: 'authProfile', operation: 'read' })
+});
 const profile = await profileResponse.json();
 ```
 
