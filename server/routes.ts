@@ -70,7 +70,7 @@ import emailRoutes from './routes/email';
 import schedulerRoutes from './modules/scheduler';
 
 import validationV3Routes from './routes/validation-v3';
-import securityRoutes from './routes/security';
+import securityRoutes from './modules/security';
 import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 // Monitor route imports
