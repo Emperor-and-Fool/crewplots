@@ -1,6 +1,7 @@
 /**
- * Email Service - Mock Implementation for Testing
+ * Legacy Email Service - MIGRATED TO MODULE STRUCTURE
  * Provides email functionality with configurable SMTP settings
+ * NOTE: This service was moved from server/services/email.ts during module migration
  */
 
 import nodemailer from 'nodemailer';
