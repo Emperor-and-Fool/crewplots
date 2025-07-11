@@ -35,8 +35,12 @@ export function MobileNavItem({
             "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer text-white hover:bg-primary-700",
             currentPath === section.children[0].path && "bg-primary-700"
           )}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 MobileNavItem clicked:', section.label, 'path:', section.children[0].path);
             onNavigate(section.children[0].path);
+            console.log('📱 Closing mobile menu for:', section.label);
             onMobileClose();
           }}
         >

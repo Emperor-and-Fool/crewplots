@@ -32,11 +32,17 @@ export function NavigationItem({
   const IconComponent = item.icon;
   const isActive = currentPath === item.path;
   
-  const handleClick = () => {
+  const handleClick = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     if (item.path) {
+      console.log('🎯 NavigationItem clicked:', item.label, 'path:', item.path, 'layout:', layout);
       onNavigate(item.path);
-      if (layout === 'mobile') {
-        onMobileClose?.();
+      
+      if (layout === 'mobile' && onMobileClose) {
+        console.log('📱 Closing mobile menu for:', item.label);
+        onMobileClose();
       }
     }
   };
