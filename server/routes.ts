@@ -65,7 +65,7 @@ import uploadRoutes from './routes/uploads';
 import applicantPortalRoutes from './routes/applicant-portal';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
-import notesRoutes from './routes/messages/notes';
+import { notesRoutes } from './modules/messaging';
 import emailRoutes from './routes/email';
 import schedulerRoutes from './modules/scheduler';
 
