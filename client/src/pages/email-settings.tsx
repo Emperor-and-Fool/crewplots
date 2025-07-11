@@ -211,6 +211,53 @@ export default function EmailSettings() {
     }
   };
 
+  const sendTestEmail = async () => {
+    try {
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityType: 'emailTest',
+          operation: 'send',
+          data: {
+            to: 'test@example.com',
+            subject: 'Test Email from CrewPlots',
+            content: 'This is a test email to verify your SMTP configuration is working correctly.'
+          }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const testData = result.threads?.transaction?.data;
+        
+        if (testData?.success) {
+          toast({
+            title: 'Test Email Sent',
+            description: testData.message || 'Test email sent successfully'
+          });
+          // Refresh sent emails to show the new test email
+          loadSentEmails();
+        } else {
+          toast({
+            title: 'Test Email Failed',
+            description: testData?.message || 'Failed to send test email',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        throw new Error('Test email request failed');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send test email',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const clearSentEmails = async () => {
     try {
       const response = await fetch('/api/validation/v3/execute', {
@@ -437,6 +484,10 @@ export default function EmailSettings() {
                 
                 <Button type="button" variant="outline" onClick={testConnection} disabled={isLoading}>
                   Test Connection
+                </Button>
+
+                <Button type="button" variant="outline" onClick={sendTestEmail} disabled={isLoading}>
+                  Send Test Email
                 </Button>
 
                 {connectionStatus !== 'unknown' && (
