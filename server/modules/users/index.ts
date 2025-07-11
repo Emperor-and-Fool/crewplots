@@ -35,9 +35,13 @@ usersRouter.use('/management', managementRoutes);
 usersRouter.use('/applicant-workflows', applicantWorkflowRoutes);
 usersRouter.use('/locations', locationRoutes);
 
+// Create applicant portal router with proper prefix
+const applicantPortalRouter = Router();
+applicantPortalRouter.use('/', applicantPortalRoutes);
+
 // Export applicant portal routes separately for compatibility
 // This maintains the original /api/applicant-portal prefix structure
-export { default as applicantPortalRoutes } from './routes/applicant-portal';
+export { applicantPortalRouter as applicantPortalRoutes };
 
 // ===================================================================================================
 // END USER ROUTES SECTION
