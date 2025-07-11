@@ -14,28 +14,8 @@ import type { VerificationRequest } from '../types';
 const router = Router();
 
 // ================================
-// Email Verification Routes
+// Admin Email Management Routes
 // ================================
-
-// REMOVED: POST /initialize-templates - Now uses VE30 emailTemplateInitializationPackage via /api/validation/v3/execute
-
-// REMOVED: POST /send-verification - Now uses VE30 emailVerificationPackage via /api/validation/v3/execute
-
-// REMOVED: POST /verify-token - Now uses VE30 emailTokenValidationPackage via /api/validation/v3/execute
-
-// REMOVED: GET /verification-status/:userId - Now uses VE30 emailVerificationStatusPackage via /api/validation/v3/execute
-
-// ================================
-// Admin Configuration Routes
-// ================================
-
-// ================================
-// Legacy Email Admin Endpoints Removed
-// ================================
-// These endpoints have been migrated to VE30 validation system:
-// - GET /api/email/config → /api/validation/v3/execute (emailConfig package, read operation)
-// - POST /api/email/config → /api/validation/v3/execute (emailConfig package, update operation)  
-// - POST /api/email/test-connection → /api/validation/v3/execute (emailTest package, create operation)
 
 /**
  * GET /api/email/sent
