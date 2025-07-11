@@ -6,7 +6,7 @@ import { authenticateUser, authenticateUserLazy } from '../middleware/auth';
 import type { DataAggregationTask } from '../services/validation/DataAggregationEngine';
 import type { User } from '@shared/schema';
 // Import messaging package from ValidationEngine30 registry
-import { messagingPackage } from '../../client/src/modules/messaging/validation/packages/messagingPackage';
+import { messagingPackage } from '../../server/modules/messaging/validation/messagingPackage.ts';
 import { mapWorkflowToValidationPermissions } from '../services/validation/validation-perm-mapping';
 
 const router = express.Router();
