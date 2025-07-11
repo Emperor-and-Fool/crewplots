@@ -590,35 +590,69 @@ export class ValidationEngine30 {
         // Handle email configuration operations
         else if (entityType === 'emailConfig' && operation === 'read') {
           console.log('📧 VALIDATION ENGINE 30: Reading email configuration');
-          // TODO: Implement email config read from storage/env
-          transactionResult = {
-            host: process.env.SMTP_HOST || '',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true',
-            from: process.env.SMTP_FROM || '',
-            testMode: process.env.EMAIL_TEST_MODE === 'true'
-          };
+          const { emailService } = await import('../../modules/email/services/EmailService.js');
+          const config = emailService.getConfig();
+          
+          if (!config) {
+            transactionResult = {
+              host: 'smtp.office365.com',
+              port: 587,
+              secure: false,
+              testMode: true
+            };
+          } else {
+            transactionResult = {
+              host: config.host,
+              port: config.port,
+              secure: config.secure,
+              from: config.from,
+              auth: {
+                user: config.auth.user,
+                // password omitted for security
+              },
+              testMode: true
+            };
+          }
           console.log('💾 Email config read completed');
         } else if (entityType === 'emailConfig' && (operation === 'create' || operation === 'update')) {
           console.log('📧 VALIDATION ENGINE 30: Updating email configuration');
-          // TODO: Implement email config persistence to database
+          const { emailService } = await import('../../modules/email/services/EmailService.js');
+          emailService.configure(assembledData);
           transactionResult = {
             saved: true,
-            message: 'Email configuration validated and ready for persistence',
+            message: 'Email configuration updated successfully',
             config: assembledData
           };
-          console.log('💾 Email config update validated');
+          console.log('💾 Email config update completed');
         }
         // Handle email test operations  
         else if (entityType === 'emailTest' && operation === 'create') {
           console.log('📧 VALIDATION ENGINE 30: Testing email connection');
-          // TODO: Implement actual SMTP connection test
+          const { emailService } = await import('../../modules/email/services/EmailService.js');
+          const testResult = await emailService.testConnection();
           transactionResult = {
-            testSuccessful: true,
-            message: 'Email connection test passed (simulated)',
-            testEmail: assembledData.testEmail || 'No test email provided'
+            success: testResult,
+            testMode: true,
+            message: testResult ? 'Test mode connection verified' : 'Connection failed'
           };
           console.log('💾 Email connection test completed');
+        }
+        // Handle sent emails operations
+        else if (entityType === 'emailSent' && operation === 'read') {
+          console.log('📧 VALIDATION ENGINE 30: Reading sent emails');
+          const { emailService } = await import('../../modules/email/services/EmailService.js');
+          const sentEmails = emailService.getSentEmails();
+          transactionResult = sentEmails;
+          console.log(`💾 Retrieved ${sentEmails.length} sent emails`);
+        } else if (entityType === 'emailSent' && operation === 'delete') {
+          console.log('📧 VALIDATION ENGINE 30: Clearing sent emails');
+          const { emailService } = await import('../../modules/email/services/EmailService.js');
+          emailService.clearSentEmails();
+          transactionResult = {
+            cleared: true,
+            message: 'Test email history cleared successfully'
+          };
+          console.log('💾 Sent emails cleared');
         }
         else {
           throw new Error(`Transaction execution not implemented for ${entityType} ${operation}`);

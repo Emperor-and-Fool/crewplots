@@ -63,11 +63,19 @@ export default function EmailSettings() {
 
   const loadCurrentConfig = async () => {
     try {
-      const response = await fetch('/api/email/config', {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityType: 'emailConfig',
+          operation: 'read',
+          data: {}
+        })
       });
       if (response.ok) {
-        const config = await response.json();
+        const result = await response.json();
+        const config = result.threads?.transaction?.data;
         if (config) {
           form.reset({
             host: config.host || 'smtp.office365.com',
@@ -88,11 +96,19 @@ export default function EmailSettings() {
 
   const loadSentEmails = async () => {
     try {
-      const response = await fetch('/api/email/sent', {
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityType: 'emailSent',
+          operation: 'read',
+          data: {}
+        })
       });
       if (response.ok) {
-        const emails = await response.json();
+        const result = await response.json();
+        const emails = result.threads?.transaction?.data || [];
         setSentEmails(emails);
       }
     } catch (error) {
@@ -115,13 +131,17 @@ export default function EmailSettings() {
         testMode: data.testMode
       };
 
-      const response = await fetch('/api/email/config', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          entityType: 'emailConfig',
+          operation: 'update',
+          data: config
+        })
       });
 
       if (response.ok) {
@@ -147,26 +167,37 @@ export default function EmailSettings() {
   const testConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/email/test-connection', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityType: 'emailTest',
+          operation: 'create',
+          data: {}
+        })
       });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        setConnectionStatus('connected');
-        toast({
-          title: 'Connection Successful',
-          description: result.testMode ? 'Test mode connection verified' : 'SMTP connection verified'
-        });
+      if (response.ok) {
+        const result = await response.json();
+        const testData = result.threads?.transaction?.data;
+        
+        if (testData?.success) {
+          setConnectionStatus('connected');
+          toast({
+            title: 'Connection Successful',
+            description: testData.message
+          });
+        } else {
+          setConnectionStatus('failed');
+          toast({
+            title: 'Connection Failed',
+            description: testData?.message || 'Failed to connect to email server',
+            variant: 'destructive'
+          });
+        }
       } else {
-        setConnectionStatus('failed');
-        toast({
-          title: 'Connection Failed',
-          description: result.error || 'Failed to connect to email server',
-          variant: 'destructive'
-        });
+        throw new Error('Test request failed');
       }
     } catch (error) {
       setConnectionStatus('failed');
@@ -182,9 +213,15 @@ export default function EmailSettings() {
 
   const clearSentEmails = async () => {
     try {
-      const response = await fetch('/api/email/sent', {
-        method: 'DELETE',
-        credentials: 'include'
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityType: 'emailSent',
+          operation: 'delete',
+          data: {}
+        })
       });
 
       if (response.ok) {

@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { emailService } from '../modules/email/services/LegacyEmailService.js';
+import { emailService } from '../modules/email/services/EmailService.js';
 
 const router = Router();
 
