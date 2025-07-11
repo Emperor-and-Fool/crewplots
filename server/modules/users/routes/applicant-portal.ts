@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../../storage';
 import { messageStorageService } from '../../../services/message-storage-service';
-import { profileFetcherService } from '../../../services/profile-fetcher-service';
+
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -125,38 +125,7 @@ const isApplicant = async (req: any, res: any, next: any) => {
   next();
 };
 
-// Get applicant data for the logged-in user
-router.get('/my-profile', isApplicant, async (req: any, res) => {
-  try {
-    console.log('[ProfileFetcher] Route hit for user ID:', req.user.id);
-    
-    // Use ProfileFetcher service with Redis-first caching
-    const profileData = await profileFetcherService.getProfileData(req.user.id);
-    
-    if (!profileData) {
-      console.log('[ProfileFetcher] No applicant profile found for user ID:', req.user.id);
-      return res.status(404).json({ 
-        error: 'Applicant profile not found',
-        message: 'Your user account exists but no applicant profile is linked to it.'
-      });
-    }
-    
-    console.log('[ProfileFetcher] Successfully retrieved profile:', 
-      { id: profileData.id, name: profileData.name, email: profileData.email, hasNotes: profileData.notes.exists, hasResume: !!profileData.resumeUrl });
-    
-    // Send profile data
-    res.json(profileData);
-  } catch (error) {
-    console.error('[ProfileFetcher] Error in route handler:', error);
-    
-    // More detailed error response
-    res.status(500).json({ 
-      error: 'Failed to fetch applicant profile',
-      message: 'There was a problem retrieving your profile data. Please try again later.',
-      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-    });
-  }
-});
+
 
 // Schema for updating messages
 const updateNoteRefSchema = z.object({
