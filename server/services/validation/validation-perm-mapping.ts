@@ -90,6 +90,13 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
     validationPermissions.push('message.read', 'message.create');
   }
   
+  // Package: Email validation packages (role-based)
+  if (user.role === 'administrator' || user.role === 'owner') {
+    validationPermissions.push('email.send', 'email.admin', 'email.verify', 'development.testing');
+  } else if (user.role === 'app_manager') {
+    validationPermissions.push('email.send', 'email.verify');
+  }
+  
   // BLOCK 4: DEDUPLICATION
   // Remove duplicate permissions (ES5 compatible)
   const uniquePermissions: string[] = [];
