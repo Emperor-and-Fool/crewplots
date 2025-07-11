@@ -66,7 +66,7 @@ import { applicantPortalRoutes } from './modules/users';
 import dashboardRoutes from './modules/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import { notesRoutes } from './modules/messaging';
-import emailRoutes from './routes/email';
+
 import schedulerRoutes from './modules/scheduler';
 
 import validationV3Routes from './routes/validation-v3';
@@ -157,7 +157,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===================================================================================================
 
   // Settings and configuration
-  app.use('/api/email', emailRoutes);
   app.use('/api/security', securityRoutes);
   
 
