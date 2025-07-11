@@ -26,6 +26,10 @@ import { userRegistrationPackage } from '../../modules/users/validation/userRegi
 // DEVELOPMENT PACKAGES - remain as direct imports for development workflow
 import { emailTestPackage } from '../../modules/development/validation/packages/emailTestPackage';
 
+// EMAIL PACKAGES - required for email system VE30 integration
+import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
+import { emailSentPackage } from '../../modules/email/validation/emailSentPackage';
+
 /**
  * ValidationEngine30.ts - Enhanced Validation Engine
  * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
@@ -60,7 +64,11 @@ const enhancedPackageRegistry = {
   userRegistration: userRegistrationPackage,
   
   // DEVELOPMENT PACKAGES: Direct imports for development workflow
-  emailTest: emailTestPackage
+  emailTest: emailTestPackage,
+  
+  // EMAIL PACKAGES: Required for email system VE30 integration
+  emailConfig: emailConfigPackage,
+  emailSent: emailSentPackage
 } as const;
 
 export interface ValidationRequest30 {
