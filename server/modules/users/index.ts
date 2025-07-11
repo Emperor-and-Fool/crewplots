@@ -8,10 +8,10 @@ import { Router } from 'express';
 import { authenticateUser } from '../../middleware/auth';
 
 // Import services (converted from routes)
-import profileRoutes from './services/ProfileService';
 import managementRoutes from './services/ManagementService';
 import applicantWorkflowRoutes from './services/WorkflowService';
 import locationRoutes from './services/LocationService';
+import applicantPortalRoutes from './routes/applicant-portal';
 
 // ===================================================================================================
 // USER ROUTES SECTION - COPIED FROM server/routes/users/index.ts
@@ -31,10 +31,13 @@ const usersRouter = Router();
 usersRouter.use(authenticateUser);
 
 // Mount user module routes
-usersRouter.use('/profile', profileRoutes);
 usersRouter.use('/management', managementRoutes);
 usersRouter.use('/applicant-workflows', applicantWorkflowRoutes);
 usersRouter.use('/locations', locationRoutes);
+
+// Export applicant portal routes separately for compatibility
+// This maintains the original /api/applicant-portal prefix structure
+export { default as applicantPortalRoutes } from './routes/applicant-portal';
 
 // ===================================================================================================
 // END USER ROUTES SECTION

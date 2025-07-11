@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { insertUserLocationSchema } from '@shared/schema';
-import { storage } from '../../storage';
+import { storage } from '../../../storage';
 import { fromZodError } from 'zod-validation-error';
 
 const locationRoutes = Router();

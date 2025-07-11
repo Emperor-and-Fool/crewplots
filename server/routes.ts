@@ -62,7 +62,7 @@ import path from "path";
 // Route module imports
 import authRoutes from './routes/auth-routes';
 import uploadRoutes from './routes/uploads';
-import applicantPortalRoutes from './routes/applicant-portal';
+import { applicantPortalRoutes } from './modules/users';
 import dashboardRoutes from './routes/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import { notesRoutes } from './modules/messaging';
