@@ -63,7 +63,7 @@ import path from "path";
 import authRoutes from './modules/auth';
 import uploadRoutes from './routes/uploads';
 import { applicantPortalRoutes } from './modules/users';
-import dashboardRoutes from './routes/dashboard';
+import dashboardRoutes from './modules/dashboard';
 import mongodbMessagesRoutes from './routes/mongodb-messages';
 import { notesRoutes } from './modules/messaging';
 import emailRoutes from './routes/email';
