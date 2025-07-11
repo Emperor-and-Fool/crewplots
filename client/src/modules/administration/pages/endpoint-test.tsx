@@ -60,7 +60,7 @@ export default function EndpointTestPage() {
       }
 
       try {
-        const response = await fetch('/api/validation/v3/auth/me', {
+        const response = await fetch('/api/auth/login-session', {
           method: 'GET',
           credentials: 'include',
         });
