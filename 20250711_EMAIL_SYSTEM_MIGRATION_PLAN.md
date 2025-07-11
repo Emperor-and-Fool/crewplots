@@ -78,6 +78,11 @@ router.post('/test-send', async (req, res) => { // Line 128
 
 ## ROLLBACK STRATEGY
 
+📋 **DECISION VALIDATION: Confirm rollback strategy aligns with:**
+- Plan 051 evidence-based rollback patterns and safety measures
+- ValidationEngine30 parallel development strategy (zero risk implementation)
+- Email system architectural decisions documented in this plan
+
 ### File Safety Protocol
 - **Primary:** Every modified file automatically renamed to `[filename].bak` before changes
 - **Secondary:** Git commit checkpoints at each phase completion
@@ -88,6 +93,12 @@ router.post('/test-send', async (req, res) => { // Line 128
 - Frontend email functionality broken
 - SMTP configuration loss
 - Database connection errors
+
+⚠️ **IMPLEMENTATION CHECKPOINT: Return to rollback strategy if:**
+- Any phase implementation deviates from planned approach (document why)
+- Multiple rollback approaches seem possible (follow plan decisions)
+- Performance targets unclear (reference specific plan metrics)
+- Architecture questions arise (check this plan evidence)
 
 ## IMPLEMENTATION PHASES
 
@@ -147,6 +158,9 @@ curl -X GET http://localhost:5000/api/email/sent -H "Cookie: connect.sid=..."
 - Frontend email-settings.tsx loads configuration without errors
 - Service configuration persistence maintained
 - No regression in email sending functionality
+- Current phase objectives achieved per email migration evidence criteria
+- Architecture decisions from this plan still being followed
+- Any deviations documented with evidence justification
 
 ### PHASE 2: VE30 ENDPOINT MIGRATION
 **Objective:** Migrate legacy routes to ValidationEngine30 system
@@ -232,10 +246,20 @@ await fetch('/api/validation/v3/execute', {
 - Email permissions exist in database and role assignments
 - ValidationEngine30 handles email operations without TODO placeholders
 - VE30 endpoints return data compatible with frontend expectations
+- Current phase objectives achieved per email migration evidence criteria
+- Architecture decisions from this plan still being followed
+- Any deviations documented with evidence justification
+- Reference this plan for VE30 architectural questions
 
 ### PHASE 3: FRONTEND INTEGRATION
 **Objective:** Complete frontend migration to VE30 endpoints
 **Duration:** 30 minutes
+
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- VE30 endpoint integration fails (check /api/validation/v3/execute format)
+- Frontend response parsing breaks (verify ValidationEngine30 response structure)
+- Error handling implementation unclear (reference this plan error patterns)
+- User experience changes unexpectedly (maintain existing workflow)
 
 **Tasks:**
 1. Update `email-settings.tsx` to use VE30 validation endpoints
@@ -255,9 +279,20 @@ await fetch('/api/validation/v3/execute', {
 - Sent email history access
 - Error handling verification
 
+🔄 **PLAN CHECK REMINDER:** Before proceeding to Phase 4, verify:
+- Email settings page loads and functions identically to legacy version
+- All VE30 endpoints responding correctly with proper data formats
+- Architecture decisions from this plan still being followed
+- Any deviations documented with evidence justification
+
 ### PHASE 4: VERIFICATION & APPROVAL
 **Objective:** Comprehensive system testing and user approval
 **Duration:** 15 minutes
+
+📋 **DECISION VALIDATION: Confirm verification approach aligns with:**
+- Plan 051 evidence-based testing patterns and completion criteria
+- Email system migration objectives documented in this plan
+- ValidationEngine30 integration success metrics and performance targets
 
 **Tasks:**
 1. Full email system functionality test
@@ -271,10 +306,21 @@ await fetch('/api/validation/v3/execute', {
 - No regression in user workflows
 - User approval obtained
 
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Testing reveals functionality gaps (check original capability mapping)
+- Performance metrics unclear (reference plan baseline measurements)
+- User acceptance criteria uncertain (validate against original workflows)
+- Multiple validation approaches seem possible (follow plan testing strategy)
+
 ## CLEANUP STAGES
 
 ### CLEANUP 1: COMPONENT REMOVAL
 **Requires User Approval**
+
+📋 **DECISION VALIDATION: Confirm cleanup approach aligns with:**
+- Plan 051 evidence-based component removal patterns and safety measures
+- Email system migration completion criteria documented in this plan
+- Zero risk implementation strategy (functionality proven working before removal)
 
 **Legacy Components to Remove:**
 ```typescript
@@ -310,8 +356,19 @@ export class EmailService { ... } // Same implementation as modern EmailService
 - **Preserves:** All email functionality via VE30 integration
 - **Risk:** ZERO - functionality migrated to VE30 before removal
 
+⚠️ **IMPLEMENTATION CHECKPOINT:** Return to this plan section if:
+- Cleanup scope questions arise (check this plan component removal evidence)
+- Multiple removal approaches seem possible (follow plan cleanup decisions)
+- Database impact unclear (reference plan schema preservation strategy)
+- User approval process uncertain (validate against plan requirements)
+
 ### CLEANUP 2: ROUTE/EXPORT CLEANUP  
 **Requires User Approval**
+
+📋 **DECISION VALIDATION: Confirm final cleanup approach aligns with:**
+- Plan 051 evidence-based modular architecture patterns and cleanup standards
+- Email system migration completion objectives documented in this plan
+- ValidationEngine30 integration requirements and import standardization goals
 
 **Modular Route Updates:**
 - `server/modules/email/routes/index.ts` - Remove "REMOVED" comments
@@ -324,6 +381,13 @@ export class EmailService { ... } // Same implementation as modern EmailService
 - Standardize service imports across codebase
 
 **Impact:** Streamlines import structure and removes transitional artifacts
+
+🔄 **FINAL PLAN CHECK REMINDER:** Upon completion, verify:
+- All email system objectives achieved per migration evidence criteria
+- Architecture decisions from this plan successfully implemented
+- All cognitive anchors followed throughout implementation process
+- Zero regressions in email functionality or user workflows
+- Plan completion criteria documented with evidence justification
 
 ### CLEANUP 3: DOCUMENTATION/INFRASTRUCTURE
 **Requires User Approval**
