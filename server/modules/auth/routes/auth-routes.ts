@@ -1,10 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { storage } from '../storage';
+import { storage } from '../../../storage';
 import { insertUserSchema, loginSchema, registerSchema, User } from '@shared/schema';
 import { ZodError } from 'zod';
 import bcrypt from 'bcryptjs';
 import { fromZodError } from 'zod-validation-error';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateUser } from '../../../middleware/auth';
 
 // Extend express-session types
 declare module 'express-session' {
@@ -50,7 +50,7 @@ router.post('/register', async (req, res) => {
         console.log("🔐 AUTH-ROUTES: Calling VE30 with hashed password for validation...");
         
         // Import ValidationEngine30 for internal validation
-        const { ValidationEngine30 } = await import('../services/validation/ValidationEngine30');
+        const { ValidationEngine30 } = await import('../../../services/validation/ValidationEngine30');
         const validationEngine30 = new ValidationEngine30();
         
         // Prepare data for VE30 validation with hashed password

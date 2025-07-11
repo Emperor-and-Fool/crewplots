@@ -60,7 +60,7 @@ import { authenticateUser } from './middleware/auth';
 import path from "path";
 
 // Route module imports
-import authRoutes from './routes/auth-routes';
+import authRoutes from './modules/auth';
 import uploadRoutes from './routes/uploads';
 import { applicantPortalRoutes } from './modules/users';
 import dashboardRoutes from './routes/dashboard';
