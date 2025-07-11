@@ -38,7 +38,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import multer from "multer";
+
 import "./middleware/auth"; // Import auth middleware for TypeScript declarations
 
 // Permission checking utility function - now properly typed with schema
@@ -79,13 +79,7 @@ import mongoMonitorRoutes from './routes/mongo-monitor';
 import hybridCacheMonitorRoutes from './routes/hybrid-cache-monitor-simple';
 import sessionMonitorRoutes from './routes/session-monitor';
 
-// Setup multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-});
+
 
 // Setup PostgreSQL session store
 const PgStore = connectPgSimple(session);

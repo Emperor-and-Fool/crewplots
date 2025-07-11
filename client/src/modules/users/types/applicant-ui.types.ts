@@ -12,7 +12,7 @@ export interface ApplicantFormWizardState {
   currentStep: number;
   completedSteps: Set<number>;
   formData: Partial<InsertUser>;
-  // uploadedFiles: File[]; // near-future-removal: Upload system removed
+
   isSubmitting: boolean;
   validationErrors: Record<string, string>;
 }

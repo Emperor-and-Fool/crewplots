@@ -2,7 +2,7 @@ import express from 'express';
 import { storage } from '../../../storage';
 import { messageStorageService } from '../../messaging';
 
-import multer from 'multer';
+
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -66,43 +66,7 @@ async function withMongoDBRetry<T>(operation: () => Promise<T>, maxRetries: numb
   throw lastError;
 }
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(process.cwd(), 'uploads', 'documents');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
-// Set up multer for file uploads
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueFilename = `${Date.now()}-${file.originalname}`;
-      cb(null, uniqueFilename);
-    }
-  }),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept only document file types
-    const allowedFileTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    if (allowedFileTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF, JPEG, PNG, and Word documents are allowed.'));
-    }
-  }
-});
 
 
 
