@@ -6,7 +6,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { dataAggregationEngine, DataAggregationTask, AggregatedUserData } from './DataAggregationEngine';
-// Removed unused import: MessageService
+import { MessageService } from '../message-storage-service';
 import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
 import { mapWorkflowToValidationPermissions } from './validation-perm-mapping';

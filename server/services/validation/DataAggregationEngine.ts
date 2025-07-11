@@ -1,5 +1,5 @@
 import { storage } from '../../storage';
-// Removed unused import: messageStorageService
+import { messageStorageService } from '../message-storage-service';
 import { hybridCacheService, HybridCacheService } from '../hybrid-cache-service-v2';
 import type { CacheOptions } from '../hybrid-cache-service-v2';
 import type { User } from '@shared/schema';
