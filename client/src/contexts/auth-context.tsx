@@ -118,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isLoggingOut]); // Add dependency array to prevent infinite loops
 
   // Login function using URLSearchParams for reliable authentication
+  /* COMMENTED OUT FOR TESTING
   const login = async (username: string, password: string): Promise<any> => {
     try {
       setIsLoading(true);
@@ -188,6 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: "An unexpected error occurred. Please try again." };
     }
   };
+  */
 
   // Optimistic logout function - immediate UI response with background cleanup
   const logout = async (): Promise<void> => {
