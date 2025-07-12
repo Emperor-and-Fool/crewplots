@@ -288,13 +288,13 @@ router.post('/login', async (req, res, next) => {
             return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
         }
         
-        const redirectUrl = getRedirectForUser(userWithoutPassword);
+        const redirectScript = getRedirectForUser(userWithoutPassword);
         
         // SERVER RESPONSE: Send JSON with clean redirectUrl (Option 1 implementation)
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
-            redirectScript: redirectUrl,  // CLEAN FIELD: Direct path, no parsing needed
+            redirectScript: redirectScript,  // CLEAN FIELD: Direct path, no parsing needed
             debug: {
                 adminBypass: false,
                 sessionId: req.sessionID,
