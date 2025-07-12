@@ -276,16 +276,7 @@ function App() {
               
               {/* Removed orphaned validation test routes - components moved to administration module */}
               
-              <Route path="/validation-engine-3-test">
-                {isAuthenticated ? 
-                  <AppLayout>
-                    <RoleProtectedRoute 
-                      component={ValidationEngine3Test} 
-                      requiredRoles={["administrator"]} 
-                    />
-                  </AppLayout> : 
-                  <Redirect to="/login" />}
-              </Route>
+              {/* Removed orphaned ValidationEngine3Test route - component not imported */}
 
               <Route path="/view-calendar">
                 {isAuthenticated ? 
