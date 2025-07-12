@@ -42,7 +42,7 @@ export const LoginForm = ({
       if (result.error) {
         console.log("🔍 LOGIN DEBUG: Auth context returned error:", result.error);
         onSuccess?.(result); // Pass error to page for toast handling
-      } else if (result.success && result.user) {
+      } else if (result.user && result.redirectScript) {
         console.log("🔍 ATOMIC LOGIN: Calling onSuccess with complete result:", result);
         onSuccess?.(result); // Pass complete response with redirectScript
       } else if (result === false) {
