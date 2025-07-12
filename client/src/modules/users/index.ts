@@ -55,7 +55,8 @@ export {
   CrewMemberProfile,
   ApplicantPortal,
   Applicants,
-  ApplicantDetail
+  ApplicantDetail,
+  RegistrationSuccess
 } from './pages';
 
 // Utility exports
