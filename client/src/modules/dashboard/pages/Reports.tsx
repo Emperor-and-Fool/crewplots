@@ -56,297 +56,372 @@ export default function Reports() {
     },
   });
 
-  // Generate mock data based on selections
-  const generateMockData = () => {
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch(selectedTimeframe) {
-      case 'daily':
-        startDate = endDate = now;
-        break;
-      case 'weekly':
-        startDate = startOfWeek(now);
-        endDate = endOfWeek(now);
-        break;
-      case 'monthly':
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
-        break;
-      default:
-        startDate = subDays(now, 7);
-        endDate = now;
-    }
+  // Calculate date ranges
+  const today = new Date();
+  const weekStart = startOfWeek(today);
+  const weekEnd = endOfWeek(today);
+  const monthStart = startOfMonth(today);
+  const monthEnd = endOfMonth(today);
 
-    // Mock sales data
-    const salesData = [
-      { date: '2024-01-01', revenue: 1250, transactions: 45, avgTicket: 27.78 },
-      { date: '2024-01-02', revenue: 1380, transactions: 52, avgTicket: 26.54 },
-      { date: '2024-01-03', revenue: 980, transactions: 38, avgTicket: 25.79 },
-      { date: '2024-01-04', revenue: 1520, transactions: 58, avgTicket: 26.21 },
-      { date: '2024-01-05', revenue: 1750, transactions: 67, avgTicket: 26.12 },
-      { date: '2024-01-06', revenue: 2100, transactions: 78, avgTicket: 26.92 },
-      { date: '2024-01-07', revenue: 1950, transactions: 72, avgTicket: 27.08 },
-    ];
-
-    // Mock staff data
-    const staffData = [
-      { name: 'Sarah Johnson', role: 'Server', hoursWorked: 38, sales: 2450, tips: 280 },
-      { name: 'Mike Chen', role: 'Bartender', hoursWorked: 42, sales: 3200, tips: 450 },
-      { name: 'Lisa Rodriguez', role: 'Server', hoursWorked: 35, sales: 2100, tips: 250 },
-      { name: 'David Kim', role: 'Host', hoursWorked: 30, sales: 0, tips: 120 },
-      { name: 'Emma Wilson', role: 'Server', hoursWorked: 40, sales: 2800, tips: 320 },
-    ];
-
-    // Mock inventory data
-    const inventoryData = [
-      { item: 'Draft Beer', category: 'Beverages', usage: 85, waste: 5, cost: 420 },
-      { item: 'House Wine', category: 'Beverages', usage: 72, waste: 3, cost: 380 },
-      { item: 'Signature Cocktails', category: 'Beverages', usage: 95, waste: 8, cost: 580 },
-      { item: 'Appetizers', category: 'Food', usage: 120, waste: 12, cost: 650 },
-      { item: 'Main Courses', category: 'Food', usage: 180, waste: 15, cost: 920 },
-    ];
-
-    return { salesData, staffData, inventoryData };
+  const formatDateRange = (start: Date, end: Date) => {
+    return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`;
   };
 
-  const { salesData, staffData, inventoryData } = generateMockData();
+  // Get date range based on selected timeframe
+  const getDateRange = () => {
+    switch (selectedTimeframe) {
+      case "daily":
+        return format(today, 'MMMM d, yyyy');
+      case "weekly":
+        return formatDateRange(weekStart, weekEnd);
+      case "monthly":
+        return formatDateRange(monthStart, monthEnd);
+      case "yearly":
+        return format(today, 'yyyy');
+      default:
+        return formatDateRange(weekStart, weekEnd);
+    }
+  };
 
-  // Calculate totals
-  const totalRevenue = salesData.reduce((sum, day) => sum + day.revenue, 0);
-  const totalTransactions = salesData.reduce((sum, day) => sum + day.transactions, 0);
-  const avgTicketSize = totalRevenue / totalTransactions;
+  // Placeholder data for reports
+  const salesData = {
+    daily: [1200, 1500, 1800, 2100, 1900, 1700, 1600],
+    categories: ["Food", "Beer", "Wine", "Spirits", "Cocktails", "Soft Drinks", "Other"],
+    times: ["12pm", "2pm", "4pm", "6pm", "8pm", "10pm", "12am"],
+  };
+
+  const staffData = {
+    names: ["Alex", "Jamie", "Sam", "Taylor", "Jordan", "Casey", "Riley"],
+    hours: [35, 28, 40, 22, 15, 32, 25],
+  };
+
+  const inventoryData = {
+    categories: ["Food", "Beer", "Wine", "Spirits", "Supplies"],
+    values: [30, 25, 20, 15, 10],
+  };
+
+  // If not a manager or floor manager, redirect to dashboard
+  if (!isManager && !isFloorManager) {
+    navigate("/dashboard");
+    return null;
+  }
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="lg:flex hidden">
-        <Sidebar />
-      </div>
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar for larger screens */}
+      <Sidebar />
       
+      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="lg:hidden">
-          <MobileNavbar />
-        </div>
+        {/* Mobile navigation */}
+        <MobileNavbar />
         
-        <Header />
+        {/* Top header with search and user */}
+        <Header onLocationChange={(id) => setSelectedLocation(id)} />
         
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-          <div className="container mx-auto space-y-6">
-            <div className="flex justify-between items-center">
+        {/* Main scrollable area */}
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
-                <p className="text-muted-foreground">
-                  Performance insights and business metrics
+                <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  View business performance metrics and insights
                 </p>
               </div>
-              <Button className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Export Report
-              </Button>
+              <div className="mt-4 sm:mt-0">
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Location:</label>
-                <Select 
-                  value={selectedLocation.toString()} 
-                  onValueChange={(value) => setSelectedLocation(parseInt(value))}
-                  disabled={isFloorManager}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {!isFloorManager && (
-                      <SelectItem value="0">All Locations</SelectItem>
+            {defaultLocationId > 0 ? (
+              <>
+                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="report-select" className="text-sm font-medium text-gray-700">Report Type:</label>
+                        <Select 
+                          value={selectedReport} 
+                          onValueChange={(value) => setSelectedReport(value)}
+                        >
+                          <SelectTrigger id="report-select" className="w-[180px]">
+                            <SelectValue placeholder="Select report" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sales">Sales Report</SelectItem>
+                            <SelectItem value="staff">Staff Report</SelectItem>
+                            <SelectItem value="inventory">Inventory Report</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="timeframe-select" className="text-sm font-medium text-gray-700">Timeframe:</label>
+                        <Select 
+                          value={selectedTimeframe} 
+                          onValueChange={(value) => setSelectedTimeframe(value)}
+                        >
+                          <SelectTrigger id="timeframe-select" className="w-[180px]">
+                            <SelectValue placeholder="Select timeframe" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4 flex items-center">
+                      <Calendar className="h-5 w-5 text-gray-500 mr-2" />
+                      <span className="text-sm font-medium">{getDateRange()}</span>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>
+                      {selectedReport === "sales" && "Sales Report"}
+                      {selectedReport === "staff" && "Staff Performance Report"}
+                      {selectedReport === "inventory" && "Inventory Status Report"}
+                    </CardTitle>
+                    <CardDescription>
+                      {locations?.find(l => l.id === defaultLocationId)?.name || `Location #${defaultLocationId}`}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedReport === "sales" && (
+                      <Tabs defaultValue="overview">
+                        <TabsList>
+                          <TabsTrigger value="overview">Overview</TabsTrigger>
+                          <TabsTrigger value="by-category">By Category</TabsTrigger>
+                          <TabsTrigger value="by-time">By Time</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="overview" className="py-4">
+                          <div className="h-80 flex items-center justify-center border rounded bg-gray-50">
+                            <div className="text-center">
+                              <BarChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                              <p className="text-gray-500">Bar Chart of Sales Data Would Appear Here</p>
+                              <p className="text-sm text-gray-400 mt-2">Placeholder for interactive sales chart</p>
+                            </div>
+                          </div>
+                          <div className="mt-6">
+                            <h3 className="text-lg font-medium mb-4">Sales Summary</h3>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Metric</TableHead>
+                                  <TableHead>Value</TableHead>
+                                  <TableHead>Change</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell className="font-medium">Total Sales</TableCell>
+                                  <TableCell>$11,800</TableCell>
+                                  <TableCell className="text-green-600">+8.2%</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="font-medium">Average Daily Sales</TableCell>
+                                  <TableCell>$1,686</TableCell>
+                                  <TableCell className="text-green-600">+5.1%</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="font-medium">Average Transaction</TableCell>
+                                  <TableCell>$42.50</TableCell>
+                                  <TableCell className="text-red-600">-2.3%</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="font-medium">Total Transactions</TableCell>
+                                  <TableCell>278</TableCell>
+                                  <TableCell className="text-green-600">+10.7%</TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="by-category" className="py-4">
+                          <div className="h-80 flex items-center justify-center border rounded bg-gray-50">
+                            <div className="text-center">
+                              <PieChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                              <p className="text-gray-500">Pie Chart of Sales by Category Would Appear Here</p>
+                              <p className="text-sm text-gray-400 mt-2">Placeholder for interactive category chart</p>
+                            </div>
+                          </div>
+                          <div className="mt-6">
+                            <h3 className="text-lg font-medium mb-4">Sales by Category</h3>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Category</TableHead>
+                                  <TableHead>Amount</TableHead>
+                                  <TableHead>% of Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {salesData.categories.map((category, index) => (
+                                  <TableRow key={category}>
+                                    <TableCell className="font-medium">{category}</TableCell>
+                                    <TableCell>${salesData.daily[index]}</TableCell>
+                                    <TableCell>
+                                      {Math.round(salesData.daily[index] / salesData.daily.reduce((a, b) => a + b, 0) * 100)}%
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="by-time" className="py-4">
+                          <div className="h-80 flex items-center justify-center border rounded bg-gray-50">
+                            <div className="text-center">
+                              <LineChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                              <p className="text-gray-500">Line Chart of Sales by Time Would Appear Here</p>
+                              <p className="text-sm text-gray-400 mt-2">Placeholder for interactive time chart</p>
+                            </div>
+                          </div>
+                          <div className="mt-6">
+                            <h3 className="text-lg font-medium mb-4">Sales by Time of Day</h3>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Time</TableHead>
+                                  <TableHead>Amount</TableHead>
+                                  <TableHead>% of Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {salesData.times.map((time, index) => (
+                                  <TableRow key={time}>
+                                    <TableCell className="font-medium">{time}</TableCell>
+                                    <TableCell>${salesData.daily[index]}</TableCell>
+                                    <TableCell>
+                                      {Math.round(salesData.daily[index] / salesData.daily.reduce((a, b) => a + b, 0) * 100)}%
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     )}
-                    {locations?.map((location) => (
-                      <SelectItem key={location.id} value={location.id.toString()}>
-                        {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    
+                    {selectedReport === "staff" && (
+                      <div>
+                        <div className="h-80 flex items-center justify-center border rounded bg-gray-50">
+                          <div className="text-center">
+                            <BarChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                            <p className="text-gray-500">Bar Chart of Staff Hours Would Appear Here</p>
+                            <p className="text-sm text-gray-400 mt-2">Placeholder for interactive staff chart</p>
+                          </div>
+                        </div>
+                        <div className="mt-6">
+                          <h3 className="text-lg font-medium mb-4">Staff Hours Summary</h3>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Staff Member</TableHead>
+                                <TableHead>Hours Worked</TableHead>
+                                <TableHead>Performance Score</TableHead>
+                                <TableHead>Sales Contribution</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {staffData.names.map((name, index) => (
+                                <TableRow key={name}>
+                                  <TableCell className="font-medium">{name}</TableCell>
+                                  <TableCell>{staffData.hours[index]} hrs</TableCell>
+                                  <TableCell>{Math.floor(Math.random() * 10) + 90}%</TableCell>
+                                  <TableCell>${Math.floor(staffData.hours[index] * (Math.random() * 50 + 150))}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedReport === "inventory" && (
+                      <div>
+                        <div className="h-80 flex items-center justify-center border rounded bg-gray-50">
+                          <div className="text-center">
+                            <PieChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                            <p className="text-gray-500">Pie Chart of Inventory Distribution Would Appear Here</p>
+                            <p className="text-sm text-gray-400 mt-2">Placeholder for interactive inventory chart</p>
+                          </div>
+                        </div>
+                        <div className="mt-6">
+                          <h3 className="text-lg font-medium mb-4">Inventory Status</h3>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Value</TableHead>
+                                <TableHead>% of Total</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {inventoryData.categories.map((category, index) => (
+                                <TableRow key={category}>
+                                  <TableCell className="font-medium">{category}</TableCell>
+                                  <TableCell>${inventoryData.values[index] * 1000}</TableCell>
+                                  <TableCell>
+                                    {inventoryData.values[index]}%
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      index % 3 === 0 ? 'bg-green-100 text-green-800' : 
+                                      index % 3 === 1 ? 'bg-yellow-100 text-yellow-800' : 
+                                      'bg-red-100 text-red-800'
+                                    }`}>
+                                      {index % 3 === 0 ? 'Healthy' : 
+                                       index % 3 === 1 ? 'Warning' : 
+                                       'Low Stock'}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="bg-white rounded-md shadow p-8 text-center">
+                <FilePieChart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Select a Location
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Please select a location from the dropdown in the header to view reports and analytics.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => isManager ? navigate("/locations") : null}
+                  disabled={!isManager}
+                >
+                  {isManager ? "Manage Locations" : "Contact a manager to set up locations"}
+                </Button>
               </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Timeframe:</label>
-                <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <BarChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +12% from last period
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-                  <FilePieChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalTransactions}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +8% from last period
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Ticket Size</CardTitle>
-                  <LineChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${avgTicketSize.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +3% from last period
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Labor Hours</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {staffData.reduce((sum, staff) => sum + staff.hoursWorked, 0)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    This period
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Report Tabs */}
-            <Tabs value={selectedReport} onValueChange={setSelectedReport} className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="sales">Sales</TabsTrigger>
-                <TabsTrigger value="staff">Staff Performance</TabsTrigger>
-                <TabsTrigger value="inventory">Inventory</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="sales" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Daily Sales Breakdown</CardTitle>
-                    <CardDescription>Revenue and transaction details by day</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Revenue</TableHead>
-                          <TableHead>Transactions</TableHead>
-                          <TableHead>Avg Ticket</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {salesData.map((day) => (
-                          <TableRow key={day.date}>
-                            <TableCell>{format(new Date(day.date), 'MMM dd, yyyy')}</TableCell>
-                            <TableCell>${day.revenue.toLocaleString()}</TableCell>
-                            <TableCell>{day.transactions}</TableCell>
-                            <TableCell>${day.avgTicket.toFixed(2)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="staff" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Staff Performance</CardTitle>
-                    <CardDescription>Individual team member metrics</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Hours</TableHead>
-                          <TableHead>Sales</TableHead>
-                          <TableHead>Tips</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {staffData.map((staff) => (
-                          <TableRow key={staff.name}>
-                            <TableCell className="font-medium">{staff.name}</TableCell>
-                            <TableCell>{staff.role}</TableCell>
-                            <TableCell>{staff.hoursWorked}h</TableCell>
-                            <TableCell>${staff.sales.toLocaleString()}</TableCell>
-                            <TableCell>${staff.tips}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="inventory" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Inventory Analysis</CardTitle>
-                    <CardDescription>Usage, waste, and cost breakdown</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Usage</TableHead>
-                          <TableHead>Waste %</TableHead>
-                          <TableHead>Cost</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {inventoryData.map((item) => (
-                          <TableRow key={item.item}>
-                            <TableCell className="font-medium">{item.item}</TableCell>
-                            <TableCell>{item.category}</TableCell>
-                            <TableCell>{item.usage} units</TableCell>
-                            <TableCell>{((item.waste / item.usage) * 100).toFixed(1)}%</TableCell>
-                            <TableCell>${item.cost}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            )}
           </div>
         </main>
       </div>
