@@ -23,7 +23,7 @@ import { Applicants, ApplicantDetail } from "@/modules/users";
 import { Profile } from "@/modules/users/pages";
 import { KnowledgeBase } from "@/modules/knowledge-base";
 import { Reports } from "@/modules/dashboard";
-import Settings from "@/pages/settings";
+import { Settings } from "@/modules/administration";
 import { EmailSettings, SecuritySettings, MessagingValidationTest } from "@/modules/administration";
 import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
