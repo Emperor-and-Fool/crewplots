@@ -4,6 +4,7 @@ import { useAuth } from "@/modules/auth";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
 import { NavigationRenderer } from "@/components/navigation";
+import { SessionSyncIndicator } from "@/components/auth/SessionSyncIndicator";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -144,6 +145,11 @@ export function Sidebar({ className }: SidebarProps) {
           >
             <LogOut className="h-5 w-5" />
           </Button>
+        </div>
+        
+        {/* Session Sync Indicator */}
+        <div className="mt-3 pt-3 border-t border-primary-700/50">
+          <SessionSyncIndicator />
         </div>
       </div>
     </aside>
