@@ -27,7 +27,7 @@ import Settings from "@/pages/settings";
 import { EmailSettings, SecuritySettings, MessagingValidationTest } from "@/modules/administration";
 import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
-import RegistrationSuccess from "@/pages/registration-success";
+import { RegistrationSuccess } from "@/modules/users";
 import LandingPage from "@/pages/landing";
 // Removed non-existent administration imports
 

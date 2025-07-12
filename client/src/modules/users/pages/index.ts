@@ -12,3 +12,4 @@ export { default as CrewMemberProfile } from './CrewMemberProfile';
 export { default as ApplicantPortal } from './ApplicantPortal';
 export { default as Applicants } from './Applicants';
 export { default as ApplicantDetail } from './ApplicantDetail';
+export { default as RegistrationSuccess } from './RegistrationSuccess';
