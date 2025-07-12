@@ -1,547 +1,383 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { Sidebar } from "@/components/ui/sidebar";
-import { MobileNavbar } from "@/components/ui/mobile-navbar";
-import { Header } from "@/components/ui/header";
-import { Shield, Lock, Key, AlertTriangle, Settings, Users, Database } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Shield, Trash2, Mail, Clock, FileText, AlertTriangle } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
 
-const securityConfigSchema = z.object({
-  sessionTimeout: z.number().min(5).max(1440, "Session timeout must be between 5 and 1440 minutes"),
-  maxLoginAttempts: z.number().min(3).max(10, "Max login attempts must be between 3 and 10"),
-  passwordMinLength: z.number().min(6).max(32, "Password length must be between 6 and 32 characters"),
-  requirePasswordComplexity: z.boolean(),
-  enableTwoFactor: z.boolean(),
-  forcePasswordChange: z.number().min(0).max(365, "Password change period must be between 0 and 365 days"),
-  enableAccountLockout: z.boolean(),
-  lockoutDuration: z.number().min(5).max(120, "Lockout duration must be between 5 and 120 minutes"),
-  enableAuditLogging: z.boolean(),
-  logRetentionDays: z.number().min(7).max(365, "Log retention must be between 7 and 365 days")
+const securitySettingsSchema = z.object({
+  locationDeletion: z.object({
+    method: z.enum(['basic', 'email_verification']),
+    confirmationSteps: z.number().min(1).max(5),
+    notificationEmails: z.string(),
+    tokenExpiration: z.number().min(1).max(168), // 1 hour to 7 days
+    auditTrail: z.boolean(),
+    requireReason: z.boolean(),
+    reversibilityWindow: z.number().min(0).max(30) // 0 to 30 days
+  })
 });
 
-type SecurityConfig = z.infer<typeof securityConfigSchema>;
+type SecuritySettingsForm = z.infer<typeof securitySettingsSchema>;
 
 export default function SecuritySettings() {
   const { toast } = useToast();
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<SecurityConfig>({
-    resolver: zodResolver(securityConfigSchema),
+  const form = useForm<SecuritySettingsForm>({
+    resolver: zodResolver(securitySettingsSchema),
     defaultValues: {
-      sessionTimeout: 60,
-      maxLoginAttempts: 5,
-      passwordMinLength: 8,
-      requirePasswordComplexity: true,
-      enableTwoFactor: false,
-      forcePasswordChange: 90,
-      enableAccountLockout: true,
-      lockoutDuration: 15,
-      enableAuditLogging: true,
-      logRetentionDays: 30
+      locationDeletion: {
+        method: 'basic',
+        confirmationSteps: 3,
+        notificationEmails: '',
+        tokenExpiration: 24,
+        auditTrail: true,
+        requireReason: true,
+        reversibilityWindow: 7
+      }
     }
   });
 
-  // Load current security settings
-  const { data: currentSettings, isLoading } = useQuery({
-    queryKey: ['/api/security/settings'],
-    queryFn: async () => {
+  // Load current settings
+  useEffect(() => {
+    loadCurrentSettings();
+  }, []);
+
+  const loadCurrentSettings = async () => {
+    try {
       const response = await fetch('/api/security/settings', {
         credentials: 'include'
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch security settings');
-      }
-      return response.json();
-    },
-  });
 
-  // Security configuration save mutation
-  const saveConfigMutation = useMutation({
-    mutationFn: async (data: SecurityConfig) => {
-      const response = await fetch('/api/security/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save security configuration');
+      if (response.ok) {
+        const settings = await response.json();
+        if (settings.locationDeletion) {
+          form.reset({
+            locationDeletion: {
+              ...form.getValues().locationDeletion,
+              ...settings.locationDeletion,
+              notificationEmails: settings.locationDeletion.notificationEmails?.join(', ') || ''
+            }
+          });
+        }
       }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Security Settings Saved",
-        description: "Security configuration has been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to save security configuration. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error('Failed to load security settings:', error);
     }
-  });
-
-  // Session management mutations
-  const clearSessionsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/security/clear-sessions', {
-        method: 'POST',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to clear sessions');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Sessions Cleared",
-        description: "All user sessions have been cleared successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to clear sessions. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const onSubmit = (data: SecurityConfig) => {
-    saveConfigMutation.mutate(data);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen bg-background">
-        <div className="lg:flex hidden">
-          <Sidebar />
-        </div>
-        
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="lg:hidden">
-            <MobileNavbar />
-          </div>
-          
-          <Header />
-          
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-            <div className="container mx-auto max-w-4xl">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-muted rounded w-1/4"></div>
-                <div className="h-64 bg-muted rounded"></div>
-                <div className="h-32 bg-muted rounded"></div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
+  const onSubmit = async (data: SecuritySettingsForm) => {
+    setIsLoading(true);
+    try {
+      // Parse email list
+      const emailList = data.locationDeletion.notificationEmails
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email.length > 0);
+
+      const payload = {
+        locationDeletion: {
+          ...data.locationDeletion,
+          notificationEmails: emailList
+        }
+      };
+
+      const response = await fetch('/api/security/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Security Settings Saved',
+          description: 'Location deletion security settings have been updated successfully'
+        });
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: 'Failed to save security settings',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deletionMethod = form.watch('locationDeletion.method');
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="lg:flex hidden">
-        <Sidebar />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="lg:hidden">
-          <MobileNavbar />
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Security Settings</h1>
+          <p className="text-gray-600">Configure security policies and access controls</p>
         </div>
-        
-        <Header />
-        
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-          <div className="container mx-auto max-w-4xl space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Security Settings</h1>
-                <p className="text-muted-foreground">
-                  Configure authentication, authorization, and security policies
-                </p>
-              </div>
-              <Badge variant="destructive" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Administrator Only
-              </Badge>
-            </div>
-
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Security configuration changes affect all users. Review settings carefully before saving.
-              </AlertDescription>
-            </Alert>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Authentication Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="h-5 w-5" />
-                      Authentication Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Configure user authentication and session policies
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="sessionTimeout"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Session Timeout (minutes)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="60"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Automatically log out inactive users
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="maxLoginAttempts"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Max Login Attempts</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="5"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Failed attempts before account lockout
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="enableTwoFactor"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Two-Factor Authentication
-                            </FormLabel>
-                            <FormDescription>
-                              Require additional verification for login (Coming Soon)
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              disabled={true}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Password Policy */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5" />
-                      Password Policy
-                    </CardTitle>
-                    <CardDescription>
-                      Set password requirements and security rules
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="passwordMinLength"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Minimum Password Length</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="8"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="forcePasswordChange"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Force Password Change (days)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="90"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              0 = Never force change
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="requirePasswordComplexity"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Require Password Complexity
-                            </FormLabel>
-                            <FormDescription>
-                              Passwords must contain uppercase, lowercase, numbers, and symbols
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Account Security */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Account Security
-                    </CardTitle>
-                    <CardDescription>
-                      Configure account lockout and monitoring settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="enableAccountLockout"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Enable Account Lockout
-                            </FormLabel>
-                            <FormDescription>
-                              Temporarily lock accounts after failed login attempts
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch('enableAccountLockout') && (
-                      <FormField
-                        control={form.control}
-                        name="lockoutDuration"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Lockout Duration (minutes)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="15"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              How long to lock accounts after max attempts reached
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Audit & Logging */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5" />
-                      Audit & Logging
-                    </CardTitle>
-                    <CardDescription>
-                      Configure security logging and audit trail settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="enableAuditLogging"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Enable Audit Logging
-                            </FormLabel>
-                            <FormDescription>
-                              Track user actions and security events
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch('enableAuditLogging') && (
-                      <FormField
-                        control={form.control}
-                        name="logRetentionDays"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Log Retention Period (days)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                placeholder="30"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              How long to keep audit logs before automatic deletion
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Separator />
-
-                {/* Emergency Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5" />
-                      Emergency Actions
-                    </CardTitle>
-                    <CardDescription>
-                      Emergency security actions for administrators
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Alert>
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          These actions immediately affect all users. Use only in emergency situations.
-                        </AlertDescription>
-                      </Alert>
-
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => clearSessionsMutation.mutate()}
-                        disabled={clearSessionsMutation.isPending}
-                        className="flex items-center gap-2"
-                      >
-                        <Users className="h-4 w-4" />
-                        {clearSessionsMutation.isPending ? "Clearing..." : "Clear All User Sessions"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Save Configuration */}
-                <div className="flex justify-end gap-4">
-                  <Button
-                    type="submit"
-                    disabled={saveConfigMutation.isPending}
-                    className="flex items-center gap-2"
-                  >
-                    <Settings className="h-4 w-4" />
-                    {saveConfigMutation.isPending ? "Saving..." : "Save Security Settings"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </div>
-        </main>
+        <Badge variant="outline" className="text-xs">
+          <Shield className="h-3 w-3 mr-1" />
+          Administrator Only
+        </Badge>
       </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          
+          {/* Location Deletion Security */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-500" />
+                Location Deletion Security
+              </CardTitle>
+              <CardDescription>
+                Configure how location deletions are handled and secured
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              
+              {/* Deletion Method */}
+              <FormField
+                control={form.control}
+                name="locationDeletion.method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Deletion Method</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select deletion method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="basic">Basic Confirmation</SelectItem>
+                        <SelectItem value="email_verification">Email Verification Required</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Basic: Multi-step confirmation dialog. Email: Requires email verification link.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Confirmation Steps */}
+              <FormField
+                control={form.control}
+                name="locationDeletion.confirmationSteps"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmation Steps</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">1 Step (Dangerous)</SelectItem>
+                        <SelectItem value="2">2 Steps (Basic)</SelectItem>
+                        <SelectItem value="3">3 Steps (Recommended)</SelectItem>
+                        <SelectItem value="4">4 Steps (High Security)</SelectItem>
+                        <SelectItem value="5">5 Steps (Maximum Security)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Number of confirmation dialogs before deletion proceeds
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Email Verification Settings */}
+              {deletionMethod === 'email_verification' && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email Verification Settings
+                    </h4>
+
+                    <FormField
+                      control={form.control}
+                      name="locationDeletion.notificationEmails"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Notification Emails</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="admin@example.com, manager@example.com"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Comma-separated list of emails that will receive deletion verification links
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="locationDeletion.tokenExpiration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Token Expiration (hours)</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">1 Hour</SelectItem>
+                              <SelectItem value="6">6 Hours</SelectItem>
+                              <SelectItem value="24">24 Hours (Recommended)</SelectItem>
+                              <SelectItem value="48">48 Hours</SelectItem>
+                              <SelectItem value="168">7 Days</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            How long email verification links remain valid
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {/* Additional Security Options */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Additional Security
+                </h4>
+
+                <FormField
+                  control={form.control}
+                  name="locationDeletion.requireReason"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Require Deletion Reason</FormLabel>
+                        <FormDescription>
+                          Users must provide a reason when deleting locations
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="locationDeletion.auditTrail"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Enable Audit Trail</FormLabel>
+                        <FormDescription>
+                          Log all deletion requests and actions for compliance
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="locationDeletion.reversibilityWindow"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reversibility Window (days)</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">No Recovery (Permanent)</SelectItem>
+                          <SelectItem value="1">1 Day</SelectItem>
+                          <SelectItem value="7">7 Days (Recommended)</SelectItem>
+                          <SelectItem value="14">14 Days</SelectItem>
+                          <SelectItem value="30">30 Days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        How long deleted locations can be recovered before permanent deletion
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Future Security Features Placeholder */}
+          <Card className="bg-gray-50 border-dashed">
+            <CardHeader>
+              <CardTitle className="text-gray-600 flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Future Security Features
+              </CardTitle>
+              <CardDescription>
+                Additional security settings will be added here as the platform grows
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-gray-500 space-y-1">
+                <div>• Password Policy Configuration</div>
+                <div>• Session Management Settings</div>
+                <div>• Two-Factor Authentication</div>
+                <div>• API Rate Limiting</div>
+                <div>• Data Encryption Settings</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Security Settings'}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
