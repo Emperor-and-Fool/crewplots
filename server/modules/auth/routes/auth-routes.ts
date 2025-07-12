@@ -219,7 +219,7 @@ router.post('/login', async (req, res, next) => {
                     sessionId: req.sessionID,
                     timestamp: new Date().toISOString(),
                     cookieSet: true
-                }
+                    }
                });
             // return res.status(200).json({
             //    message: 'Login successful',
@@ -318,50 +318,20 @@ router.post('/login', async (req, res, next) => {
         
         const redirectUrl = getRedirectForUser(userWithoutPassword);
         
-                // Line 211 - Replace complex redirectScript with clean redirectUrl
-                            return res.status(200).json({
-                                message: 'Login successful',
-                                user: userWithoutPassword,
-                                redirectUrl: redirectUrl,  // Clean field (already exists)
-                                // TODO: Add debug logging spot is here, for cookie/timing investigation
-                                debug: {
-                                    adminBypass: true,
-                                    sessionId: req.sessionID,
-                                    timestamp: new Date().toISOString(),
-                                    cookieSet: true
-                                }
-                            });
-                            // return res.status(200).json({
-                            //    message: 'Login successful',
-                            //    user: userWithoutPassword,
-                            //    redirectScript: `
-                            //        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
-                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
-                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
-                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-                            //        setTimeout(() => {
-                            //            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
-                            //            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
-                            //            if (!document.cookie.includes('connect.sid')) {
-                            //                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-                            //                console.log('🔄 Trying manual cookie refresh...');
-                            //                window.location.reload();
-                            //                return;
-                            //            }
-                            //            window.location.replace('${redirectUrl}');
-                            //        }, 1000);
-                            //    `,
-                            //    redirectUrl: redirectUrl,
-                            //    debug: {
-                            //        adminBypass: true,
-                            //        sessionId: req.sessionID,
-                            //        timestamp: new Date().toISOString(),
-                            //        cookieSet: true
-                }
-           });
-    } 
-
-catch (error) {
+        // Replace complex redirectScript with clean redirectUrl
+        return res.status(200).json({
+            message: 'Login successful',
+            user: userWithoutPassword,
+            redirectUrl: redirectUrl,  // Clean field (already exists)
+            // TODO: Add debug logging spot here for cookie/timing investigation
+            debug: {
+                adminBypass: false,
+                sessionId: req.sessionID,
+                timestamp: new Date().toISOString(),
+                cookieSet: true
+            }
+        }); 
+        catch (error) {
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
             return res.status(400).json({ 
