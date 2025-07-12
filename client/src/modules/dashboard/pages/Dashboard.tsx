@@ -53,10 +53,9 @@ export default function Dashboard() {
   );
 
   // 2. Second: Load shifts only after schedules loaded
-  const { data: shifts, isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/scheduler/shifts', activeWeekSchedule?.id],
+  const { data: shifts } = useQuery({
+    queryKey: ['/api/scheduler/week-schedules', activeWeekSchedule?.id, 'shifts'],
     queryFn: async () => {
-      if (!activeWeekSchedule?.id) return [];
       const response = await fetch(`/api/scheduler/week-schedules/${activeWeekSchedule.id}/shifts`, {
         credentials: 'include'
       });
@@ -65,287 +64,321 @@ export default function Dashboard() {
       }
       return response.json();
     },
-    enabled: !!activeWeekSchedule?.id && !!weekSchedules, // Only run after schedules loaded
+    enabled: !!activeWeekSchedule?.id && !schedulesLoading,
     staleTime: 2 * 60 * 1000, // 2 minutes cache
   });
 
-  // 3. Third: Load profile data
-  const { data: profileData, isLoading: profileLoading } = useQuery({
-    queryKey: ['/api/validation/v3/execute'],
+  // 3. Third: Load users only after schedules complete
+  const { data: profileData } = useQuery({
+    queryKey: ['/api/validation/v3/execute', 'userList'],
     queryFn: async () => {
       const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
+          operation: 'read',
           entityType: 'userList',
-          operation: 'list',
-          data: {}
-        }),
-        credentials: 'include'
+          data: {
+            operation: 'userList',
+            filters: {}
+          }
+        })
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error('Failed to fetch user list via ValidationEngine30');
       }
       const result = await response.json();
-      return result.data;
+      return result.threads?.transaction?.data?.users || [];
     },
-    enabled: !!shifts, // Only run after shifts loaded
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    enabled: !schedulesLoading,
+    staleTime: 3 * 60 * 1000, // 3 minutes cache
   });
 
-  // Calculate statistics 
-  const staffUsers = Array.isArray(profileData) ? profileData.filter((user: any) => 
-    (user.role === 'staff' || user.role === 'crew_member') && 
-    (!selectedLocationId || user.locationIds?.includes(selectedLocationId))
+  // 4. Fourth: Load user locations via ValidationEngine30
+  const { data: userLocations } = useQuery({
+    queryKey: ['/api/validation/v3/execute', 'userLocations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch('/api/validation/v3/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          operation: 'list',
+          entityType: 'userLocations',
+          data: {
+            userId: user.id
+          }
+        })
+      });
+      if (!response.ok) {
+        if (response.status === 404) return []; // No assignments
+        throw new Error('Failed to fetch user locations via ValidationEngine30');
+      }
+      const result = await response.json();
+      return result.threads?.transaction?.data?.userLocations || [];
+    },
+    enabled: !!user?.id && (user?.role === 'crew_chief') && !schedulesLoading
+  });
+
+  // Get assigned location IDs for role-based filtering
+  const assignedLocationIds = userLocations?.map((ul: any) => ul.locationId) || [];
+  const isLocationRestricted = (user?.role === 'crew_chief') && assignedLocationIds.length > 0;
+
+  // Cherry-pick crew data from unified profile data (include all non-applicant roles)
+  // Add safety check to ensure profileData is an array
+  let staffUsers = Array.isArray(profileData) ? profileData.filter((user: any) => 
+    user.role === 'crew_member' || 
+    user.role === 'crew_chief' || 
+    user.role === 'app_manager' || 
+    user.role === 'owner' || 
+    user.role === 'administrator'
   ) : [];
 
-  const applicantUsers = Array.isArray(profileData) ? profileData.filter((user: any) => 
-    user.role === 'applicant' && 
-    (!selectedLocationId || user.locationIds?.includes(selectedLocationId))
-  ) : [];
+  // Apply location filtering for crew managers
+  if (isLocationRestricted) {
+    staffUsers = staffUsers.filter((user: any) => 
+      !user.locationId || assignedLocationIds.includes(user.locationId)
+    );
+  }
 
-  const thisWeekShifts = shifts || [];
-  const hoursScheduled = thisWeekShifts.reduce((total: number, shift: any) => {
+  const totalStaff = staffUsers.length;
+  const shiftsThisWeek = shifts?.length || 0;
+  const hoursScheduled = shifts?.reduce((total: number, shift: any) => {
     if (shift.startTime && shift.endTime) {
-      const start = new Date(`2000-01-01T${shift.startTime}`);
-      const end = new Date(`2000-01-01T${shift.endTime}`);
+      const start = new Date(`1970-01-01T${shift.startTime}`);
+      const end = new Date(`1970-01-01T${shift.endTime}`);
       const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-      return total + (hours > 0 ? hours : 0);
+      return total + hours;
     }
     return total;
-  }, 0);
+  }, 0) || 0;
 
-  const recentApplicants = applicantUsers
-    .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    .slice(0, 5);
+  // Calculate applicant stats from profile data (cherry-pick applicants only)
+  // Add safety check to ensure profileData is an array
+  let applicantUsers = Array.isArray(profileData) ? profileData.filter((user: any) => user.role === 'applicant') : [];
+  
+  // Apply location filtering for crew managers
+  if (isLocationRestricted) {
+    applicantUsers = applicantUsers.filter((user: any) => 
+      !user.locationId || assignedLocationIds.includes(user.locationId)
+    );
+  }
+  
+  const newApplicants = applicantUsers?.filter((applicant: any) => applicant.status === 'new').length || 0;
+  const shortListedApplicants = applicantUsers?.filter((applicant: any) => applicant.status === 'short-listed').length || 0;
+  const displayApplicantCount = applicantUsers?.length || 0;
 
-  const isLoading = schedulesLoading || shiftsLoading || profileLoading;
+  // Use location-filtered data when location is selected, or show all data when no location selected
+  const currentLocationId = selectedLocationId;
+  
+  // Override location context for role-restricted users
+  const effectiveIsAllLocations = isLocationRestricted ? false : isAllLocations;
+  const restrictedLocationMessage = isLocationRestricted ? 
+    `Showing data for your assigned locations (${assignedLocationIds.length} locations)` : 
+    null;
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="lg:flex hidden">
-        <Sidebar />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="lg:hidden">
-          <MobileNavbar />
-        </div>
+    <div className="flex flex-col overflow-hidden">
+      {/* Mobile navigation */}
+      <MobileNavbar />
         
+        {/* Top header with search and user */}
         <Header />
         
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-          <div className="container mx-auto space-y-6">
+        {/* Main scrollable area */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 relative">
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Location-aware Dashboard Header */}
             <LocationHeader />
             
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {[...Array(4)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-4 bg-muted rounded mb-2"></div>
-                      <div className="h-8 bg-muted rounded"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* Stats Grid - Only show in "All Locations" view */}
-                {isAllLocations && (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <StatsCard
-                      title="Total Applicants"
-                      value={applicantUsers.length}
-                      description="+5 from last month"
-                      icon={UserPlus}
-                    />
-                    <StatsCard
-                      title="Total Staff"
-                      value={staffUsers.length}
-                      description="Active crew members"
-                      icon={Users}
-                    />
-                    <StatsCard
-                      title="Shifts This Week"
-                      value={thisWeekShifts.length}
-                      description="Across all locations"
-                      icon={Calendar}
-                    />
-                    <StatsCard
-                      title="Hours Scheduled"
-                      value={Math.round(hoursScheduled)}
-                      description="This week total"
-                      icon={Clock}
-                    />
-                  </div>
-                )}
-
-                {/* Two-column layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left Column */}
-                  <div className="space-y-6">
-                    {/* Recent Applicants - Only in "All Locations" view */}
-                    {isAllLocations && (
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Recent Applicants</CardTitle>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate('/applicants')}
-                          >
-                            View All
-                          </Button>
-                        </CardHeader>
-                        <CardContent>
-                          <ApplicantsSummary />
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* Staff Overview */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Staff Overview</CardTitle>
-                        <CardDescription>Current team members</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <StaffOverview />
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Right Column */}
-                  <div className="space-y-6">
-                    {/* Weekly Calendar Preview */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">This Week's Schedule</CardTitle>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate('/scheduler')}
-                        >
-                          View Full Calendar
-                        </Button>
-                      </CardHeader>
-                      <CardContent>
-                        {activeWeekSchedule ? (
-                          <WeeklyCalendarPreview 
-                            weekSchedule={activeWeekSchedule}
-                            shifts={thisWeekShifts}
-                          />
-                        ) : (
-                          <div className="text-center text-muted-foreground py-8">
-                            No active schedule for this location
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Cash Management Summary */}
-                    {hasWorkflowAccess('cash_management') && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Cash Management</CardTitle>
-                          <CardDescription>Recent transactions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <CashManagementSummary />
-                        </CardContent>
-                      </Card>
-                    )}
+            <div className="md:flex md:items-center md:justify-between mb-8">
+              <div className="flex-1 min-w-0">
+                <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+                  <div className="mt-2 flex items-center text-sm text-gray-500">
+                    <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
                   </div>
                 </div>
+              </div>
+              <div className="mt-4 flex md:mt-0 md:ml-4">
+                <Button variant="outline" onClick={() => navigate("/reports")}>
+                  Export
+                </Button>
+                <Button className="ml-3" onClick={() => navigate("/shift-creation")}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  New Shift
+                </Button>
+                {user?.role === 'administrator' && (
+                  <>
+                    <Button 
+                      variant="destructive" 
+                      className="ml-3"
+                      onClick={clearAllSessions}
+                      disabled={isClearing}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {isClearing ? "Clearing..." : "Clear Sessions"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="ml-3"
+                      onClick={() => window.location.href = "/api/auth/dev-logout"}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Logout (Debug)
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
 
-                {/* Quick Actions */}
+            {/* Stats cards - Show based on workflow permissions and location context */}
+            {(isAllLocations || isLocationRestricted) && hasWorkflowAccess('application') && (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <StatsCard
+                  title="Total Applicants"
+                  value={displayApplicantCount}
+                  subtitle={`${newApplicants} new, ${shortListedApplicants} short-listed`}
+                  icon={<UserPlus className="h-6 w-6" />}
+                  link={{ text: "Review applicants", href: "/applicants" }}
+                  onClick={() => navigate("/applicants")}
+                />
+                
+                <StatsCard
+                  title="Total Crew"
+                  value={totalStaff}
+                  icon={<Users className="h-6 w-6" />}
+                  link={{ text: "View all", href: "/staff-management" }}
+                  onClick={() => navigate("/staff-management")}
+                />
+                
+                <StatsCard
+                  title="Shifts This Week"
+                  value={shiftsThisWeek}
+                  icon={<Calendar className="h-6 w-6" />}
+                  link={{ text: "View schedule", href: "/scheduling" }}
+                  onClick={() => navigate("/scheduling")}
+                />
+                
+                <StatsCard
+                  title="Hours Scheduled"
+                  value={hoursScheduled}
+                  icon={<Clock className="h-6 w-6" />}
+                  link={{ text: "View details", href: "/reports" }}
+                  onClick={() => navigate("/reports")}
+                />
+              </div>
+            )}
+
+            {/* Dashboard content grid - permission-based layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+              {/* Scheduling content - prioritized for crew members */}
+              {hasWorkflowAccess('scheduling') && (
+                <div className="lg:col-span-8">
+                {activeWeekSchedule && shifts ? (
+                  <WeeklyCalendarPreview 
+                    shifts={shifts} 
+                    weekScheduleName={activeWeekSchedule.name}
+                  />
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Weekly Schedule
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">
+                        No active schedule found for this location. 
+                        <Button variant="link" className="p-0 ml-1" onClick={() => navigate("/shift-creation")}>
+                          Create a schedule
+                        </Button>
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                </div>
+              )}
+              
+              {/* Right sidebar - permission-based content */}
+              {(hasWorkflowAccess('scheduling') || hasWorkflowAccess('application')) && (
+                <div className="lg:col-span-4 space-y-6">
+                {/* Quick actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Common tasks and shortcuts</CardDescription>
+                    <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('/scheduler')}
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                      >
-                        <Calendar className="h-6 w-6" />
-                        <span className="text-sm">Schedule</span>
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('/applicants')}
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                      >
-                        <UserPlus className="h-6 w-6" />
-                        <span className="text-sm">Applicants</span>
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate('/reports')}
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                      >
-                        <BarChart3 className="h-6 w-6" />
-                        <span className="text-sm">Reports</span>
-                      </Button>
-                      
-                      {hasWorkflowAccess('cash_management') && (
-                        <Button
-                          variant="outline"
-                          onClick={() => navigate('/cash-management')}
-                          className="flex flex-col items-center gap-2 h-auto py-4"
-                        >
-                          <PlusCircle className="h-6 w-6" />
-                          <span className="text-sm">Cash Count</span>
-                        </Button>
-                      )}
-                    </div>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/scheduling/new")}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Create New Shift
+                    </Button>
                   </CardContent>
                 </Card>
 
-                {/* Admin Section */}
-                {user?.role === 'administrator' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Administration</CardTitle>
-                      <CardDescription>System management tools</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-4">
-                        <Button
-                          variant="destructive"
-                          onClick={clearAllSessions}
-                          disabled={isClearing}
-                          className="flex items-center gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {isClearing ? "Clearing..." : "Clear All Sessions"}
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          onClick={() => navigate('/validation-test')}
-                          className="flex items-center gap-2"
-                        >
-                          <User className="h-4 w-4" />
-                          Validation Test
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {/* ValidationEngine30 Test - Development Tool */}
+                <ValidationEngine30Test />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium">Application Management</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/applicants")}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Review Applicants
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/reports")}
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      View Reports
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                {/* Staff overview - location-specific */}
+                {selectedLocationId && (
+                  <StaffOverview locationId={selectedLocationId} />
                 )}
-              </>
+                
+                {/* Cash management summary - location-specific */}
+                {selectedLocationId && (
+                  <CashManagementSummary locationId={selectedLocationId} />
+                )}
+                </div>
+              )}
+            </div>
+
+            {/* Recent applicants - permission-based display */}
+            {effectiveIsAllLocations && hasWorkflowAccess('application') && (
+              <ApplicantsSummary limit={6} />
             )}
           </div>
         </main>
-      </div>
     </div>
   );
 }
