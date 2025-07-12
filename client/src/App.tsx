@@ -17,7 +17,7 @@ import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
 import { CashManagement } from "@/modules/cashcount";
 
-import ViewCalendar from "@/pages/view-calendar";
+import { ViewCalendar } from "@/modules/scheduler";
 import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
 import { Applicants, ApplicantDetail } from "@/modules/users";
 import { Profile } from "@/modules/users/pages";
