@@ -206,13 +206,13 @@ router.post('/login', async (req, res, next) => {
                 return user.role === 'applicant' ? '/applicant-portal' : '/dashboard';
             }
             
-            const redirectUrl = getRedirectForUser(userWithoutPassword);
+            const redirectScript = getRedirectForUser(userWithoutPassword);
             
             // Line 211 - Replace complex redirectScript with clean redirectUrl
             return res.status(200).json({
                 message: 'Login successful',
                 user: userWithoutPassword,
-                redirectUrl: redirectUrl,  // Clean field (already exists)
+                redirectUrl: redirectScript,  // Clean field (already exists)
                 // TODO: Add debug logging spot is here, for cookie/timing investigation
                 debug: {
                     adminBypass: false,
