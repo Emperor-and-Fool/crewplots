@@ -1,30 +1,22 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/modules/auth";
-import { useLocationContext } from "@/contexts/location-context";
-import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
+import { useLocation } from "wouter";
+// Removed apiRequest import - using direct fetch calls
 import { Sidebar } from "@/components/ui/sidebar";
 import { MobileNavbar } from "@/components/ui/mobile-navbar";
 import { Header } from "@/components/ui/header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  UserPlus, 
-  Filter, 
-  Search, 
-  Users, 
-  Mail, 
-  Phone, 
-  Calendar,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  Clock
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -33,461 +25,742 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApplicantForm } from "@/modules/users/components/workflows";
-import { Badge } from "@/components/ui/badge";
-import LocationHeader from "@/modules/locations/components/LocationHeader";
 
-interface Applicant {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  status: 'pending' | 'reviewing' | 'approved' | 'rejected';
-  appliedAt: string;
-  position: string;
-  experience: string;
-  availability: string;
-  locationIds?: number[];
-}
+import { PlusCircle, Trash2, UserCheck, UserX, QrCode, MessageSquare, Paperclip, StickyNote } from "lucide-react";
+import { printQRCode } from "@/lib/qr-code";
+import { useToast } from "@/hooks/use-toast";
+import { User, Location, Staff, Message } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
+import { format } from "date-fns";
 
 export default function Applicants() {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState<User | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [hireDialogOpen, setHireDialogOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const navigate = (to: string) => setLocation(to);
-  const { user } = useAuth();
-  const { selectedLocationId, isAllLocations } = useLocationContext();
-  const { hasWorkflowAccess } = useWorkflowPermissions();
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [positionFilter, setPositionFilter] = useState<string>("all");
-  const [showNewApplicantForm, setShowNewApplicantForm] = useState(false);
 
-  // Load applicants using ValidationEngine30
-  const { data: applicants, isLoading, error } = useQuery({
-    queryKey: ['/api/validation/v3/execute', 'userList', selectedLocationId],
+  // Auth hook
+  const { user } = useAuth();
+  const { hasPermission } = useWorkflowPermissions();
+
+  // SECURITY & ACCESS CONTROL SYSTEM:
+  // This page is protected by RoleProtectedRoute in App.tsx which uses SERVER-SIDE authentication.
+  // Additional workflow permissions control feature-level access (hire/delete buttons)
+  
+  // Workflow permissions for applicant management
+  const canHire = hasPermission('application', 'hire');
+  const canDelete = hasPermission('application', 'delete');
+  const canEdit = hasPermission('application', 'edit');
+
+  // Fetch applicants using ValidationEngine30
+  const { data: profileData, isLoading } = useQuery<User[]>({
+    queryKey: ['/api/validation/v3/execute', 'userList'],
     queryFn: async () => {
       const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
+          operation: 'read',
           entityType: 'userList',
-          operation: 'list',
           data: {
-            filters: {
-              role: 'applicant',
-              locationId: selectedLocationId || undefined
-            }
+            operation: 'userList',
+            filters: {}
           }
-        }),
-        credentials: 'include'
+        })
       });
-      
       if (!response.ok) {
-        throw new Error('Failed to fetch applicants');
+        throw new Error('Failed to fetch user list via ValidationEngine30');
       }
-      
       const result = await response.json();
-      return result.data || [];
+      return result.threads?.transaction?.data?.users || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
-  // Filter applicants based on search and filters
-  const filteredApplicants = (applicants || []).filter((applicant: any) => {
-    const matchesSearch = !searchTerm || 
-      applicant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      applicant.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      applicant.phone?.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === 'all' || applicant.status === statusFilter;
-    
-    const matchesPosition = positionFilter === 'all' || applicant.position === positionFilter;
-    
-    const matchesLocation = isAllLocations || !selectedLocationId || 
-      applicant.locationIds?.includes(selectedLocationId);
-    
-    return matchesSearch && matchesStatus && matchesPosition && matchesLocation;
-  });
+  // Filter for applicants only
+  const applicants = profileData?.filter(user => user.role === 'applicant') || [];
 
-  // Get unique positions for filter
-  const positions = [...new Set((applicants || []).map((a: any) => a.position).filter(Boolean))];
-
-  // Status update mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ applicantId, status }: { applicantId: number; status: string }) => {
-      const response = await fetch('/api/validation/v3/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entityType: 'userSingle',
-          operation: 'update',
-          data: {
-            id: applicantId,
-            status
-          }
-        }),
+  // Fetch locations
+  const { data: locations } = useQuery<Location[]>({
+    queryKey: ['/api/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/locations', {
         credentials: 'include'
       });
-      
       if (!response.ok) {
-        throw new Error('Failed to update applicant status');
+        throw new Error('Failed to fetch locations');
+      }
+      return response.json();
+    },
+  });
+
+  // Component to display message count for an applicant
+  const MessageIndicator = ({ applicantId }: { applicantId: number }) => {
+    const { data: countData, isLoading, error } = useQuery<{count: number}>({
+      queryKey: ['/api/messages/notes', applicantId, 'application', 'count'],
+      queryFn: async () => {
+        const response = await fetch(`/api/messages/notes/${applicantId}/application/count`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch note count');
+        }
+        return response.json();
+      },
+    });
+
+    // Check for motivational text in messaging system
+    const { data: motivationalNotes } = useQuery<any[]>({
+      queryKey: ['/api/messaging/notes/applicant', applicantId],
+      queryFn: async () => {
+        const response = await fetch(`/api/messaging/notes/applicant/${applicantId}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch motivational notes');
+        }
+        return response.json();
+      },
+    });
+
+    const hasMotivationalText = motivationalNotes && motivationalNotes.length > 0;
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center gap-1">
+          <div className="relative">
+            <MessageSquare className="w-3 h-3 text-gray-400" />
+            {hasMotivationalText && (
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
+            )}
+          </div>
+
+        </div>
+      );
+    }
+
+    if (error) {
+      console.error('MessageIndicator error:', error);
+    }
+
+    const messageCount = countData?.count || 0;
+
+    return (
+      <div className="flex items-center gap-1 relative">
+        <div className="relative">
+          <MessageSquare className={`w-3 h-3 ${messageCount > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+          {hasMotivationalText && (
+            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-white shadow-sm" title="Has motivational text"></div>
+          )}
+        </div>
+        {messageCount > 0 && (
+          <Badge variant="secondary" className="text-xs px-1 py-0 h-4 min-w-4 flex items-center justify-center">
+            {messageCount}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  // Filter applicants by location
+  const filteredApplicants = applicants?.filter((applicant: User) => 
+    !selectedLocation || applicant.locationId === selectedLocation
+  );
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete applicant');
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
+      toast({
+        title: "Applicant Deleted",
+        description: "The applicant has been successfully deleted",
+      });
+      setDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error deleting applicant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete applicant. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Hire mutation (update status and promote to crew_member)
+  const hireMutation = useMutation({
+    mutationFn: async ({ id, locationId }: { id: number, locationId: number }) => {
+      // Update the user to crew_member role and hired status
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          role: 'crew_member',
+          status: 'hired'
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to promote applicant');
+      
+      // Add location assignment
+      if (locationId) {
+        const locationResponse = await fetch('/api/user-locations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            userId: id, 
+            locationId,
+            roleAtLocation: 'crew_member'
+          })
+        });
+        
+        if (!locationResponse.ok) {
+          console.warn('Failed to assign location, but user was promoted successfully');
+        }
       }
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
+    onSuccess: async () => {
+      // Invalidate relevant queries
+      await queryClient.invalidateQueries({ queryKey: ['/api/profile-data'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
       toast({
-        title: "Status Updated",
-        description: "Applicant status has been updated successfully.",
+        title: "Applicant Hired",
+        description: "The applicant has been promoted to crew member",
       });
+      
+      setHireDialogOpen(false);
     },
     onError: (error) => {
+      console.error('Error hiring applicant:', error);
       toast({
         title: "Error",
-        description: "Failed to update applicant status. Please try again.",
+        description: "Failed to hire applicant. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle delete applicant
+  const handleDelete = (applicant: User) => {
+    setSelectedApplicant(applicant);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle hire applicant
+  const handleHire = (applicant: User) => {
+    setSelectedApplicant(applicant);
+    setHireDialogOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    if (selectedApplicant) {
+      deleteMutation.mutate(selectedApplicant.id);
+    }
+  };
+
+  // Confirm hire
+  const confirmHire = (locationId: number) => {
+    if (selectedApplicant) {
+      hireMutation.mutate({ 
+        id: selectedApplicant.id, 
+        locationId 
+      });
+    }
+  };
+
+  // Generate and print QR code
+  const handlePrintQR = async () => {
+    try {
+      await printQRCode();
+      toast({
+        title: "QR Code Generated",
+        description: "The application QR code has been sent to your printer",
+      });
+    } catch (error) {
+      console.error('Error printing QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code. Please try again.",
         variant: "destructive",
       });
     }
-  });
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'approved': return 'default';
-      case 'rejected': return 'destructive';
-      case 'reviewing': return 'secondary';
-      default: return 'outline';
-    }
   };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved': return CheckCircle;
-      case 'rejected': return XCircle;
-      case 'reviewing': return Clock;
-      default: return Clock;
-    }
-  };
-
-  if (error) {
-    return (
-      <div className="flex h-screen bg-background">
-        <div className="lg:flex hidden">
-          <Sidebar />
-        </div>
-        
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="lg:hidden">
-            <MobileNavbar />
-          </div>
-          
-          <Header />
-          
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-            <div className="container mx-auto">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Error Loading Applicants</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Unable to load applicant data. Please try again.
-                    </p>
-                    <Button onClick={() => window.location.reload()}>
-                      Reload Page
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="lg:flex hidden">
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Sidebar */}
         <Sidebar />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="lg:hidden">
+        
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <Header />
+          
+          {/* Mobile navbar */}
           <MobileNavbar />
-        </div>
-        
-        <Header />
-        
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-          <div className="container mx-auto space-y-6">
-            <LocationHeader />
-            
-            <div className="flex justify-between items-center">
+          
+          {/* Page content */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+            {showForm ? (
+              // Show form
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Applicants</h1>
-                <p className="text-muted-foreground">
-                  Manage job applications and candidate reviews
-                </p>
-              </div>
-              {hasWorkflowAccess('applicant_management') && (
-                <Button 
-                  onClick={() => setShowNewApplicantForm(!showNewApplicantForm)}
-                  className="flex items-center gap-2"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  New Application
-                </Button>
-              )}
-            </div>
-
-            {/* New Applicant Form */}
-            {showNewApplicantForm && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>New Application</CardTitle>
-                  <CardDescription>
-                    Add a new job application to the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ApplicantForm 
-                    onSuccess={() => {
-                      setShowNewApplicantForm(false);
-                      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'userList'] });
+                <div className="mb-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedApplicant(null);
                     }}
-                    onCancel={() => setShowNewApplicantForm(false)}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Filters */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search applicants..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="flex-1"
-                    />
-                  </div>
-                  
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="reviewing">Reviewing</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={positionFilter} onValueChange={setPositionFilter}>
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="Position" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Positions</SelectItem>
-                      {positions.map((position) => (
-                        <SelectItem key={position} value={position}>
-                          {position}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="mb-4"
+                  >
+                    ← Back to Applicants
+                  </Button>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {selectedApplicant ? 'Edit Applicant' : 'Add New Applicant'}
+                  </h1>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Applicants List */}
-            {isLoading ? (
-              <div className="grid gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-muted rounded-full"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-muted rounded w-1/4"></div>
-                          <div className="h-3 bg-muted rounded w-1/3"></div>
-                        </div>
-                        <div className="h-6 w-20 bg-muted rounded"></div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                <ApplicantForm 
+                  showForm={showForm} 
+                  onClose={() => setShowForm(false)}
+                  editingApplicant={selectedApplicant}
+                />
               </div>
-            ) : filteredApplicants.length === 0 ? (
-              <Card>
-                <CardContent className="p-12">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Applicants Found</h3>
-                    <p className="text-muted-foreground mb-6">
-                      {searchTerm || statusFilter !== 'all' || positionFilter !== 'all'
-                        ? "No applicants match your current filters."
-                        : "No applications have been submitted yet."}
+            ) : (
+              // Show four-section applicants view
+              <>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Applicants</h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Manage job applicants and hiring process
                     </p>
-                    {hasWorkflowAccess('applicant_management') && (
-                      <Button onClick={() => setShowNewApplicantForm(true)}>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Add First Application
+                  </div>
+                  <div className="mt-4 sm:mt-0 flex gap-2">
+                    {canEdit && (
+                      <Button onClick={() => setShowForm(true)}>
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Applicant
                       </Button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {filteredApplicants.map((applicant: any) => {
-                  const StatusIcon = getStatusIcon(applicant.status || 'pending');
-                  
-                  return (
-                    <Card key={applicant.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1" onClick={() => navigate(`/applicant/${applicant.id}`)}>
-                            <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
-                              <Users className="h-6 w-6 text-primary" />
-                            </div>
+                </div>
+
+                {/* Filter by Location */}
+                <div className="mb-6">
+                  <Card className="w-full sm:w-auto">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="location-filter" className="text-sm font-medium text-gray-700">Filter by Location:</label>
+                        <Select 
+                          value={selectedLocation?.toString() || ""} 
+                          onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}
+                        >
+                          <SelectTrigger id="location-filter" className="w-[200px]">
+                            <SelectValue placeholder="All Locations" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Locations</SelectItem>
+                            {locations?.map(location => (
+                              <SelectItem key={location.id} value={location.id.toString()}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Four-section applicant view */}
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <p>Loading applicants...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    {/* Not Reviewed Yet */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Not Reviewed Yet</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'new').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
                             
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-lg">{applicant.name || 'Unnamed Applicant'}</h3>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                {applicant.email && (
-                                  <div className="flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    <span>{applicant.email}</span>
+                            return (
+                              <div 
+                                key={applicant.id} 
+                                className="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
+
+                                    {applicant.resumeUrl ? (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="w-3 h-3 text-green-600" />
+                                        <span className="w-2 h-2 bg-green-500 rounded-full" title="Has document"></span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="w-3 h-3 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No document"></span>
+                                      </div>
+                                    )}
                                   </div>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
                                 )}
-                                {applicant.phone && (
-                                  <div className="flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />
-                                    <a 
-                                      href={`tel:${applicant.phone}`} 
-                                      className="hover:text-primary transition-colors"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {applicant.phone}
-                                    </a>
-                                  </div>
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
                                 )}
-                                {applicant.appliedAt && (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    <span>{new Date(applicant.appliedAt).toLocaleDateString()}</span>
-                                  </div>
-                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
                               </div>
-                              
-                              {applicant.position && (
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {applicant.position}
-                                  </Badge>
-                                  {applicant.experience && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {applicant.experience} experience
-                                    </Badge>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'new').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No new applicants</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Short-listed */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Short-listed</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'short-listed').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div 
+                                key={applicant.id} 
+                                className="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
+                                    {applicant.resumeUrl ? (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-green-500" />
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-300" />
+                                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 mb-2">
+                                  {applicant.status === 'contacted' && (
+                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">Contacted</Badge>
+                                  )}
+                                  {applicant.status === 'interviewed' && (
+                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Interviewed</Badge>
+                                  )}
+                                  {applicant.status === 'short-listed' && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Short-listed</Badge>
                                   )}
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <Badge 
-                              variant={getStatusBadgeVariant(applicant.status || 'pending')}
-                              className="flex items-center gap-1"
-                            >
-                              <StatusIcon className="h-3 w-3" />
-                              {(applicant.status || 'pending').charAt(0).toUpperCase() + (applicant.status || 'pending').slice(1)}
-                            </Badge>
-                            
-                            {hasWorkflowAccess('applicant_management') && applicant.status !== 'approved' && applicant.status !== 'rejected' && (
-                              <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateStatusMutation.mutate({ applicantId: applicant.id, status: 'approved' });
-                                  }}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateStatusMutation.mutate({ applicantId: applicant.id, status: 'rejected' });
-                                  }}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  {canHire && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleHire(applicant);
+                                      }}
+                                    >
+                                      <UserCheck className="h-3 w-3 mr-1" />
+                                      Hire
+                                    </Button>
+                                  )}
+                                  {canDelete && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(applicant);
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            )}
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'short-listed').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No short-listed applicants</p>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                        )}
+                      </div>
+                    </div>
 
-            {/* Summary Stats */}
-            {filteredApplicants.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">{filteredApplicants.length}</div>
-                      <div className="text-sm text-muted-foreground">Total Applications</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-600">
-                        {filteredApplicants.filter((a: any) => a.status === 'pending' || !a.status).length}
+                    {/* Re-evaluate */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Re-evaluate</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'contacted').map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div 
+                                key={applicant.id} 
+                                className="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
+                                    {applicant.resumeUrl ? (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-orange-500" />
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full" title="Has document"></span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Paperclip className="h-4 w-4 text-gray-400" />
+                                        <span className="w-2 h-2 bg-gray-300 rounded-full" title="No document"></span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200 mb-2">Review Later</Badge>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                                <div className="flex gap-2 mt-3">
+                                  {canHire && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleHire(applicant);
+                                      }}
+                                    >
+                                      <UserCheck className="h-3 w-3 mr-1" />
+                                      Hire
+                                    </Button>
+                                  )}
+                                  {canDelete && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(applicant);
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'contacted').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No applicants to re-evaluate</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">Pending Review</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {filteredApplicants.filter((a: any) => a.status === 'approved').length}
+
+                    {/* Recently Hired */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Recently Hired</h3>
+                      <div className="space-y-3">
+                        {filteredApplicants?.filter(app => app.status === 'hired').slice(0, 10).map((applicant) => {
+                            const location = locations?.find(l => l.id === applicant.locationId);
+                            
+                            return (
+                              <div 
+                                key={applicant.id} 
+                                className="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all duration-200"
+                                onClick={() => navigate(`/applicant/${applicant.id}`)}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-medium text-gray-900">{applicant.name}</h4>
+                                  <div className="flex gap-2 items-center">
+                                    <MessageIndicator applicantId={applicant.id} />
+                                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Hired</Badge>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">{applicant.email}</p>
+                                {applicant.phoneNumber && (
+                                  <p className="text-sm text-gray-600 mb-2">{applicant.phoneNumber}</p>
+                                )}
+                                {location && (
+                                  <p className="text-xs text-gray-500 mb-3">{location.name}</p>
+                                )}
+                                <p className="text-xs text-gray-400">{format(new Date(applicant.createdAt), "MMM d, yyyy")}</p>
+                              </div>
+                            );
+                        })}
+                        {filteredApplicants?.filter(app => app.status === 'hired').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <p>No recent hires</p>
+                          </div>
+                        )}
+                        {filteredApplicants?.filter(app => app.status === 'hired').length > 10 && (
+                          <div className="text-center py-2 text-gray-400 text-sm">
+                            <p>Showing 10 most recent hires</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">Approved</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">
-                        {filteredApplicants.filter((a: any) => a.status === 'rejected').length}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Rejected</div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+                
+                {/* Rejected Section - Full width */}
+                {!isLoading && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-gray-500 mb-4">Rejected</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {filteredApplicants?.filter(app => app.status === 'rejected').map((applicant) => {
+                          const location = locations?.find(l => l.id === applicant.locationId);
+                          
+                          return (
+                            <div key={applicant.id} className="bg-gray-50 p-3 rounded-lg shadow-sm border border-gray-200 opacity-60">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-500 text-sm">{applicant.name}</h4>
+                                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 text-xs">Rejected</Badge>
+                              </div>
+                              <p className="text-xs text-gray-500 mb-1">{applicant.email}</p>
+                              {location && (
+                                <p className="text-xs text-gray-400">{location.name}</p>
+                              )}
+                            </div>
+                          );
+                      })}
+                      {filteredApplicants?.filter(app => app.status === 'rejected').length === 0 && (
+                        <div className="col-span-full text-center py-8 text-gray-500">
+                          <p>No rejected applicants</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Applicant</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedApplicant?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hire Dialog */}
+      <Dialog open={hireDialogOpen} onOpenChange={setHireDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hire Applicant</DialogTitle>
+            <DialogDescription>
+              Select a location to hire {selectedApplicant?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select onValueChange={(value) => setSelectedLocation(value ? parseInt(value) : null)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations?.map(location => (
+                  <SelectItem key={location.id} value={location.id.toString()}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHireDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => selectedLocation && confirmHire(selectedLocation)}
+              disabled={hireMutation.isPending || !selectedLocation}
+            >
+              {hireMutation.isPending ? "Hiring..." : "Hire"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
