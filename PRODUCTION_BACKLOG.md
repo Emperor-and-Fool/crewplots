@@ -53,6 +53,26 @@
 - Write operation queuing for later processing
 - Clear user notifications about system status
 - Content preservation during failures
+
+## Medium Priority - Code Quality
+
+### 5. Authentication Redirect Naming Standardization
+**Priority**: Medium
+**Effort**: Low
+**Risk**: Developer confusion and maintenance overhead
+
+**Problem**: Inconsistent naming between `redirectUrl` and `redirectScript` across authentication system components.
+
+**Current State**: 
+- Server: Uses `redirectScript` variable and field
+- Comments/documentation: References both `redirectUrl` and `redirectScript`
+- Historical code: Mixed usage patterns
+
+**Solution Requirements**:
+- Choose single naming convention (`redirectUrl` OR `redirectScript`)
+- Update all auth-related components consistently
+- Update comments and documentation
+- Ensure frontend/backend field name alignment
 - Automatic retry with exponential backoff
 
 ## Medium Priority - Monitoring and Observability
