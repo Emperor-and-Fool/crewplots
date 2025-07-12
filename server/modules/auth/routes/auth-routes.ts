@@ -331,6 +331,7 @@ router.post('/login', async (req, res, next) => {
             cookieSet: true
             }
         });
+        
     } catch (error) {
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
