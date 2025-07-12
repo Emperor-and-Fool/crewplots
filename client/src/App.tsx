@@ -274,38 +274,7 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
-              <Route path="/validation-test">
-                {isAuthenticated ? 
-                  <AppLayout>
-                    <RoleProtectedRoute 
-                      component={ValidationTestPage} 
-                      requiredRoles={["administrator"]} 
-                    />
-                  </AppLayout> : 
-                  <Redirect to="/login" />}
-              </Route>
-              
-              <Route path="/admin-test">
-                {isAuthenticated ? 
-                  <AppLayout>
-                    <RoleProtectedRoute 
-                      component={AdminTestPage} 
-                      requiredRoles={["administrator"]} 
-                    />
-                  </AppLayout> : 
-                  <Redirect to="/login" />}
-              </Route>
-              
-              <Route path="/endpoint-test">
-                {isAuthenticated ? 
-                  <AppLayout>
-                    <RoleProtectedRoute 
-                      component={EndpointTestPage} 
-                      requiredRoles={["administrator"]} 
-                    />
-                  </AppLayout> : 
-                  <Redirect to="/login" />}
-              </Route>
+              {/* Removed orphaned validation test routes - components moved to administration module */}
               
               <Route path="/validation-engine-3-test">
                 {isAuthenticated ? 
