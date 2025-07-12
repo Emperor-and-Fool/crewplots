@@ -161,23 +161,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using React Router instead of window.location");
               console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Current cookies:", document.cookie);
               
-              // Check if it's a clean URL - use it directly
-              if (data.redirectScript.startsWith('/')) {
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Clean URL detected, using directly");
-                setLocation(data.redirectScript);
+              // Parse the redirect URL from the script and use setLocation instead
+                if (data.redirectScript.startsWith('/')) {
+                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Extracted URL:", redirectUrl);
+                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using setLocation to prevent HMR");
+                  setLocation(data.redirectScript);
               } else {
-                // Fall back to regex parsing for script format
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Script format detected, parsing");
-                const urlMatch = data.redirectScript.match(/window\.location\.replace\('([^']+)'\)/);
-                if (urlMatch && urlMatch[1]) {
-                  const redirectUrl = urlMatch[1];
-                  console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Extracted URL:", redirectUrl);
-                  console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using setLocation to prevent HMR");
-                  setLocation(redirectUrl);
-                } else {
-                  console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Could not parse URL, falling back to eval");
-                  eval(data.redirectScript);
-                }
+                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Could not parse URL, falling back to eval");
+                eval(data.redirectScript);
               }
             }
             

@@ -294,7 +294,7 @@ router.post('/login', async (req, res, next) => {
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
-            redirectUrl: redirectUrl,  // CLEAN FIELD: Direct path, no parsing needed
+            redirectUrl: redirectScript,  // CLEAN FIELD: Direct path, no parsing needed
             debug: {
                 adminBypass: false,
                 sessionId: req.sessionID,
