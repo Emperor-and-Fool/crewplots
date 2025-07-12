@@ -102,7 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           setUser(null);
-          setLocation('/login');
+          // DISABLED: Conflicts with atomic login redirect
+          // setLocation('/login');
         } else {
           setUser(null);
         }
