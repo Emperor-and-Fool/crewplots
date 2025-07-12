@@ -215,7 +215,7 @@ router.post('/login', async (req, res, next) => {
                 redirectUrl: redirectUrl,  // Clean field (already exists)
                 // TODO: Add debug logging spot is here, for cookie/timing investigation
                 debug: {
-                    adminBypass: true,
+                    adminBypass: false,
                     sessionId: req.sessionID,
                     timestamp: new Date().toISOString(),
                     cookieSet: true
