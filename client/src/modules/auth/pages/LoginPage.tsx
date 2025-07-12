@@ -23,8 +23,8 @@ export const LoginPage = () => {
     }
     
     // Handle successful login with user data
-    // if (loginResponse.user && loginResponse.redirectScript) { <-- The Success Toast
-    if (loginResponse.success && loginResponse.user) {
+     if (loginResponse.user && loginResponse.redirectScript) {
+    // if (loginResponse.success && loginResponse.user) {
       toast({
         title: "Login successful",
         description: `Welcome back, ${loginResponse.user?.name || loginResponse.user?.username}!`,
