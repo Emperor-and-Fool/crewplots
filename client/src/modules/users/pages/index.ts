@@ -10,3 +10,5 @@ export { default as UserSettings } from './UserSettings';
 export { default as CrewManagement } from './CrewManagement';
 export { default as CrewMemberProfile } from './CrewMemberProfile';
 export { default as ApplicantPortal } from './ApplicantPortal';
+export { default as Applicants } from './Applicants';
+export { default as ApplicantDetail } from './ApplicantDetail';

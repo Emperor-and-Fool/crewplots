@@ -11,7 +11,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { EmergencyLogout } from "@/components/emergency-logout";
 import { RegistrationPage, LoginPage } from "@/modules/auth";
-import Dashboard from "@/pages/dashboard";
+import { Dashboard } from "@/modules/dashboard";
 import { ApplicantPortal } from "@/modules/users";
 import { LocationsPage, LocationDetailPage, LocationCreatePage } from "@/modules/locations";
 import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/pages";
@@ -19,21 +19,17 @@ import { CashManagement } from "@/modules/cashcount";
 
 import ViewCalendar from "@/pages/view-calendar";
 import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
-import Applicants from "@/pages/applicants";
-import ApplicantDetail from "@/pages/applicant-detail";
+import { Applicants, ApplicantDetail } from "@/modules/users";
 import { Profile } from "@/modules/users/pages";
 import { KnowledgeBase } from "@/modules/knowledge-base";
-import Reports from "@/pages/reports";
+import { Reports } from "@/modules/dashboard";
 import Settings from "@/pages/settings";
-import EmailSettings from "@/pages/email-settings";
-import SecuritySettings from "@/pages/security-settings";
+import { EmailSettings, SecuritySettings, MessagingValidationTest } from "@/modules/administration";
 import { UserSettings } from "@/modules/users/pages";
-import MessagingValidationTest from "@/pages/MessagingValidationTest";
 import NotFound from "@/pages/not-found";
 import RegistrationSuccess from "@/pages/registration-success";
 import LandingPage from "@/pages/landing";
-import { ValidationTestPage, AdminTestPage, EndpointTestPage } from "@/modules/administration";
-import { ValidationEngine3Test } from "@/modules/administration/pages/ValidationEngine3Test";
+// Removed non-existent administration imports
 
 // Role-based protected route that checks user roles
 const RoleProtectedRoute = ({ component: Component, requiredRoles = [], ...rest }: any) => {

@@ -53,7 +53,9 @@ export {
   UserSettings,
   CrewManagement,
   CrewMemberProfile,
-  ApplicantPortal
+  ApplicantPortal,
+  Applicants,
+  ApplicantDetail
 } from './pages';
 
 // Utility exports
