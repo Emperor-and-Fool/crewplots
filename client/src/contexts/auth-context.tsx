@@ -156,6 +156,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log("🔍 DATA DEBUG: CONDITION PASSED - Setting user");
             setUser(data.user);
             
+            // Execute atomic redirect if present (moved from LoginPage)
+            if (data.redirectScript) {
+              console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Executing server redirect script");
+              console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Current cookies:", document.cookie);
+              eval(data.redirectScript);
+            }
+            
             // Invalidate all queries to ensure fresh data
             queryClient.invalidateQueries();
             setIsLoading(false);

@@ -29,17 +29,8 @@ export const LoginPage = () => {
         description: `Welcome back, ${loginResponse.user?.name || loginResponse.user?.username}!`,
       });
       
-      // Execute server's redirect script with delay
-      if (loginResponse.redirectScript) {
-          console.log("🔍 ATOMIC REDIRECT: Executing server redirect script");
-          console.log("🔍 ATOMIC REDIRECT: Current cookies:", document.cookie);
-          console.log("🔍 ATOMIC REDIRECT: Login response:", loginResponse);
-          
-          // Execute the server's redirect script (includes its own timing)
-          eval(loginResponse.redirectScript);
-      } else {
-          console.error("❌ NO REDIRECT SCRIPT in login response:", loginResponse);
-      }
+      // MOVED: Atomic redirect now handled in auth-context
+      console.log("🔍 LOGIN PAGE: Redirect handling moved to auth-context");
     } else {
       // Handle missing user data
       console.error("🚨 LOGIN ERROR: Authentication successful but user data unavailable");
