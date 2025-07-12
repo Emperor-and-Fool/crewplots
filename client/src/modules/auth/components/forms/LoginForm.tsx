@@ -50,7 +50,7 @@ export const LoginForm = ({
         onSuccess?.({ error: "Login failed - invalid credentials" });
       } else {
         console.log("🔍 LOGIN DEBUG: Login failed - unexpected result:", result);
-        onSuccess?.({ error: "Login failed - invalid credentials" });
+        onSuccess?.({ error: "BUT IT DID NOT FAIL! SUCCESS!" });
       }
     } catch (error) {
       console.log("🔍 LOGIN DEBUG: Exception caught:", error);
