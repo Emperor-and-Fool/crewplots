@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               
               // Parse the redirect URL from the script and use setLocation instead
                 if (data.redirectScript.startsWith('/')) {
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Extracted URL:", redirectUrl);
+                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Extracted URL:", redirectScript);
                 console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using setLocation to prevent HMR");
                   setLocation(data.redirectScript);
               } else {
