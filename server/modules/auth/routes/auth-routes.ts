@@ -318,21 +318,22 @@ router.post('/login', async (req, res, next) => {
         
         const redirectUrl = getRedirectForUser(userWithoutPassword);
         
-        // Replace complex redirectScript with clean redirectUrl
+        // Line 211 - Replace complex redirectScript with clean redirectUrl
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
             redirectUrl: redirectUrl,  // Clean field (already exists)
-            // TODO: Add debug logging spot here for cookie/timing investigation
-            debug: {
-                adminBypass: false,
-                sessionId: req.sessionID,
-                timestamp: new Date().toISOString(),
-                cookieSet: true
-            }
+        // TODO: Add debug logging spot is here, for cookie/timing investigation
+        debug: {
+            adminBypass: true,
+            sessionId: req.sessionID,
+            timestamp: new Date().toISOString(),
+            cookieSet: true
+        }
         }); 
-        catch (error) {
-        if (error instanceof ZodError) {
+
+catch (error) {
+    if (error instanceof ZodError) {
             const validationError = fromZodError(error);
             return res.status(400).json({ 
                 message: 'Validation error', 
