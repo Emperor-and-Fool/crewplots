@@ -357,9 +357,11 @@ router.post('/login', async (req, res, next) => {
                             //        sessionId: req.sessionID,
                             //        timestamp: new Date().toISOString(),
                             //        cookieSet: true
-                
+                }
+           });
+    } 
 
-    } catch (error) {
+catch (error) {
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
             return res.status(400).json({ 
