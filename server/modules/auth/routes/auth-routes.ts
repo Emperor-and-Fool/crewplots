@@ -219,36 +219,8 @@ router.post('/login', async (req, res, next) => {
                     sessionId: req.sessionID,
                     timestamp: new Date().toISOString(),
                     cookieSet: true
-                    }
-               });
-            // return res.status(200).json({
-            //    message: 'Login successful',
-            //    user: userWithoutPassword,
-            //    redirectScript: `
-            //        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
-            //        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
-            //        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
-            //        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-            //        setTimeout(() => {
-            //            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
-            //            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
-            //            if (!document.cookie.includes('connect.sid')) {
-            //                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-            //                console.log('🔄 Trying manual cookie refresh...');
-            //                window.location.reload();
-            //                return;
-            //            }
-            //            window.location.replace('${redirectUrl}');
-            //        }, 1000);
-            //    `,
-            //    redirectUrl: redirectUrl,
-            //    debug: {
-            //        adminBypass: true,
-            //        sessionId: req.sessionID,
-            //        timestamp: new Date().toISOString(),
-            //        cookieSet: true
-               }
-           });
+                }
+            });
         }
         
         // For email login or username login, we need to find the correct user first
@@ -318,33 +290,36 @@ router.post('/login', async (req, res, next) => {
         
         const redirectUrl = getRedirectForUser(userWithoutPassword);
         
-        // Line 211 - Replace complex redirectScript with clean redirectUrl
+        // SERVER RESPONSE: Send JSON with clean redirectUrl (Option 1 implementation)
         return res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword,
-            redirectUrl: redirectUrl,  // Clean field (already exists)
-        // TODO: Add debug logging spot is here, for cookie/timing investigation
-        debug: {
-            adminBypass: true,
-            sessionId: req.sessionID,
-            timestamp: new Date().toISOString(),
-            cookieSet: true
+            redirectUrl: redirectUrl,  // CLEAN FIELD: Direct path, no parsing needed
+            debug: {
+                adminBypass: false,
+                sessionId: req.sessionID,
+                timestamp: new Date().toISOString(),
+                cookieSet: true
             }
-        });
+        }); // ← CLOSES: res.status(200).json({ object
         
-    } catch (error) {
+    } catch (error) { // ← CLOSES: try block from line 141, OPENS: catch block
+        
+        // VALIDATION ERROR HANDLING: Zod schema validation failures
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
             return res.status(400).json({ 
                 message: 'Validation error', 
                 errors: validationError.details 
-            });
+            }); // ← CLOSES: res.status(400).json({ object
         }
         
+        // GENERAL ERROR HANDLING: Any other login failures
         console.error('Login error:', error);
         return res.status(500).json({ message: 'Error logging in' });
-    }
-});
+        
+    } // ← CLOSES: catch block
+}); // ← CLOSES: router.post('/login', async (req, res, next) => { function
 
 // Get current user - authenticated endpoint
 router.get('/user', authenticateUser, (req, res) => {
