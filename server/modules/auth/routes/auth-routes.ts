@@ -208,34 +208,47 @@ router.post('/login', async (req, res, next) => {
             
             const redirectUrl = getRedirectForUser(userWithoutPassword);
             
+            // Line 211 - Replace complex redirectScript with clean redirectUrl
             return res.status(200).json({
                 message: 'Login successful',
                 user: userWithoutPassword,
-                redirectScript: `
-                    console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
-                    console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-                    setTimeout(() => {
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
-                        console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
-                        if (!document.cookie.includes('connect.sid')) {
-                            console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-                            console.log('🔄 Trying manual cookie refresh...');
-                            window.location.reload();
-                            return;
-                        }
-                        window.location.replace('${redirectUrl}');
-                    }, 1000);
-                `,
-                redirectUrl: redirectUrl,
+                redirectUrl: redirectUrl,  // Clean field (already exists)
+                // TODO: Add debug logging spot is here, for cookie/timing investigation
                 debug: {
                     adminBypass: true,
                     sessionId: req.sessionID,
                     timestamp: new Date().toISOString(),
                     cookieSet: true
                 }
-            });
+               });
+            // return res.status(200).json({
+            //    message: 'Login successful',
+            //    user: userWithoutPassword,
+            //    redirectScript: `
+            //        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
+            //        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+            //        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
+            //        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
+            //        setTimeout(() => {
+            //            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+            //            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
+            //            if (!document.cookie.includes('connect.sid')) {
+            //                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+            //                console.log('🔄 Trying manual cookie refresh...');
+            //                window.location.reload();
+            //                return;
+            //            }
+            //            window.location.replace('${redirectUrl}');
+            //        }, 1000);
+            //    `,
+            //    redirectUrl: redirectUrl,
+            //    debug: {
+            //        adminBypass: true,
+            //        sessionId: req.sessionID,
+            //        timestamp: new Date().toISOString(),
+            //        cookieSet: true
+               }
+           });
         }
         
         // For email login or username login, we need to find the correct user first
@@ -305,33 +318,47 @@ router.post('/login', async (req, res, next) => {
         
         const redirectUrl = getRedirectForUser(userWithoutPassword);
         
-        return res.status(200).json({
-            message: 'Login successful',
-            user: userWithoutPassword,
-            redirectScript: `
-                console.log('🔍 SERVER REDIRECT: About to execute redirect to ${redirectUrl}');
-                console.log('🔍 SERVER REDIRECT: Current cookies before redirect:', document.cookie);
-                console.log('🔍 SERVER REDIRECT: Expected session cookie: connect.sid');
-                console.log('🔍 SERVER REDIRECT: Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
-                setTimeout(() => {
-                    console.log('🔍 SERVER REDIRECT: Cookies after 1 second:', document.cookie);
-                    console.log('🔍 SERVER REDIRECT: Session cookie check:', document.cookie.includes('connect.sid'));
-                    if (!document.cookie.includes('connect.sid')) {
-                        console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
-                        console.log('🔄 Trying manual cookie refresh...');
-                        window.location.reload();
-                        return;
-                    }
-                    window.location.replace('${redirectUrl}');
-                }, 1000);
-            `,
-            redirectUrl: redirectUrl,
-            debug: {
-                sessionId: req.sessionID,
-                timestamp: new Date().toISOString(),
-                cookieSet: true
-            }
-        });
+                // Line 211 - Replace complex redirectScript with clean redirectUrl
+                            return res.status(200).json({
+                                message: 'Login successful',
+                                user: userWithoutPassword,
+                                redirectUrl: redirectUrl,  // Clean field (already exists)
+                                // TODO: Add debug logging spot is here, for cookie/timing investigation
+                                debug: {
+                                    adminBypass: true,
+                                    sessionId: req.sessionID,
+                                    timestamp: new Date().toISOString(),
+                                    cookieSet: true
+                                }
+                            });
+                            // return res.status(200).json({
+                            //    message: 'Login successful',
+                            //    user: userWithoutPassword,
+                            //    redirectScript: `
+                            //        console.log('🔍 SERVER REDIRECT (ADMIN): About to execute redirect to ${redirectUrl}');
+                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Current cookies before redirect:', document.cookie);
+                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Expected session cookie: connect.sid');
+                            //        console.log('🔍 SERVER REDIRECT (ADMIN): Cookie includes connect.sid:', document.cookie.includes('connect.sid'));
+                            //        setTimeout(() => {
+                            //            console.log('🔍 SERVER REDIRECT (ADMIN): Cookies after 1 second:', document.cookie);
+                            //            console.log('🔍 SERVER REDIRECT (ADMIN): Session cookie check:', document.cookie.includes('connect.sid'));
+                            //            if (!document.cookie.includes('connect.sid')) {
+                            //                console.error('❌ COOKIE TIMING ISSUE: Session cookie not found after 1 second');
+                            //                console.log('🔄 Trying manual cookie refresh...');
+                            //                window.location.reload();
+                            //                return;
+                            //            }
+                            //            window.location.replace('${redirectUrl}');
+                            //        }, 1000);
+                            //    `,
+                            //    redirectUrl: redirectUrl,
+                            //    debug: {
+                            //        adminBypass: true,
+                            //        sessionId: req.sessionID,
+                            //        timestamp: new Date().toISOString(),
+                            //        cookieSet: true
+                
+
     } catch (error) {
         if (error instanceof ZodError) {
             const validationError = fromZodError(error);
