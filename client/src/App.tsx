@@ -24,7 +24,7 @@ import { Profile } from "@/modules/users/pages";
 import { KnowledgeBase } from "@/modules/knowledge-base";
 import { Reports } from "@/modules/dashboard";
 import { Settings } from "@/modules/administration";
-import { EmailSettings, SecuritySettings, MessagingValidationTest } from "@/modules/administration";
+import { EmailSettings, SecuritySettings, MessagingValidationTest, ValidationEngine3Test, AdminTest, EndpointTest, ValidationTest } from "@/modules/administration";
 import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
 import { RegistrationSuccess } from "@/modules/users";
@@ -393,6 +393,50 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={MessagingValidationTest} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/validation-engine-3-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={ValidationEngine3Test} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/admin-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={AdminTest} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/endpoint-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={EndpointTest} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/validation-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={ValidationTest} 
                       requiredRoles={["administrator"]} 
                     />
                   </AppLayout> : 
