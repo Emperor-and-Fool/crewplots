@@ -39,11 +39,12 @@ export const LoginForm = ({
       try {
         const result = await login(data.username, data.password);
       
-        // Handle LoginResponse union type - COMMENTED OUT DUE TO DUAL REDIRECTION ISSUE
-        // Auth-context already handles redirection automatically (lines 157-165)
-        // This section was causing "Login failed" toasts on successful logins
-        // due to dual redirection and unused callback patterns
+        // COMMENTED OUT: Useless duplicate logic (lines 42-63)
+        // LoginForm never calls onSuccess/onError callbacks 
+        // Auth-context already handles all success/error/redirection logic
+        // This section was causing false "Login failed" toasts on successful logins
         /*
+        // Handle LoginResponse union type
         if (result === false) {
           // Network/system error
           toast({
@@ -51,7 +52,7 @@ export const LoginForm = ({
             description: "System error. Please try again.",
             variant: "destructive",
           });
-        } else if (result.user && result.redirectUrl) {
+        } else if (result.user && result.redirectScript) {
           // Success case
           if (result.redirectScript) {
             eval(result.redirectScript); // Execute server redirect
@@ -67,8 +68,12 @@ export const LoginForm = ({
         }
         */
         
-        // Let auth-context handle all success/error cases and redirection
-        console.log("🔍 LOGIN DEBUG: Auth-context handling login result:", result);
+        // Let LoginPage handle the result via callbacks
+        if (result === false || (result && 'error' in result)) {
+          onError?.(result === false ? "System error" : result.error);
+        } else if (result && 'user' in result) {
+          onSuccess?.(result);
+        }
         } catch (error) {
         toast({
           title: "Login failed",
