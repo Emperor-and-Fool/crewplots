@@ -31,7 +31,7 @@ export const useAuthOperations = () => {
   /**
    * Login operation with enhanced error handling
    */
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<LoginResponse> => {
     try {
       const result = await contextLogin(username, password);
       return result;
