@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
@@ -8,12 +9,27 @@ export const LoginPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  /* ------------------------------------------------------------------
+   * progressive-error & success-flag state
+   * ------------------------------------------------------------------ */
+  const [justLoggedIn, setJustLoggedIn]   = useState(false);
+  const [errorCount,   setErrorCount]     = useState(0);   // 0->1->2 (max 3)
+  const errorResetTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const getErrorMessage = (count: number) => {
+    switch (count) {
+      case 0: return "Something went wrong, we're trying to fix it!";
+      case 1: return "Something still not okay, try again";
+      case 2: return "Sorry, can't fix it – contact support";
+      default: return "Something went wrong, we're trying to fix it!";
+    }
+  };
+  
   const handleLoginSuccess = (loginResponse: any) => {
-    console.log("🔍 ATOMIC REDIRECT: handleLoginSuccess called with loginResponse:", loginResponse);
-    
-    // Handle error responses from auth-context
+    console.log("🔍 handleLoginSuccess:", loginResponse);
+
+    /* ---------- error branch coming from auth-context ---------------- */
     if (loginResponse.error) {
-      console.error("🚨 LOGIN ERROR: Auth context returned error:", loginResponse.error);
       toast({
         title: "Login failed",
         description: loginResponse.error,
@@ -21,26 +37,58 @@ export const LoginPage = () => {
       });
       return;
     }
-    
-    // Handle successful login with user data
+
+    /* ---------- success branch -------------------------------------- */
     if (loginResponse.user && loginResponse.redirectScript) {
+      // success toast shown only once
+      if (!justLoggedIn) {
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${loginResponse.user.name || loginResponse.user.username}!`,
+        });
+      }
+      setJustLoggedIn(true);
+      setErrorCount(0);
+      if (errorResetTimer.current) {
+        clearTimeout(errorResetTimer.current);
+        errorResetTimer.current = null;
+      }
+      return;                                  // nothing else to do here
+    }
+
+    /* ---------- fallback / unexpected shape -> progressive error ---- */
+    if (!justLoggedIn) {
+      const msg = getErrorMessage(errorCount);
       toast({
-        title: "Login successful",
-        description: `Welcome back, ${loginResponse.user?.name || loginResponse.user?.username}!`,
-      });
-      
-      // MOVED: Atomic redirect now handled in auth-context
-      console.log("🔍 LOGIN PAGE: Redirect handling moved to auth-context");
-    } else {
-      // Handle missing user data
-      console.error("🚨 LOGIN ERROR: Authentication successful but user data unavailable");
-      toast({
-        title: "Login failed",
-        description: "Authentication successful but user data unavailable",
+        title: "Login error",
+        description: msg,
         variant: "destructive",
       });
+
+      const newCount = Math.min(errorCount + 1, 3);
+      setErrorCount(newCount);
+
+      // after the 3rd failure, reset the counter after 5 min
+      if (newCount === 3 && !errorResetTimer.current) {
+        errorResetTimer.current = setTimeout(() => {
+          setErrorCount(0);
+          errorResetTimer.current = null;
+        }, 5 * 60 * 1000);
+      }
     }
   };
+
+  // reset justLoggedIn every time the page mounts (or after logout nav)
+  useEffect(() => {
+    setJustLoggedIn(false);
+  }, []);
+
+  // cleanup any pending timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (errorResetTimer.current) clearTimeout(errorResetTimer.current);
+    };
+  }, []);
 
   const handleLoginError = (error: string) => {
     console.error("🚨 BANNER DEBUG: handleLoginError called with:", error);
