@@ -75,11 +75,7 @@ export const LoginForm = ({
           onSuccess?.(result);
         }
         } catch (error) {
-        toast({
-          title: "Login failed",
-          description: "Network error. Please try again.",
-          variant: "destructive",
-        });
+        onError?.("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
