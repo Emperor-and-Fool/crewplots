@@ -39,7 +39,11 @@ export const LoginForm = ({
       try {
         const result = await login(data.username, data.password);
       
-        // Handle LoginResponse union type
+        // Handle LoginResponse union type - COMMENTED OUT DUE TO DUAL REDIRECTION ISSUE
+        // Auth-context already handles redirection automatically (lines 157-165)
+        // This section was causing "Login failed" toasts on successful logins
+        // due to dual redirection and unused callback patterns
+        /*
         if (result === false) {
           // Network/system error
           toast({
@@ -61,6 +65,10 @@ export const LoginForm = ({
             variant: "destructive",
           });
         }
+        */
+        
+        // Let auth-context handle all success/error cases and redirection
+        console.log("🔍 LOGIN DEBUG: Auth-context handling login result:", result);
         } catch (error) {
         toast({
           title: "Login failed",
