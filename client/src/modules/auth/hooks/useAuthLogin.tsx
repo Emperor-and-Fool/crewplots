@@ -16,55 +16,7 @@ import { AuthLoginService } from '../services/authLoginService';
 export const useAuthLogin = () => {
   const authOps = useAuthOperations();
 
-  /**
-   * Login Form Hook
-   */
-  const useLoginForm = () => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    const form = useForm<Login>({
-      resolver: zodResolver(loginSchema),
-      defaultValues: {
-        username: "",
-        password: "",
-      },
-    });
-
-    const onSubmit = async (data: Login) => {
-      setIsSubmitting(true);
-      try {
-        const success = await authOps.login(data.username, data.password);
-        if (!success) {
-          form.setError('root', { 
-            type: 'manual', 
-            message: 'Invalid username or password' 
-          });
-        }
-        return success;
-      } catch (error) {
-        form.setError('root', { 
-          type: 'manual', 
-          message: error instanceof Error ? error.message : 'Login failed' 
-        });
-        return false;
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    const resetForm = () => {
-      form.reset();
-      form.clearErrors();
-    };
-
-    return {
-      form,
-      onSubmit,
-      resetForm,
-      isSubmitting,
-      formErrors: form.formState.errors,
-    };
-  };
+  // DELETED: useLoginForm - FORM LOGIC BELONGS IN COMPONENT, NOT HOOK
 
   /**
    * Registration Form Hook
@@ -142,7 +94,7 @@ export const useAuthLogin = () => {
 
   return {
     // Form hooks
-    useLoginForm,
+    // DELETED: useLoginForm (form logic belongs in component)
     useRegistrationForm,
     
     // State utilities
