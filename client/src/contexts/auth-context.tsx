@@ -78,7 +78,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!hasCookies) {
       // No session cookies present - user needs to login
-      console.log('🔒 No session cookies found - redirecting to login');
       setUser(null);
       setIsLoading(false);
       return;
@@ -108,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else if (response.status === 401) {
           // Session expired or invalid - clear ghost cookies and redirect to login
-          console.log('🔒 Session invalid - clearing ghost cookies and auth state');
           document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           setUser(null);
@@ -118,7 +116,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
         }
       } catch (error) {
-        console.log('🔒 Auth check failed - clearing auth state');
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -154,30 +151,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
 
-          // 🔍 DEBUG: Log complete data structure
-          console.log("🔍 DATA DEBUG: Complete response data:", data);
-          console.log("🔍 DATA DEBUG: data exists:", !!data);
-          console.log("🔍 DATA DEBUG: data.user exists:", !!(data && data.user));
-          console.log("🔍 DATA DEBUG: data.user value:", data?.user);
-          console.log("🔍 DATA DEBUG: typeof data:", typeof data);
-          console.log("🔍 DATA DEBUG: typeof data.user:", typeof data?.user);
-          
           if (data && data.user) {
-            console.log("🔍 DATA DEBUG: CONDITION PASSED - Setting user");
             setUser(data.user);
             
             // Execute atomic redirect if present (moved from LoginPage)
             if (data.redirectScript) {
-              console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using React Router instead of window.location");
-              console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Current cookies:", document.cookie);
-              
               // Parse the redirect URL from the script and use setLocation instead
-                if (data.redirectScript.startsWith('/')) {
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Extracted URL:", redirectScript);
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Using setLocation to prevent HMR");
-                  setLocation(data.redirectScript);
+              if (data.redirectScript.startsWith('/')) {
+                setLocation(data.redirectScript);
               } else {
-                console.log("🔍 AUTH-CONTEXT ATOMIC REDIRECT: Could not parse URL, falling back to eval");
                 eval(data.redirectScript);
               }
             }
@@ -187,16 +169,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(false);
             return data;
           } else {
-            console.log("🔍 DATA DEBUG: CONDITION FAILED - Returning false");
-            console.error("Login response missing user data:", data);
             setIsLoading(false);
             return false;
           }
         } else {
-          console.error("Login failed with status:", response.status);
           try {
             const errorData = await response.json();
-            // Return error data for page-level handling
             setIsLoading(false);
             return { error: errorData.message || "Login failed" };
           } catch (e) {
@@ -205,12 +183,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } catch (fetchError) {
-        console.error("Login fetch error:", fetchError);
         setIsLoading(false);
         return { error: "Could not connect to the server. Please check your network connection." };
       }
     } catch (error) {
-      console.error("Login error:", error);
       setIsLoading(false);
       return { error: "An unexpected error occurred. Please try again." };
     }
@@ -242,10 +218,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       // Server handles cookie deletion via Set-Cookie headers with Max-Age=0
       // No manual cookie manipulation needed - HttpOnly cookies cannot be cleared by JS
-      console.log('🔴 Frontend: Server logout completed, cookies cleared by Set-Cookie headers');
     } catch (error) {
       // Silent failure - user is already logged out locally
-      console.log('🔴 Frontend: Logout request failed, but user locally logged out');
     }
   };
 
@@ -290,7 +264,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   description: "An unexpected error occurred. Please try again.",
                   variant: "destructive",
                 });
-                console.error("Error parsing registration error response:", e);
+
               }
               resolve(false);
             }
@@ -298,7 +272,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         
         xhr.onerror = function() {
-          console.error("Registration request failed");
           toast({
             title: "Registration failed",
             description: "Network error. Please check your connection and try again.",
@@ -312,7 +285,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         xhr.send(JSON.stringify(userData));
       });
     } catch (error) {
-      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: "An unexpected error occurred. Please try again.",
@@ -359,7 +331,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
     } catch (error) {
-      console.error("Error refreshing authentication:", error);
       setUser(null);
       setIsLoading(false);
       return false;

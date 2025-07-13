@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { LoginRequest, LoginResponse } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
@@ -29,7 +30,7 @@ export const LoginPage = () => {
     console.log("🔍 handleLoginSuccess:", loginResponse);
 
     /* ---------- error branch coming from auth-context ---------------- */
-    if (loginResponse.error) {
+    if (loginResponse === false) {
       toast({
         title: "Login failed",
         description: loginResponse.error,
@@ -39,7 +40,7 @@ export const LoginPage = () => {
     }
 
     /* ---------- success branch -------------------------------------- */
-    if (loginResponse.user && loginResponse.redirectScript) {
+    if (typeof loginResponse === 'object' && 'user' in loginResponse && 'redirectScript' in loginResponse) {
       // success toast shown only once
       if (!justLoggedIn) {
         toast({
