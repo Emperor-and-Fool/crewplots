@@ -47,7 +47,7 @@ export const LoginForm = ({
             description: "System error. Please try again.",
             variant: "destructive",
           });
-        } else if (result.user && result.redirectScript) {
+        } else if (result.user && result.redirectUrl) {
           // Success case
           if (result.redirectScript) {
             eval(result.redirectScript); // Execute server redirect
