@@ -68,7 +68,7 @@ export const LoginForm = ({
         }
         */
         
-        // Let LoginPage handle the result via callbacks
+        // Let LoginPage haWhy doesn'tndle the result via callbacks
         if (result === false || (result && 'error' in result)) {
           onError?.(result === false ? "System error" : result.error);
         } else if (result && 'user' in result) {
