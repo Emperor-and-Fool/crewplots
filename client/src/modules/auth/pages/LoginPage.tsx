@@ -127,6 +127,14 @@ export const LoginPage = () => {
       footerContent={footerContent}
     >
       <LoginForm 
+        onSubmit={(data) => {
+          // CLEAN SEPARATION: Just pass data to hook - no async/await here
+          newLogin(data.username, data.password);
+        }}
+        isLoading={newIsLoading}
+      />
+
+      {/* COMMENTED OUT MIXED CONCERNS CODE:
         onSubmit={async (data) => {
           try {
             const result = await newLogin(data.username, data.password);
@@ -137,8 +145,7 @@ export const LoginPage = () => {
             handleLoginError("Network error. Please try again.");
           }
         }}
-        isLoading={newIsLoading}
-      />
+      */}
     </AuthPageLayout>
   );
 };

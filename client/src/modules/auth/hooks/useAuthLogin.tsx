@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, registerSchema, type Login, type Register } from '@shared/schema';
 import { useAuthOperations } from './useAuthOperations';
+import { useMutation } from '@tanstack/react-query';
+import { AuthLoginService } from '../services/authLoginService';
 // import { LoginFormState, RegistrationFormState } from '../types/auth-ui.types';
 
 /**
@@ -146,6 +148,45 @@ export const useAuthLogin = () => {
     // State utilities
     getFormStates,
   };
+};
+
+/**
+ * CLEAN SEPARATION: useLogin Hook
+ * Handles all async/business logic for login
+ */
+export const useLogin = () => {
+  // CLEAN SEPARATION: Hook handles all async/business logic
+  const { mutate: newLogin, isLoading: newIsLoading } = useMutation({
+    mutationFn: async (data: { username: string; password: string }) => {
+      try {
+        const result = await AuthLoginService.login(data.username, data.password);
+        // Handle all business logic here
+        // Call page callbacks for UI updates if needed
+        return result;
+      } catch (error) {
+        // Handle errors in hook
+        throw error;
+      }
+    },
+    onSuccess: (result) => {
+      console.log("🔍 LOGIN SUCCESS:", result);
+    },
+    onError: (error) => {
+      console.error("🔍 LOGIN ERROR:", error);
+    },
+  });
+
+  return {
+    newLogin,
+    newIsLoading,
+  };
+
+  /* COMMENTED OUT MIXED CONCERNS VERSION THAT WAS IN PAGE:
+  const result = await newLogin(data.username, data.password);
+  if (result) {
+    handleLoginSuccess(result);
+  }
+  */
 };
 
 export type AuthForms = ReturnType<typeof useAuthLogin>;
