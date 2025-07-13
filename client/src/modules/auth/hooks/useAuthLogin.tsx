@@ -148,4 +148,4 @@ export const useAuthLogin = () => {
   };
 };
 
-export type AuthForms = ReturnType<typeof useAuthForms>;
+export type AuthForms = ReturnType<typeof useAuthLogin>;

@@ -1,6 +1,6 @@
 import { Login, Register } from "@shared/schema";
 
-export class AuthFormService {
+export class AuthLoginService {
   // TODO: Extract form submission logic
   
   static async submitRegistration(data: Register): Promise<any> {
