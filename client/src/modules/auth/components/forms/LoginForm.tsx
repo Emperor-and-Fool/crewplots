@@ -32,30 +32,39 @@ export const LoginForm = ({
     },
   });
 
-  const onSubmit = async (data: Login) => {
-    try {
+    const onSubmit = async (data: LoginRequest) => {
       setIsLoading(true);
+      try {
+        const result = await login(data.username, data.password);
       
-      const result = await login(data.username, data.password);
-      console.log("🔍 LOGIN DEBUG: Result from login():", result);
-      
-      if (result.error) {
-        console.log("🔍 LOGIN DEBUG: Auth context returned error:", result.error);
-        onSuccess?.(result); // Pass error to page for toast handling
-      } else if (result.user && result.redirectScript) {
-        console.log("🔍 ATOMIC LOGIN: Calling onSuccess with complete result:", result);
-        onSuccess?.(result); // Pass complete response with redirectScript
-      } else if (result === false) {
-        console.log("🔍 LOGIN DEBUG: Login failed - boolean false result");
-        onSuccess?.({ error: "Login failed - invalid credentials" });
-      } else {
-        console.log("🔍 LOGIN DEBUG: Login failed - unexpected result:", result);
-        onSuccess?.({ error: "BUT IT DID NOT FAIL! SUCCESS!" });
-      }
-    } catch (error) {
-      console.log("🔍 LOGIN DEBUG: Exception caught:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      onError?.(errorMessage);
+        // Handle LoginResponse union type
+        if (result === false) {
+          // Network/system error
+          toast({
+            title: "Login failed",
+            description: "System error. Please try again.",
+            variant: "destructive",
+          });
+        } else if (result.authenticated) {
+          // Success case
+          if (result.redirectScript) {
+            eval(result.redirectScript); // Execute server redirect
+          } 
+          // No fallback - let server handle all redirects
+        } else {
+          // Authentication failed
+          toast({
+            title: "Login failed", 
+            description: result.error,
+            variant: "destructive",
+          });
+        }
+        } catch (error) {
+        toast({
+          title: "Login failed",
+          description: "Network error. Please try again.",
+          variant: "destructive",
+        });
     } finally {
       setIsLoading(false);
     }
