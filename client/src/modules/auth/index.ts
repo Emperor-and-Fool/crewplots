@@ -9,7 +9,7 @@ export { useAuthValidation } from './hooks/useAuthValidation';
 export { useAuthState } from './hooks/useAuthState';
 
 // Services
-export { AuthFormService } from './services/authFormService';
+export { AuthLoginService } from './services/authLoginService';
 export { AuthValidationService } from './services/authValidationService';
 
 // Component exports
