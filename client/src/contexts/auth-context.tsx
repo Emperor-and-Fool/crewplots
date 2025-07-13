@@ -12,12 +12,22 @@ import { useToast } from "@/hooks/use-toast";
 import { hasAdminBypass } from "@shared/utils/permissions";
 import { useLocation } from "wouter";
 
+type LoginRequest = {
+  username: string;
+  password: string;
+};
+
+type LoginResponse =
+  | { user: User; redirectScript: string }
+  | { error: string }
+  | false;
+
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isSuperuser: boolean;
-  login: (username: string, password: string) => Promise<Login>;
+  login: (username: string, password: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
   refreshAuth: () => Promise<boolean>;
