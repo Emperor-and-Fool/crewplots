@@ -7,7 +7,7 @@
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Register } from "@shared/schema";
+import { User, Register, Login } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { hasAdminBypass } from "@shared/utils/permissions";
 import { useLocation } from "wouter";
@@ -17,7 +17,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   isSuperuser: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<Login>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<boolean>;
   refreshAuth: () => Promise<boolean>;
