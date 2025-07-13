@@ -28,8 +28,8 @@ export interface AuthPageLayoutProps {
 }
 
 export interface LoginFormProps {
-  onSuccess?: (user: any) => void;
-  onError?: (error: string) => void;
+  onSubmit: (data: { username: string; password: string }) => void;
+  isLoading: boolean;
   showAutoLogin?: boolean;
   showDebugForm?: boolean;
 }

@@ -127,8 +127,17 @@ export const LoginPage = () => {
       footerContent={footerContent}
     >
       <LoginForm 
-        onSuccess={handleLoginSuccess}
-        onError={handleLoginError}
+        onSubmit={async (data) => {
+          try {
+            const result = await newLogin(data.username, data.password);
+            if (result) {
+              handleLoginSuccess(result);
+            }
+          } catch (error) {
+            handleLoginError("Network error. Please try again.");
+          }
+        }}
+        isLoading={newIsLoading}
       />
     </AuthPageLayout>
   );
