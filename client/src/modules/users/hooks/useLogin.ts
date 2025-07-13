@@ -40,13 +40,13 @@ export const useLogin = (): UseLoginResult => {
         // Success case
         setUser(result.user); // TODO: Use pure context setter
         
-        // Handle navigation
-        if (result.redirectUrl) {
-          if (result.redirectUrl.startsWith('/')) {
-            setLocation(result.redirectUrl);
+        // Handle navigation - COPIED FROM auth-context lines 157-165
+        if (result.redirectScript) {
+          // Parse the redirect URL from the script and use setLocation instead
+          if (result.redirectScript.startsWith('/')) {
+            setLocation(result.redirectScript);
           } else {
-            // Handle external redirects or scripts
-            window.location.href = result.redirectUrl;
+            eval(result.redirectScript);
           }
         }
         
