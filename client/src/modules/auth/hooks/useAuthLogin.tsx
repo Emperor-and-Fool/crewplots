@@ -11,7 +11,7 @@ import { useAuthOperations } from './useAuthOperations';
  * Provides form-specific logic and state management for authentication forms.
  * Integrates with useAuthOperations for actual authentication operations.
  */
-export const useAuthForms = () => {
+export const useAuthLogin = () => {
   const authOps = useAuthOperations();
 
   /**
