@@ -12,4 +12,4 @@ export class AuthFormService {
     // TODO: Extract form data formatting logic
     return data;
   }
-
+}
