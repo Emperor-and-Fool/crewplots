@@ -12,7 +12,7 @@ export type LoginRequest = {
 };
 
 export type LoginResponse =
-  | { user: User; redirectUrl: string }
+  | { user: User; redirectScript: string }
   | { error: string }
   | false;
 
