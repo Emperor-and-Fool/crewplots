@@ -4,7 +4,7 @@
 export * from './types/auth-ui.types';
 
 // Hooks
-export { useAuthForms } from './hooks/useAuthForms';
+export { useAuthLogin } from './hooks/useAuthLogin';
 export { useAuthValidation } from './hooks/useAuthValidation';
 export { useAuthState } from './hooks/useAuthState';
 
