@@ -24,6 +24,7 @@ export const LoginForm = ({
 }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { login, user } = useAuth();
+  const { toast } = useToast();
 
   const form = useForm<Login>({
     resolver: zodResolver(loginSchema),
