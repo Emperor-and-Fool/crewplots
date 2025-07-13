@@ -3,13 +3,13 @@
 // Types
 export * from './types/auth-ui.types';
 
-// Hooks
-export { useAuthLogin } from './hooks/useAuthLogin';
+// Hooks  
+export { useAuthForms } from './hooks/useAuthForms';
 export { useAuthValidation } from './hooks/useAuthValidation';
 export { useAuthState } from './hooks/useAuthState';
 
 // Services
-export { AuthLoginService } from './services/authLoginService';
+export { AuthFormService } from './services/authFormService';
 export { AuthValidationService } from './services/authValidationService';
 
 // Component exports
