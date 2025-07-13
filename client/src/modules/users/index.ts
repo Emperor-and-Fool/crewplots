@@ -39,6 +39,13 @@ export {
   useAuth
 } from './hooks';
 
+// Auth-specific exports - NEW CLEAN ARCHITECTURE
+export { AuthService } from './services/auth-service';
+export { useLogin } from './hooks/useLogin';
+export { useLogout } from './hooks/useLogout'; 
+export { useRegister } from './hooks/useRegister';
+export { useAuthSession } from './hooks/useAuthSession';
+
 // Component exports - UI layer
 export {
   UserCard,
