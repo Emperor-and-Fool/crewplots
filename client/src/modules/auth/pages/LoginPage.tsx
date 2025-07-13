@@ -25,7 +25,7 @@ export const LoginPage = () => {
     }
   };
   
-  const handleLoginSuccess = (loginResponse: any) => {
+  const handleLoginSuccess = (loginResponse: LoginResponse) => {
     console.log("🔍 handleLoginSuccess:", loginResponse);
 
     /* ---------- error branch coming from auth-context ---------------- */
