@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { LoginRequest, LoginResponse } from "@/contexts/auth-context";
+import { useLogin } from "@/modules/users"; // HYBRID: Import new auth hook
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "../components/forms/LoginForm";
@@ -9,6 +10,7 @@ import { Link } from "wouter";
 export const LoginPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login: newLogin, isLoading: newIsLoading } = useLogin(); // HYBRID: New auth hook
 
   /* ------------------------------------------------------------------
    * progressive-error & success-flag state
