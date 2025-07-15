@@ -241,7 +241,7 @@ export class OnDemandRedisService {
     try {
       console.log('[OnDemand] Starting Redis server with config file...');
       
-      this.redisProcess = spawn('/nix/store/xlvzg81dgimxfjxpxwr2k4-redis-7.2.4/bin/redis-server', ['--port', '6380'], {
+      this.redisProcess = spawn('/nix/store/xlvzg81dgimxfjxpxwr2w3q1ca3l5lwa-redis-7.2.4/bin/redis-server', ['--port', '6380'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false
       });
