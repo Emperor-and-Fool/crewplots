@@ -1,4 +1,4 @@
-//Direct REDIS Management is done in adapters-repl/redis-ondemand/on-demand-redis.ts!!!
+//Direct REDIS Server-Management is done in adapters-repl/redis-ondemand/on-demand-redis.ts!!!
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { pool } from '../db';
