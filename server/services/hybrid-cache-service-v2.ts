@@ -1,3 +1,4 @@
+//Direct REDIS Management is done in adapters-repl/redis-ondemand/on-demand-redis.ts!!!
 import { onDemandRedis } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 import { OnDemandRedisService } from '../../adapters-repl/redis-ondemand/on-demand-redis';
 import { db } from '../db';
