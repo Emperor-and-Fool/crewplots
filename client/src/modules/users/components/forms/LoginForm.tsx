@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
-import { LoginRequest, LoginResponse } from "@/contexts/auth-context"; // Form callback types
+import { LoginRequest, LoginResponse } from "@/modules/auth/contexts/auth-context"; // Form callback types
 import { loginSchema, type Login } from "@shared/schema";
-import { LoginFormProps } from "../../types/auth-ui.types";
+import { LoginFormProps } from "@client/src/modules/auth/types/auth-ui.types.ts";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
