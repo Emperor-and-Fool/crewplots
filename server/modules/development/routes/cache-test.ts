@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { cacheService } from '../services/cache-service';
-import { onDemandMongoService } from '../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
+import { hybridCacheService } from '../../../services/hybrid-cache-service-v2';
+import { onDemandMongoService } from '../../../adapters-repl/mongodb-ondemand/on-demand-mongodb';
 
 const router = Router();
 
@@ -18,15 +18,15 @@ router.get('/cache/test', async (req, res) => {
     const startTime = process.hrtime.bigint();
 
     // Test cache set
-    await cacheService.set(testKey, testData, { ttl: 300 });
+    await hybridCacheService.set(testKey, testData, { ttl: 300, category: 'test' });
 
     // Test cache get
-    const retrieved = await cacheService.get(testKey);
+    const retrieved = await hybridCacheService.get(testKey);
 
     const endTime = process.hrtime.bigint();
     const duration = Number(endTime - startTime) / 1000000; // Convert to milliseconds
 
-    const status = cacheService.getStatus();
+    const status = hybridCacheService.getStats();
 
     res.json({
       success: true,
@@ -44,7 +44,7 @@ router.get('/cache/test', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      cache_status: cacheService.getStatus()
+      cache_status: await hybridCacheService.getStats()
     });
   }
 });
@@ -77,11 +77,11 @@ router.post('/cache/session/test', async (req, res) => {
     console.log('[Test] Testing session caching...');
     const startTime = process.hrtime.bigint();
 
-    // Cache session
-    await cacheService.cacheSession(sessionId, testUser, { ttl: 300 });
+    // Cache session (using hybrid cache with user data)
+    await hybridCacheService.set(`session:${sessionId}`, testUser, { ttl: 300, category: 'session' });
 
     // Retrieve session
-    const retrievedSession = await cacheService.getSession(sessionId);
+    const retrievedSession = await hybridCacheService.get(`session:${sessionId}`);
 
     const endTime = process.hrtime.bigint();
     const duration = Number(endTime - startTime) / 1000000;
@@ -94,7 +94,7 @@ router.post('/cache/session/test', async (req, res) => {
         retrieved_user: retrievedSession,
         data_matches: JSON.stringify(testUser) === JSON.stringify(retrievedSession)
       },
-      cache_status: cacheService.getStatus()
+      cache_status: await hybridCacheService.getStats()
     });
 
   } catch (error) {
@@ -102,7 +102,7 @@ router.post('/cache/session/test', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      cache_status: cacheService.getStatus()
+      cache_status: await hybridCacheService.getStats()
     });
   }
 });
@@ -146,8 +146,10 @@ router.post('/cache/batch/test', async (req, res) => {
     console.log('[Test] Testing batch cache operations...');
     const startTime = process.hrtime.bigint();
 
-    // Warmup user cache with batch operation
-    await cacheService.warmupUserCache(userId, testData);
+    // Batch cache operations using hybrid cache
+    await hybridCacheService.set(`batch:session:${userId}`, testData.session, { ttl: 300, category: 'session' });
+    await hybridCacheService.set(`batch:messages:${userId}`, testData.messages, { ttl: 300, category: 'messages' });
+    await hybridCacheService.set(`batch:profile:${userId}`, testData.profile, { ttl: 300, category: 'profile' });
 
     const endTime = process.hrtime.bigint();
     const duration = Number(endTime - startTime) / 1000000;
@@ -159,7 +161,7 @@ router.post('/cache/batch/test', async (req, res) => {
         user_id: userId,
         data_cached: testData
       },
-      cache_status: cacheService.getStatus()
+      cache_status: await hybridCacheService.getStats()
     });
 
   } catch (error) {
@@ -167,14 +169,14 @@ router.post('/cache/batch/test', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      cache_status: cacheService.getStatus()
+      cache_status: await hybridCacheService.getStats()
     });
   }
 });
 
 // Get cache status
-router.get('/cache/status', (req, res) => {
-  const status = cacheService.getStatus();
+router.get('/cache/status', async (req, res) => {
+  const status = await hybridCacheService.getStats();
   res.json({
     cache_service: status,
     environment: {

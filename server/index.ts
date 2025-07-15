@@ -4,7 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 
 import { mongoConnection } from "./db-mongo";
 // Keepalive service removed - using on-demand Redis service instead
-import { cacheService } from "./services/cache-service";
+import { hybridCacheService } from "./services/hybrid-cache-service-v2";
 
 
 const app = express();
@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'development') {
 
   // Initialize on-demand cache service (no persistent processes)
   console.log('✅ On-demand cache service initialized - Redis will start when needed');
-  console.log('Cache status:', cacheService.getStatus());
+  console.log('Cache status:', hybridCacheService.getRedisStatus());
 
   // Using on-demand Redis service instead of persistent keepalive
   console.log('Redis supervisor disabled - using on-demand Redis service');
@@ -95,13 +95,13 @@ if (process.env.NODE_ENV === 'development') {
   // Graceful shutdown handling
   process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
-    await cacheService.shutdown();
+    // No specific shutdown needed for hybrid cache service
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down gracefully...');
-    await cacheService.shutdown();
+    // No specific shutdown needed for hybrid cache service
     process.exit(0);
   });
 })();
