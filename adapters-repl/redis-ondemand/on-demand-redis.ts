@@ -78,10 +78,7 @@ export class OnDemandRedisService {
   ): Promise<T> {
     const { connectionId = 'default', keepAlive = 540000, skipInDocker = true } = options; // 9 minutes default
 
-    // Skip Redis activation in Docker environments (docker-compose handles it)
-    if (skipInDocker && process.env.DOCKER_ENV) {
-      throw new Error('Redis service skipped - running in Docker environment');
-    }
+
 
     // Check for existing connection
     const existingConnection = this.activeConnections.get(connectionId);
@@ -159,9 +156,7 @@ export class OnDemandRedisService {
   ): Promise<T[]> {
     const { connectionId = 'batch', skipInDocker = true } = options;
 
-    if (skipInDocker && process.env.DOCKER_ENV) {
-      throw new Error('Redis service skipped - running in Docker environment');
-    }
+
 
     const connection = await this.createConnection(connectionId);
     
