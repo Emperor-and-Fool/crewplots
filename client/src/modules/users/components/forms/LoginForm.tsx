@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export const LoginForm = () => {
+  const queryClient = useQueryClient();
   const { login, isLoading } = useLogin();  // ← Get loading from hook
   const { toast } = useToast();
   const form = useForm<Login>({
@@ -94,6 +96,7 @@ export const LoginForm = () => {
           eval(loginResponse.redirectScript);
         }
       }
+      queryClient.invalidateQueries();
       return;                                  // nothing else to do here
     }
 
