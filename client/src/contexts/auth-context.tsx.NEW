@@ -24,9 +24,6 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // After line 26 in AuthProvider:
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   // ADD THIS useEffect HERE:
   useEffect(() => {
     // Skip auth check on login page
