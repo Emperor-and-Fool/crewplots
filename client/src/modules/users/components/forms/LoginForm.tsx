@@ -86,6 +86,14 @@ export const LoginForm = () => {
       }
       // Update auth context with user data
       setUser(loginResponse.user);
+      // Execute atomic redirect if present
+      if (loginResponse.redirectScript) {
+        if (loginResponse.redirectScript.startsWith('/')) {
+          setLocation(loginResponse.redirectScript);
+        } else {
+          eval(loginResponse.redirectScript);
+        }
+      }
       return;                                  // nothing else to do here
     }
 
