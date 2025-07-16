@@ -26,6 +26,7 @@ export const LoginForm = () => {
   });
   
   const [, setLocation] = useLocation();
+  const { setUser } = useAuth();
   
   const onSubmit = async (data: LoginRequest) => {
     try {
