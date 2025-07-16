@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/hooks/use-auth";
 import { useLogin } from "@/modules/users/hooks/useLogin";
 import { LoginRequest, LoginResponse } from "@/modules/users/services/auth-service"; // Form callback types
 import { loginSchema, type Login } from "@shared/schema";
@@ -14,9 +13,7 @@ import { Loader2 } from "lucide-react";
 
 export const LoginForm = () => {
   const { login, isLoading } = useLogin();  // ← Get loading from hook
-  const { user } = useAuth();              // ← Still need user state
   const { toast } = useToast();
-
   const form = useForm<Login>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -25,22 +22,20 @@ export const LoginForm = () => {
     },
   });
   
-  const [, setLocation] = useLocation();                   // → LoginForm
+  const [, setLocation] = useLocation();
   
-  const { user } = useAuth();  // Only user state needed
-
   const onSubmit = async (data: LoginRequest) => {
     try {
       const result = await login(data.username, data.password);
 
       // Handle LoginResponse union type - simplified logic
       if (result === false || (result && 'error' in result)) {
-        onError?.(result === false ? "System error" : result.error);
+        handleLoginError(result === false ? "System error" : result.error);
       } else if (result && 'user' in result) {
-        onSuccess?.(result);
+        handleLoginSuccess(result) ;
       }
     } catch (error) {
-      onError?.("Network error. Please try again.");
+      handleLoginError("Network error. Please try again.");
     }
   };
 
