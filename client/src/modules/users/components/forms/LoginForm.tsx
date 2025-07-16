@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
+import { useLogin } from "@/modules/users/hooks/useLogin";
 import { LoginRequest, LoginResponse } from "@/modules/auth/contexts/auth-context"; // Form callback types
 import { loginSchema, type Login } from "@shared/schema";
 import { LoginFormProps } from "@client/src/modules/auth/types/auth-ui.types.ts";
@@ -15,8 +16,8 @@ export const LoginForm = ({
   onSuccess, 
   onError 
 }: LoginFormProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { login, user } = useAuth();
+  const { login, isLoading } = useLogin();  // ← Get loading from hook
+  const { user } = useAuth();              // ← Still need user state
   const { toast } = useToast();
 
   const form = useForm<Login>({
@@ -28,49 +29,17 @@ export const LoginForm = ({
   });
 
   const onSubmit = async (data: LoginRequest) => {
-    setIsLoading(true);
-      try {
-        const result = await login(data.username, data.password);
+    try {
+      const result = await login(data.username, data.password);
 
-        // COMMENTED OUT: Useless duplicate logic (lines 42-63)
-        // LoginForm never calls onSuccess/onError callbacks 
-        // Auth-context already handles all success/error/redirection logic
-        // This section was causing false "Login failed" toasts on successful logins
-        /*
-        // Handle LoginResponse union type
-        if (result === false) {
-          // Network/system error
-          toast({
-            title: "Login failed",
-            description: "System error. Please try again.",
-            variant: "destructive",
-          });
-        } else if (result.user && result.redirectScript) {
-          // Success case
-          if (result.redirectScript) {
-            eval(result.redirectScript); // Execute server redirect
-          } 
-          // No fallback - let server handle all redirects
-        } else {
-          // Authentication failed
-          toast({
-            title: "Login failed", 
-            description: result.error,
-            variant: "destructive",
-          });
-        }
-        */
-
-        // Let LoginPage haWhy doesn'tndle the result via callbacks
-        if (result === false || (result && 'error' in result)) {
-          onError?.(result === false ? "System error" : result.error);
-        } else if (result && 'user' in result) {
-          onSuccess?.(result);
-        }
-        } catch (error) {
-        onError?.("Network error. Please try again.");
-    } finally {
-      setIsLoading(false);
+      // Handle LoginResponse union type - simplified logic
+      if (result === false || (result && 'error' in result)) {
+        onError?.(result === false ? "System error" : result.error);
+      } else if (result && 'user' in result) {
+        onSuccess?.(result);
+      }
+    } catch (error) {
+      onError?.("Network error. Please try again.");
     }
   };
 
