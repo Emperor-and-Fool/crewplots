@@ -3,16 +3,10 @@
  * Coordinates Login Authentication
  */
 
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query'; 
+import { useState } from 'react'; 
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthService, LoginResponse } from '../services/auth-service';
-import { useAuth } from '@/contexts/auth-context';
-
-  const [user, setUser] = useState<User | null>(null);      // → useLogin hook
-  const [isLoading, setIsLoading] = useState(true);         // → useLogin hook  
-  const [isLoggingOut, setIsLoggingOut] = useState(false);  // → useLogin hook
-  const queryClient = useQueryClient();                     // → useLogin hook
 
 export type UseLoginResult = {
   login: (username: string, password: string) => Promise<LoginResponse>;
@@ -21,7 +15,6 @@ export type UseLoginResult = {
 
 export const useLogin = (): UseLoginResult => {
   const [isLoading, setIsLoading] = useState(false);
-  const { login: contextLogin } = useAuth(); // ← From auth-context line 30
 
   // ✅ PURE: Only wraps context operations, no side effects
   const login = async (username: string, password: string): Promise<LoginResponse> => {
