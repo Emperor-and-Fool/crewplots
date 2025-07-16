@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
+export const LoginForm = () => {
   const { login, isLoading } = useLogin();  // ← Get loading from hook
   const { user } = useAuth();              // ← Still need user state
   const { toast } = useToast();
@@ -186,3 +187,4 @@ import { Loader2 } from "lucide-react";
     </Form>
   );
 };
+}
