@@ -12,6 +12,34 @@ type AuthContextType = {
   // Remove: isSuperuser, login, logout, register, refreshAuth
 };
 
+// Missing AuthContext definition
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: () => {},
+  isLoading: true,
+  isAuthenticated: false,
+});
+
+// Missing AuthProvider implementation  
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isAuthenticated = Boolean(user);
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        isLoading,
+        isAuthenticated,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
 // Export useAuth hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
