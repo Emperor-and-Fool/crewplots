@@ -63,7 +63,8 @@ export {
   ApplicantPortal,
   Applicants,
   ApplicantDetail,
-  RegistrationSuccess
+  RegistrationSuccess,
+  LoginPage
 } from './pages';
 
 // Utility exports
