@@ -13,11 +13,10 @@ export { AuthFormService } from './services/authFormService';
 export { AuthValidationService } from './services/authValidationService';
 
 // Component exports
-export { LoginForm } from './components/forms/LoginForm';
+// Legacy LoginForm and LoginPage moved to .bak - using modular users module instead
 export { RegistrationForm } from './components/forms/RegistrationForm';
 export { AuthDevelopmentTools } from './components/utils/AuthDevelopmentTools';
 export { AuthPageLayout } from './components/layouts/AuthPageLayout';
-export { LoginPage } from './pages/LoginPage';
 export { RegistrationPage } from './pages/RegistrationPage';
 
 // Compatibility re-exports for gradual migration
