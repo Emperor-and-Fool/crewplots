@@ -102,6 +102,15 @@ export class AuthService {
   }
 
   /**
+   * Check if any session cookies exist before making auth request
+   */
+  private static hasCookies(): boolean {
+    return document.cookie.includes('connect.sid') || 
+           document.cookie.includes('session') ||
+           document.cookie.length > 0;
+  }
+
+  /**
    * Logout current user session
    * Handles server-side session cleanup
    */
