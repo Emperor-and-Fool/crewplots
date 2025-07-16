@@ -1,6 +1,6 @@
 // CHECK BEFORE MODIFYING CODE HERE  
 // 
-
+import { AuthService } from '@/modules/users/services/auth-service';
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { User } from "@shared/schema";
 
@@ -24,6 +24,23 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // After line 26 in AuthProvider:
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  // ADD THIS useEffect HERE:
+  useEffect(() => {
+    // Skip auth check on login page
+    if (window.location.pathname === '/login') {
+      setIsLoading(false);
+      return;
+    }
+    const initializeAuth = async () => {
+      const userData = await AuthService.validateSession();
+      setUser(userData);
+      setIsLoading(false);
+    };
+    initializeAuth();
+  }, []);
 
   const isAuthenticated = Boolean(user);
   return (
