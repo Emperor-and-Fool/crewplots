@@ -5,17 +5,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLogin } from "@/modules/users/hooks/useLogin";
 import { LoginRequest, LoginResponse } from "@/modules/users/services/auth-service"; // Form callback types
 import { loginSchema, type Login } from "@shared/schema";
-import { LoginFormProps } from "@client/src/modules/auth/types/auth-ui.types.ts";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-export const LoginForm = ({ 
-  onSuccess, 
-  onError 
-}: LoginFormProps) => {
   const { login, isLoading } = useLogin();  // ← Get loading from hook
   const { user } = useAuth();              // ← Still need user state
   const { toast } = useToast();
