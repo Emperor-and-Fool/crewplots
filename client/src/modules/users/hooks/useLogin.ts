@@ -20,12 +20,15 @@ export const useLogin = (): UseLoginResult => {
 
   // ✅ PURE: Only wraps context operations, no side effects
   const login = async (username: string, password: string): Promise<LoginResponse> => {
+    setIsLoading(true);
     try {
       const result = await contextLogin(username, password);
       return result;
     } catch (error) {
       console.error('Login operation failed:', error);
       throw new Error(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
     }
   };
   return { login, isLoading };
