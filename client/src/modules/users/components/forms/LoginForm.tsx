@@ -65,8 +65,8 @@ export const LoginForm = () => {
     /* ---------- error branch coming from auth-context ---------------- */
     if (loginResponse === false) {
       toast({
-        title: "Login failed",
-        description: loginResponse.error,
+        title: "Login failed", 
+        description: "Authentication failed",
         variant: "destructive",
       });
       return;
@@ -197,4 +197,3 @@ export const LoginForm = () => {
     </Form>
   );
 };
-}
