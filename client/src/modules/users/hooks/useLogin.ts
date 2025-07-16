@@ -1,6 +1,6 @@
-/**
- * Login Hook - UI-focused login logic with toast feedback
- * Coordinates auth service with UI state management
+/** Login Hook - Generic LoginForm focused login hook
+ * 
+ * Coordinates Login Authentication
  */
 
 import { useState } from 'react';
