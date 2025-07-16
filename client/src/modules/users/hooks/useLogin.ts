@@ -14,6 +14,10 @@ export type UseLoginResult = {
   isLoading: boolean;
 };
 
+export const useLogin = (): UseLoginResult => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { login: contextLogin } = useAuth(); // ← From auth-context line 30
+
   // ✅ PURE: Only wraps context operations, no side effects
   const login = async (username: string, password: string): Promise<LoginResponse> => {
     try {
