@@ -1,6 +1,6 @@
-import { AuthPageLayout } from "../components/layouts/AuthPageLayout";  // Page wrapper
+import { AuthPageLayout } from "@client/src/modules/users/components/layouts/LoginPageLayout.tsx";  // Page wrapper
 import { Link } from "wouter";                                          // Navigation links
-import { LoginForm } from "../components/forms/LoginForm";              // Self-contained form
+import { LoginForm } from "@client/src/modules/users/components/forms/LoginForm.tsx";      // Self-contained form
 
 const footerContent = (
   <>
@@ -19,7 +19,7 @@ const footerContent = (
 );
 
 return (
-  <AuthPageLayout 
+  <LoginPageLayout 
     title="Crew Plots Pro - Login Page" 
     description="Sign in to your account to continue"
     footerContent={footerContent}
