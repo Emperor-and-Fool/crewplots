@@ -9,6 +9,11 @@ import { useLocation } from 'wouter';
 import { AuthService, LoginResponse } from '../services/auth-service';
 import { useAuth } from '@/contexts/auth-context';
 
+  const [user, setUser] = useState<User | null>(null);      // → useLogin hook
+  const [isLoading, setIsLoading] = useState(true);         // → useLogin hook  
+  const [isLoggingOut, setIsLoggingOut] = useState(false);  // → useLogin hook
+  const queryClient = useQueryClient();                     // → useLogin hook
+
 export type UseLoginResult = {
   login: (username: string, password: string) => Promise<LoginResponse>;
   isLoading: boolean;
@@ -22,7 +27,7 @@ export const useLogin = (): UseLoginResult => {
   const login = async (username: string, password: string): Promise<LoginResponse> => {
     setIsLoading(true);
     try {
-      const result = await contextLogin(username, password);
+      const result = await AuthService.login(username, password);
       return result;
     } catch (error) {
       console.error('Login operation failed:', error);

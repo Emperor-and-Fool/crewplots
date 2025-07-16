@@ -28,6 +28,9 @@ export const LoginForm = ({
     },
   });
 
+  const { toast } = useToast();                            // → LoginForm
+  const [, setLocation] = useLocation();                   // → LoginForm
+  
   const { user } = useAuth();  // Only user state needed
 
   const onSubmit = async (data: LoginRequest) => {
