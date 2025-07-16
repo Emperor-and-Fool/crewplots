@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@/modules/users/hooks/useLogin";
 import { LoginRequest, LoginResponse } from "@/modules/users/services/auth-service"; // Form callback types
+import { useAuth } from '@/contexts/auth-context';
 import { loginSchema, type Login } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +84,8 @@ export const LoginForm = () => {
         clearTimeout(errorResetTimer.current);
         errorResetTimer.current = null;
       }
+      // Update auth context with user data
+      setUser(loginResponse.user);
       return;                                  // nothing else to do here
     }
 
