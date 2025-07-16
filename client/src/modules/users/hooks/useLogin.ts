@@ -4,9 +4,8 @@
  */
 
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query'; 
 import { useLocation } from 'wouter';
-import { useToast } from '@/hooks/use-toast';
 import { AuthService, LoginResponse } from '../services/auth-service';
 import { useAuth } from '@/contexts/auth-context';
 
