@@ -119,6 +119,44 @@ export class AuthService {
   }
 
   /**
+   * Validate current session and return user data
+   * Returns null if no valid session exists
+   */
+  static async validateSession(): Promise<User | null> {
+    try {
+      // Use ValidationEngine30 auth endpoint - simplified authentication check
+      const response = await fetch('/api/validation/v3/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({})
+      });
+      
+      if (response.ok) {
+        const authData = await response.json();
+        // ValidationEngine30 response structure: { success, result, user }
+        if (authData?.success && authData.user) {
+          return authData.user;
+        } else {
+          return null;
+        }
+      } else if (response.status === 401) {
+        // Session expired or invalid - clear ghost cookies
+        this.clearSessionCookies();
+        return null;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Logout current user session
    * Handles server-side session cleanup
    */
