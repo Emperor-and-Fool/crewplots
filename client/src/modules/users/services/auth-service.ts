@@ -111,6 +111,14 @@ export class AuthService {
   }
 
   /**
+   * Clear ghost/expired session cookies
+   */
+  private static clearSessionCookies(): void {
+    document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  }
+
+  /**
    * Logout current user session
    * Handles server-side session cleanup
    */
