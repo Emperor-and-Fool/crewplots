@@ -12,6 +12,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
+type LoginRequest = {
+  username: string;
+  password: string;
+};
+
+type LoginResponse =
+  | { user: User; redirectScript: string }
+  | { error: string }
+  | false;
+
 export const LoginForm = ({ 
   onSuccess, 
   onError 
@@ -27,6 +37,8 @@ export const LoginForm = ({
       password: "",
     },
   });
+
+  const { user } = useAuth();  // Only user state needed
 
   const onSubmit = async (data: LoginRequest) => {
     try {
