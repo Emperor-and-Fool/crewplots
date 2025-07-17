@@ -162,12 +162,17 @@ export class AuthService {
    */
   static async logout(): Promise<void> {
     try {
-      await fetch('/api/auth/dev-logout', {
-        method: 'GET',
-        credentials: 'include'
+      // Use production logout endpoint instead of dev-logout
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
     } catch (error) {
       // Silent failure - user is already logged out locally
+      console.log('Logout request failed, but proceeding with local cleanup:', error);
     }
   }
 
