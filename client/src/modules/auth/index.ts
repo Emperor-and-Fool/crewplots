@@ -14,10 +14,9 @@ export { AuthValidationService } from './services/authValidationService';
 
 // Component exports
 // Legacy LoginForm and LoginPage moved to .bak - using modular users module instead
-export { RegistrationForm } from './components/forms/RegistrationForm';
+// RegistrationForm and RegistrationPage migrated to users module
 export { AuthDevelopmentTools } from './components/utils/AuthDevelopmentTools';
 export { AuthPageLayout } from './components/layouts/AuthPageLayout';
-export { RegistrationPage } from './pages/RegistrationPage';
 
 // Compatibility re-exports for gradual migration
 export { useAuth } from '@/hooks/use-auth';

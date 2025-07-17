@@ -64,7 +64,8 @@ export {
   Applicants,
   ApplicantDetail,
   RegistrationSuccess,
-  LoginPage
+  LoginPage,
+  RegistrationPage
 } from './pages';
 
 // Utility exports
