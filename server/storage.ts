@@ -23,7 +23,7 @@ import {
 // type WeekSchedule = Week; // near-future-removal: Legacy alias removed  
 // type InsertWeekSchedule = InsertWeek; // near-future-removal: Legacy alias removed
 import { db } from "./db";
-import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray, asc } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
 import { onDemandMongoService } from "../adapters-repl/mongodb-ondemand/on-demand-mongodb";
 import { initializeWorkflowPermissions } from './utils/assign-default-permissions';
@@ -1612,6 +1612,11 @@ class DatabaseStorage {
 
   async getShifts(): Promise<Shift[]> {
     return await db.select().from(shifts).orderBy(asc(shifts.date));
+  }
+
+  async getShift(id: number): Promise<Shift | undefined> {
+    const results = await db.select().from(shifts).where(eq(shifts.id, id));
+    return results[0];
   }
 
   async createShift(insertShift: InsertShift): Promise<Shift> {

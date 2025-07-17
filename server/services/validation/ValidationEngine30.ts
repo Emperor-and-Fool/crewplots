@@ -517,6 +517,49 @@ export class ValidationEngine30 {
         } else if (entityType === 'shift' && operation === 'update') {
           transactionResult = await storage.updateShift(assembledData.id, assembledData);
           console.log('💾 Shift updated ID:', assembledData.id);
+        } else if (entityType === 'scheduleBlock' && operation === 'read') {
+          console.log('📅 VALIDATION ENGINE 30: Reading schedule block ID:', assembledData.id);
+          transactionResult = await storage.getScheduleBlock(assembledData.id);
+          if (!transactionResult) {
+            throw new Error(`Schedule block not found: ${assembledData.id}`);
+          }
+          console.log('💾 Schedule block read completed ID:', assembledData.id);
+        } else if (entityType === 'scheduleBlock' && operation === 'delete') {
+          console.log('📅 VALIDATION ENGINE 30: Deleting schedule block ID:', assembledData.id);
+          transactionResult = await storage.deleteScheduleBlock(assembledData.id);
+          console.log('💾 Schedule block deleted ID:', assembledData.id);
+        } else if (entityType === 'weekSchedule' && operation === 'read') {
+          console.log('📅 VALIDATION ENGINE 30: Reading week schedule ID:', assembledData.id);
+          transactionResult = await storage.getWeekSchedule(assembledData.id);
+          if (!transactionResult) {
+            throw new Error(`Week schedule not found: ${assembledData.id}`);
+          }
+          console.log('💾 Week schedule read completed ID:', assembledData.id);
+        } else if (entityType === 'weekSchedule' && operation === 'list') {
+          console.log('📅 VALIDATION ENGINE 30: Reading week schedules list');
+          const weekSchedules = await storage.getWeekSchedules();
+          console.log(`💾 Retrieved ${weekSchedules.length} week schedules`);
+          transactionResult = weekSchedules;
+        } else if (entityType === 'weekSchedule' && operation === 'delete') {
+          console.log('📅 VALIDATION ENGINE 30: Deleting week schedule ID:', assembledData.id);
+          transactionResult = await storage.deleteWeekSchedule(assembledData.id);
+          console.log('💾 Week schedule deleted ID:', assembledData.id);
+        } else if (entityType === 'shift' && operation === 'read') {
+          console.log('📅 VALIDATION ENGINE 30: Reading shift ID:', assembledData.id);
+          transactionResult = await storage.getShift(assembledData.id);
+          if (!transactionResult) {
+            throw new Error(`Shift not found: ${assembledData.id}`);
+          }
+          console.log('💾 Shift read completed ID:', assembledData.id);
+        } else if (entityType === 'shift' && operation === 'list') {
+          console.log('📅 VALIDATION ENGINE 30: Reading shifts list');
+          const shifts = await storage.getShifts();
+          console.log(`💾 Retrieved ${shifts.length} shifts`);
+          transactionResult = shifts;
+        } else if (entityType === 'shift' && operation === 'delete') {
+          console.log('📅 VALIDATION ENGINE 30: Deleting shift ID:', assembledData.id);
+          transactionResult = await storage.deleteShift(assembledData.id);
+          console.log('💾 Shift deleted ID:', assembledData.id);
         } 
         // Handle authProfile operations - lightweight user data fetching
         else if (entityType === 'authProfile' && operation === 'read') {
