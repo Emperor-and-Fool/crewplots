@@ -208,11 +208,11 @@ router.post('/login', async (req, res, next) => {
             
             const redirectScript = getRedirectForUser(userWithoutPassword);
             
-            // Line 211 - Replace complex redirectScript with clean redirectUrl
+            // Return success response with consistent field naming
             return res.status(200).json({
                 message: 'Login successful',
                 user: userWithoutPassword,
-                redirectUrl: redirectScript,  // Clean field (already exists)
+                redirectScript: redirectScript,  // Fixed: Use consistent field name
                 // TODO: Add debug logging spot is here, for cookie/timing investigation
                 debug: {
                     adminBypass: false,
