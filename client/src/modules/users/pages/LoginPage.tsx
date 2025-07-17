@@ -1,6 +1,6 @@
-import { AuthPageLayout } from "@client/src/modules/users/components/layouts/AuthPageLayout.tsx";  // Page wrapper
+import { AuthPageLayout } from "../components/layouts/AuthPageLayout";  // Page wrapper
 import { Link } from "wouter";                                          // Navigation links
-import { LoginForm } from "@client/src/modules/users/components/forms/LoginForm.tsx";      // Self-contained form
+import { LoginForm } from "../components/forms/LoginForm";      // Self-contained form
 
 export default function LoginPage() {
   const footerContent = (
