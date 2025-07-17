@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../../storage';
 import { authenticateUser } from '../../../middleware/auth';
-import { insertWeekScheduleSchema, insertShiftSchema, updateShiftSchema } from '@shared/schema';
+import { validationEngine30 } from '../../../services/validation/ValidationEngine30';
 
 const router = express.Router();
 
@@ -104,13 +104,32 @@ router.post("/", authenticateUser, async (req: any, res) => {
 
   try {
     console.log("✅ WEEK SCHEDULE CREATE - Permission granted, validating data");
-    const validatedData = insertWeekScheduleSchema.parse({
-      ...req.body,
-      createdBy: req.user.id
-    });
-    console.log("✅ WEEK SCHEDULE CREATE - Data validated:", validatedData);
     
-    const weekSchedule = await storage.createWeekSchedule(validatedData);
+    const validationResult = await validationEngine30.validate({
+      entityType: 'weekSchedule',
+      operation: 'create',
+      data: {
+        ...req.body,
+        createdBy: req.user.id
+      },
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      }
+    });
+    
+    if (!validationResult.overall.isValid) {
+      console.error("❌ WEEK SCHEDULE CREATE - Validation error:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
+    
+    console.log("✅ WEEK SCHEDULE CREATE - Validation successful");
+    
+    const weekSchedule = validationResult.result;
     console.log("✅ WEEK SCHEDULE CREATE - Saved successfully:", weekSchedule);
     res.status(201).json(weekSchedule);
   } catch (error) {
@@ -135,10 +154,30 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log("✅ WEEK SCHEDULE UPDATE - Permission granted, validating data");
-    const validatedData = insertWeekScheduleSchema.omit({ createdBy: true }).parse(req.body);
-    console.log("✅ WEEK SCHEDULE UPDATE - Data validated:", validatedData);
     
-    const weekSchedule = await storage.updateWeekSchedule(id, validatedData);
+    const validationResult = await validationEngine30.validate({
+      entityType: 'weekSchedule',
+      operation: 'update',
+      data: req.body,
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      },
+      entityId: id
+    });
+    
+    if (!validationResult.overall.isValid) {
+      console.error("❌ WEEK SCHEDULE UPDATE - Validation error:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
+    
+    console.log("✅ WEEK SCHEDULE UPDATE - Validation successful");
+    
+    const weekSchedule = validationResult.result;
     console.log("✅ WEEK SCHEDULE UPDATE - Updated successfully:", weekSchedule);
     res.json(weekSchedule);
   } catch (error) {

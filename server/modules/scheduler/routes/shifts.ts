@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../../storage';
 import { authenticateUser } from '../../../middleware/auth';
-import { insertShiftSchema, updateShiftSchema } from '@shared/schema';
+import { validationEngine30 } from '../../../services/validation/ValidationEngine30';
 
 const router = express.Router();
 
@@ -52,13 +52,32 @@ router.post("/", authenticateUser, async (req: any, res) => {
 
   try {
     console.log("🔄 AUTO-SAVE: Creating shift with data:", req.body);
-    const validatedData = insertShiftSchema.parse({
-      ...req.body,
-      createdBy: req.user.id
-    });
-    console.log("🔄 AUTO-SAVE: Validated data:", validatedData);
     
-    const shift = await storage.createShift(validatedData);
+    const validationResult = await validationEngine30.validate({
+      entityType: 'shift',
+      operation: 'create',
+      data: {
+        ...req.body,
+        createdBy: req.user.id
+      },
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      }
+    });
+    
+    if (!validationResult.overall.isValid) {
+      console.error("🔄 AUTO-SAVE: Validation error:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
+    
+    console.log("🔄 AUTO-SAVE: Validation successful");
+    
+    const shift = validationResult.result;
     console.log("🔄 AUTO-SAVE: Created shift successfully:", shift);
     res.status(201).json(shift);
   } catch (error) {
@@ -79,10 +98,29 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
     console.log("🔄 AUTO-SAVE UPDATE: Updating shift:", shiftId);
     console.log("🔄 AUTO-SAVE UPDATE: Request body:", req.body);
     
-    const validatedData = updateShiftSchema.parse(req.body);
-    console.log("🔄 AUTO-SAVE UPDATE: Validated data:", validatedData);
+    const validationResult = await validationEngine30.validate({
+      entityType: 'shift',
+      operation: 'update',
+      data: req.body,
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      },
+      entityId: shiftId
+    });
     
-    const shift = await storage.updateShift(shiftId, validatedData);
+    if (!validationResult.overall.isValid) {
+      console.error("🔄 AUTO-SAVE UPDATE: Validation error:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
+    
+    console.log("🔄 AUTO-SAVE UPDATE: Validation successful");
+    
+    const shift = validationResult.result;
     console.log("🔄 AUTO-SAVE UPDATE: Updated shift successfully:", shift);
     res.json(shift);
   } catch (error) {

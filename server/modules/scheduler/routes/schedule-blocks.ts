@@ -1,7 +1,7 @@
 import express from 'express';
 import { storage } from '../../../storage';
 import { authenticateUser } from '../../../middleware/auth';
-import { insertScheduleBlockSchema } from '@shared/schema';
+import { validationEngine30 } from '../../../services/validation/ValidationEngine30';
 
 const router = express.Router();
 
@@ -68,14 +68,31 @@ router.post("/", authenticateUser, async (req: any, res) => {
     console.log('📅 CREATE SCHEDULE: Request body:', req.body);
     console.log('📅 CREATE SCHEDULE: User ID:', req.user.id);
     
-    const validatedData = insertScheduleBlockSchema.parse({
-      ...req.body,
-      createdBy: req.user.id
+    const validationResult = await validationEngine30.validate({
+      entityType: 'scheduleBlock',
+      operation: 'create',
+      data: {
+        ...req.body,
+        createdBy: req.user.id
+      },
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      }
     });
     
-    console.log('📅 CREATE SCHEDULE: Validated data:', validatedData);
+    if (!validationResult.overall.isValid) {
+      console.error("📅 CREATE SCHEDULE VALIDATION ERROR:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
     
-    const scheduleBlock = await storage.createScheduleBlock(validatedData);
+    console.log('📅 CREATE SCHEDULE: Validation successful');
+    
+    const scheduleBlock = validationResult.result;
     
     console.log('📅 CREATE SCHEDULE: Created schedule block:', scheduleBlock);
     console.log('📅 CREATE SCHEDULE: Schedule block ID:', scheduleBlock.id);
@@ -98,10 +115,29 @@ router.put("/:id", authenticateUser, async (req: any, res) => {
     console.log(`🔄 TOGGLE DEBUG: PUT request for schedule block ${id}`);
     console.log(`🔄 TOGGLE DEBUG: Request body:`, req.body);
     
-    const validatedData = insertScheduleBlockSchema.omit({ createdBy: true }).partial().parse(req.body);
-    console.log(`🔄 TOGGLE DEBUG: Validated data:`, validatedData);
+    const validationResult = await validationEngine30.validate({
+      entityType: 'scheduleBlock',
+      operation: 'update',
+      data: req.body,
+      context: { 
+        userId: req.user.id, 
+        userRole: req.user.role,
+        permissions: req.user.permissions
+      },
+      entityId: id
+    });
     
-    const scheduleBlock = await storage.updateScheduleBlock(id, validatedData);
+    if (!validationResult.overall.isValid) {
+      console.error("🔄 TOGGLE DEBUG: Validation error:", validationResult.overall.errors);
+      return res.status(400).json({ 
+        error: "Validation failed", 
+        details: validationResult.overall.errors 
+      });
+    }
+    
+    console.log(`🔄 TOGGLE DEBUG: Validation successful`);
+    
+    const scheduleBlock = validationResult.result;
     console.log(`🔄 TOGGLE DEBUG: Updated schedule block result:`, scheduleBlock);
     
     res.json(scheduleBlock);

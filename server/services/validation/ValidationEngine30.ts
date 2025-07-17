@@ -30,6 +30,11 @@ import { emailTestPackage } from '../../modules/development/validation/packages/
 import { emailConfigPackage } from '../../modules/email/validation/emailConfigPackage';
 import { emailSentPackage } from '../../modules/email/validation/emailSentPackage';
 
+// SCHEDULER PACKAGES - required for scheduler VE30 integration
+import { scheduleBlockPackage } from '../../modules/scheduler/validation/scheduleBlockPackage';
+import { weekSchedulePackage } from '../../modules/scheduler/validation/weekSchedulePackage';
+import { shiftPackage } from '../../modules/scheduler/validation/shiftPackage';
+
 /**
  * ValidationEngine30.ts - Enhanced Validation Engine
  * Plan 050: Enhanced version based on PROVEN ValidationEngine.ts patterns
@@ -68,7 +73,12 @@ const enhancedPackageRegistry = {
   
   // EMAIL PACKAGES: Required for email system VE30 integration
   emailConfig: emailConfigPackage,
-  emailSent: emailSentPackage
+  emailSent: emailSentPackage,
+  
+  // SCHEDULER PACKAGES: Required for scheduler VE30 integration
+  scheduleBlock: scheduleBlockPackage,
+  weekSchedule: weekSchedulePackage,
+  shift: shiftPackage
 } as const;
 
 export interface ValidationRequest30 {
