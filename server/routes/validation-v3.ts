@@ -163,17 +163,25 @@ router.post('/execute', authenticateUser, async (req, res) => {
     
     console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, mapped permissions:`, validationPermissions);
 
-    // Use ValidationEngine30 direct validation + execution
+    // Use ValidationEngine30 direct validation + execution with nested user object
     const result = await validationEngine30.validateAndExecute(
       operation || 'read',
       entityType,
       data,
       {
+        user: {
+          id: (req.user as any)?.id,
+          username: (req.user as any)?.username,
+          role: userRole,
+          permissions: validationPermissions,
+          workflowPermissions: workflowPermissions
+        },
         userId: (req.user as any)?.id,
         username: (req.user as any)?.username,
         role: userRole,
         permissions: validationPermissions,
         workflowPermissions: workflowPermissions,
+        operation: operation || 'read',
         ...context
       }
     );
