@@ -246,8 +246,8 @@ export default function ValidationTestPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Test Results
-              <Badge variant={testResult.success ? "default" : "destructive"}>
-                {testResult.success ? 'Success' : 'Failed'}
+              <Badge variant={testResult.overall?.isValid ? "default" : "destructive"}>
+                {testResult.overall?.isValid ? 'Success' : 'Failed'}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -258,50 +258,50 @@ export default function ValidationTestPage() {
                 <p className="text-sm text-gray-600">{testResult.message}</p>
               </div>
               
-              {testResult.result && (
+              {testResult.overall && (
                 <div>
                   <h4 className="font-semibold">Validation Result</h4>
                   <div className="grid gap-2 text-sm">
                     <div className="flex justify-between">
                       <span>Valid:</span>
-                      <Badge variant={testResult.result.isValid ? "default" : "destructive"}>
-                        {testResult.result.isValid ? 'Yes' : 'No'}
+                      <Badge variant={testResult.overall.isValid ? "default" : "destructive"}>
+                        {testResult.overall.isValid ? 'Yes' : 'No'}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Validation Time:</span>
-                      <span>{testResult.result.validationTime}ms</span>
+                      <span>{testResult.overall.metadata?.validationTime}ms</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Package ID:</span>
-                      <span className="font-mono text-xs">{testResult.result.packageId}</span>
+                      <span className="font-mono text-xs">{testResult.packageId}</span>
                     </div>
-                    {testResult.result.context && (
+                    {testResult.overall.metadata?.engine && (
                       <div className="flex justify-between">
-                        <span>User Role:</span>
-                        <span>{testResult.result.context.role}</span>
+                        <span>Engine:</span>
+                        <span>{testResult.overall.metadata.engine}</span>
                       </div>
                     )}
                   </div>
                 </div>
               )}
               
-              {testResult.result?.errors?.length > 0 && (
+              {testResult.overall?.errors?.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-red-600">Errors</h4>
                   <ul className="list-disc list-inside text-sm text-red-600">
-                    {testResult.result.errors.map((error: string, index: number) => (
+                    {testResult.overall.errors.map((error: string, index: number) => (
                       <li key={index}>{error}</li>
                     ))}
                   </ul>
                 </div>
               )}
               
-              {testResult.result?.warnings?.length > 0 && (
+              {testResult.overall?.warnings?.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-yellow-600">Warnings</h4>
                   <ul className="list-disc list-inside text-sm text-yellow-600">
-                    {testResult.result.warnings.map((warning: string, index: number) => (
+                    {testResult.overall.warnings.map((warning: string, index: number) => (
                       <li key={index}>{warning}</li>
                     ))}
                   </ul>
