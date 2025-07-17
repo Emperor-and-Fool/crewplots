@@ -3,11 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Copy, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ValidationTestPage() {
   const [testResult, setTestResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const runValidationTest = async () => {
     setIsLoading(true);
@@ -304,12 +308,39 @@ export default function ValidationTestPage() {
                 </div>
               )}
               
-              <details className="mt-4">
-                <summary className="cursor-pointer font-semibold">Raw Response</summary>
-                <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto">
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold">Raw Response</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(JSON.stringify(testResult, null, 2));
+                        setCopied(true);
+                        toast({
+                          title: "Copied!",
+                          description: "Raw response copied to clipboard",
+                        });
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch (err) {
+                        toast({
+                          title: "Copy failed",
+                          description: "Could not copy to clipboard",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+                <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-96">
                   {JSON.stringify(testResult, null, 2)}
                 </pre>
-              </details>
+              </div>
             </div>
           </CardContent>
         </Card>
