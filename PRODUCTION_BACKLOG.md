@@ -73,6 +73,39 @@
 - Update all auth-related components consistently
 - Update comments and documentation
 - Ensure frontend/backend field name alignment
+
+### 6. Fix Normal Logout ✅ COMPLETED
+**Priority**: High
+**Effort**: Low
+**Status**: RESOLVED - July 16, 2025
+
+**Problem**: AuthService.logout() was using development-only `/api/auth/dev-logout` endpoint causing passport reference issues in production flow.
+
+**Solution Implemented**:
+- Changed from GET `/api/auth/dev-logout` to POST `/api/auth/logout`
+- Updated to use production logout endpoint with proper headers
+- Added Content-Type application/json and POST method
+- Maintained error handling for silent failure
+
+### 7. Figure Out Protected Routes Configuration
+**Priority**: High
+**Effort**: Medium
+**Risk**: Security vulnerabilities and inconsistent access control
+
+**Problem**: Current protected route system has inconsistencies across the application with mixed permission checking patterns. Need unified approach for route protection that works consistently across all pages and API endpoints.
+
+**Current Issues**:
+- Mixed authentication middleware patterns
+- Inconsistent permission validation  
+- Some routes bypass protection checks
+- Complex role-based access control needs simplification
+
+**Solution Requirements**:
+- Centralized route protection configuration
+- Consistent permission checking across frontend and backend
+- Clear documentation of which routes require which permissions
+- Unified ProtectedRoute component for React routes
+- Standardized middleware for API route protection
 - Automatic retry with exponential backoff
 
 ## Medium Priority - Monitoring and Observability
