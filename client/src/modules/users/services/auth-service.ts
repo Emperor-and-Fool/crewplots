@@ -158,12 +158,12 @@ export class AuthService {
 
   /**
    * Logout current user session
-   * Handles server-side session cleanup
+   * Uses dev-logout route for reliable session cleanup
    */
   static async logout(): Promise<void> {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
+      await fetch('/api/auth/dev-logout', {
+        method: 'GET',
         credentials: 'include'
       });
     } catch (error) {

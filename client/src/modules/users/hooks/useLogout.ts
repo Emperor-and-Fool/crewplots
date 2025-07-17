@@ -11,16 +11,20 @@ export const useLogout = () => {
 
   const logout = async (): Promise<void> => {
     try {
-      // Call AuthService logout method
+      // Call AuthService logout method (uses dev-logout route)
       await AuthService.logout();
       
       // Clear user state in context
       setUser(null);
       
+      // Navigate to login page (matching legacy behavior)
+      window.location.href = '/login';
+      
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if server logout fails, clear local state
+      // Even if server logout fails, clear local state and redirect
       setUser(null);
+      window.location.href = '/login';
     }
   };
 
