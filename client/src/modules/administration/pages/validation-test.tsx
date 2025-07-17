@@ -15,7 +15,7 @@ export default function ValidationTestPage() {
     setTestResult(null);
     
     try {
-      const response = await fetch('/api/validation/test/test', {
+      const response = await fetch('/api/validation/v3/test', {
         method: 'GET',
         credentials: 'include',
       });
@@ -54,7 +54,7 @@ export default function ValidationTestPage() {
         }
       };
       
-      const response = await fetch('/api/validation/execute', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export default function ValidationTestPage() {
         }
       };
       
-      const response = await fetch('/api/validation/execute', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export default function ValidationTestPage() {
         }
       };
       
-      const response = await fetch('/api/validation/execute', {
+      const response = await fetch('/api/validation/v3/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
