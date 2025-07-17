@@ -12,3 +12,6 @@ export * from './profiles';
 
 // Workflow-specific components (applicant processing, etc.)
 export * from './workflows';
+
+// Form components
+export * from './forms';
