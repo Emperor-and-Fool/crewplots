@@ -57,15 +57,15 @@ export default function SchedulerEditPage() {
 
   // Fetch schedule block data
   const { data: scheduleData, isLoading, error } = useQuery({
-    queryKey: ['/api/scheduler/schedule-blocks', scheduleId],
+    queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'read', scheduleId],
     queryFn: async () => {
-      const response = await fetch(`/api/scheduler/schedule-blocks/${scheduleId}`, {
-        credentials: 'include'
+      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'read',
+        entityType: 'scheduleBlock',
+        data: { id: parseInt(scheduleId) },
+        context: {}
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch schedule data');
-      }
-      return response.json();
+      return response;
     },
     enabled: !!scheduleId,
   });
@@ -100,7 +100,12 @@ export default function SchedulerEditPage() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: InsertScheduleBlock) => {
-      const response = await apiRequest('PUT', `/api/scheduler/schedule-blocks/${scheduleId}`, data);
+      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'update',
+        entityType: 'scheduleBlock',
+        data: { id: parseInt(scheduleId), ...data },
+        context: {}
+      });
       return response;
     },
     onSuccess: () => {
@@ -108,7 +113,7 @@ export default function SchedulerEditPage() {
         title: "Schedule Updated",
         description: "Schedule details have been saved successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
     },
     onError: (error: any) => {
       toast({
@@ -148,7 +153,7 @@ export default function SchedulerEditPage() {
     },
     onSaveSuccess: () => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/packages/schedule-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
     },
     onSaveError: (error) => {
       console.error('Auto-save failed:', error);

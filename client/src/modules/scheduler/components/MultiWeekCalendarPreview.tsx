@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Trash2, Plus, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Shift {
   id: number;
@@ -81,21 +82,25 @@ export default function MultiWeekCalendarPreview({
 
   // Fetch shifts for all week schedules in this schedule block
   const { data: allShifts = [] } = useQuery({
-    queryKey: ['/api/scheduler/schedule-blocks', scheduleBlockId, 'all-shifts'],
+    queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'all-shifts', scheduleBlockId],
     queryFn: async () => {
       console.log('🔍 MULTI-WEEK SHIFTS: Fetching all shifts for schedule block:', scheduleBlockId);
       
-      // Fetch shifts for each week schedule
+      // Fetch shifts for each week schedule using VE30
       const shiftsPromises = weekSchedules.map(async (weekSchedule) => {
-        const response = await fetch(`/api/scheduler/week-schedules/${weekSchedule.id}/shifts`, {
-          credentials: 'include'
+        const response = await apiRequest('POST', '/api/validation/v3/execute', {
+          operation: 'list',
+          entityType: 'shift',
+          data: { weekScheduleId: weekSchedule.id },
+          context: {}
         });
-        if (!response.ok) {
+        
+        if (!response || !Array.isArray(response)) {
           console.warn(`Failed to fetch shifts for week schedule ${weekSchedule.id}`);
           return [];
         }
-        const shifts = await response.json();
-        return shifts.map((shift: any) => ({
+        
+        return response.map((shift: any) => ({
           ...shift,
           weekScheduleId: weekSchedule.id,
           weekNumber: weekSchedule.weekNumber

@@ -176,9 +176,15 @@ export default function WeeklyCalendarPreview({
     
     setIsAddingWeek(true);
     try {
-      // Create a new week schedule based on the current one
-      const response = await apiRequest('POST', `/api/scheduler/week-schedules/${weekScheduleId}/copy`, {
-        weekNumber: weekCount + 1
+      // Create a new week schedule based on the current one using VE30
+      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'copy',
+        entityType: 'weekSchedule',
+        data: { 
+          sourceId: weekScheduleId,
+          weekNumber: weekCount + 1 
+        },
+        context: {}
       });
       
       if (response.ok) {
