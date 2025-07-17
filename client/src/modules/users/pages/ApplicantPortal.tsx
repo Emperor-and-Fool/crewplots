@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/modules/auth';
+import { useLogout } from '../hooks/useLogout';
 
 import { 
   Card, 
@@ -18,7 +19,8 @@ import { ProfileCard } from '@/modules/users/components/profiles';
 import { LogOut } from 'lucide-react';
 
 function ApplicantPortal() {
-  const { user, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { logout } = useLogout();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
