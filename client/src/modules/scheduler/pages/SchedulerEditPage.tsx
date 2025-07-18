@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'wouter';
+import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +24,7 @@ import type { Location } from '@shared/schema';
 export default function SchedulerEditPage() {
   const params = useParams();
   const { scheduleId } = params;
+  const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
@@ -207,6 +209,16 @@ export default function SchedulerEditPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
+            <div className="flex items-center gap-4 mb-2">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/scheduler')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Schedules
+              </Button>
+            </div>
             <h1 className="text-3xl font-bold">
               Edit Week Schedule: {scheduleData?.name || 'Loading...'}
             </h1>
