@@ -35,7 +35,25 @@ export default function SchedulerEditPage() {
   
   // Shift management hooks
   const deleteShiftMutation = useDeleteShift();
-  const { data: shiftsData } = useWeekScheduleShifts(parseInt(scheduleId));
+  
+  // Fetch week schedules for this schedule block
+  const { data: weekSchedules = [] } = useQuery({
+    queryKey: ['/api/validation/v3/execute', 'weekSchedule', 'list', scheduleId],
+    queryFn: async () => {
+      console.log('🔍 WEEK SCHEDULES: Fetching for schedule block:', scheduleId);
+      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'list',
+        entityType: 'weekSchedule',
+        data: { scheduleBlockId: parseInt(scheduleId) },
+        context: {}
+      });
+      
+      console.log('🔍 WEEK SCHEDULES: Response:', response);
+      return Array.isArray(response) ? response : [];
+    },
+    enabled: !!scheduleId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Edit mode only - scheduleId is required
   if (!scheduleId) {
@@ -377,7 +395,7 @@ export default function SchedulerEditPage() {
           <ShiftManagementInterface
             scheduleBlockId={parseInt(scheduleId)}
             scheduleBlockName={scheduleData?.name || 'Schedule'}
-            weekSchedules={[]}
+            weekSchedules={weekSchedules}
             onShiftClick={handleShiftEdit}
             onShiftDelete={async (shift) => {
               try {
