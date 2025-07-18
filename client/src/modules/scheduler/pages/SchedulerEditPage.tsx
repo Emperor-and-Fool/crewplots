@@ -59,12 +59,14 @@ export default function SchedulerEditPage() {
   const { data: scheduleData, isLoading, error } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'read', scheduleId],
     queryFn: async () => {
+      console.log('🔍 SCHEDULER EDIT: Loading schedule ID:', scheduleId);
       const response = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'read',
         entityType: 'scheduleBlock',
         data: { id: parseInt(scheduleId) },
         context: {}
       });
+      console.log('🔍 SCHEDULER EDIT: Schedule data received:', response);
       return response;
     },
     enabled: !!scheduleId,
