@@ -35,7 +35,7 @@ export default function SchedulerEditPage() {
   
   // Shift management hooks
   const deleteShiftMutation = useDeleteShift();
-  const { data: weekSchedules } = useWeekScheduleShifts(parseInt(scheduleId));
+  const { data: shiftsData } = useWeekScheduleShifts(parseInt(scheduleId));
 
   // Edit mode only - scheduleId is required
   if (!scheduleId) {
@@ -377,7 +377,7 @@ export default function SchedulerEditPage() {
           <ShiftManagementInterface
             scheduleBlockId={parseInt(scheduleId)}
             scheduleBlockName={scheduleData?.name || 'Schedule'}
-            weekSchedules={weekSchedules || []}
+            weekSchedules={[]}
             onShiftClick={handleShiftEdit}
             onShiftDelete={async (shift) => {
               try {
