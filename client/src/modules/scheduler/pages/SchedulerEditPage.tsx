@@ -356,15 +356,15 @@ export default function SchedulerEditPage() {
 
         <TabsContent value="requirements">
           <CompetencySelector 
-            scheduleBlockId={scheduleId} 
-            locationId={scheduleBlock?.locationId || 1}
+            scheduleBlockId={parseInt(scheduleId)} 
+            locationId={scheduleData?.locationId || 1}
           />
         </TabsContent>
 
         <TabsContent value="schedule">
           <ShiftManagementInterface
-            scheduleBlockId={scheduleId}
-            scheduleBlockName={scheduleBlock?.name || 'Schedule'}
+            scheduleBlockId={parseInt(scheduleId)}
+            scheduleBlockName={scheduleData?.name || 'Schedule'}
             weekSchedules={weekSchedules || []}
             onShiftClick={handleShiftEdit}
             onShiftDelete={async (shift) => {
