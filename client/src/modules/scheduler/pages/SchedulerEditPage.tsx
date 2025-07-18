@@ -365,22 +365,18 @@ export default function SchedulerEditPage() {
           <ShiftManagementInterface
             scheduleBlockId={parseInt(scheduleId)}
             scheduleBlockName={scheduleData?.name || 'Schedule'}
-            weekSchedules={weekSchedules || []}
-            onShiftClick={handleShiftEdit}
-            onShiftDelete={async (shift) => {
-              try {
-                await deleteShiftMutation.mutateAsync(shift.id);
-                toast({
-                  title: "Shift Deleted",
-                  description: "Shift has been removed successfully."
-                });
-              } catch (error) {
-                toast({
-                  title: "Error",
-                  description: "Failed to delete shift.",
-                  variant: "destructive"
-                });
-              }
+            weekSchedules={[]}
+            onShiftClick={(shift) => {
+              toast({
+                title: "Shift Selected",
+                description: `Selected shift: ${shift.title}`
+              });
+            }}
+            onShiftDelete={(shift) => {
+              toast({
+                title: "Feature Coming Soon",
+                description: "Shift deletion will be available in the next update."
+              });
             }}
           />
         </TabsContent>
