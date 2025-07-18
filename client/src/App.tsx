@@ -232,10 +232,7 @@ function App() {
               <Route path="/scheduler">
                 {isAuthenticated ? 
                   <AppLayout>
-                    <RoleProtectedRoute 
-                      component={SchedulerListPage} 
-                      requiredRoles={["owner", "app_manager", "administrator"]} 
-                    />
+                    <SchedulerListPage />
                   </AppLayout> : 
                   <Redirect to="/login" />}
               </Route>
