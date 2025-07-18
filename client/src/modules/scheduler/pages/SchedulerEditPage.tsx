@@ -22,6 +22,7 @@ import { insertScheduleBlockSchema, type InsertScheduleBlock } from '@shared/sch
 import type { Location } from '@shared/schema';
 import CompetencySelector from '../components/CompetencySelector';
 import ShiftManagementInterface from '../components/ShiftManagementInterface';
+import { useDeleteShift, useWeekScheduleShifts } from '../hooks/useSchedulerData';
 
 export default function SchedulerEditPage() {
   const params = useParams();
@@ -31,6 +32,10 @@ export default function SchedulerEditPage() {
   const { toast } = useToast();
   const permissions = useSchedulerPermissions();
   const queryClient = useQueryClient();
+  
+  // Shift management hooks
+  const deleteShiftMutation = useDeleteShift();
+  const { data: weekSchedules } = useWeekScheduleShifts(parseInt(scheduleId));
 
   // Edit mode only - scheduleId is required
   if (!scheduleId) {
@@ -180,6 +185,13 @@ export default function SchedulerEditPage() {
 
   const handleSave = async (data: InsertScheduleBlock) => {
     await updateMutation.mutateAsync(data);
+  };
+
+  const handleShiftEdit = (shift: any) => {
+    toast({
+      title: "Edit Mode",
+      description: `Selected ${shift.title} for editing`
+    });
   };
 
   if (isLoading) {
@@ -365,18 +377,22 @@ export default function SchedulerEditPage() {
           <ShiftManagementInterface
             scheduleBlockId={parseInt(scheduleId)}
             scheduleBlockName={scheduleData?.name || 'Schedule'}
-            weekSchedules={[]}
-            onShiftClick={(shift) => {
-              toast({
-                title: "Shift Selected",
-                description: `Selected shift: ${shift.title}`
-              });
-            }}
-            onShiftDelete={(shift) => {
-              toast({
-                title: "Feature Coming Soon",
-                description: "Shift deletion will be available in the next update."
-              });
+            weekSchedules={weekSchedules || []}
+            onShiftClick={handleShiftEdit}
+            onShiftDelete={async (shift) => {
+              try {
+                await deleteShiftMutation.mutateAsync(shift.id);
+                toast({
+                  title: "Shift Deleted",
+                  description: "Shift has been removed successfully."
+                });
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to delete shift.",
+                  variant: "destructive"
+                });
+              }
             }}
           />
         </TabsContent>
