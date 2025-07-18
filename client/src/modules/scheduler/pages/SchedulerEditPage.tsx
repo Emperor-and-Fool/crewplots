@@ -66,11 +66,14 @@ export default function SchedulerEditPage() {
         data: { id: parseInt(scheduleId) },
         context: {}
       });
-      console.log('🔍 SCHEDULER EDIT: Raw ValidationEngine30 response:', response);
+      
+      // Parse Response object to JSON (matching SchedulerListPage pattern)
+      const result = await response.json();
+      console.log('🔍 SCHEDULER EDIT: Parsed ValidationEngine30 result:', result);
       
       // Extract data from ValidationEngine30 response structure
-      if (response && response.threads && response.threads.transaction && response.threads.transaction.data) {
-        const scheduleData = response.threads.transaction.data;
+      if (result && result.threads && result.threads.transaction && result.threads.transaction.data) {
+        const scheduleData = result.threads.transaction.data;
         console.log('🔍 SCHEDULER EDIT: Extracted schedule data:', scheduleData);
         return scheduleData;
       }
