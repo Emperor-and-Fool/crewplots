@@ -110,9 +110,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     const initializeAuth = async () => {
+      console.log('🔍 AUTH-CONTEXT: Starting session validation...');
       const userData = await AuthService.validateSession();
+      console.log('🔍 AUTH-CONTEXT: Session validation result:', userData);
       setUser(userData);
       setIsLoading(false);
+      console.log('🔍 AUTH-CONTEXT: Auth state updated, user:', userData?.username, 'loading:', false);
     };
     initializeAuth();
   }, []);
@@ -138,5 +141,6 @@ export const useAuth = () => {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+  console.log('🔍 AUTH-CONTEXT: useAuth called, returning:', { user: context.user?.username, isLoading: context.isLoading, isAuthenticated: context.isAuthenticated });
   return context;
 };
