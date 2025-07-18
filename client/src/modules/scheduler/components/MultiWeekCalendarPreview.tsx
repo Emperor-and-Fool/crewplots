@@ -7,7 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Trash2, Plus, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { apiRequest } from '@/lib/queryClient';
 
 interface Shift {
   id: number;

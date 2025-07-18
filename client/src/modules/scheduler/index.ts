@@ -5,6 +5,9 @@
 export { default as WeekScheduleEditor } from './components/WeekScheduleEditor';
 export { default as ShiftCreationPanel } from './components/ShiftCreationPanel';
 export { default as WeeklyCalendarPreview } from './components/WeeklyCalendarPreview';
+export { default as CompetencySelector } from './components/CompetencySelector';
+export { default as ShiftManagementInterface } from './components/ShiftManagementInterface';
+export { default as MultiWeekCalendarPreview } from './components/MultiWeekCalendarPreview';
 
 // Pages
 export { default as ShiftCreationPage } from './pages/ShiftCreationPage';

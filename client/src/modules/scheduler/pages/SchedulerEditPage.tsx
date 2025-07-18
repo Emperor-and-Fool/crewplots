@@ -20,6 +20,8 @@ import { AutoSaveIndicator } from '@/components/ui/auto-save-indicator';
 import { apiRequest } from '@/lib/queryClient';
 import { insertScheduleBlockSchema, type InsertScheduleBlock } from '@shared/schema';
 import type { Location } from '@shared/schema';
+import CompetencySelector from '../components/CompetencySelector';
+import ShiftManagementInterface from '../components/ShiftManagementInterface';
 
 export default function SchedulerEditPage() {
   const params = useParams();
@@ -353,27 +355,34 @@ export default function SchedulerEditPage() {
         </TabsContent>
 
         <TabsContent value="requirements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Competency Requirements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Configure competency requirements for this schedule.</p>
-              {/* TODO: Add competency requirements management */}
-            </CardContent>
-          </Card>
+          <CompetencySelector 
+            scheduleBlockId={scheduleId} 
+            locationId={scheduleBlock?.locationId || 1}
+          />
         </TabsContent>
 
         <TabsContent value="schedule">
-          <Card>
-            <CardHeader>
-              <CardTitle>Schedule Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Manage shifts and timing for this schedule.</p>
-              {/* TODO: Add shift management interface */}
-            </CardContent>
-          </Card>
+          <ShiftManagementInterface
+            scheduleBlockId={scheduleId}
+            scheduleBlockName={scheduleBlock?.name || 'Schedule'}
+            weekSchedules={weekSchedules || []}
+            onShiftClick={handleShiftEdit}
+            onShiftDelete={async (shift) => {
+              try {
+                await deleteShiftMutation.mutateAsync(shift.id);
+                toast({
+                  title: "Shift Deleted",
+                  description: "Shift has been removed successfully."
+                });
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to delete shift.",
+                  variant: "destructive"
+                });
+              }
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
