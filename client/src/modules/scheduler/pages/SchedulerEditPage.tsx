@@ -66,8 +66,17 @@ export default function SchedulerEditPage() {
         data: { id: parseInt(scheduleId) },
         context: {}
       });
-      console.log('🔍 SCHEDULER EDIT: Schedule data received:', response);
-      return response;
+      console.log('🔍 SCHEDULER EDIT: Raw ValidationEngine30 response:', response);
+      
+      // Extract data from ValidationEngine30 response structure
+      if (response && response.threads && response.threads.transaction && response.threads.transaction.data) {
+        const scheduleData = response.threads.transaction.data;
+        console.log('🔍 SCHEDULER EDIT: Extracted schedule data:', scheduleData);
+        return scheduleData;
+      }
+      
+      console.log('🔍 SCHEDULER EDIT: No data found in response structure');
+      return null;
     },
     enabled: !!scheduleId,
   });
