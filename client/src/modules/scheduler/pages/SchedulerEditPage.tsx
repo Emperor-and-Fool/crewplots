@@ -109,26 +109,15 @@ export default function SchedulerEditPage() {
     queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'read', scheduleId],
     queryFn: async () => {
       console.log('🔍 SCHEDULER EDIT: Loading schedule ID:', scheduleId);
-      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+      const scheduleData = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'read',
         entityType: 'scheduleBlock',
         data: { id: parseInt(scheduleId) },
         context: {}
-      });
+      }, { unpackVE30: true });
       
-      // Parse Response object to JSON (matching SchedulerListPage pattern)
-      const result = await response.json();
-      console.log('🔍 SCHEDULER EDIT: Parsed ValidationEngine30 result:', result);
-      
-      // Extract data from ValidationEngine30 response structure
-      if (result && result.threads && result.threads.transaction && result.threads.transaction.data) {
-        const scheduleData = result.threads.transaction.data;
-        console.log('🔍 SCHEDULER EDIT: Extracted schedule data:', scheduleData);
-        return scheduleData;
-      }
-      
-      console.log('🔍 SCHEDULER EDIT: No data found in response structure');
-      return null;
+      console.log('🔍 SCHEDULER EDIT: VE30 unpacker result:', scheduleData);
+      return scheduleData;
     },
     enabled: !!scheduleId,
   });
@@ -155,7 +144,7 @@ export default function SchedulerEditPage() {
         name: scheduleData.name || '',
         description: scheduleData.description || '',
         locationId: scheduleData.locationId || 0,
-        isActive: scheduleData.isActive !== false
+        isActive: scheduleData.isActive
       });
     }
   }, [scheduleData, form]);
