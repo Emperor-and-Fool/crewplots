@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ import { AutoSaveIndicator } from '@/components/ui/auto-save-indicator';
 import { apiRequest } from '@/lib/queryClient';
 import { insertScheduleBlockSchema, type InsertScheduleBlock } from '@shared/schema';
 import type { Location } from '@shared/schema';
+import type { ShiftFormData } from '../types/scheduler.types';
 import CompetencySelector from '../components/CompetencySelector';
 import ShiftManagementInterface from '../components/ShiftManagementInterface';
 import { useDeleteShift, useWeekScheduleShifts } from '../hooks/useSchedulerData';
@@ -70,6 +72,11 @@ export default function SchedulerEditPage() {
 
   // State
   const [activeTab, setActiveTab] = useState<'basic-info' | 'requirements' | 'schedule'>('basic-info');
+  
+  // Shift editing state (Phase 1 implementation)
+  const [editingShift, setEditingShift] = useState<any>(null);
+  const [showGroupEditDialog, setShowGroupEditDialog] = useState(false);
+  const [groupEditDialogShift, setGroupEditDialogShift] = useState<any>(null);
 
   // Form setup
   const form = useForm<InsertScheduleBlock>({
@@ -79,6 +86,19 @@ export default function SchedulerEditPage() {
       description: '',
       locationId: 0,
       isActive: true
+    }
+  });
+
+  // Shift form setup (for editing existing shifts)
+  const shiftForm = useForm<ShiftFormData>({
+    defaultValues: {
+      title: '',
+      position: '',
+      daysOfWeek: [],
+      startTime: '',
+      endTime: '',
+      description: '',
+      competencyRequirements: []
     }
   });
 
@@ -205,10 +225,72 @@ export default function SchedulerEditPage() {
     await updateMutation.mutateAsync(data);
   };
 
-  const handleShiftEdit = (shift: any) => {
+  const handleShiftClick = (shift: any) => {
+    // Check if this shift belongs to a group
+    if (shift.shiftGroupId) {
+      // Show group editing dialog
+      setGroupEditDialogShift(shift);
+      setShowGroupEditDialog(true);
+    } else {
+      // Edit single shift directly
+      editSingleShift(shift);
+    }
+  };
+
+  const editSingleShift = (shift: any) => {
+    console.log('🎯 SHIFT EDIT: Editing single shift:', shift);
+    setEditingShift(shift);
+    
+    // Populate shift form with existing data
+    shiftForm.reset({
+      title: shift.title || '',
+      position: shift.position || '',
+      startTime: shift.startTime || '',
+      endTime: shift.endTime || '',
+      daysOfWeek: [shift.dayOfWeek || ''],
+      description: shift.description || '',
+      competencyRequirements: shift.competencyRequirements || []
+    });
+    
+    // Switch to Basic Info tab for editing
+    setActiveTab('basic-info');
+    
     toast({
-      title: "Edit Mode",
-      description: `Selected ${shift.title} for editing`
+      title: "Shift selected for editing",
+      description: `Editing ${shift.position || shift.title} shift for ${shift.dayOfWeek}`,
+    });
+  };
+
+  const editShiftGroup = (shift: any) => {
+    console.log('🎯 SHIFT EDIT: Editing shift group:', shift);
+    // Find all shifts in the same group across all weeks
+    const allShifts: any[] = [];
+    weekSchedules.forEach((weekSchedule: any) => {
+      if (weekSchedule.shifts) {
+        allShifts.push(...weekSchedule.shifts);
+      }
+    });
+    
+    const groupShifts = allShifts.filter((s: any) => s.shiftGroupId === shift.shiftGroupId);
+    const groupDays = groupShifts.map((s: any) => s.dayOfWeek);
+    
+    setEditingShift(shift);
+    
+    shiftForm.reset({
+      title: shift.title || '',
+      position: shift.position || '',
+      startTime: shift.startTime || '',
+      endTime: shift.endTime || '',
+      daysOfWeek: groupDays, // Set all days from the group
+      description: shift.description || '',
+      competencyRequirements: shift.competencyRequirements || []
+    });
+    
+    setActiveTab('basic-info');
+    
+    toast({
+      title: "Group selected for editing",
+      description: `Editing ${shift.position || shift.title} shift group (${groupDays.length} days)`,
     });
   };
 
@@ -396,7 +478,7 @@ export default function SchedulerEditPage() {
             scheduleBlockId={parseInt(scheduleId)}
             scheduleBlockName={scheduleData?.name || 'Schedule'}
             weekSchedules={weekSchedules}
-            onShiftClick={handleShiftEdit}
+            onShiftClick={handleShiftClick}
             onShiftDelete={async (shift) => {
               try {
                 await deleteShiftMutation.mutateAsync(shift.id);
@@ -415,6 +497,51 @@ export default function SchedulerEditPage() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Group Edit Dialog (Phase 1 implementation) */}
+      <Dialog open={showGroupEditDialog} onOpenChange={setShowGroupEditDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Shift Group</DialogTitle>
+            <DialogDescription>
+              This shift belongs to a group of shifts. Choose how you want to edit it.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="text-sm text-muted-foreground">
+              Shift: {groupEditDialogShift?.position || groupEditDialogShift?.title}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Day: {groupEditDialogShift?.dayOfWeek}
+            </div>
+          </div>
+
+          <DialogFooter className="space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (groupEditDialogShift) {
+                  editSingleShift(groupEditDialogShift);
+                }
+                setShowGroupEditDialog(false);
+              }}
+            >
+              Edit This Day Only
+            </Button>
+            <Button
+              onClick={() => {
+                if (groupEditDialogShift) {
+                  editShiftGroup(groupEditDialogShift);
+                }
+                setShowGroupEditDialog(false);
+              }}
+            >
+              Edit Entire Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
