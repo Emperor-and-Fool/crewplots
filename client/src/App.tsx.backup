@@ -261,6 +261,17 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
+              <Route path="/scheduler/edit/:scheduleId">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SchedulerEditPage} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+              
               {/* Removed orphaned validation test routes - components moved to administration module */}
               
               {/* Removed orphaned ValidationEngine3Test route - component not imported */}
