@@ -215,7 +215,7 @@ export default function SchedulerEditPage() {
           name: data.name || '',
           description: data.description || '',
           locationId: data.locationId || 0,
-          isActive: data.isActive !== false
+          isActive: data.isActive
         }
       };
     },
