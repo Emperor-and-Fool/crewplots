@@ -22,6 +22,17 @@ export type AuthResult = {
   error?: string;
 };
 
+export type LogoutOptions = {
+  forceHtml?: boolean;  // For admin/devops HTML logout
+  clearAllSessions?: boolean;  // Clear all user sessions
+};
+
+export type LogoutResult = {
+  success: boolean;
+  redirectUrl?: string;
+  error?: string;
+};
+
 export class AuthService {
   /**
    * Authenticate user with username/password
@@ -157,22 +168,48 @@ export class AuthService {
   }
 
   /**
-   * Logout current user session
-   * Uses dev-logout route for reliable session cleanup
+   * Logout current user session with role-based options
+   * Normal users: Clean JSON logout with SPA navigation
+   * Admin/devops: Optional HTML logout when needed
    */
-  static async logout(): Promise<void> {
+  static async logout(options: LogoutOptions = {}): Promise<LogoutResult> {
     try {
-      // Use production logout endpoint instead of dev-logout
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
+      // For normal users: Clean JSON logout (default)
+      if (!options.forceHtml) {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            success: true,
+            redirectUrl: data.redirectUrl || '/login'
+          };
+        } else {
+          return {
+            success: false,
+            error: 'Logout request failed'
+          };
         }
-      });
+      }
+
+      // For admin/devops: HTML logout (special case)
+      else {
+        // Redirect to development HTML logout
+        window.location.href = '/api/auth/dev-logout';
+        return { success: true, redirectUrl: '/login' };
+      }
     } catch (error) {
-      // Silent failure - user is already logged out locally
-      console.log('Logout request failed, but proceeding with local cleanup:', error);
+      // Even if server logout fails, indicate local cleanup needed
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error during logout'
+      };
     }
   }
 

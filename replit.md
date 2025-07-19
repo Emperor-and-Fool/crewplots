@@ -343,4 +343,4 @@ Changelog:
 
 ```
 Preferred communication style: Simple, everyday language.
-```
+```- July 19, 2025. COMPLETED: Logout Flow Architecture Migration - Successfully eliminated HTML logout page duplication causing normal crew members to see unexpected development logout pages. Removed duplicate dev-logout implementation from main auth-routes.ts (80+ lines), enhanced AuthService with role-based logout options (LogoutOptions, LogoutResult types), upgraded useLogout hook with proper error handling and loading states. Implemented conditional development route mounting in auth module with clean separation: JSON logout for normal users, HTML logout available for admin/devops only. Authentication architecture now mirrors login flow patterns with zero code duplication and proper SPA navigation for all user roles.

@@ -1,23 +1,25 @@
 import { Router } from 'express';
 import authRoutes from './routes/auth-routes';
-
-// FUTURE CATEGORIZED IMPORTS (commented out for preparation)
-// import authRoutesGlobal from './routes/auth-routes-global';
-// import authRoutesAdmin from './routes/auth-routes-admin';
-// import authRoutesDevelopment from './routes/auth-routes-development';
+import authDevelopmentRoutes from './routes/auth-routes-development';
 
 // Export types for future integration
 export * from './types';
 
 const router = Router();
 
-// CURRENT: Single auth routes (active)
-// Mount auth routes directly (no additional /auth prefix since main routes.ts handles /api/auth)
+// ================================
+// PRODUCTION ROUTES (always active)
+// ================================
+// Production authentication routes (JSON only)
 router.use('/', authRoutes);
 
-// FUTURE: Categorized auth routes (prepared for integration)
-// router.use('/', authRoutesGlobal);
-// router.use('/', authRoutesAdmin);
-// router.use('/', authRoutesDevelopment);
+// ================================
+// DEVELOPMENT ROUTES (conditional)
+// ================================
+// Development routes for admin/devops (HTML logout available)
+if (process.env.NODE_ENV === 'development' || process.env.ENABLE_DEV_ROUTES === 'true') {
+  router.use('/', authDevelopmentRoutes);
+  console.log('🔧 AUTH MODULE: Development routes enabled');
+}
 
 export default router;

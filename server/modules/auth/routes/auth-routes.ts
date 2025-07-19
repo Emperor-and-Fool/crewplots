@@ -564,90 +564,9 @@ router.get('/clear-all-sessions', async (req, res) => {
 });
 
 // ================================
-// DEVELOPMENT ROUTES
+// PRODUCTION ROUTES ONLY
 // ================================
-
-// Development direct HTML logout with centralized auth
-router.get('/dev-logout', (req: Request, res: Response) => {
-    console.log('Development centralized auth logout, sessionID:', req.sessionID);
-    console.log('Session passport data exists:', !!(req.session?.passport?.user));
-    
-    try {
-        // Clear authentication data from session using centralized auth pattern
-        if (req.session?.passport) {
-            delete req.session.passport;
-            console.log('Dev logout: Cleared passport session data');
-        }
-        
-        // Destroy the session completely
-        req.session.destroy((err) => {
-            if (err) {
-                console.error('Error destroying session during dev logout:', err);
-                return res.status(500).send('Error destroying session');
-            }
-            
-            // Clear only authentication-related cookies (targeted approach)
-            const authCookies = [
-                'connect.sid',
-                'login-timestamp', 
-                'debug-auth-check',
-                'admin-login',
-                'crewplots.sid',
-                'connect.sid-refreshed'
-            ];
-            
-            authCookies.forEach(cookieName => {
-                res.clearCookie(cookieName);
-            });
-            
-            console.log('Development centralized auth logout successful');
-            
-            // Serve HTML with immediate redirect to login page
-            res.send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Logout Successful</title>
-                    <meta http-equiv="refresh" content="1;url=/login" />
-                    <style>
-                        body {
-                            font-family: system-ui, -apple-system, sans-serif;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            height: 100vh;
-                            margin: 0;
-                            text-align: center;
-                            background-color: #f9f9f9;
-                        }
-                        h1 {
-                            color: #0070f3;
-                        }
-                        .method {
-                            color: #666;
-                            font-size: 0.9em;
-                            margin-top: 1em;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Logout Successful</h1>
-                    <p>You are being redirected to the login page...</p>
-                    <div class="method">Using centralized authentication</div>
-                    <script>
-                        // Force reload to login and clear history
-                        window.location.replace('/login');
-                    </script>
-                </body>
-                </html>
-            `);
-        });
-    } catch (error) {
-        console.error('Error during development logout:', error);
-        return res.status(500).send('Error during logout process: ' + String(error));
-    }
-});
+// HTML development routes moved to auth-routes-development.ts
 
 // Auto-login endpoint for development
 router.get('/autologin', async (req, res) => {
