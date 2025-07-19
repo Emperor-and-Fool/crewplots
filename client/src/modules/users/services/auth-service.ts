@@ -137,7 +137,7 @@ export class AuthService {
   static async refresh(): Promise<AuthResult> {
     try {
       // Use ValidationEngine30 auth endpoint - simplified authentication check
-      const response = await fetch('/api/validation/v3/auth', {
+      const response = await fetch('/api/validation/v3/validate', {
         method: 'POST',
         credentials: 'include',
         headers: {
