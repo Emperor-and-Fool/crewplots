@@ -136,21 +136,19 @@ export class AuthService {
    */
   static async refresh(): Promise<AuthResult> {
     try {
-      // Use ValidationEngine30 auth endpoint - simplified authentication check
-      const response = await fetch('/api/validation/v3/validate', {
-        method: 'POST',
+      // Use auth login-session endpoint - designed for session validation
+      const response = await fetch('/api/auth/login-session', {
+        method: 'GET',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({})
+        }
       });
       
       if (response.ok) {
         const authData = await response.json();
-        // ValidationEngine30 response structure: { success, result, user }
+        // Auth endpoint response structure: { success, user }
         if (authData?.success && authData.user) {
           return { success: true, user: authData.user };
         } else {
