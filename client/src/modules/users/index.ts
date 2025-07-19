@@ -42,7 +42,8 @@ export {
 // Auth-specific exports - NEW CLEAN ARCHITECTURE
 export { AuthService } from './services/auth-service';
 export { useLogin } from './hooks/useLogin';
-export { useLogout } from './hooks/useLogout'; 
+export { useLogout } from './hooks/useLogout';
+export { useRefresh } from './hooks/useRefresh';
 export { useRegister } from './hooks/useRegister';
 export { useAuthSession } from './hooks/useAuthSession';
 

@@ -130,10 +130,11 @@ export class AuthService {
   }
 
   /**
-   * Validate current session and return user data
-   * Returns null if no valid session exists
+   * Refresh current authentication session and return user data
+   * Unified method replacing validateSession() and checkAuth()
+   * Returns success/failure with user data for auth state updates
    */
-  static async validateSession(): Promise<User | null> {
+  static async refresh(): Promise<AuthResult> {
     try {
       // Use ValidationEngine30 auth endpoint - simplified authentication check
       const response = await fetch('/api/validation/v3/auth', {
@@ -151,20 +152,29 @@ export class AuthService {
         const authData = await response.json();
         // ValidationEngine30 response structure: { success, result, user }
         if (authData?.success && authData.user) {
-          return authData.user;
+          return { success: true, user: authData.user };
         } else {
-          return null;
+          return { success: false };
         }
       } else if (response.status === 401) {
         // Session expired or invalid - clear ghost cookies
         this.clearSessionCookies();
-        return null;
+        return { success: false };
       } else {
-        return null;
+        return { success: false };
       }
     } catch (error) {
-      return null;
+      return { success: false };
     }
+  }
+
+  /**
+   * @deprecated Use refresh() instead
+   * Maintained for backward compatibility during migration
+   */
+  static async validateSession(): Promise<User | null> {
+    const result = await this.refresh();
+    return result.success && result.user ? result.user : null;
   }
 
   /**
@@ -214,34 +224,10 @@ export class AuthService {
   }
 
   /**
-   * Check current authentication status
-   * Used for session validation and user data refresh
+   * @deprecated Use refresh() instead
+   * Maintained for backward compatibility during migration
    */
   static async checkAuth(): Promise<AuthResult> {
-    try {
-      const response = await fetch('/api/validation/v3/auth', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({})
-      });
-      
-      if (response.ok) {
-        const authData = await response.json();
-        if (authData?.success && authData.user) {
-          return { success: true, user: authData.user };
-        } else {
-          return { success: false };
-        }
-      } else {
-        return { success: false };
-      }
-    } catch (error) {
-      return { success: false };
-    }
+    return this.refresh();
   }
 }

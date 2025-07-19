@@ -78,9 +78,9 @@
  * • Zero business logic in context layer
  */
 
-import { AuthService } from '@/modules/users/services/auth-service';
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { User } from "@shared/schema";
+import { AuthService } from '@/modules/users/services/auth-service';
 
 type AuthContextType = {
   user: User | null;
@@ -102,21 +102,30 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // ADD THIS useEffect HERE:
+  // Initialize authentication state using AuthService refresh method
   useEffect(() => {
     // Skip auth check on login page
     if (window.location.pathname === '/login') {
       setIsLoading(false);
       return;
     }
+    
     const initializeAuth = async () => {
-      console.log('🔍 AUTH-CONTEXT: Starting session validation...');
-      const userData = await AuthService.validateSession();
-      console.log('🔍 AUTH-CONTEXT: Session validation result:', userData);
-      setUser(userData);
+      console.log('🔍 AUTH-CONTEXT: Starting session refresh...');
+      const result = await AuthService.refresh();
+      console.log('🔍 AUTH-CONTEXT: Session refresh result:', result);
+      
+      if (result.success && result.user) {
+        setUser(result.user);
+        console.log('🔍 AUTH-CONTEXT: Auth state updated, user:', result.user.username, 'loading:', false);
+      } else {
+        setUser(null);
+        console.log('🔍 AUTH-CONTEXT: Auth state cleared, no valid session');
+      }
+      
       setIsLoading(false);
-      console.log('🔍 AUTH-CONTEXT: Auth state updated, user:', userData?.username, 'loading:', false);
     };
+    
     initializeAuth();
   }, []);
 

@@ -9,6 +9,13 @@ export { useUserManagement } from './useUserManagement';
 export { useApplicantManagement } from './useApplicantManagement';
 export { useUserProfile } from './useUserProfile';
 
+// Authentication hooks
+export { useLogin } from './useLogin';
+export { useLogout } from './useLogout';
+export { useRefresh } from './useRefresh';
+export { useRegister } from './useRegister';
+export { useAuthSession } from './useAuthSession';
+
 // Re-export existing auth hook for convenience (maintains compatibility)
 export { useAuth } from '@/modules/auth';
 
