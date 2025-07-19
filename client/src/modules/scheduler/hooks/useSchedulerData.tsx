@@ -113,8 +113,14 @@ export const useUpdateShift = () => {
         context: {}
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, { data }) => {
+      // Invalidate specific shift list for the week schedule
+      if (data.weekScheduleId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift', 'list', data.weekScheduleId] });
+      }
+      // Invalidate all shift queries
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift'] });
+      // Invalidate week schedule queries  
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
     }
   });
