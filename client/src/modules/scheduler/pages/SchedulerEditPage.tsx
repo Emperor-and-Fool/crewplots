@@ -252,10 +252,12 @@ export default function SchedulerEditPage() {
       competencyRequirements: shift.competencyRequirements || []
     });
     
-    // Historical behavior: Stay in current tab, editing interface appears contextually
+    // Auto-switch to Requirements tab where editing interface appears
+    setActiveTab('requirements');
+    
     toast({
       title: "Shift selected for editing",
-      description: `Editing ${shift.position || shift.title} shift for ${shift.dayOfWeek}. Form appears in Requirements tab.`,
+      description: `Editing ${shift.position || shift.title} shift for ${shift.dayOfWeek}.`,
     });
   };
 
