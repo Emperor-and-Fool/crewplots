@@ -480,7 +480,8 @@ export default function SchedulerEditPage() {
                                   name: form.getValues('name'),
                                   description: form.getValues('description'),
                                   locationId: form.getValues('locationId'),
-                                  isActive: newValue
+                                  isActive: newValue,
+                                  createdBy: 1
                                 });
                                 
                                 toast({
