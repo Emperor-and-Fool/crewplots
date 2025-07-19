@@ -469,21 +469,35 @@ export default function SchedulerEditPage() {
                         <FormControl>
                           <Switch
                             checked={field.value}
-                            onCheckedChange={(newValue) => {
-                              console.log('🔘 SWITCH: Toggle triggered, new value:', newValue);
-                              console.log('🔘 SWITCH: Current form data before change:', form.getValues());
-                              
+                            onCheckedChange={async (newValue) => {
                               // Immediate UI update
                               field.onChange(newValue);
                               
-                              console.log('🔘 SWITCH: Form data after onChange:', form.getValues());
-                              
-                              // Instant feedback toast
-                              toast({
-                                title: newValue ? "Schedule Activated" : "Schedule Deactivated",
-                                description: "Saving change automatically...",
-                                duration: 2000,
-                              });
+                              // Direct save - bypass auto-save completely
+                              try {
+                                await updateMutation.mutateAsync({
+                                  id: parseInt(scheduleId),
+                                  name: form.getValues('name'),
+                                  description: form.getValues('description'),
+                                  locationId: form.getValues('locationId'),
+                                  isActive: newValue
+                                });
+                                
+                                toast({
+                                  title: newValue ? "✅ Schedule Activated" : "✅ Schedule Deactivated",
+                                  description: "Status saved successfully",
+                                  duration: 2000,
+                                });
+                              } catch (error) {
+                                // Revert UI on error
+                                field.onChange(!newValue);
+                                toast({
+                                  title: "❌ Save Failed",
+                                  description: "Failed to update status. Please try again.",
+                                  variant: "destructive",
+                                  duration: 3000,
+                                });
+                              }
                             }}
                             className={`${field.value ? '!bg-green-600' : '!bg-red-600'} !important`}
                           />
