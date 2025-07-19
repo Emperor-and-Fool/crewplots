@@ -77,10 +77,23 @@ const shiftBusinessRules = [
         errors.push('At least one day of the week must be selected');
       }
     } else if (context?.operation === 'update') {
-      // Single-shift editing requires dayOfWeek field (Russian Doll constraint)
-      if (!data.dayOfWeek || typeof data.dayOfWeek !== 'string') {
-        errors.push('Day of week is required for shift editing');
+      // Single-shift editing - Russian Doll constraint (flexible data format)
+      // Frontend may send either dayOfWeek or daysOfWeek for updates
+      const hasDayOfWeek = data.dayOfWeek && typeof data.dayOfWeek === 'string';
+      const hasDaysOfWeek = data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 0;
+      
+      if (!hasDayOfWeek && !hasDaysOfWeek) {
+        errors.push('Day of week is required for shift editing (dayOfWeek or daysOfWeek)');
       }
+      
+      // Log what we received for debugging
+      console.log('🔍 SHIFT VALIDATION: Update operation data format check:', {
+        hasDayOfWeek,
+        hasDaysOfWeek,
+        dayOfWeek: data.dayOfWeek,
+        daysOfWeek: data.daysOfWeek,
+        operation: context?.operation
+      });
     }
 
     return { warnings, errors };
@@ -145,20 +158,31 @@ const shiftAssembly = (rawData: any, user: any, operation: string) => {
     };
   }
 
-  // For UPDATE operations - single-day format (Russian Doll editing)
+  // For UPDATE operations - flexible format handling (Russian Doll editing)
   if (operation === 'update') {
-    return {
+    const assembledData = {
       id: rawData.id,
       weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
       title: rawData.title?.trim(),
       position: rawData.position?.trim() || null,
-      dayOfWeek: rawData.dayOfWeek, // Single day for Russian Doll constraint
       startTime: rawData.startTime,
       endTime: rawData.endTime,
       maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
       subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
       competencyRequirements: rawData.competencyRequirements || []
     };
+
+    // Handle flexible day format for Russian Doll operations
+    if (rawData.dayOfWeek) {
+      assembledData.dayOfWeek = rawData.dayOfWeek;
+    } else if (rawData.daysOfWeek && Array.isArray(rawData.daysOfWeek)) {
+      // Convert array to single day for update operations
+      assembledData.dayOfWeek = rawData.daysOfWeek[0];
+      console.log('🔄 ASSEMBLY: Converted daysOfWeek array to single dayOfWeek for update:', rawData.daysOfWeek[0]);
+    }
+
+    console.log('🔄 ASSEMBLY: Update operation assembled data:', JSON.stringify(assembledData, null, 2));
+    return assembledData;
   }
 
   // Fallback for other operations
