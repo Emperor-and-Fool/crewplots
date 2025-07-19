@@ -1,4 +1,4 @@
-import { Users, Calendar, UserPlus, DollarSign, Plus } from 'lucide-react';
+import { Users, Calendar, UserPlus, DollarSign, Plus, CalendarCheck } from 'lucide-react';
 import { NavigationSection } from '../types';
 
 export const workflowSections: NavigationSection[] = [
@@ -48,6 +48,13 @@ export const workflowSections: NavigationSection[] = [
         path: '/scheduler',
         icon: Plus,
         permission: { workflow: 'crew_planning' }
+      },
+      {
+        id: 'calendar-view',
+        label: 'Calendar View',
+        path: '/view-calendar',
+        icon: CalendarCheck,
+        permission: { workflow: 'scheduling' }
       }
     ]
   },

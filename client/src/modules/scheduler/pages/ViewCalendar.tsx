@@ -22,6 +22,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/modules/auth";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function ViewCalendar() {
   const [, setLocation] = useLocation();
@@ -40,6 +42,29 @@ export default function ViewCalendar() {
   const handleLocationChange = (locationId: number) => {
     setSelectedLocation(locationId);
   };
+
+  // Fetch real schedule blocks and shifts data using ValidationEngine30
+  const { data: scheduleBlocks, isLoading: blocksLoading } = useQuery({
+    queryKey: ['schedule-blocks', selectedLocation],
+    queryFn: () => apiRequest('POST', '/api/validation/v3/execute', {
+      packageType: 'scheduleBlock',
+      entityType: 'scheduleBlock',
+      operation: 'list',
+      data: {}
+    }),
+    credentials: 'include'
+  });
+
+  const { data: shifts, isLoading: shiftsLoading } = useQuery({
+    queryKey: ['all-shifts', selectedLocation],
+    queryFn: () => apiRequest('POST', '/api/validation/v3/execute', {
+      packageType: 'shift',
+      entityType: 'shift', 
+      operation: 'list',
+      data: {}
+    }),
+    credentials: 'include'
+  });
 
   // Time slots for the schedule
   const timeSlots = [
