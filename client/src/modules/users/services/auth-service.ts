@@ -148,8 +148,8 @@ export class AuthService {
       
       if (response.ok) {
         const authData = await response.json();
-        // Auth endpoint response structure: { success, user }
-        if (authData?.success && authData.user) {
+        // Auth endpoint response structure: { authenticated, user }
+        if (authData?.authenticated && authData.user) {
           return { success: true, user: authData.user };
         } else {
           return { success: false };
