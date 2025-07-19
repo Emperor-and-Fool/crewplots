@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 export interface AutoSaveConfig<T = any> {
   // Core configuration
@@ -75,20 +76,9 @@ export function useAutoSave<T = any>(
       // Transform data if transformer provided
       const finalData = transformData ? transformData(saveData) : saveData;
       
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(finalData)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Auto-save failed: ${response.status}`);
-      }
-      
-      return response.json();
+      // Use apiRequest with VE30 unpacker for ValidationEngine30 endpoints
+      const response = await apiRequest(method, endpoint, finalData, { unpackVE30: true });
+      return response;
     },
     onMutate: () => {
       setStatus('saving');
