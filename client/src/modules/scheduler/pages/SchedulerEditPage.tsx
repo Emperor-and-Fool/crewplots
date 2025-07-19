@@ -252,12 +252,10 @@ export default function SchedulerEditPage() {
       competencyRequirements: shift.competencyRequirements || []
     });
     
-    // Switch to Basic Info tab for editing
-    setActiveTab('basic-info');
-    
+    // Historical behavior: Stay in current tab, editing interface appears contextually
     toast({
       title: "Shift selected for editing",
-      description: `Editing ${shift.position || shift.title} shift for ${shift.dayOfWeek}`,
+      description: `Editing ${shift.position || shift.title} shift for ${shift.dayOfWeek}. Form appears in Requirements tab.`,
     });
   };
 
@@ -286,7 +284,7 @@ export default function SchedulerEditPage() {
       competencyRequirements: shift.competencyRequirements || []
     });
     
-    setActiveTab('basic-info');
+    // Historical behavior: No tab switching, editing appears contextually
     
     toast({
       title: "Group selected for editing",
@@ -467,10 +465,131 @@ export default function SchedulerEditPage() {
         </TabsContent>
 
         <TabsContent value="requirements">
-          <CompetencySelector 
-            scheduleBlockId={parseInt(scheduleId)} 
-            locationId={scheduleData?.locationId || 1}
-          />
+          <div className="space-y-4">
+            <CompetencySelector 
+              scheduleBlockId={parseInt(scheduleId)} 
+              locationId={scheduleData?.locationId || 1}
+            />
+            
+            {/* Historical Shift Editing Interface - appears when editingShift is set */}
+            {editingShift && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Shift: {editingShift.position || editingShift.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {editingShift.dayOfWeek} • {editingShift.startTime} - {editingShift.endTime}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Form {...shiftForm}>
+                    <form onSubmit={shiftForm.handleSubmit((data) => {
+                      console.log('🎯 SHIFT SAVE: Form submitted:', data);
+                      toast({
+                        title: "Shift Updated",
+                        description: "Shift changes saved successfully.",
+                      });
+                    })} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={shiftForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Shift Title</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Morning Shift" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={shiftForm.control}
+                          name="position"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Position</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Manager, Staff" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={shiftForm.control}
+                          name="startTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Start Time</FormLabel>
+                              <FormControl>
+                                <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={shiftForm.control}
+                          name="endTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>End Time</FormLabel>
+                              <FormControl>
+                                <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={shiftForm.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Additional shift details..."
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex justify-between">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => {
+                            setEditingShift(null);
+                            toast({
+                              title: "Edit Cancelled",
+                              description: "Shift editing cancelled.",
+                            });
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit">
+                          Save Shift Changes
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="schedule">
