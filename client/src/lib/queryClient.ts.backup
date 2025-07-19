@@ -14,9 +14,8 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-  options?: { unpackVE30?: boolean; timeout?: number },
-): Promise<any> {
-  const timeout = options?.timeout || DEFAULT_TIMEOUT;
+  timeout = DEFAULT_TIMEOUT,
+): Promise<Response> {
   // Create AbortController for request timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -32,17 +31,6 @@ export async function apiRequest(
 
     clearTimeout(timeoutId); // Clear timeout if request completes
     await throwIfResNotOk(res);
-    
-    // Handle VE30 unpacking if requested
-    if (options?.unpackVE30) {
-      const jsonResponse = await res.json();
-      if (jsonResponse?.threads?.transaction?.data) {
-        console.log('🔧 VE30 UNPACKER: Extracting data from ValidationEngine30 response');
-        return jsonResponse.threads.transaction.data;
-      }
-      return jsonResponse;
-    }
-    
     return res;
   } catch (error: any) {
     clearTimeout(timeoutId); // Clean up timeout

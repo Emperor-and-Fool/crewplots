@@ -46,9 +46,9 @@ export default function SchedulerEditPage() {
         entityType: 'weekSchedule',
         data: { scheduleBlockId: parseInt(scheduleId) },
         context: {}
-      });
+      }, { unpackVE30: true });
       
-      console.log('🔍 WEEK SCHEDULES: Response:', response);
+      console.log('🔍 WEEK SCHEDULES: Response (VE30 unpacked):', response);
       return Array.isArray(response) ? response : [];
     },
     enabled: !!scheduleId,
