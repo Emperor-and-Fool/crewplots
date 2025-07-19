@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/modules/auth";
+import { useLogout } from "@/modules/users/hooks/useLogout";
 import { useWorkflowPermissions } from "@/hooks/use-workflow-permissions";
 import { useLocationContext } from "@/contexts/location-context";
 import { NavigationRenderer } from "@/components/navigation";
@@ -41,6 +42,7 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
 export function Sidebar({ className }: SidebarProps) {
   const [location, navigate] = useLocation();
   const { user } = useAuth();
+  const { logout, isLoggingOut } = useLogout();
   const { hasWorkflowAccess, hasPermission } = useWorkflowPermissions();
   const { selectedLocationId, setSelectedLocationId } = useLocationContext();
   const [serverAuthData, setServerAuthData] = useState<{
@@ -91,11 +93,10 @@ export function Sidebar({ className }: SidebarProps) {
     }
   };
 
-  // Direct server-side logout that bypasses the React state issues
+  // Clean logout using AuthService with SPA navigation
   const handleLogout = () => {
-    console.log("Using direct server-side logout");
-    // Navigate directly to the dev-logout endpoint
-    window.location.href = "/api/auth/dev-logout";
+    console.log("Using AuthService logout from sidebar");
+    logout(); // Delegates to service layer
   };
 
   return (
@@ -142,6 +143,8 @@ export function Sidebar({ className }: SidebarProps) {
             size="icon" 
             className="ml-auto text-primary-200 hover:text-white hover:bg-primary-700"
             onClick={handleLogout}
+            disabled={isLoggingOut}
+            title={isLoggingOut ? 'Logging out...' : 'Logout'}
           >
             <LogOut className="h-5 w-5" />
           </Button>

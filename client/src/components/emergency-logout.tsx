@@ -2,10 +2,14 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, RefreshCw, AlertTriangle } from "lucide-react";
+import { useLogout } from "@/modules/users/hooks/useLogout";
 
 export function EmergencyLogout() {
+  const { logout, isLoggingOut } = useLogout();
+  
   const handleLogout = () => {
-    window.location.href = "/api/auth/dev-logout";
+    console.log("Using AuthService logout from emergency component");
+    logout(); // Delegates to service layer
   };
 
   const handleRefresh = () => {
@@ -29,9 +33,9 @@ export function EmergencyLogout() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh Page
           </Button>
-          <Button variant="outline" onClick={handleLogout} className="w-full">
+          <Button variant="outline" onClick={handleLogout} className="w-full" disabled={isLoggingOut}>
             <LogOut className="w-4 h-4 mr-2" />
-            Logout & Restart
+            {isLoggingOut ? 'Logging out...' : 'Logout & Restart'}
           </Button>
         </CardContent>
       </Card>

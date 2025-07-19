@@ -1,5 +1,6 @@
 import { Search, Bell } from "lucide-react";
 import { useAuth } from "@/modules/auth";
+import { useLogout } from "@/modules/users/hooks/useLogout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,12 +19,12 @@ interface HeaderProps {
 
 export function Header({ className }: HeaderProps) {
   const { user } = useAuth();
+  const { logout, isLoggingOut } = useLogout();
   
-  // Direct server-side logout that bypasses the React state issues
+  // Clean logout using AuthService with SPA navigation
   const handleLogout = () => {
-    console.log("Using direct server-side logout from header");
-    // Navigate directly to the dev-logout endpoint
-    window.location.href = "/api/auth/dev-logout";
+    console.log("Using AuthService logout from header");
+    logout(); // Delegates to service layer
   };
 
   return (
@@ -95,8 +96,8 @@ export function Header({ className }: HeaderProps) {
               <DropdownMenuItem onClick={() => window.location.href = '/profile'}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.location.href = '/user-settings'}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                Logout
+              <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
