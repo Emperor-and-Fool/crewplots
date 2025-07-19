@@ -470,8 +470,13 @@ export default function SchedulerEditPage() {
                           <Switch
                             checked={field.value}
                             onCheckedChange={(newValue) => {
+                              console.log('🔘 SWITCH: Toggle triggered, new value:', newValue);
+                              console.log('🔘 SWITCH: Current form data before change:', form.getValues());
+                              
                               // Immediate UI update
                               field.onChange(newValue);
+                              
+                              console.log('🔘 SWITCH: Form data after onChange:', form.getValues());
                               
                               // Instant feedback toast
                               toast({
