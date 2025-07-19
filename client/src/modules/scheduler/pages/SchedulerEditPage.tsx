@@ -155,8 +155,7 @@ export default function SchedulerEditPage() {
       const response = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'update',
         entityType: 'scheduleBlock',
-        entityId: parseInt(scheduleId),
-        data: data,
+        data: { id: parseInt(scheduleId), ...data },
         context: {}
       });
       return response;
