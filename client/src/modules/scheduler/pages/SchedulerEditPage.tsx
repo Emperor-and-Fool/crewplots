@@ -191,7 +191,7 @@ export default function SchedulerEditPage() {
     enabled: permissions.canEditSchedules && !!scheduleData,
     validateData: (data) => {
       // Only auto-save if data is valid and has changed from initial values
-      return !!(data.name && data.name.trim().length > 0);
+      return !!(data.name && data.name.trim().length > 0) || data.isActive !== undefined;
     },
     transformData: (data) => {
       // Transform form data to validation engine format
