@@ -24,7 +24,7 @@ import type { Location } from '@shared/schema';
 import type { ShiftFormData } from '../types/scheduler.types';
 import CompetencySelector from '../components/CompetencySelector';
 import ShiftManagementInterface from '../components/ShiftManagementInterface';
-import { useDeleteShift, useWeekScheduleShifts } from '../hooks/useSchedulerData';
+import { useDeleteShift, useWeekScheduleShifts, useUpdateShift } from '../hooks/useSchedulerData';
 
 export default function SchedulerEditPage() {
   const params = useParams();
@@ -37,6 +37,7 @@ export default function SchedulerEditPage() {
   
   // Shift management hooks
   const deleteShiftMutation = useDeleteShift();
+  const updateShiftMutation = useUpdateShift();
   
   // Fetch week schedules for this schedule block
   const { data: weekSchedules = [] } = useQuery({
@@ -484,12 +485,46 @@ export default function SchedulerEditPage() {
                 </CardHeader>
                 <CardContent>
                   <Form {...shiftForm}>
-                    <form onSubmit={shiftForm.handleSubmit((data) => {
-                      console.log('🎯 SHIFT SAVE: Form submitted:', data);
-                      toast({
-                        title: "Shift Updated",
-                        description: "Shift changes saved successfully.",
-                      });
+                    <form onSubmit={shiftForm.handleSubmit(async (data) => {
+                      try {
+                        console.log('🎯 SHIFT SAVE: Form submitted:', data);
+                        console.log('🎯 SHIFT SAVE: editingShift context:', editingShift);
+                        
+                        // Assemble Russian Doll compliant data structure
+                        const shiftUpdateData = {
+                          id: editingShift.id,
+                          weekScheduleId: editingShift.weekScheduleId,
+                          dayOfWeek: editingShift.dayOfWeek,
+                          title: data.title,
+                          position: data.position,
+                          startTime: data.startTime,
+                          endTime: data.endTime,
+                          maxSlots: editingShift.maxSlots || 1,
+                          subscriptionDeadline: editingShift.subscriptionDeadline
+                        };
+                        
+                        console.log('🎯 SHIFT SAVE: Russian Doll data assembled:', shiftUpdateData);
+                        
+                        // Call ValidationEngine30 update
+                        await updateShiftMutation.mutateAsync({
+                          id: editingShift.id,
+                          data: shiftUpdateData
+                        });
+                        
+                        // Clear editing state and show success
+                        setEditingShift(null);
+                        toast({
+                          title: "Shift Updated",
+                          description: "Changes saved successfully.",
+                        });
+                      } catch (error) {
+                        console.error('🎯 SHIFT SAVE: Error:', error);
+                        toast({
+                          title: "Save Failed",
+                          description: error instanceof Error ? error.message : 'An error occurred while saving the shift.',
+                          variant: "destructive"
+                        });
+                      }
                     })} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -582,8 +617,11 @@ export default function SchedulerEditPage() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit">
-                          Save Shift Changes
+                        <Button 
+                          type="submit" 
+                          disabled={updateShiftMutation.isPending}
+                        >
+                          {updateShiftMutation.isPending ? 'Saving...' : 'Save Shift Changes'}
                         </Button>
                       </div>
                     </form>
