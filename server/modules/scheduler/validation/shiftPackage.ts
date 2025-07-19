@@ -70,9 +70,17 @@ const shiftBusinessRules = [
       warnings.push('Large number of slots - verify this is correct');
     }
 
-    // Days of week validation (only for create/update)
-    if (!data.daysOfWeek || !Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0) {
-      errors.push('At least one day of the week must be selected');
+    // Days of week validation - Context-aware for Russian Doll operations
+    if (context?.operation === 'create') {
+      // Multi-day creation requires daysOfWeek array
+      if (!data.daysOfWeek || !Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0) {
+        errors.push('At least one day of the week must be selected');
+      }
+    } else if (context?.operation === 'update') {
+      // Single-shift editing requires dayOfWeek field (Russian Doll constraint)
+      if (!data.dayOfWeek || typeof data.dayOfWeek !== 'string') {
+        errors.push('Day of week is required for shift editing');
+      }
     }
 
     return { warnings, errors };
@@ -110,7 +118,7 @@ const shiftBusinessRules = [
   }
 ];
 
-// Custom assembly function for shifts
+// Custom assembly function for shifts - Russian Doll compliant
 const shiftAssembly = (rawData: any, user: any, operation: string) => {
   // For READ operations, just return the ID
   if (operation === 'read') {
@@ -122,20 +130,39 @@ const shiftAssembly = (rawData: any, user: any, operation: string) => {
     return rawData.filters || {};
   }
 
-  // For CREATE/UPDATE operations, return full data
-  return {
-    weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
-    title: rawData.title?.trim(),
-    position: rawData.position?.trim() || null,
-    daysOfWeek: Array.isArray(rawData.daysOfWeek) ? rawData.daysOfWeek : [],
-    startTime: rawData.startTime,
-    endTime: rawData.endTime,
-    maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
-    subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
-    competencyRequirements: rawData.competencyRequirements || [],
-    // Include ID for update operations
-    ...(operation === 'update' && rawData.id && { id: rawData.id })
-  };
+  // For CREATE operations - multi-day array format
+  if (operation === 'create') {
+    return {
+      weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
+      title: rawData.title?.trim(),
+      position: rawData.position?.trim() || null,
+      daysOfWeek: Array.isArray(rawData.daysOfWeek) ? rawData.daysOfWeek : [],
+      startTime: rawData.startTime,
+      endTime: rawData.endTime,
+      maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
+      subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
+      competencyRequirements: rawData.competencyRequirements || []
+    };
+  }
+
+  // For UPDATE operations - single-day format (Russian Doll editing)
+  if (operation === 'update') {
+    return {
+      id: rawData.id,
+      weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
+      title: rawData.title?.trim(),
+      position: rawData.position?.trim() || null,
+      dayOfWeek: rawData.dayOfWeek, // Single day for Russian Doll constraint
+      startTime: rawData.startTime,
+      endTime: rawData.endTime,
+      maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
+      subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
+      competencyRequirements: rawData.competencyRequirements || []
+    };
+  }
+
+  // Fallback for other operations
+  return rawData;
 };
 
 // VE30PackageBuilder-based package (STANDARDIZED from working function-based)
