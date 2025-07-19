@@ -96,9 +96,20 @@ export const useCreateShift = () => {
         context: {}
       });
     },
-    onSuccess: (_, { weekScheduleId }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule', 'list'] });
+    onSuccess: (result, { weekScheduleId }) => {
+      // Immediately invalidate and refetch shift list for live updates
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId] 
+      });
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId],
+        type: 'active'
+      });
+      
+      // Update week schedule list
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'weekSchedule', 'list'] 
+      });
     }
   });
 };
@@ -113,15 +124,37 @@ export const useUpdateShift = () => {
         context: {}
       });
     },
-    onSuccess: (_, { data }) => {
-      // Invalidate specific shift list for the week schedule
-      if (data.weekScheduleId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift', 'list', data.weekScheduleId] });
+    onSuccess: (result, { id, data }) => {
+      // Extract weekScheduleId from the updated data or original data
+      const weekScheduleId = data.weekScheduleId || result?.weekScheduleId;
+      
+      // 1. Invalidate specific shift list for the week schedule (highest priority)
+      if (weekScheduleId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId] 
+        });
       }
-      // Invalidate all shift queries
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift'] });
-      // Invalidate week schedule queries  
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
+      
+      // 2. Invalidate individual shift query
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift', 'read', id] 
+      });
+      
+      // 3. Invalidate all shift-related queries (catch-all)
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift'] 
+      });
+      
+      // 4. Invalidate week schedule queries to update schedule preview
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'weekSchedule'] 
+      });
+      
+      // 5. Force immediate refetch for active schedule views
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId],
+        type: 'active'
+      });
     }
   });
 };
@@ -136,9 +169,42 @@ export const useDeleteShift = () => {
         context: {}
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'shift'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
+    onSuccess: (result, deletedShiftId) => {
+      // Get shift data to extract weekScheduleId for targeted invalidation
+      const shiftQueries = queryClient.getQueriesData({ 
+        queryKey: ['/api/validation/v3/execute', 'shift'] 
+      });
+      
+      // Extract weekScheduleId from cached shift data
+      let weekScheduleId;
+      for (const [queryKey, data] of shiftQueries) {
+        if (Array.isArray(data)) {
+          const shift = data.find((s: any) => s.id === deletedShiftId);
+          if (shift?.weekScheduleId) {
+            weekScheduleId = shift.weekScheduleId;
+            break;
+          }
+        }
+      }
+      
+      // Targeted invalidation
+      if (weekScheduleId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId] 
+        });
+        queryClient.refetchQueries({ 
+          queryKey: ['/api/validation/v3/execute', 'shift', 'list', weekScheduleId],
+          type: 'active'
+        });
+      }
+      
+      // Broad invalidation as fallback
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'shift'] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/validation/v3/execute', 'weekSchedule'] 
+      });
     }
   });
 };

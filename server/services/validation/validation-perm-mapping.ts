@@ -97,6 +97,15 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
     validationPermissions.push('email.send', 'email.verify', 'email.read');
   }
   
+  // Package: Competency validation packages (role-based)
+  if (user.role === 'administrator' || user.role === 'owner') {
+    validationPermissions.push('competency.read', 'competency.create', 'competency.update', 'competency.delete');
+  } else if (user.role === 'app_manager' || user.role === 'crew_chief') {
+    validationPermissions.push('competency.read', 'competency.update');
+  } else if (user.role === 'crew_member' || user.role === 'applicant') {
+    validationPermissions.push('competency.read');
+  }
+  
   // BLOCK 4: DEDUPLICATION
   // Remove duplicate permissions (ES5 compatible)
   const uniquePermissions: string[] = [];
