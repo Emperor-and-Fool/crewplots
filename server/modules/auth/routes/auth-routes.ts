@@ -341,8 +341,17 @@ router.get('/user', authenticateUser, (req, res) => {
 // Session validation endpoint for authentication checks
 router.get('/login-session', async (req, res) => {
     try {
+        // DEBUG: Log session details for investigation
+        console.log('🔍 LOGIN-SESSION DEBUG: Session ID:', req.sessionID);
+        console.log('🔍 LOGIN-SESSION DEBUG: req.session exists:', !!req.session);
+        console.log('🔍 LOGIN-SESSION DEBUG: req.session.passport exists:', !!(req.session?.passport));
+        console.log('🔍 LOGIN-SESSION DEBUG: req.session.passport.user exists:', !!(req.session?.passport?.user));
+        console.log('🔍 LOGIN-SESSION DEBUG: Full session data:', JSON.stringify(req.session, null, 2));
+        console.log('🔍 LOGIN-SESSION DEBUG: Cookie header:', req.headers.cookie);
+        
         // Check if user has valid session
         if (!req.session?.passport?.user) {
+            console.log('🔍 LOGIN-SESSION DEBUG: No passport.user found - returning 401');
             return res.status(401).json({ 
                 authenticated: false,
                 message: 'No valid session found'
