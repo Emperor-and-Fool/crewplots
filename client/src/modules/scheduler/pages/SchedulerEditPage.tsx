@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -172,10 +173,15 @@ export default function SchedulerEditPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Schedule Updated",
-        description: "Schedule details have been saved successfully.",
+        title: "✅ Schedule Updated",
+        description: "All changes have been saved successfully.",
+        duration: 3000,
       });
+      
+      // Enhanced cache invalidation for immediate cross-tab updates
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      queryClient.refetchQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', parseInt(scheduleId)] });
     },
     onError: (error: any) => {
       toast({
@@ -214,11 +220,28 @@ export default function SchedulerEditPage() {
       };
     },
     onSaveSuccess: () => {
-      // Invalidate queries to refresh data
+      // Enhanced success feedback with cross-tab synchronization
+      toast({
+        title: "✅ Changes Saved",
+        description: "Schedule status updated successfully",
+        duration: 3000,
+      });
+      
+      // Invalidate queries to refresh data across all tabs
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
+      
+      // Force immediate refetch of current schedule data
+      queryClient.refetchQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', parseInt(scheduleId)] });
     },
     onSaveError: (error) => {
       console.error('Auto-save failed:', error);
+      toast({
+        title: "❌ Save Failed",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+        duration: 4000,
+      });
     }
   });
 
@@ -334,9 +357,19 @@ export default function SchedulerEditPage() {
                 Back to Schedules
               </Button>
             </div>
-            <h1 className="text-3xl font-bold">
-              Edit Week Schedule: {scheduleData?.name || 'Loading...'}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">
+                Edit Week Schedule: {scheduleData?.name || 'Loading...'}
+              </h1>
+              {scheduleData && (
+                <Badge 
+                  className={`${scheduleData.isActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white`}
+                >
+                  {scheduleData.isActive ? 'Active' : 'Inactive'}
+                  {autoSave.isSaving && <span className="ml-1 animate-pulse">●</span>}
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-2">
               Update the details for your weekly schedule template
             </p>
@@ -437,17 +470,27 @@ export default function SchedulerEditPage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Active Schedule
+                          <FormLabel className={`text-base font-medium ${field.value ? 'text-green-600' : 'text-red-600'}`}>
+                            {field.value ? 'Active Schedule' : 'Inactive Schedule'}
                           </FormLabel>
-                          <div className="text-sm text-muted-foreground">
-                            Enable this schedule for use in shift planning
+                          <div className={`text-sm ${field.value ? 'text-green-500' : 'text-red-500'}`}>
+                            {field.value ? 'Available for shift creation' : 'Not available for shift creation'}
                           </div>
                         </div>
                         <FormControl>
                           <Switch
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(newValue) => {
+                              // Immediate UI update
+                              field.onChange(newValue);
+                              
+                              // Instant feedback toast
+                              toast({
+                                title: newValue ? "Schedule Activated" : "Schedule Deactivated",
+                                description: "Saving change automatically...",
+                                duration: 2000,
+                              });
+                            }}
                             className={`${field.value ? '!bg-green-600' : '!bg-red-600'} !important`}
                           />
                         </FormControl>
