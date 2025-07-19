@@ -537,9 +537,17 @@ export class ValidationEngine30 {
           console.log('💾 Week schedule read completed ID:', assembledData.id);
         } else if (entityType === 'weekSchedule' && operation === 'list') {
           console.log('📅 VALIDATION ENGINE 30: Reading week schedules list');
-          const weekSchedules = await storage.getWeekSchedules();
-          console.log(`💾 Retrieved ${weekSchedules.length} week schedules`);
-          transactionResult = weekSchedules;
+          if (assembledData.scheduleBlockId) {
+            console.log('🔍 FILTERING: Using scheduleBlockId filter:', assembledData.scheduleBlockId);
+            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.scheduleBlockId);
+            console.log(`💾 Retrieved ${weekSchedules.length} week schedules for schedule block ${assembledData.scheduleBlockId}`);
+            transactionResult = weekSchedules;
+          } else {
+            console.log('🔍 NO FILTER: Getting all week schedules');
+            const weekSchedules = await storage.getWeekSchedules();
+            console.log(`💾 Retrieved ${weekSchedules.length} week schedules`);
+            transactionResult = weekSchedules;
+          }
         } else if (entityType === 'weekSchedule' && operation === 'delete') {
           console.log('📅 VALIDATION ENGINE 30: Deleting week schedule ID:', assembledData.id);
           transactionResult = await storage.deleteWeekSchedule(assembledData.id);

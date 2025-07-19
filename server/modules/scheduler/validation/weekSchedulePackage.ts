@@ -7,8 +7,13 @@ const weekScheduleReadSchema = z.object({
   id: z.number()
 });
 
-// LIST operation schema - handles filters
+// LIST operation schema - handles Russian Doll + legacy filters
 const weekScheduleListSchema = z.object({
+  // Russian Doll architecture: flat scheduleBlockId
+  scheduleBlockId: z.number().optional(),
+  weekNumber: z.number().optional(),
+  locationId: z.number().optional(),
+  // Legacy: nested filters structure (backward compatibility)
   filters: z.object({
     scheduleBlockId: z.number().optional(),
     weekNumber: z.number().optional(),
@@ -86,8 +91,13 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
     return { id: rawData.id };
   }
 
-  // For LIST operations, return filters
+  // For LIST operations, handle Russian Doll architecture (flat scheduleBlockId)
   if (operation === 'list') {
+    // Russian Doll: Frontend sends { scheduleBlockId: 6 }, not { filters: { scheduleBlockId: 6 } }
+    if (rawData.scheduleBlockId) {
+      return { scheduleBlockId: parseInt(rawData.scheduleBlockId) };
+    }
+    // Legacy: Check for nested filters structure (backward compatibility)
     return rawData.filters || {};
   }
 
