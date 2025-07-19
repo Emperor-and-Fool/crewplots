@@ -422,15 +422,14 @@ router.post('/auth/me', authenticateUser, async (req, res) => {
 });
 */
 
-// POST /api/validation/v3/auth - Direct implementation (no proxy)
-router.post('/auth', async (req, res) => {
-  console.log('🔍 VE30 AUTH: REQUEST RECEIVED - Starting auth check without middleware');
+// POST /api/validation/v3/auth - Authentication endpoint with middleware
+router.post('/auth', authenticateUser, async (req, res) => {
+  console.log('🔍 VE30 AUTH: REQUEST RECEIVED - Using authentication middleware');
   console.log('🔍 VE30 AUTH: Session ID present:', !!req.sessionID);
   console.log('🔍 VE30 AUTH: Cookies:', req.headers.cookie || 'none');
   
-  // Manual authentication check to avoid circular dependency
   try {
-    console.log('🔐 VE30 AUTH STANDALONE: Session validation request (no proxy)');
+    console.log('🔐 VE30 AUTH WITH MIDDLEWARE: Session validation request');
     
     // Enable CORS for all origins in development
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -442,14 +441,14 @@ router.post('/auth', async (req, res) => {
     
     if (!user) {
       return res.status(401).json({ 
-        authenticated: false, 
+        success: false, 
         error: 'Authentication required' 
       });
     }
 
-    // Return authenticated user data
+    // Return authenticated user data in expected format
     res.json({
-      authenticated: true,
+      success: true,
       user: {
         id: user.id,
         username: user.username,
@@ -462,9 +461,9 @@ router.post('/auth', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ VE30 AUTH STANDALONE: Session validation error:', error);
+    console.error('❌ VE30 AUTH WITH MIDDLEWARE: Session validation error:', error);
     res.status(500).json({ 
-      authenticated: false,
+      success: false,
       error: 'Session validation failed' 
     });
   }
