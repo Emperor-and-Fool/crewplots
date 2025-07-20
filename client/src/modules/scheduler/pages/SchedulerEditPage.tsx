@@ -500,12 +500,18 @@ export default function SchedulerEditPage() {
                       <FormItem>
                         <FormLabel>Number of Weeks</FormLabel>
                         <FormControl>
+                          {/* Debug info - remove after testing */}
+                          {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs text-blue-600 mb-2">
+                              DEBUG: isCreationMode={isCreationMode.toString()}, scheduleData.maxWeeks={scheduleData?.maxWeeks}, field.value={field.value}
+                            </div>
+                          )}
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             value={field.value?.toString() || ""}
-                            disabled={scheduleData?.maxWeeks !== null}  // Disable when maxWeeks is set in database
+                            disabled={!isCreationMode && scheduleData?.maxWeeks !== null}  // Only disable in edit mode when maxWeeks is set
                           >
-                            <SelectTrigger className={scheduleData?.maxWeeks !== null ? "opacity-50 cursor-not-allowed" : ""}>
+                            <SelectTrigger className={(!isCreationMode && scheduleData?.maxWeeks !== null) ? "opacity-50 cursor-not-allowed" : ""}>
                               <SelectValue placeholder="Select number of weeks" />
                             </SelectTrigger>
                             <SelectContent>
@@ -518,8 +524,8 @@ export default function SchedulerEditPage() {
                           </Select>
                         </FormControl>
                         <div className="text-xs text-muted-foreground">
-                          {scheduleData?.maxWeeks !== null 
-                            ? `⚠️ Week block is fixed at ${field.value || 1} week${(field.value || 1) > 1 ? 's' : ''} and cannot be modified`
+                          {(!isCreationMode && scheduleData?.maxWeeks !== null)
+                            ? `⚠️ Week block is fixed at ${field.value || scheduleData?.maxWeeks || 1} week${(field.value || scheduleData?.maxWeeks || 1) > 1 ? 's' : ''} and cannot be modified`
                             : `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning`
                           }
                         </div>
