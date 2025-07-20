@@ -399,7 +399,7 @@ export class ValidationEngine30 {
       console.log('🎁 Raw frontend data:', JSON.stringify(data, null, 2));
       
       // USE PACKAGE ASSEMBLY FUNCTION (historical ValidationPackageService pattern)
-      const assembledData = pkg.assemblePackage(data, context, operation);
+      const assembledData = await pkg.assemblePackage(data, context, operation);
       console.log('🎁 Package assembled data:', JSON.stringify(assembledData, null, 2));
       
       // Track cascade delete flag for debugging
