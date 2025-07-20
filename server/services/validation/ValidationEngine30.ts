@@ -398,30 +398,15 @@ export class ValidationEngine30 {
       console.log('🎁 VALIDATION ENGINE 30: Starting enhanced data assembly');
       console.log('🎁 Raw frontend data:', JSON.stringify(data, null, 2));
       
-      const assembledData = { ...data };
-      if (operation === 'create') {
-        assembledData.createdBy = context.userId; // Proven server-side injection
-        console.log('🎁 Injected createdBy from authenticated user:', context.userId);
-      }
+      // USE PACKAGE ASSEMBLY FUNCTION (historical ValidationPackageService pattern)
+      const assembledData = pkg.assemblePackage(data, context, operation);
+      console.log('🎁 Package assembled data:', JSON.stringify(assembledData, null, 2));
       
-      // PROVEN DATE CONVERSION from ValidationEngine.ts
-      if (entityType === 'shift' && assembledData.subscriptionDeadline) {
-        if (typeof assembledData.subscriptionDeadline === 'string') {
-          assembledData.subscriptionDeadline = new Date(assembledData.subscriptionDeadline);
-          console.log('🎁 Converted subscriptionDeadline string to Date object');
-        }
+      // Track cascade delete flag for debugging
+      if (assembledData.cascadeDelete) {
+        console.log('🔥 CASCADE FLAG DETECTED: cascadeDelete=true from package assembly');
       }
-      
-      // ENHANCEMENT: Add aggregation metadata if available
-      if (context.aggregatedData) {
-        assembledData._aggregationContext = {
-          hasAggregatedData: true,
-          aggregationTimestamp: context.aggregatedData.metadata?.timestamp
-        };
-        console.log('🎁 ENHANCEMENT: Added aggregation context to assembled data');
-      }
-      
-      console.log('🎁 Final assembled data:', JSON.stringify(assembledData, null, 2));
+
 
       // THREAD 2: Schema Validation (PROVEN PATTERN)
       console.log('🔍 VALIDATION ENGINE 30: Starting schema validation');
