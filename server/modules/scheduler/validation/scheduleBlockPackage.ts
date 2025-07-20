@@ -118,8 +118,8 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   };
 
   // Include maxWeeks only for create operations (immutable after creation)
-  if (operation === 'create') {
-    baseData.maxWeeks = parseInt(rawData.maxWeeks) || 1;
+  if (operation === 'create' && rawData.maxWeeks !== undefined) {
+    baseData.maxWeeks = parseInt(rawData.maxWeeks) || null;
   }
 
   return baseData;

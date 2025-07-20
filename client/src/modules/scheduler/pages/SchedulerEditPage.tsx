@@ -91,13 +91,13 @@ export default function SchedulerEditPage() {
       name: '',
       description: '',
       locationId: 0,
-      maxWeeks: 1,  // Default to 1 week for new schedules
+      maxWeeks: undefined,  // Start as undefined - user must explicitly select
       isActive: false  // Default to inactive for new schedules
     } : {
       name: '',
       description: '',
       locationId: 0,
-      maxWeeks: 1,
+      maxWeeks: undefined,
       isActive: true
     }
   });
@@ -155,6 +155,7 @@ export default function SchedulerEditPage() {
         name: scheduleData.name || '',
         description: scheduleData.description || '',
         locationId: scheduleData.locationId || 0,
+        maxWeeks: scheduleData.maxWeeks,  // Include maxWeeks from database
         isActive: scheduleData.isActive
       });
     }
@@ -171,7 +172,7 @@ export default function SchedulerEditPage() {
           description: data.description,
           locationId: data.locationId,
           isActive: data.isActive,
-          maxWeeks: 0  // Default: no auto-creation of child records
+          ...(data.maxWeeks && { maxWeeks: data.maxWeeks })  // Include maxWeeks only if explicitly set
         },
         context: {}
       }, { unpackVE30: true });
@@ -501,10 +502,10 @@ export default function SchedulerEditPage() {
                         <FormControl>
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
-                            value={field.value?.toString() || "1"}
-                            disabled={!isCreationMode}  // Disable in edit mode
+                            value={field.value?.toString() || ""}
+                            disabled={scheduleData?.maxWeeks !== null}  // Disable when maxWeeks is set in database
                           >
-                            <SelectTrigger className={!isCreationMode ? "opacity-50 cursor-not-allowed" : ""}>
+                            <SelectTrigger className={scheduleData?.maxWeeks !== null ? "opacity-50 cursor-not-allowed" : ""}>
                               <SelectValue placeholder="Select number of weeks" />
                             </SelectTrigger>
                             <SelectContent>
@@ -517,9 +518,9 @@ export default function SchedulerEditPage() {
                           </Select>
                         </FormControl>
                         <div className="text-xs text-muted-foreground">
-                          {isCreationMode 
-                            ? `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning`
-                            : `⚠️ Week block is fixed at ${field.value || 1} week${(field.value || 1) > 1 ? 's' : ''} and cannot be modified`
+                          {scheduleData?.maxWeeks !== null 
+                            ? `⚠️ Week block is fixed at ${field.value || 1} week${(field.value || 1) > 1 ? 's' : ''} and cannot be modified`
+                            : `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning`
                           }
                         </div>
                         <FormMessage />
