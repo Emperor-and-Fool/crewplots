@@ -36,11 +36,15 @@ export default function SchedulerEditPage() {
   const permissions = useSchedulerPermissions();
   const queryClient = useQueryClient();
   
+  // Creation mode detection
+  const isCreationMode = scheduleId === 'new';
+  const scheduleIdNumber = isCreationMode ? null : parseInt(scheduleId);
+  
   // Shift management hooks
   const deleteShiftMutation = useDeleteShift();
   const updateShiftMutation = useUpdateShift();
   
-  // Fetch week schedules for this schedule block
+  // Fetch week schedules for this schedule block (only in edit mode)
   const { data: weekSchedules = [] } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'weekSchedule', 'list', scheduleId],
     queryFn: async () => {
@@ -48,19 +52,19 @@ export default function SchedulerEditPage() {
       const response = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'list',
         entityType: 'weekSchedule',
-        data: { scheduleBlockId: parseInt(scheduleId) },
+        data: { scheduleBlockId: scheduleIdNumber },
         context: {}
       }, { unpackVE30: true });
       
       console.log('🔍 WEEK SCHEDULES: Response (VE30 unpacked):', response);
       return Array.isArray(response) ? response : [];
     },
-    enabled: !!scheduleId,
+    enabled: !isCreationMode && !!scheduleIdNumber,
     staleTime: 2 * 60 * 1000,
   });
 
-  // Edit mode only - scheduleId is required
-  if (!scheduleId) {
+  // Validate schedule ID (must be number or 'new')
+  if (!scheduleId || (!isCreationMode && !scheduleIdNumber)) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
         <Card>
@@ -80,10 +84,15 @@ export default function SchedulerEditPage() {
   const [showGroupEditDialog, setShowGroupEditDialog] = useState(false);
   const [groupEditDialogShift, setGroupEditDialogShift] = useState<any>(null);
 
-  // Form setup
+  // Form setup - different defaults for creation vs edit mode
   const form = useForm<InsertScheduleBlock>({
     resolver: zodResolver(insertScheduleBlockSchema),
-    defaultValues: {
+    defaultValues: isCreationMode ? {
+      name: '',
+      description: '',
+      locationId: 0,
+      isActive: false  // Default to inactive for new schedules
+    } : {
       name: '',
       description: '',
       locationId: 0,
@@ -104,7 +113,7 @@ export default function SchedulerEditPage() {
     }
   });
 
-  // Fetch schedule block data
+  // Fetch schedule block data (only in edit mode)
   const { data: scheduleData, isLoading, error } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'read', scheduleId],
     queryFn: async () => {
@@ -112,14 +121,14 @@ export default function SchedulerEditPage() {
       const scheduleData = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'read',
         entityType: 'scheduleBlock',
-        data: { id: parseInt(scheduleId) },
+        data: { id: scheduleIdNumber },
         context: {}
       }, { unpackVE30: true });
       
       console.log('🔍 SCHEDULER EDIT: VE30 unpacker result:', scheduleData);
       return scheduleData;
     },
-    enabled: !!scheduleId,
+    enabled: !isCreationMode && !!scheduleIdNumber,
   });
 
   // Fetch locations
@@ -137,9 +146,9 @@ export default function SchedulerEditPage() {
     enabled: permissions.canEditSchedules,
   });
 
-  // Populate form when schedule data loads
+  // Populate form when schedule data loads (only in edit mode)
   useEffect(() => {
-    if (scheduleData && scheduleData.name) {
+    if (!isCreationMode && scheduleData && scheduleData.name) {
       form.reset({
         name: scheduleData.name || '',
         description: scheduleData.description || '',
@@ -147,7 +156,48 @@ export default function SchedulerEditPage() {
         isActive: scheduleData.isActive
       });
     }
-  }, [scheduleData, form]);
+  }, [scheduleData, form, isCreationMode]);
+
+  // Create mutation (for creation mode)
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertScheduleBlock) => {
+      const response = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'create',
+        entityType: 'scheduleBlock',
+        data: {
+          name: data.name,
+          description: data.description,
+          locationId: data.locationId,
+          isActive: data.isActive,
+          maxWeeks: 0  // Default: no auto-creation of child records
+        },
+        context: {}
+      }, { unpackVE30: true });
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "✅ Schedule Created",
+        description: "Schedule created successfully. You can now configure it.",
+        duration: 3000,
+      });
+      
+      // Navigate to edit mode with the new schedule ID
+      if (data && data.id) {
+        navigate(`/scheduler/edit/${data.id}`);
+      }
+      
+      // Invalidate cache
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error?.message || "Failed to create schedule. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Update mutation
   const updateMutation = useMutation({
@@ -155,7 +205,7 @@ export default function SchedulerEditPage() {
       const response = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'update',
         entityType: 'scheduleBlock',
-        data: { id: parseInt(scheduleId), ...data },
+        data: { id: scheduleIdNumber, ...data },
         context: {}
       });
       return response;
@@ -170,7 +220,7 @@ export default function SchedulerEditPage() {
       // Enhanced cache invalidation for immediate cross-tab updates
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
       queryClient.invalidateQueries({ queryKey: ['/api/scheduler/schedule-blocks'] });
-      queryClient.refetchQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', parseInt(scheduleId)] });
+      queryClient.refetchQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', scheduleIdNumber] });
     },
     onError: (error: any) => {
       toast({
@@ -181,14 +231,14 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // Auto-save configuration using ValidationEngine30
+  // Auto-save configuration using ValidationEngine30 (only in edit mode)
   const formValues = form.watch();
   const autoSave = useAutoSave(formValues, {
     endpoint: `/api/validation/v3/execute`,
     method: 'POST',
     debounceMs: 2000,
     minContentLength: 1,
-    enabled: permissions.canEditSchedules && !!scheduleData,
+    enabled: !isCreationMode && permissions.canEditSchedules && !!scheduleData,
     validateData: (data) => {
       // Only auto-save if data is valid and has changed from initial values
       return !!(data.name && data.name.trim().length > 0) || data.isActive !== undefined;
@@ -198,9 +248,9 @@ export default function SchedulerEditPage() {
       return {
         operation: "update",
         entityType: "scheduleBlock",
-        entityId: parseInt(scheduleId),
+        entityId: scheduleIdNumber,
         data: {
-          id: parseInt(scheduleId),
+          id: scheduleIdNumber,
           name: data.name || '',
           description: data.description || '',
           locationId: data.locationId || 0,
@@ -235,7 +285,11 @@ export default function SchedulerEditPage() {
   });
 
   const handleSave = async (data: InsertScheduleBlock) => {
-    await updateMutation.mutateAsync(data);
+    if (isCreationMode) {
+      await createMutation.mutateAsync(data);
+    } else {
+      await updateMutation.mutateAsync(data);
+    }
   };
 
   const handleShiftClick = (shift: any) => {
@@ -348,9 +402,11 @@ export default function SchedulerEditPage() {
             </div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">
-                Edit Week Schedule: {scheduleData?.name || 'Loading...'}
+                {isCreationMode 
+                  ? 'Create New Schedule' 
+                  : `Edit Week Schedule: ${scheduleData?.name || 'Loading...'}`}
               </h1>
-              {scheduleData && (
+              {!isCreationMode && scheduleData && (
                 <Badge 
                   className={`${scheduleData.isActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white`}
                 >
@@ -358,20 +414,29 @@ export default function SchedulerEditPage() {
                   {autoSave.isSaving && <span className="ml-1 animate-pulse">●</span>}
                 </Badge>
               )}
+              {isCreationMode && (
+                <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
+                  New Schedule
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground mt-2">
-              Update the details for your weekly schedule template
+              {isCreationMode 
+                ? 'Enter basic details to create a new schedule template'
+                : 'Update the details for your weekly schedule template'}
             </p>
           </div>
-          <AutoSaveIndicator
-            status={autoSave.status}
-            lastSaved={autoSave.lastSaved}
-            hasUnsavedChanges={autoSave.hasUnsavedChanges}
-            error={autoSave.error}
-            onManualSave={autoSave.manualSave}
-            variant="button"
-            className="flex-shrink-0"
-          />
+          {!isCreationMode && (
+            <AutoSaveIndicator
+              status={autoSave.status}
+              lastSaved={autoSave.lastSaved}
+              hasUnsavedChanges={autoSave.hasUnsavedChanges}
+              error={autoSave.error}
+              onManualSave={autoSave.manualSave}
+              variant="button"
+              className="flex-shrink-0"
+            />
+          )}
         </div>
       </div>
 
@@ -473,31 +538,33 @@ export default function SchedulerEditPage() {
                               // Immediate UI update
                               field.onChange(newValue);
                               
-                              // Direct save - bypass auto-save completely
-                              try {
-                                await updateMutation.mutateAsync({
-                                  id: parseInt(scheduleId),
-                                  name: form.getValues('name'),
-                                  description: form.getValues('description'),
-                                  locationId: form.getValues('locationId'),
-                                  isActive: newValue,
-                                  createdBy: 1
-                                });
-                                
-                                toast({
-                                  title: newValue ? "✅ Schedule Activated" : "✅ Schedule Deactivated",
-                                  description: "Status saved successfully",
-                                  duration: 2000,
-                                });
-                              } catch (error) {
-                                // Revert UI on error
-                                field.onChange(!newValue);
-                                toast({
-                                  title: "❌ Save Failed",
-                                  description: "Failed to update status. Please try again.",
-                                  variant: "destructive",
-                                  duration: 3000,
-                                });
+                              // Only save immediately in edit mode
+                              if (!isCreationMode) {
+                                try {
+                                  await updateMutation.mutateAsync({
+                                    id: scheduleIdNumber,
+                                    name: form.getValues('name'),
+                                    description: form.getValues('description'),
+                                    locationId: form.getValues('locationId'),
+                                    isActive: newValue,
+                                    createdBy: 1
+                                  });
+                                  
+                                  toast({
+                                    title: newValue ? "✅ Schedule Activated" : "✅ Schedule Deactivated",
+                                    description: "Status saved successfully",
+                                    duration: 2000,
+                                  });
+                                } catch (error) {
+                                  // Revert UI on error
+                                  field.onChange(!newValue);
+                                  toast({
+                                    title: "❌ Save Failed",
+                                    description: "Failed to update status. Please try again.",
+                                    variant: "destructive",
+                                    duration: 3000,
+                                  });
+                                }
                               }
                             }}
                             className={`${field.value ? '!bg-green-600' : '!bg-red-600'} !important`}
@@ -509,9 +576,12 @@ export default function SchedulerEditPage() {
 
                   <Button 
                     type="submit" 
-                    disabled={updateMutation.isPending}
+                    disabled={isCreationMode ? createMutation.isPending : updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                    {isCreationMode 
+                      ? (createMutation.isPending ? 'Creating...' : 'Create Schedule')
+                      : (updateMutation.isPending ? 'Saving...' : 'Save Changes')
+                    }
                   </Button>
                 </form>
               </Form>
@@ -521,13 +591,23 @@ export default function SchedulerEditPage() {
 
         <TabsContent value="requirements">
           <div className="space-y-4">
-            <CompetencySelector 
-              scheduleBlockId={parseInt(scheduleId)} 
-              locationId={scheduleData?.locationId || 1}
-            />
+            {isCreationMode ? (
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-muted-foreground text-center">
+                    Create the schedule first to set up requirements and shifts.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <CompetencySelector 
+                scheduleBlockId={scheduleIdNumber} 
+                locationId={scheduleData?.locationId || 1}
+              />
+            )}
             
             {/* Historical Shift Editing Interface - appears when editingShift is set */}
-            {editingShift && (
+            {!isCreationMode && editingShift && (
               <Card>
                 <CardHeader>
                   <CardTitle>Edit Shift: {editingShift.position || editingShift.title}</CardTitle>
@@ -685,27 +765,37 @@ export default function SchedulerEditPage() {
         </TabsContent>
 
         <TabsContent value="schedule">
-          <ShiftManagementInterface
-            scheduleBlockId={parseInt(scheduleId)}
-            scheduleBlockName={scheduleData?.name || 'Schedule'}
-            weekSchedules={weekSchedules}
-            onShiftClick={handleShiftClick}
-            onShiftDelete={async (shift) => {
-              try {
-                await deleteShiftMutation.mutateAsync(shift.id);
-                toast({
-                  title: "Shift Deleted",
-                  description: "Shift has been removed successfully."
-                });
-              } catch (error) {
-                toast({
-                  title: "Error",
-                  description: "Failed to delete shift.",
-                  variant: "destructive"
-                });
-              }
-            }}
-          />
+          {isCreationMode ? (
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-muted-foreground text-center">
+                  Create the schedule first to manage shifts and weekly calendar.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ShiftManagementInterface
+              scheduleBlockId={scheduleIdNumber}
+              scheduleBlockName={scheduleData?.name || 'Schedule'}
+              weekSchedules={weekSchedules}
+              onShiftClick={handleShiftClick}
+              onShiftDelete={async (shift) => {
+                try {
+                  await deleteShiftMutation.mutateAsync(shift.id);
+                  toast({
+                    title: "Shift Deleted",
+                    description: "Shift has been removed successfully."
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to delete shift.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
