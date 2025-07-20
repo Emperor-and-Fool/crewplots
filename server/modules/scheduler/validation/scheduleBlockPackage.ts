@@ -16,6 +16,11 @@ export const scheduleBlockListSchema = z.object({
   }).optional()
 });
 
+// ID-only schema for delete operations
+export const scheduleBlockDeleteSchema = z.object({
+  id: z.number().positive()
+});
+
 export interface ScheduleBlockData {
   id?: number;
   name: string;
@@ -64,11 +69,36 @@ const scheduleBlockBusinessRules = [
     }
 
     return { warnings, errors };
+  },
+
+  // Cascade deletion validation rule
+  (data: any, context: any) => {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    if (context?.operation === 'delete' && data.id) {
+      // Validate cascade deletion permissions
+      if (!context.user?.permissions?.includes('schedule.delete')) {
+        errors.push('Insufficient permissions for cascade deletion');
+      }
+      
+      // Warning about cascade effects
+      warnings.push('This will permanently delete all week schedules and shifts within this schedule block');
+    }
+
+    return { warnings, errors };
   }
 ];
 
 // Assembly function for schedule blocks
 const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
+  if (operation === 'delete') {
+    return {
+      id: rawData.id,
+      cascadeDelete: true  // Flag for Russian Doll cascade
+    };
+  }
+  
   return {
     name: rawData.name?.trim(),
     description: rawData.description?.trim() || null,
@@ -89,6 +119,10 @@ export const scheduleBlockPackage: VE30Package = {
     // Use list schema for list/read operations (handles empty data {})
     if (operation === 'list' || operation === 'read') {
       return VE30PackageBuilder.validateSchema(data, operation, scheduleBlockListSchema);
+    }
+    // Use delete schema for delete operations (ID-only)
+    if (operation === 'delete') {
+      return VE30PackageBuilder.validateSchema(data, operation, scheduleBlockDeleteSchema);
     }
     // Use insert schema for create/update operations
     return VE30PackageBuilder.validateSchema(data, operation, insertScheduleBlockSchema);
