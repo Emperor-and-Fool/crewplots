@@ -107,16 +107,22 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
     };
   }
   
-  return {
+  const baseData = {
     name: rawData.name?.trim(),
     description: rawData.description?.trim() || null,
     locationId: parseInt(rawData.locationId) || rawData.locationId,
-    maxWeeks: parseInt(rawData.maxWeeks) || 1,  // Include maxWeeks field with default
     isActive: Boolean(rawData.isActive),
     createdBy: user?.id || rawData.createdBy,
     // Include ID for update operations
     ...(operation === 'update' && rawData.id && { id: rawData.id })
   };
+
+  // Include maxWeeks only for create operations (immutable after creation)
+  if (operation === 'create') {
+    baseData.maxWeeks = parseInt(rawData.maxWeeks) || 1;
+  }
+
+  return baseData;
 };
 
 // VE30PackageBuilder-based schedule block package (COMPLIANT like userListPackage)

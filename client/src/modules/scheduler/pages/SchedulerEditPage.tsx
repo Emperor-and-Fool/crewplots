@@ -502,8 +502,9 @@ export default function SchedulerEditPage() {
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             value={field.value?.toString() || "1"}
+                            disabled={!isCreationMode}  // Disable in edit mode
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className={!isCreationMode ? "opacity-50 cursor-not-allowed" : ""}>
                               <SelectValue placeholder="Select number of weeks" />
                             </SelectTrigger>
                             <SelectContent>
@@ -516,7 +517,10 @@ export default function SchedulerEditPage() {
                           </Select>
                         </FormControl>
                         <div className="text-xs text-muted-foreground">
-                          Creates {field.value || 1} week schedule{(field.value || 1) > 1 ? 's' : ''} for shift planning
+                          {isCreationMode 
+                            ? `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning`
+                            : `⚠️ Week block is fixed at ${field.value || 1} week${(field.value || 1) > 1 ? 's' : ''} and cannot be modified`
+                          }
                         </div>
                         <FormMessage />
                       </FormItem>
@@ -807,27 +811,54 @@ export default function SchedulerEditPage() {
               </CardContent>
             </Card>
           ) : (
-            <ShiftManagementInterface
-              scheduleBlockId={scheduleIdNumber}
-              scheduleBlockName={scheduleData?.name || 'Schedule'}
-              weekSchedules={weekSchedules}
-              onShiftClick={handleShiftClick}
-              onShiftDelete={async (shift) => {
-                try {
-                  await deleteShiftMutation.mutateAsync(shift.id);
-                  toast({
-                    title: "Shift Deleted",
-                    description: "Shift has been removed successfully."
-                  });
-                } catch (error) {
-                  toast({
-                    title: "Error",
-                    description: "Failed to delete shift.",
-                    variant: "destructive"
-                  });
-                }
-              }}
-            />
+            <div className="space-y-4">
+              {/* Week Block Information Display */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Schedule Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Schedule Name</label>
+                      <p className="text-base">{scheduleData?.name || 'Untitled Schedule'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Week Block Configuration</label>
+                      <p className="text-base font-medium">
+                        {scheduleData?.maxWeeks || 1} {(scheduleData?.maxWeeks || 1) === 1 ? 'Week' : 'Weeks'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Fixed setting - cannot be modified after creation
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Shift Management Interface */}
+              <ShiftManagementInterface
+                scheduleBlockId={scheduleIdNumber}
+                scheduleBlockName={scheduleData?.name || 'Schedule'}
+                weekSchedules={weekSchedules}
+                onShiftClick={handleShiftClick}
+                onShiftDelete={async (shift) => {
+                  try {
+                    await deleteShiftMutation.mutateAsync(shift.id);
+                    toast({
+                      title: "Shift Deleted",
+                      description: "Shift has been removed successfully."
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to delete shift.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              />
+            </div>
           )}
         </TabsContent>
       </Tabs>
