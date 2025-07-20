@@ -91,11 +91,13 @@ export default function SchedulerEditPage() {
       name: '',
       description: '',
       locationId: 0,
+      maxWeeks: 1,  // Default to 1 week for new schedules
       isActive: false  // Default to inactive for new schedules
     } : {
       name: '',
       description: '',
       locationId: 0,
+      maxWeeks: 1,
       isActive: true
     }
   });
@@ -485,6 +487,37 @@ export default function SchedulerEditPage() {
                             value={field.value || ''}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maxWeeks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Weeks</FormLabel>
+                        <FormControl>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            value={field.value?.toString() || "1"}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select number of weeks" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 9 }, (_, i) => i + 1).map((weekNum) => (
+                                <SelectItem key={weekNum} value={weekNum.toString()}>
+                                  {weekNum} {weekNum === 1 ? 'Week' : 'Weeks'}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <div className="text-xs text-muted-foreground">
+                          Creates {field.value || 1} week schedule{(field.value || 1) > 1 ? 's' : ''} for shift planning
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

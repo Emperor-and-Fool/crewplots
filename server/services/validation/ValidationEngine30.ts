@@ -307,7 +307,36 @@ export class ValidationEngine30 {
       },
       // SCHEDULE BLOCK OPERATIONS
       scheduleBlock: {
-        create: (data: any) => storage.createScheduleBlock(data),
+        create: async (data: any) => {
+          console.log(`🔄 SCHEDULE BLOCK CREATE: Creating block with ${data.maxWeeks || 1} weeks`);
+          
+          // Create the schedule block first
+          const scheduleBlock = await storage.createScheduleBlock(data);
+          console.log(`🔄 SCHEDULE BLOCK CREATE: Created block with ID ${scheduleBlock.id}`);
+          
+          // Create week schedules for the specified number of weeks
+          const maxWeeks = data.maxWeeks || 1;
+          const weekSchedules = [];
+          
+          for (let weekNumber = 1; weekNumber <= maxWeeks; weekNumber++) {
+            const weekScheduleData = {
+              scheduleBlockId: scheduleBlock.id,
+              weekNumber,
+              createdBy: data.createdBy
+            };
+            
+            console.log(`🔄 WEEK SCHEDULE CREATE: Creating week ${weekNumber} for block ${scheduleBlock.id}`);
+            const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
+            weekSchedules.push(weekSchedule);
+          }
+          
+          console.log(`🔄 SCHEDULE BLOCK CREATE: Created ${weekSchedules.length} week schedules`);
+          
+          return {
+            ...scheduleBlock,
+            weekSchedules  // Include created week schedules in response
+          };
+        },
         read: (data: any) => storage.getScheduleBlock(data.id),
         update: (data: any) => storage.updateScheduleBlock(data.id, data),
         delete: (data: any) => storage.deleteScheduleBlock(data.id),
