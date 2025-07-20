@@ -519,15 +519,68 @@ export class ValidationEngine30 {
           console.log('💾 Shift updated ID:', assembledData.id);
         } else if (entityType === 'scheduleBlock' && operation === 'read') {
           console.log('📅 VALIDATION ENGINE 30: Reading schedule block ID:', assembledData.id);
-          transactionResult = await storage.getScheduleBlock(assembledData.id);
-          if (!transactionResult) {
-            throw new Error(`Schedule block not found: ${assembledData.id}`);
+          
+          // Handle deletion info queries (historical ValidationPackageService pattern)
+          if (assembledData.includeDeleteInfo) {
+            console.log('🔍 CASCADE INFO: Calculating deletion impact for schedule block:', assembledData.id);
+            
+            // Count related records for deletion warning (Russian Doll architecture)
+            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.id);
+            let totalShifts = 0;
+            
+            for (const week of weekSchedules) {
+              const shifts = await storage.getShiftsByWeekSchedule(week.id);
+              totalShifts += shifts.length;
+            }
+            
+            const scheduleBlock = await storage.getScheduleBlock(assembledData.id);
+            if (!scheduleBlock) {
+              throw new Error(`Schedule block not found: ${assembledData.id}`);
+            }
+            
+            transactionResult = {
+              ...scheduleBlock,
+              weekSchedulesCount: weekSchedules.length,
+              shiftsCount: totalShifts
+            };
+            
+            console.log(`💾 Deletion info compiled: ${weekSchedules.length} week schedules, ${totalShifts} shifts`);
+          } else {
+            // Standard read operation
+            transactionResult = await storage.getScheduleBlock(assembledData.id);
+            if (!transactionResult) {
+              throw new Error(`Schedule block not found: ${assembledData.id}`);
+            }
+            console.log('💾 Schedule block read completed ID:', assembledData.id);
           }
-          console.log('💾 Schedule block read completed ID:', assembledData.id);
         } else if (entityType === 'scheduleBlock' && operation === 'delete') {
           console.log('📅 VALIDATION ENGINE 30: Deleting schedule block ID:', assembledData.id);
-          transactionResult = await storage.deleteScheduleBlock(assembledData.id);
-          console.log('💾 Schedule block deleted ID:', assembledData.id);
+          
+          // Handle cascade deletion (historical ValidationPackageService pattern)
+          if (assembledData.cascadeDelete) {
+            console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', assembledData.id);
+            
+            // Step 1: Get all week schedules for this block
+            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.id);
+            console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete`);
+            
+            // Step 2: Delete all week schedules (which cascade delete their shifts automatically)
+            for (const week of weekSchedules) {
+              console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (including its shifts)`);
+              await storage.deleteWeekSchedule(week.id);  // This already cascades to shifts in storage layer
+            }
+            
+            // Step 3: Delete the schedule block itself
+            console.log('🔥 CASCADE DELETE: Deleting schedule block (final step)');
+            transactionResult = await storage.deleteScheduleBlock(assembledData.id);
+            
+            console.log(`💾 CASCADE DELETE COMPLETED: Schedule block ${assembledData.id} and all related data deleted`);
+          } else {
+            // Standard simple deletion (may fail with foreign key constraints)
+            console.log('⚠️  SIMPLE DELETE: Attempting non-cascade deletion (may fail with foreign keys)');
+            transactionResult = await storage.deleteScheduleBlock(assembledData.id);
+            console.log('💾 Schedule block deleted ID:', assembledData.id);
+          }
         } else if (entityType === 'weekSchedule' && operation === 'read') {
           console.log('📅 VALIDATION ENGINE 30: Reading week schedule ID:', assembledData.id);
           transactionResult = await storage.getWeekSchedule(assembledData.id);
