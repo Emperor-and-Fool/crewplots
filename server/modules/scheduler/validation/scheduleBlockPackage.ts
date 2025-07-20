@@ -99,6 +99,14 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
     };
   }
   
+  if (operation === 'read') {
+    return {
+      id: rawData.id,
+      // Preserve includeDeleteInfo flag for deletion info queries (historical ValidationPackageService pattern)
+      ...(rawData.includeDeleteInfo && { includeDeleteInfo: rawData.includeDeleteInfo })
+    };
+  }
+  
   return {
     name: rawData.name?.trim(),
     description: rawData.description?.trim() || null,
