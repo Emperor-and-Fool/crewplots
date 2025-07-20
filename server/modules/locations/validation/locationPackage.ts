@@ -115,6 +115,6 @@ export const locationPackage: VE30Package = {
       }
     };
     
-    return VE30PackageBuilder.assemblePackage(data, user, operation, assembly);
+    return assembly;
   }
 };
