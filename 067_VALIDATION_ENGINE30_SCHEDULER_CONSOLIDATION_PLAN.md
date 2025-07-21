@@ -193,31 +193,96 @@ else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.
 - Entity-routing logic preserves individual package behaviors
 ```
 
-### Phase 3: Russian Doll Logic Integration
-**Objective:** Integrate exact cascade delete logic into unified package
-**Completion Criteria:** scheduleBlock delete operations maintain safety boundaries
+### Phase 3: Registry Triple Mapping Implementation
+**Objective:** Map all three entity types to unified package in registry
+**Completion Criteria:** Frontend requests `scheduleBlock`, `weekSchedule`, `shift` route to schedulerEntitiesPackage
+
+```
+🔄 PLAN CHECK REMINDER: Before Phase 3 execution, verify:
+- Registry currently has single `schedulerEntities: schedulerEntitiesPackage` mapping
+- Frontend sends requests with entityType: "scheduleBlock", "weekSchedule", "shift"
+- Registry enhancement is for code efficiency using embedded data-sets model
+- One import, three mappings approach maintains VE30 generic architecture
+```
 
 **Actions:**
-1. Copy exact Russian Doll implementation from scheduleBlockPackage.ts lines 217-276
-2. Integrate safety checks and boundary validation
-3. Add entity-type routing for cascade vs. simple deletes
-4. Preserve all console logging and error handling
+1. **SCOPE BOUNDARY CHECK:** Verify packageRegistry30.ts modification within consolidation scope
+2. **BACKUP PROTOCOL:** Create packageRegistry30.ts.bak before changes
+3. Update `server/services/validation/packageRegistry30.ts` registry object:
+```javascript
+export const packageRegistry30 = {
+  // ... existing packages ...
+  
+  // Unified scheduler package (PLAN 067: three entities, one package)
+  scheduleBlock: schedulerEntitiesPackage,
+  weekSchedule: schedulerEntitiesPackage,
+  shift: schedulerEntitiesPackage,
+  
+  // ... other packages ...
+};
+```
+4. Remove single `schedulerEntities: schedulerEntitiesPackage` mapping
+5. Keep single import statement: `import { schedulerEntitiesPackage } from '../../modules/scheduler/validation/schedulerEntitiesPackage';`
 
-**Testing:** Verify cascade deletion with database integrity
-**Approval Required:** Safety boundary validation review
+**Testing:** Verify frontend `entityType: "scheduleBlock"` requests route to unified package
+**Approval Required:** Registry routing verification
 
-### Phase 4: Multi-Entity Operation Support
-**Objective:** Add multi-day shift creation and complex update patterns
-**Completion Criteria:** All advanced scheduler operations working through unified package
+```
+⚠️ IMPLEMENTATION CHECKPOINT: Phase 3 completion requires:
+- Registry maps all three entities to same package (one import, three mappings)
+- Frontend keeps existing request format (no changes needed)
+- schedulerEntitiesPackage receives entity routing through registry
+- Embedded data-sets model efficiency achieved through shared validation logic
+```
+
+### Phase 4: Entity-Type Routing Internal Logic
+**Objective:** Enable unified package to handle entity-specific operations internally
+**Completion Criteria:** Package routes operations based on entityType parameter
+
+```
+🔄 PLAN CHECK REMINDER: Before Phase 4 execution, verify:
+- schedulerEntitiesPackage.ts receives entityType through data parameter
+- Russian Doll cascade patterns need entity-specific routing (scheduleBlock → weekSchedule → shift)
+- Multi-day shift creation logic preserved for shift entities
+- Shared validation logic benefits all three entities while maintaining distinct behaviors
+```
 
 **Actions:**
-1. Copy multi-day creation logic from shiftPackage.ts lines 130-180
-2. Copy update operation patterns from all packages
-3. Add entity-type routing for complex operations
-4. Integrate all business rule validations
+1. **SCOPE BOUNDARY CHECK:** Verify schedulerEntitiesPackage.ts modification within consolidation scope
+2. Add entity-type detection logic to validate requests:
+```javascript
+validateSchema: (data: any, operation: string) => {
+  const entityType = data.entityType || 'scheduleBlock'; // Default fallback
+  if (!['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType)) {
+    throw new Error(`Invalid scheduler entity type: ${entityType}`);
+  }
+  // Route to entity-specific schema validation
+},
+```
+3. Add entity-routing in storageActions operations:
+```javascript
+executeCreate: async (data, storage) => {
+  switch(data.entityType) {
+    case 'scheduleBlock': /* scheduleBlock creation logic */
+    case 'weekSchedule': /* weekSchedule creation logic */  
+    case 'shift': /* shift creation logic with multi-day support */
+  }
+},
+```
+4. Preserve Russian Doll cascade deletion for scheduleBlock entities
+5. Preserve multi-day creation logic for shift entities
+6. Enable shared business rules and permission logic across all entities
 
-**Testing:** Verify complex scheduler operations
-**Approval Required:** Full operation testing validation
+**Testing:** Verify entity-specific routing with all three entity types
+**Approval Required:** Internal routing logic validation
+
+```
+⚠️ IMPLEMENTATION CHECKPOINT: Phase 4 completion requires:
+- schedulerEntitiesPackage handles all three entity types internally
+- Entity-specific behaviors preserved (cascade delete, multi-day creation)
+- Shared validation logic eliminates code duplication 
+- Russian Doll embedded data-sets model fully operational
+```
 
 ### Phase 5: Package Registry Integration
 **Objective:** Register unified package and update imports
