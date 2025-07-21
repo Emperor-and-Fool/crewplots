@@ -196,7 +196,37 @@ export const scheduleBlockPackage: VE30Package = {
     executeCreate: async (data, storage) => await storage.createScheduleBlock(data),
     executeRead: async (data, storage) => await storage.getScheduleBlock(data.id),
     executeUpdate: async (data, storage) => await storage.updateScheduleBlock(data.id, data),
-    executeDelete: async (data, storage) => await storage.deleteScheduleBlock(data.id),
+    executeDelete: async (data, storage) => {
+      console.log('📦 SCHEDULE BLOCK DELETE: Starting package-driven deletion with cascade');
+      
+      // Handle cascade deletion (copied from ValidationEngine30.ts.bak lines 574-597)
+      if (data.cascadeDelete) {
+        console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', data.id);
+        
+        // Step 1: Get all week schedules for this block
+        const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(data.id);
+        console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete`);
+        
+        // Step 2: Delete all week schedules (which cascade delete their shifts automatically)
+        for (const week of weekSchedules) {
+          console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (including its shifts)`);
+          await storage.deleteWeekSchedule(week.id);  // This already cascades to shifts in storage layer
+        }
+        
+        // Step 3: Delete the schedule block itself
+        console.log('🔥 CASCADE DELETE: Deleting schedule block (final step)');
+        const result = await storage.deleteScheduleBlock(data.id);
+        
+        console.log(`💾 CASCADE DELETE COMPLETED: Schedule block ${data.id} and all related data deleted`);
+        return result;
+      } else {
+        // Standard simple deletion (may fail with foreign key constraints)
+        console.log('⚠️  SIMPLE DELETE: Attempting non-cascade deletion (may fail with foreign keys)');
+        const result = await storage.deleteScheduleBlock(data.id);
+        console.log('💾 Schedule block deleted ID:', data.id);
+        return result;
+      }
+    },
     executeList: async (data, storage) => {
       console.log('📦 STORAGE ACTION DEBUG: executeList called with data:', JSON.stringify(data));
       // Handle location filtering for schedule blocks

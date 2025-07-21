@@ -513,10 +513,12 @@ export class ValidationEngine30 {
           console.log('💾 Messaging operation completed via hybrid handler');
         }
         // Handle scheduler operations with PostgreSQL storage (existing patterns)
-        else if (entityType === 'scheduleBlock' && operation === 'create') {
+        else if (false && entityType === 'scheduleBlock' && operation === 'create') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.create must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: scheduleBlock.create disabled to force package-driven architecture');
-        } else if (entityType === 'scheduleBlock' && operation === 'update') {
+        } else if (false && entityType === 'scheduleBlock' && operation === 'update') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.update must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: scheduleBlock.update disabled to force package-driven architecture');
         } else if (entityType === 'weekSchedule' && operation === 'create') {
@@ -531,7 +533,8 @@ export class ValidationEngine30 {
         } else if (entityType === 'shift' && operation === 'update') {
           transactionResult = await storage.updateShift(assembledData.id, assembledData);
           console.log('💾 Shift updated ID:', assembledData.id);
-        } else if (entityType === 'scheduleBlock' && operation === 'read') {
+        } else if (false && entityType === 'scheduleBlock' && operation === 'read') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.read must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: scheduleBlock.read disabled to force package-driven architecture');
           
@@ -568,11 +571,12 @@ export class ValidationEngine30 {
             }
             console.log('💾 Schedule block read completed ID:', assembledData.id);
           }
-        } else if (entityType === 'scheduleBlock' && operation === 'delete') {
+        } else if (false && entityType === 'scheduleBlock' && operation === 'delete') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.delete must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: scheduleBlock.delete disabled to force package-driven architecture');
           
-          // DISABLED CODE: cascade deletion (historical ValidationPackageService pattern)
+          // DISABLED CODE: cascade deletion (historical ValidationPackageService pattern)  
           if (false && assembledData.cascadeDelete) {
             console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', assembledData.id);
             
@@ -637,7 +641,21 @@ export class ValidationEngine30 {
           console.log('📅 VALIDATION ENGINE 30: Deleting shift ID:', assembledData.id);
           transactionResult = await storage.deleteShift(assembledData.id);
           console.log('💾 Shift deleted ID:', assembledData.id);
-        } 
+        }
+        // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
+        else if (pkg.storageActions) {
+          const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
+          console.log(`📦 PACKAGE-DRIVEN: Checking for storageAction method: ${operationMethod}`);
+          
+          if (pkg.storageActions[operationMethod]) {
+            console.log(`📦 PACKAGE-DRIVEN: Executing ${operationMethod} from package storageActions`);
+            transactionResult = await pkg.storageActions[operationMethod](assembledData, storage);
+            console.log(`📦 PACKAGE-DRIVEN: ${operationMethod} completed successfully`);
+          } else {
+            console.log(`📦 PACKAGE-DRIVEN: Method ${operationMethod} not found in storageActions`);
+            throw new Error(`Package storageActions method '${operationMethod}' not implemented for ${entityType}`);
+          }
+        }
         // Handle authProfile operations - lightweight user data fetching
         else if (entityType === 'authProfile' && operation === 'read') {
           console.log('🔍 VALIDATION ENGINE 30: Reading auth profile for user:', assembledData.userId || context.userId);
