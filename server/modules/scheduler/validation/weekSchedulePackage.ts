@@ -137,7 +137,22 @@ export const weekSchedulePackage: VE30Package = {
   },
   
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, weekScheduleBusinessRules),
-  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, weekScheduleAssembly)
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, weekScheduleAssembly),
+  
+  // Storage actions implementation - Plan 066 Phase 2
+  storageActions: {
+    executeCreate: async (data, storage) => await storage.createWeekSchedule(data),
+    executeRead: async (data, storage) => await storage.getWeekSchedule(data.id),
+    executeUpdate: async (data, storage) => await storage.updateWeekSchedule(data.id, data),
+    executeDelete: async (data, storage) => await storage.deleteWeekSchedule(data.id),
+    executeList: async (data, storage) => {
+      // Russian Doll architecture: handle scheduleBlockId filtering
+      if (data.scheduleBlockId) {
+        return await storage.getWeekSchedulesByScheduleBlock(data.scheduleBlockId);
+      }
+      return await storage.getWeekSchedules();
+    }
+  }
 };
 
 export type WeekSchedulePackage = typeof weekSchedulePackage;

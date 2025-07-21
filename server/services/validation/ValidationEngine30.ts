@@ -502,8 +502,23 @@ export class ValidationEngine30 {
       console.log('💾 VALIDATION ENGINE 30: Starting enhanced database transaction');
       let transactionResult;
       try {
+        // PLAN 066 PHASE 3: Package-Driven Transaction Handler (PRIORITY PATH)
+        const storageActionKey = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
+        console.log(`🔍 PACKAGE DEBUG: Checking ${entityType}.${operation} for storageActionKey: ${storageActionKey}`);
+        console.log(`🔍 PACKAGE DEBUG: pkg.storageActions exists: ${!!pkg.storageActions}`);
+        if (pkg.storageActions) {
+          console.log(`🔍 PACKAGE DEBUG: Available actions: ${Object.keys(pkg.storageActions).join(', ')}`);
+        }
+        
+        if (pkg.storageActions && pkg.storageActions[storageActionKey]) {
+          console.log(`📦 PACKAGE-DRIVEN: Using package storage action for ${entityType}.${operation}`);
+          console.log(`📦 STORAGE ACTION INPUT: assembledData:`, JSON.stringify(assembledData));
+          transactionResult = await pkg.storageActions[storageActionKey](assembledData, storage);
+          console.log(`📦 STORAGE ACTION OUTPUT: transactionResult:`, JSON.stringify(transactionResult));
+          console.log(`💾 Package-driven operation completed for ${entityType}`);
+        }
         // Handle messaging operations with hybrid storage
-        if (entityType === 'messaging') {
+        else if (entityType === 'messaging') {
           console.log('🔄 VALIDATION ENGINE 30: Using hybrid transaction handler for messaging');
           const hybridResult = await this.hybridTransactionHandler.executeMessagingTransaction(
             pkg, 
@@ -699,13 +714,14 @@ export class ValidationEngine30 {
           console.log(`💾 Retrieved ${users.length} users for profile data`);
           transactionResult = { users };
         }
-        // Handle scheduleBlock list operations - get all schedule blocks
-        else if (entityType === 'scheduleBlock' && operation === 'list') {
-          console.log('📅 VALIDATION ENGINE 30: Reading schedule blocks list');
-          const scheduleBlocks = await storage.getScheduleBlocks();
-          console.log(`💾 Retrieved ${scheduleBlocks.length} schedule blocks`);
-          transactionResult = scheduleBlocks;
-        }
+
+        // LEGACY FALLBACK: Handle scheduleBlock list operations - TEMPORARILY DISABLED FOR PACKAGE-DRIVEN TESTING
+        // else if (entityType === 'scheduleBlock' && operation === 'list') {
+        //   console.log('📅 VALIDATION ENGINE 30: Reading schedule blocks list (LEGACY HARDCODED)');
+        //   const scheduleBlocks = await storage.getScheduleBlocks();
+        //   console.log(`💾 Retrieved ${scheduleBlocks.length} schedule blocks`);
+        //   transactionResult = scheduleBlocks;
+        // }
         // Handle location list operations - get all locations  
         else if (entityType === 'location' && operation === 'list') {
           console.log('📍 VALIDATION ENGINE 30: Reading locations list');
@@ -819,7 +835,8 @@ export class ValidationEngine30 {
           permission: { success: true, errors: [], permissions: requiredPermissions },
           businessRules: { success: true, errors: [], warnings: businessRuleResult.warnings || [] },
           transaction: { success: true, errors: [], data: transactionResult }
-        }
+        },
+        data: transactionResult
       };
 
     } catch (error) {

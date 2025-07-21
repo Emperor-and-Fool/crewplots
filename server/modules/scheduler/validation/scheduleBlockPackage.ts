@@ -189,7 +189,29 @@ export const scheduleBlockPackage: VE30Package = {
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules),
   
   // Standard VE30PackageBuilder assembly
-  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly)
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly),
+  
+  // Storage actions implementation - Plan 066 Phase 2
+  storageActions: {
+    executeCreate: async (data, storage) => await storage.createScheduleBlock(data),
+    executeRead: async (data, storage) => await storage.getScheduleBlock(data.id),
+    executeUpdate: async (data, storage) => await storage.updateScheduleBlock(data.id, data),
+    executeDelete: async (data, storage) => await storage.deleteScheduleBlock(data.id),
+    executeList: async (data, storage) => {
+      console.log('📦 STORAGE ACTION DEBUG: executeList called with data:', JSON.stringify(data));
+      // Handle location filtering for schedule blocks
+      if (data.filters?.locationId) {
+        console.log('📦 STORAGE ACTION DEBUG: Using location filter:', data.filters.locationId);
+        const result = await storage.getScheduleBlocksByLocation(data.filters.locationId);
+        console.log('📦 STORAGE ACTION DEBUG: Location-filtered result:', result?.length || 'null');
+        return result;
+      }
+      console.log('📦 STORAGE ACTION DEBUG: Getting all schedule blocks');
+      const result = await storage.getScheduleBlocks();
+      console.log('📦 STORAGE ACTION DEBUG: All schedule blocks result:', result?.length || 'null', result);
+      return result;
+    }
+  }
 };
 
 export type ScheduleBlockPackage = typeof scheduleBlockPackage;

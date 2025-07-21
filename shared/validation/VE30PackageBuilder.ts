@@ -20,6 +20,13 @@ export interface VE30Package {
   getRequiredPermissions: (operation: string) => string[];
   validateBusinessRules: (data: any, context: any) => Promise<{ isValid: boolean; errors: string[]; warnings?: string[] }>;
   assemblePackage: (data: any, user: any, operation: string) => Promise<any>;
+  storageActions?: {
+    executeCreate?: (data: any, storage: any) => Promise<any>;
+    executeRead?: (data: any, storage: any) => Promise<any>;
+    executeUpdate?: (data: any, storage: any) => Promise<any>;
+    executeDelete?: (data: any, storage: any) => Promise<any>;
+    executeList?: (data: any, storage: any) => Promise<any>;
+  };
 }
 
 export interface VE30PackageConfig {

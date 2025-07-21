@@ -214,7 +214,22 @@ export const shiftPackage: VE30Package = {
   },
   
   validateBusinessRules: (data: any, context: any) => VE30PackageBuilder.validateBusinessRules(data, context, shiftBusinessRules),
-  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, shiftAssembly)
+  assemblePackage: (data: any, user: any, operation: string) => VE30PackageBuilder.assemblePackage(data, user, operation, shiftAssembly),
+  
+  // Storage actions implementation - Plan 066 Phase 2 + Critical Bug Fix
+  storageActions: {
+    executeCreate: async (data, storage) => await storage.createShift(data),
+    executeRead: async (data, storage) => await storage.getShift(data.id),
+    executeUpdate: async (data, storage) => await storage.updateShift(data.id, data),
+    executeDelete: async (data, storage) => await storage.deleteShift(data.id),
+    executeList: async (data, storage) => {
+      // CRITICAL FIX: Plan 066 lines 629-633 - Apply weekScheduleId filtering
+      if (data.filters?.weekScheduleId) {
+        return await storage.getShiftsByWeekSchedule(data.filters.weekScheduleId);
+      }
+      return await storage.getShifts();
+    }
+  }
 };
 
 export type ShiftPackage = typeof shiftPackage;
