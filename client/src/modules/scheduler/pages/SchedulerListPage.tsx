@@ -168,6 +168,8 @@ export default function SchedulerListPage() {
   // Delete schedule mutation using ValidationEngine30
   const deleteScheduleMutation = useMutation({
     mutationFn: async (scheduleId: number) => {
+      console.log('🗑️ FRONTEND DELETE: Starting deletion request for schedule ID:', scheduleId);
+      
       const validationData = {
         operation: "delete",
         entityType: "scheduleBlock",
@@ -175,18 +177,32 @@ export default function SchedulerListPage() {
         data: { id: scheduleId }
       };
       
+      console.log('🗑️ FRONTEND DELETE: Request payload:', validationData);
+      console.log('🗑️ FRONTEND DELETE: Using apiRequest to call /api/validation/v3/execute');
+      
       const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
+      
+      console.log('🗑️ FRONTEND DELETE: Response status:', response.status);
+      console.log('🗑️ FRONTEND DELETE: Response headers:', Object.fromEntries(response.headers.entries()));
+      
       const result = await response.json();
+      console.log('🗑️ FRONTEND DELETE: Response body:', result);
       
       if (!response.ok) {
+        console.error('🗑️ FRONTEND DELETE: Request failed with error:', result);
         throw new Error(result.message || 'Failed to delete schedule');
       }
       
       // ValidationEngine30 response structure for delete operations
       if (!result.overall || !result.overall.isValid) {
+        console.error('🗑️ FRONTEND DELETE: Validation failed:', { 
+          overall: result.overall,
+          isValid: result.overall?.isValid 
+        });
         throw new Error('Schedule deletion validation failed');
       }
       
+      console.log('🗑️ FRONTEND DELETE: Deletion successful, returning result');
       return result;
     }
   });

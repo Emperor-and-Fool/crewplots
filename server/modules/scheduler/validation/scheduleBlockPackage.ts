@@ -120,11 +120,18 @@ const scheduleBlockBusinessRules = [
 
 // Assembly function for schedule blocks
 const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
+  console.log('🔧 SCHEDULE BLOCK ASSEMBLY: Starting assembly for operation:', operation);
+  console.log('🔧 SCHEDULE BLOCK ASSEMBLY: Raw data:', rawData);
+  console.log('🔧 SCHEDULE BLOCK ASSEMBLY: User context:', user);
+  
   if (operation === 'delete') {
-    return {
+    const assembled = {
       id: rawData.id,
       cascadeDelete: true  // Flag for Russian Doll cascade
     };
+    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [DELETE]: Assembled data:', assembled);
+    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [DELETE]: TARGET ID FOR DELETION:', rawData.id);
+    return assembled;
   }
   
   if (operation === 'read') {
