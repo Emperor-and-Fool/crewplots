@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/modules/auth';
 import { useSchedulerPermissions } from '../hooks/useSchedulerPermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -83,6 +84,8 @@ export default function SchedulerEditPage() {
   const [editingShift, setEditingShift] = useState<any>(null);
   const [showGroupEditDialog, setShowGroupEditDialog] = useState(false);
   const [groupEditDialogShift, setGroupEditDialogShift] = useState<any>(null);
+  const [showWeekConfirmDialog, setShowWeekConfirmDialog] = useState(false);
+  const [pendingWeekCount, setPendingWeekCount] = useState<number | null>(null);
 
   // Form setup - different defaults for creation vs edit mode
   const form = useForm<InsertScheduleBlock>({
@@ -234,6 +237,59 @@ export default function SchedulerEditPage() {
     },
   });
 
+  // Mutation to lock week structure and create week blocks
+  const lockWeekStructureMutation = useMutation({
+    mutationFn: async ({ weekCount }: { weekCount: number }) => {
+      // 1. Lock the week structure
+      const lockResponse = await apiRequest('POST', '/api/validation/v3/execute', {
+        operation: 'update',
+        entityType: 'scheduleBlock',
+        data: { 
+          id: scheduleIdNumber, 
+          maxWeeks: weekCount,
+          weekStructureLocked: true 
+        },
+        context: {}
+      });
+
+      // 2. Create week schedules for each week
+      const weekSchedulePromises = Array.from({ length: weekCount }, (_, index) => 
+        apiRequest('POST', '/api/validation/v3/execute', {
+          operation: 'create',
+          entityType: 'weekSchedule',
+          data: {
+            scheduleBlockId: scheduleIdNumber,
+            weekNumber: index + 1,
+            name: `Week ${index + 1}`,
+            isActive: true
+          },
+          context: {}
+        })
+      );
+
+      await Promise.all(weekSchedulePromises);
+      return { success: true, weekCount };
+    },
+    onSuccess: ({ weekCount }) => {
+      toast({
+        title: "✅ Week Structure Locked",
+        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully. Structure is now immutable.`,
+        duration: 4000,
+      });
+      
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lock Failed",
+        description: error?.message || "Failed to lock week structure. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Auto-save configuration using ValidationEngine30 (only in edit mode)
   const formValues = form.watch();
   const autoSave = useAutoSave(formValues, {
@@ -293,6 +349,25 @@ export default function SchedulerEditPage() {
     } else {
       await updateMutation.mutateAsync(data);
     }
+  };
+
+  const handleWeekCountConfirmation = async () => {
+    if (pendingWeekCount && scheduleIdNumber) {
+      // Update the form field
+      form.setValue('maxWeeks', pendingWeekCount);
+      
+      // Lock the structure and create week blocks
+      await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
+      
+      // Reset pending state
+      setPendingWeekCount(null);
+      setShowWeekConfirmDialog(false);
+    }
+  };
+
+  const handleWeekCountCancel = () => {
+    setPendingWeekCount(null);
+    setShowWeekConfirmDialog(false);
   };
 
   const handleShiftClick = (shift: any) => {
@@ -507,7 +582,17 @@ export default function SchedulerEditPage() {
                         )}
                         <FormControl>
                           <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            onValueChange={(value) => {
+                              const newWeekCount = parseInt(value);
+                              if (!isCreationMode && !scheduleData?.weekStructureLocked) {
+                                // Show confirmation dialog for existing schedules
+                                setPendingWeekCount(newWeekCount);
+                                setShowWeekConfirmDialog(true);
+                              } else {
+                                // For creation mode, set directly
+                                field.onChange(newWeekCount);
+                              }
+                            }} 
                             value={field.value?.toString() || ""}
                             disabled={!isCreationMode && scheduleData?.weekStructureLocked}  // Only disable when week structure is locked
                           >
@@ -913,6 +998,34 @@ export default function SchedulerEditPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Week Count Confirmation Dialog */}
+      <AlertDialog open={showWeekConfirmDialog} onOpenChange={setShowWeekConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Set Number of Weeks?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to set the number of weeks to <strong>{pendingWeekCount}</strong>? 
+              <br /><br />
+              <span className="text-orange-600 font-medium">⚠️ You can only set this number once.</span>
+              <br />
+              After confirmation, the week structure will be locked and {pendingWeekCount} week schedule{(pendingWeekCount || 0) > 1 ? 's' : ''} will be created.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleWeekCountCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleWeekCountConfirmation}
+              disabled={lockWeekStructureMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {lockWeekStructureMutation.isPending ? 'Creating...' : `Yes, Create ${pendingWeekCount} Week${(pendingWeekCount || 0) > 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

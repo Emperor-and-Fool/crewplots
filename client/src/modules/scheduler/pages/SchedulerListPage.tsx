@@ -140,8 +140,8 @@ export default function SchedulerListPage() {
       // Invalidate the schedule list to show the new schedule
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'list'] });
       
-      // Navigate to creation mode instead of immediately creating database record
-      navigate(`/scheduler/new`);
+      // Navigate directly to edit mode with the new schedule ID
+      navigate(`/scheduler/edit/${data.id}`);
       
       toast({
         title: "Schedule Created",
