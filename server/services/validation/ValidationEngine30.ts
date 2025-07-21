@@ -533,14 +533,10 @@ export class ValidationEngine30 {
         } else if (entityType === 'shift' && operation === 'update') {
           transactionResult = await storage.updateShift(assembledData.id, assembledData);
           console.log('💾 Shift updated ID:', assembledData.id);
-        } else if (entityType === 'scheduleBlock' && operation === 'read') {
-          // RESTORED WORKING LOGIC: Direct storage call returns full schedule block data
-          console.log('💾 SCHEDULE BLOCK READ: Using direct storage call (restored working logic)');
-          transactionResult = await storage.getScheduleBlock(assembledData.id);
-          if (!transactionResult) {
-            throw new Error(`Schedule block not found: ${assembledData.id}`);
-          }
-          console.log('💾 Schedule block read completed ID:', assembledData.id);
+        } else if (false && entityType === 'scheduleBlock' && operation === 'read') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.read must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: scheduleBlock.read disabled to force package-driven architecture');
           
           // DISABLED CODE: deletion info queries (historical ValidationPackageService pattern)
           if (false && assembledData.includeDeleteInfo) {

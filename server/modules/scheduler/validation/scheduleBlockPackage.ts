@@ -135,8 +135,12 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   }
   
   if (operation === 'read') {
-    // Pass through all storage data for read operations instead of filtering to just ID
-    return rawData;
+    // For read operations, we only need the ID to fetch full data from storage
+    const assembled = {
+      id: rawData.id
+    };
+    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [READ]: Assembled data:', assembled);
+    return assembled;
   }
   
   const baseData = {
