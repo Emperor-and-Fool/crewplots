@@ -123,7 +123,7 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'delete') {
     return {
       id: rawData.id,
-      cascadeDelete: rawData.cascadeDelete ?? true  // Allow frontend to control cascade behavior, default to true for safety
+      cascadeDelete: true  // Flag for Russian Doll cascade
     };
   }
   
