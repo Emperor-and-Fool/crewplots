@@ -19,7 +19,7 @@ import { CrewManagement, CrewMemberProfile, ProfileEdit } from "@/modules/users/
 import { CashManagement } from "@/modules/cashcount";
 
 import { ViewCalendar } from "@/modules/scheduler";
-import { SchedulerListPage, SchedulerEditPage } from "@/modules/scheduler";
+import { SchedulerListPage, SchedulerEditPage, SchedulerCreatePage } from "@/modules/scheduler";
 import { Applicants, ApplicantDetail } from "@/modules/users";
 import { Profile } from "@/modules/users/pages";
 import { KnowledgeBase } from "@/modules/knowledge-base";
@@ -237,6 +237,16 @@ function App() {
                   <Redirect to="/login" />}
               </Route>
               
+              <Route path="/scheduler/new">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={SchedulerCreatePage} 
+                      requiredRoles={["owner", "app_manager", "administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
 
               
               <Route path="/scheduler/edit/:scheduleId">
