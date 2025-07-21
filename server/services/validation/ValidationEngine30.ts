@@ -387,7 +387,7 @@ export class ValidationEngine30 {
     
     console.log(`🔄 GENERIC CRUD: Calling storage.${entityType}.${operation}`);
     const result = await method(assembledData);
-    console.log(`🔄 GENERIC CRUD: ${operation} completed for ${entityType}`, result?.id ? `ID: ${result.id}` : '');
+    console.log(`🔄 GENERIC CRUD: ${operation} completed for ${entityType}`, (result && typeof result === 'object' && 'id' in result) ? `ID: ${result.id}` : '');
     
     return result;
   }
@@ -463,10 +463,10 @@ export class ValidationEngine30 {
       const requiredPermissions = pkg.getRequiredPermissions(operation as any);
       console.log('🔐 VALIDATION ENGINE 30: Required permissions for', operation, ':', requiredPermissions);
       
-      const hasPermissions = requiredPermissions.every(perm => validationPermissions.includes(perm));
+      const hasPermissions = requiredPermissions.every((perm: string) => validationPermissions.includes(perm));
       
       if (!hasPermissions) {
-        const missingPermissions = requiredPermissions.filter(perm => !validationPermissions.includes(perm));
+        const missingPermissions = requiredPermissions.filter((perm: string) => !validationPermissions.includes(perm));
         console.log('🔐 VALIDATION ENGINE 30: Missing permissions:', missingPermissions);
         console.log('🔐 VALIDATION ENGINE 30: Available permissions:', validationPermissions);
         return this.createFailureResult(packageId, operation, entityType, [`Missing permissions: ${missingPermissions.join(', ')}`], !!context.aggregatedData);
