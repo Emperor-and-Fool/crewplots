@@ -135,11 +135,8 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   }
   
   if (operation === 'read') {
-    return {
-      id: rawData.id,
-      // Preserve includeDeleteInfo flag for deletion info queries (historical ValidationPackageService pattern)
-      ...(rawData.includeDeleteInfo && { includeDeleteInfo: rawData.includeDeleteInfo })
-    };
+    // Pass through all storage data for read operations instead of filtering to just ID
+    return rawData;
   }
   
   const baseData = {
