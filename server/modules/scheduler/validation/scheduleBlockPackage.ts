@@ -26,6 +26,8 @@ export interface ScheduleBlockData {
   name: string;
   description?: string;
   locationId: number;
+  maxWeeks?: number | null;
+  weekStructureLocked?: boolean;
   isActive: boolean;
   createdBy?: number;
 }
@@ -66,6 +68,32 @@ const scheduleBlockBusinessRules = [
       if (data.hasOwnProperty('isActive') && typeof data.isActive !== 'boolean') {
         errors.push('Active status must be true or false');
       }
+    }
+
+    return { warnings, errors };
+  },
+
+  // Week structure lock immutability validation rule
+  (data: any, context: any) => {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    // Week structure lock validation for update operations
+    if (context?.operation === 'update' && data.hasOwnProperty('maxWeeks')) {
+      // Check if trying to modify week count on locked schedule
+      if (context.existingData?.weekStructureLocked) {
+        errors.push('Cannot modify week count - week structure is locked. Week schedules already exist.');
+      }
+      
+      // Warning when week count is being set (potential lock point)
+      if (data.maxWeeks && !context.existingData?.maxWeeks) {
+        warnings.push('Setting week count will lock the week structure after first week schedule is created');
+      }
+    }
+
+    // Week structure lock status validation
+    if (data.hasOwnProperty('weekStructureLocked') && typeof data.weekStructureLocked !== 'boolean') {
+      errors.push('Week structure lock status must be true or false');
     }
 
     return { warnings, errors };
@@ -117,9 +145,14 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
     ...(operation === 'update' && rawData.id && { id: rawData.id })
   };
 
-  // Include maxWeeks only for create operations (immutable after creation)
+  // Include maxWeeks only for create operations or update when not locked
   if (operation === 'create' && rawData.maxWeeks !== undefined) {
     baseData.maxWeeks = parseInt(rawData.maxWeeks) || null;
+  }
+
+  // Handle weekStructureLocked field for both create and update
+  if (rawData.hasOwnProperty('weekStructureLocked')) {
+    baseData.weekStructureLocked = Boolean(rawData.weekStructureLocked);
   }
 
   return baseData;

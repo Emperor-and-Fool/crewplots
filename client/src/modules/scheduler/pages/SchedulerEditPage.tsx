@@ -509,9 +509,9 @@ export default function SchedulerEditPage() {
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             value={field.value?.toString() || ""}
-                            disabled={!isCreationMode && scheduleData?.maxWeeks !== null}  // Only disable in edit mode when maxWeeks is set
+                            disabled={!isCreationMode && scheduleData?.weekStructureLocked}  // Only disable when week structure is locked
                           >
-                            <SelectTrigger className={(!isCreationMode && scheduleData?.maxWeeks !== null) ? "opacity-50 cursor-not-allowed" : ""}>
+                            <SelectTrigger className={(!isCreationMode && scheduleData?.weekStructureLocked) ? "opacity-50 cursor-not-allowed" : ""}>
                               <SelectValue placeholder="Select number of weeks" />
                             </SelectTrigger>
                             <SelectContent>
@@ -524,9 +524,9 @@ export default function SchedulerEditPage() {
                           </Select>
                         </FormControl>
                         <div className="text-xs text-muted-foreground">
-                          {(!isCreationMode && scheduleData?.maxWeeks !== null)
-                            ? `⚠️ Week block is fixed at ${field.value || scheduleData?.maxWeeks || 1} week${(field.value || scheduleData?.maxWeeks || 1) > 1 ? 's' : ''} and cannot be modified`
-                            : `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning`
+                          {(!isCreationMode && scheduleData?.weekStructureLocked)
+                            ? `🔒 Week structure is locked at ${field.value || scheduleData?.maxWeeks || 1} week${(field.value || scheduleData?.maxWeeks || 1) > 1 ? 's' : ''} and cannot be modified`
+                            : `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning. Week count can be changed until first week schedule is created.`
                           }
                         </div>
                         <FormMessage />

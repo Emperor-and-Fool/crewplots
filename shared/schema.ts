@@ -229,6 +229,7 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   maxWeeks: integer("max_weeks"), // Maximum weeks allowed in this block - NULL until set by user
+  weekStructureLocked: boolean("week_structure_locked").notNull().default(false), // Controls week count immutability
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
