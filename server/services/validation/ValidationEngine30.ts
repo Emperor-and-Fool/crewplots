@@ -630,6 +630,11 @@ export class ValidationEngine30 {
           console.log('🚨 HARDCODED BYPASS DISABLED: shift.delete must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: shift.delete disabled to force package-driven architecture');
         }
+        // Handle scheduler operations with package-driven execution
+        else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
+          const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
+          transactionResult = await pkg.storageActions[operationMethod](assembledData, storage);
+        }
         // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
         else if (pkg.storageActions) {
           const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;

@@ -13,9 +13,7 @@
 import { messagingPackage } from '../../modules/messaging/validation/messagingPackage';
 import { motivationNotePackage } from '../../modules/messaging/validation/motivationNotePackage';
 import { userListPackage as legacyUserListPackage } from '../../modules/users/validation/userListPackage';
-import { scheduleBlockPackage } from '../../modules/scheduler/validation/scheduleBlockPackage';
-import { weekSchedulePackage } from '../../modules/scheduler/validation/weekSchedulePackage';
-import { shiftPackage } from '../../modules/scheduler/validation/shiftPackage';
+import { schedulerEntitiesPackage } from '../../modules/scheduler/validation/schedulerEntitiesPackage';
 
 // Import new user validation packages (migrated to modules)
 import { userListPackage } from '../../modules/users/validation/userListPackage';
@@ -42,10 +40,8 @@ export const packageRegistry30 = {
   messaging: messagingPackage,
   motivationNote: motivationNotePackage,
   
-  // Scheduler packages
-  scheduleBlock: scheduleBlockPackage,
-  weekSchedule: weekSchedulePackage,
-  shift: shiftPackage,
+  // Unified scheduler package (PLAN 067: replaces scheduleBlock, weekSchedule, shift)
+  schedulerEntities: schedulerEntitiesPackage,
   
   // User management (non-auth) - NEW VE30 PACKAGES
   userList: userListPackage,
