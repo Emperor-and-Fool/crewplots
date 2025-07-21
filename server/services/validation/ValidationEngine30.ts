@@ -521,18 +521,22 @@ export class ValidationEngine30 {
           // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.update must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: scheduleBlock.update disabled to force package-driven architecture');
-        } else if (entityType === 'weekSchedule' && operation === 'create') {
-          transactionResult = await storage.createWeekSchedule(assembledData);
-          console.log('💾 Week schedule created with ID:', transactionResult.id);
-        } else if (entityType === 'weekSchedule' && operation === 'update') {
-          transactionResult = await storage.updateWeekSchedule(assembledData.id, assembledData);
-          console.log('💾 Week schedule updated ID:', assembledData.id);
-        } else if (entityType === 'shift' && operation === 'create') {
-          transactionResult = await storage.createShift(assembledData);
-          console.log('💾 Shift created with ID:', transactionResult.id);
-        } else if (entityType === 'shift' && operation === 'update') {
-          transactionResult = await storage.updateShift(assembledData.id, assembledData);
-          console.log('💾 Shift updated ID:', assembledData.id);
+        } else if (false && entityType === 'weekSchedule' && operation === 'create') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.create must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: weekSchedule.create disabled to force package-driven architecture');
+        } else if (false && entityType === 'weekSchedule' && operation === 'update') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.update must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: weekSchedule.update disabled to force package-driven architecture');
+        } else if (false && entityType === 'shift' && operation === 'create') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: shift.create must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: shift.create disabled to force package-driven architecture');
+        } else if (false && entityType === 'shift' && operation === 'update') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: shift.update must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: shift.update disabled to force package-driven architecture');
         } else if (false && entityType === 'scheduleBlock' && operation === 'read') {
           // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.read must use package-driven flow');
@@ -601,46 +605,30 @@ export class ValidationEngine30 {
             transactionResult = await storage.deleteScheduleBlock(assembledData.id);
             console.log('💾 Schedule block deleted ID:', assembledData.id);
           }
-        } else if (entityType === 'weekSchedule' && operation === 'read') {
-          console.log('📅 VALIDATION ENGINE 30: Reading week schedule ID:', assembledData.id);
-          transactionResult = await storage.getWeekSchedule(assembledData.id);
-          if (!transactionResult) {
-            throw new Error(`Week schedule not found: ${assembledData.id}`);
-          }
-          console.log('💾 Week schedule read completed ID:', assembledData.id);
-        } else if (entityType === 'weekSchedule' && operation === 'list') {
-          console.log('📅 VALIDATION ENGINE 30: Reading week schedules list');
-          if (assembledData.scheduleBlockId) {
-            console.log('🔍 FILTERING: Using scheduleBlockId filter:', assembledData.scheduleBlockId);
-            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.scheduleBlockId);
-            console.log(`💾 Retrieved ${weekSchedules.length} week schedules for schedule block ${assembledData.scheduleBlockId}`);
-            transactionResult = weekSchedules;
-          } else {
-            console.log('🔍 NO FILTER: Getting all week schedules');
-            const weekSchedules = await storage.getWeekSchedules();
-            console.log(`💾 Retrieved ${weekSchedules.length} week schedules`);
-            transactionResult = weekSchedules;
-          }
-        } else if (entityType === 'weekSchedule' && operation === 'delete') {
-          console.log('📅 VALIDATION ENGINE 30: Deleting week schedule ID:', assembledData.id);
-          transactionResult = await storage.deleteWeekSchedule(assembledData.id);
-          console.log('💾 Week schedule deleted ID:', assembledData.id);
-        } else if (entityType === 'shift' && operation === 'read') {
-          console.log('📅 VALIDATION ENGINE 30: Reading shift ID:', assembledData.id);
-          transactionResult = await storage.getShift(assembledData.id);
-          if (!transactionResult) {
-            throw new Error(`Shift not found: ${assembledData.id}`);
-          }
-          console.log('💾 Shift read completed ID:', assembledData.id);
-        } else if (entityType === 'shift' && operation === 'list') {
-          console.log('📅 VALIDATION ENGINE 30: Reading shifts list');
-          const shifts = await storage.getShifts();
-          console.log(`💾 Retrieved ${shifts.length} shifts`);
-          transactionResult = shifts;
-        } else if (entityType === 'shift' && operation === 'delete') {
-          console.log('📅 VALIDATION ENGINE 30: Deleting shift ID:', assembledData.id);
-          transactionResult = await storage.deleteShift(assembledData.id);
-          console.log('💾 Shift deleted ID:', assembledData.id);
+        } else if (false && entityType === 'weekSchedule' && operation === 'read') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.read must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: weekSchedule.read disabled to force package-driven architecture');
+        } else if (false && entityType === 'weekSchedule' && operation === 'list') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.list must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: weekSchedule.list disabled to force package-driven architecture');
+        } else if (false && entityType === 'weekSchedule' && operation === 'delete') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.delete must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: weekSchedule.delete disabled to force package-driven architecture');
+        } else if (false && entityType === 'shift' && operation === 'read') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: shift.read must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: shift.read disabled to force package-driven architecture');
+        } else if (false && entityType === 'shift' && operation === 'list') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: shift.list must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: shift.list disabled to force package-driven architecture');
+        } else if (false && entityType === 'shift' && operation === 'delete') {
+          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
+          console.log('🚨 HARDCODED BYPASS DISABLED: shift.delete must use package-driven flow');
+          throw new Error('TROUBLESHOOTING MODE: shift.delete disabled to force package-driven architecture');
         }
         // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
         else if (pkg.storageActions) {
