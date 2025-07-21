@@ -91,14 +91,56 @@ executeCreate: async (data, storage) => {
 }
 ```
 
+## Cognitive Anchors Integration
+
+### **Phase Transition Anchors:**
+```
+🔄 PLAN CHECK REMINDER: Before proceeding to next phase, verify:
+- Current phase objectives achieved per plan evidence criteria  
+- Architecture decisions from this plan still being followed
+- Any deviations documented with evidence justification
+- Scope boundaries maintained (no protected system modifications)
+- Reference plan document for architectural questions
+```
+
+### **Implementation Checkpoint Anchors:**
+```
+⚠️ IMPLEMENTATION CHECKPOINT: Return to this plan section if:
+- Architecture questions arise (check plan evidence)
+- Multiple approaches seem possible (follow plan decisions)  
+- Implementation differs from planned approach (document why)
+- Performance targets unclear (reference specific plan metrics)
+- Scope boundary violations detected (check protected systems)
+```
+
+### **Scope Boundary Protection:**
+```
+🚧 SCOPE BOUNDARY VALIDATION: Before any file modification, verify:
+- File is within defined migration scope (ValidationEngine30, scheduler packages only)
+- BACKUP FILES CREATED (.bak) for ValidationEngine30.ts modifications
+- No Core API Routes affected outside scheduler module
+- Rollback capability maintained (backup files created)
+- Change aligns with package-driven architecture isolation
+```
+
 ## Implementation Phases
 
 ### Phase 1: ValidationEngine30 Package-Driven Integration
 **Objective:** Add 5-line scheduler routing to ValidationEngine30 Thread 5
 **Completion Criteria:** All scheduler operations route through package fallback
 
+```
+🔄 PLAN CHECK REMINDER: Before Phase 1 execution, verify:
+- ValidationEngine30.ts current line count: 872 lines
+- Target insertion point: Before existing `else if (pkg.storageActions)` block (line ~634)
+- Exact code copying from plan evidence (no modifications)
+- Backup file creation: ValidationEngine30.ts.bak required
+```
+
 **Actions:**
-1. Add scheduler entity routing before existing `else if (pkg.storageActions)` block
+1. **SCOPE BOUNDARY CHECK:** Verify ValidationEngine30.ts modification within scheduler consolidation scope
+2. **BACKUP PROTOCOL:** Create ValidationEngine30.ts.bak before any changes
+3. Add scheduler entity routing before existing `else if (pkg.storageActions)` block
 ```javascript
 // Handle scheduler operations with package-driven execution
 else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
@@ -110,20 +152,46 @@ else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.
 **Testing:** Verify existing scheduler functionality unchanged
 **Approval Required:** Code review of 5-line addition
 
+```
+⚠️ IMPLEMENTATION CHECKPOINT: Phase 1 completion requires:
+- ValidationEngine30.ts.bak backup file exists
+- 5-line code insertion completed exactly as planned
+- No scope boundary violations (only ValidationEngine30.ts modified)
+- Existing scheduler operations still functional
+```
+
 ### Phase 2: Unified Package Creation
 **Objective:** Create schedulerEntitiesPackage.ts with all three entity types
 **Completion Criteria:** Single package handles all scheduler validation and operations
 
+```
+🔄 PLAN CHECK REMINDER: Before Phase 2 execution, verify:
+- scheduleBlockPackage.ts structure analyzed (lines 130-200 VE30PackageBuilder pattern)
+- weekSchedulePackage.ts business rules examined (lines 38-75)
+- shiftPackage.ts multi-day logic understood (lines 130-180)
+- Exact code copying strategy confirmed (no modifications during transfer)
+```
+
 **Actions:**
-1. Create `server/modules/scheduler/validation/schedulerEntitiesPackage.ts`
-2. Copy exact VE30PackageBuilder structure from scheduleBlockPackage.ts (lines 130-200)
-3. Copy consolidated schema validation routing logic
-4. Copy consolidated business rules from all three packages
-5. Copy consolidated assembly logic
-6. Create entity-routing storageActions with exact operation copying
+1. **SCOPE BOUNDARY CHECK:** Verify new package creation within scheduler module scope
+2. **BACKUP PROTOCOL:** Create .bak files for any existing schedulerEntitiesPackage.ts
+3. Create `server/modules/scheduler/validation/schedulerEntitiesPackage.ts`
+4. Copy exact VE30PackageBuilder structure from scheduleBlockPackage.ts (lines 130-200)
+5. Copy consolidated schema validation routing logic from all three packages
+6. Copy consolidated business rules from all three packages (preserving line-by-line logic)
+7. Copy consolidated assembly logic maintaining entity-specific requirements
+8. Create entity-routing storageActions with exact operation copying
 
 **Testing:** Validate all entity types through unified package
 **Approval Required:** Full package structure review
+
+```
+⚠️ IMPLEMENTATION CHECKPOINT: Phase 2 completion requires:
+- schedulerEntitiesPackage.ts created with complete VE30Package interface
+- All three entity types (scheduleBlock, weekSchedule, shift) supported
+- Exact code copying completed (no architectural modifications)
+- Entity-routing logic preserves individual package behaviors
+```
 
 ### Phase 3: Russian Doll Logic Integration
 **Objective:** Integrate exact cascade delete logic into unified package
@@ -176,21 +244,64 @@ else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.
 **Testing:** Verify clean orchestrator functionality
 **Approval Required:** Code reduction validation
 
+## Evidence Matrix Analysis (Plan 066 Integration)
+
+### **Scheduler Package Consolidation Target Analysis**
+| Package File | Current Lines | Key Logic Location | Consolidation Priority | Cognitive Anchor Check |
+|--------------|---------------|-------------------|----------------------|----------------------|
+| scheduleBlockPackage.ts | 302 lines | Russian Doll (207-284) | **Critical** | ✅ Lines identified |
+| weekSchedulePackage.ts | 158 lines | Business Rules (38-75) | High | ✅ Lines identified |
+| shiftPackage.ts | 235 lines | Multi-day (130-180) | High | ✅ Lines identified |
+| ValidationEngine30.ts | 117 disabled lines | Thread 5 (516-632) | **Critical** | ✅ Lines identified |
+
+### **Package Architecture Alignment Matrix**
+| Architecture Component | scheduleBlock | weekSchedule | shift | Unified Package Status |
+|----------------------|---------------|--------------|-------|----------------------|
+| VE30PackageBuilder Integration | ✅ Complete | ✅ Complete | ✅ Complete | 🔄 Consolidation Target |
+| Schema Validation | ✅ Complete | ✅ Complete | ✅ Complete | 🔄 Routing Required |
+| Business Rules | ✅ Complete | ✅ Complete | ✅ Complete | 🔄 Merge Required |
+| Storage Actions | ✅ Complete | ✅ Complete | ✅ Complete | 🔄 Entity Routing Required |
+| Permissions | ✅ Complete | ✅ Complete | ✅ Complete | 🔄 Unified Required |
+
+### **Code Duplication Elimination Evidence**
+| Duplicate Pattern | Location 1 | Location 2 | Consolidation Approach |
+|-------------------|------------|------------|----------------------|
+| VE30Package interface | scheduleBlockPackage.ts:130-200 | weekSchedulePackage.ts:80-130 | Single unified interface |
+| Permission patterns | All packages (schedule.read/create/update/delete) | Same across all | Consolidated permission logic |
+| Storage action patterns | executeCreate/Read/Update/Delete/List | All packages | Entity-routing storage actions |
+| Schema validation patterns | insertSchema usage | All packages | Entity-type routing logic |
+
 ## Cleanup Phases with Approval
 
 ### Cleanup 1: Component Removal
 **Will Remove:**
-- scheduleBlockPackage.ts (302 lines)
-- weekSchedulePackage.ts (158 lines) 
-- shiftPackage.ts (235 lines)
-- ValidationEngine30.ts disabled block (117 lines)
+- scheduleBlockPackage.ts (302 lines) - **Evidence**: Russian Doll logic extracted
+- weekSchedulePackage.ts (158 lines) - **Evidence**: Business rules consolidated
+- shiftPackage.ts (235 lines) - **Evidence**: Multi-day logic preserved
+- ValidationEngine30.ts disabled block (117 lines) - **Evidence**: Package routing implemented
+
+```
+🚧 SCOPE BOUNDARY VALIDATION: Component removal verification:
+- All packages within scheduler module scope ✅
+- No Core API Routes affected ✅  
+- Backup files created for all removals ✅
+- Unified package operational before removal ✅
+```
 
 **Categories for Approval:**
-1. **Individual Scheduler Packages** - Three separate validation packages
-2. **ValidationEngine30 Disabled Operations** - 117 lines of false && operations
+1. **Individual Scheduler Packages** - Three separate validation packages (695 total lines)
+2. **ValidationEngine30 Disabled Operations** - 117 lines of false && operations  
 3. **Backup Files** - .bak versions of modified files
 
 **User Approval Required:** Per category before execution
+
+```
+📋 DECISION VALIDATION: Component removal aligns with:
+- Plan phase objectives: Package consolidation achieved
+- Documented architectural decisions: Package-driven architecture
+- Zero Risk Implementation: Parallel development completed
+- Scope boundaries: Only scheduler packages affected
+```
 
 ### Cleanup 2: Route/Export Cleanup
 **Will Update:**
