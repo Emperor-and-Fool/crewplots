@@ -73,6 +73,43 @@ shift: shiftPackage,
 - Cascade deletion patterns implemented in storage layer
 - Filter operations require package-driven logic (getShiftsByWeekSchedule)
 
+### Evidence Tables
+
+#### **Hardcoded Blocks Elimination Target Analysis**
+| Entity Type | Operations | Line Range | Current Status | Target Status |
+|-------------|------------|------------|----------------|---------------|
+| scheduleBlock | create/update | 516-521 | ❌ Hardcoded | ✅ Package-driven |
+| weekSchedule | create/update | 522-527 | ❌ Hardcoded | ✅ Package-driven |
+| shift | create/update | 528-533 | ❌ Hardcoded | ✅ Package-driven |
+| scheduleBlock | read/delete | 534-597 | ❌ Hardcoded | ✅ Package-driven |
+| weekSchedule | read/delete | 598-621 | ❌ Hardcoded | ✅ Package-driven |
+| shift | read/list/delete | 622-637 | ❌ Hardcoded + **Bug** | ✅ Package-driven + **Fixed** |
+
+#### **Package Enhancement Requirements Matrix**
+| Package File | Current VE30 Status | StorageActions Status | Business Logic | Permissions | Priority |
+|--------------|--------------------|--------------------|----------------|-------------|----------|
+| scheduleBlockPackage.ts | ✅ Compliant | ❌ Missing | ✅ Complete | ✅ Complete | High |
+| weekSchedulePackage.ts | ✅ Compliant | ❌ Missing | ✅ Complete | ✅ Complete | High |
+| shiftPackage.ts | ✅ Compliant | ❌ Missing + **Bug Fix** | ✅ Complete | ✅ Complete | **Critical** |
+
+#### **VE30Package Interface Extension Requirements**
+| Interface Element | Current Status | Required Addition | Implementation Phase |
+|-------------------|----------------|-------------------|-------------------|
+| entityType | ✅ Present | - | N/A |
+| validateSchema | ✅ Present | - | N/A |
+| getRequiredPermissions | ✅ Present | - | N/A |
+| validateBusinessRules | ✅ Present | - | N/A |
+| assemblePackage | ✅ Present | - | N/A |
+| **storageActions** | ❌ **Missing** | **executeCreate, executeRead, executeUpdate, executeDelete, executeList** | **Phase 1** |
+
+#### **ValidationEngine30 Thread 5 Transformation Requirements**
+| Current Implementation | Package-Driven Target | Fallback Strategy |
+|----------------------|----------------------|-------------------|
+| 27+ hardcoded `else if` blocks | Dynamic package discovery | Backward compatibility during transition |
+| `storage.createScheduleBlock()` direct calls | `pkg.storageActions.executeCreate()` | Legacy blocks preserved until packages ready |
+| Manual operation type checking | Package `storageActionKey` detection | Graceful degradation to hardcoded blocks |
+| Static entity routing | Dynamic package orchestration | Zero breaking changes during migration |
+
 ---
 
 ## Roll-back Strategy
