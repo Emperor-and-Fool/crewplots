@@ -199,25 +199,72 @@ export const scheduleBlockPackage: VE30Package = {
     executeDelete: async (data, storage) => {
       console.log('📦 SCHEDULE BLOCK DELETE: Starting package-driven deletion with cascade');
       
+      // CRITICAL SAFETY CHECK: Verify the schedule block exists and get its info
+      const targetBlock = await storage.getScheduleBlock(data.id);
+      if (!targetBlock) {
+        throw new Error(`⚠️ SAFETY CHECK FAILED: Schedule block ${data.id} not found - aborting deletion`);
+      }
+      console.log(`🛡️ SAFETY CHECK: Confirmed schedule block exists - ID: ${targetBlock.id}, Name: "${targetBlock.name}"`);
+      
       // Handle cascade deletion (copied from ValidationEngine30.ts.bak lines 574-597)
       if (data.cascadeDelete) {
         console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', data.id);
         
-        // Step 1: Get all week schedules for this block
+        // CRITICAL SAFETY CHECK: Verify database state BEFORE deletion
+        const allBlocksBefore = await storage.getScheduleBlocks();
+        const allWeeksBefore = await storage.getWeekSchedules();
+        console.log(`🛡️ PRE-DELETE STATE: Total schedule blocks: ${allBlocksBefore.length}, Total week schedules: ${allWeeksBefore.length}`);
+        
+        // Step 1: Get all week schedules for this specific block
         const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(data.id);
-        console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete`);
+        console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete for block ${data.id}`);
+        console.log(`🔍 WEEK SCHEDULES TO DELETE:`, weekSchedules.map(w => `ID:${w.id} Block:${w.scheduleBlockId}`));
+        
+        // CRITICAL SAFETY BOUNDARY CHECK: Verify all week schedules belong to target block
+        const invalidWeeks = weekSchedules.filter(week => week.scheduleBlockId !== data.id);
+        if (invalidWeeks.length > 0) {
+          throw new Error(`🚨 BOUNDARY VIOLATION: Found week schedules not belonging to block ${data.id}: ${invalidWeeks.map(w => w.id).join(', ')}`);
+        }
+        console.log(`✅ BOUNDARY CHECK PASSED: All ${weekSchedules.length} week schedules belong to block ${data.id}`);
         
         // Step 2: Delete all week schedules (which cascade delete their shifts automatically)
         for (const week of weekSchedules) {
-          console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (including its shifts)`);
+          console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (scheduleBlockId: ${week.scheduleBlockId}, including its shifts)`);
+          
+          // Additional safety check per week schedule
+          if (week.scheduleBlockId !== data.id) {
+            throw new Error(`🚨 CRITICAL SAFETY VIOLATION: Week schedule ${week.id} belongs to block ${week.scheduleBlockId}, not target block ${data.id}`);
+          }
+          
           await storage.deleteWeekSchedule(week.id);  // This already cascades to shifts in storage layer
+          console.log(`✅ Week schedule ${week.id} deleted successfully`);
         }
         
         // Step 3: Delete the schedule block itself
         console.log('🔥 CASCADE DELETE: Deleting schedule block (final step)');
         const result = await storage.deleteScheduleBlock(data.id);
         
+        // CRITICAL SAFETY CHECK: Verify database state AFTER deletion
+        const allBlocksAfter = await storage.getScheduleBlocks();
+        const allWeeksAfter = await storage.getWeekSchedules();
+        console.log(`🛡️ POST-DELETE STATE: Total schedule blocks: ${allBlocksAfter.length}, Total week schedules: ${allWeeksAfter.length}`);
+        
+        // Verify deletion boundaries were respected
+        const expectedBlocksAfter = allBlocksBefore.length - 1;
+        const expectedWeeksAfter = allWeeksBefore.length - weekSchedules.length;
+        
+        if (allBlocksAfter.length !== expectedBlocksAfter) {
+          console.error(`🚨 OVER-DELETION DETECTED: Expected ${expectedBlocksAfter} blocks, found ${allBlocksAfter.length}`);
+          throw new Error(`🚨 CRITICAL DATA INTEGRITY VIOLATION: Expected ${expectedBlocksAfter} schedule blocks after deletion, but found ${allBlocksAfter.length}`);
+        }
+        
+        if (allWeeksAfter.length !== expectedWeeksAfter) {
+          console.error(`🚨 OVER-DELETION DETECTED: Expected ${expectedWeeksAfter} weeks, found ${allWeeksAfter.length}`);
+          throw new Error(`🚨 CRITICAL DATA INTEGRITY VIOLATION: Expected ${expectedWeeksAfter} week schedules after deletion, but found ${allWeeksAfter.length}`);
+        }
+        
         console.log(`💾 CASCADE DELETE COMPLETED: Schedule block ${data.id} and all related data deleted`);
+        console.log(`✅ SAFETY VERIFIED: Deletion boundaries respected - only target data removed`);
         return result;
       } else {
         // Standard simple deletion (may fail with foreign key constraints)
