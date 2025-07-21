@@ -499,13 +499,13 @@ export default function SchedulerEditPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Number of Weeks</FormLabel>
+                        {/* Debug info - remove after testing */}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="text-xs text-blue-600 mb-2">
+                            DEBUG: isCreationMode={isCreationMode.toString()}, scheduleData.maxWeeks={scheduleData?.maxWeeks}, field.value={field.value}
+                          </div>
+                        )}
                         <FormControl>
-                          {/* Debug info - remove after testing */}
-                          {process.env.NODE_ENV === 'development' && (
-                            <div className="text-xs text-blue-600 mb-2">
-                              DEBUG: isCreationMode={isCreationMode.toString()}, scheduleData.maxWeeks={scheduleData?.maxWeeks}, field.value={field.value}
-                            </div>
-                          )}
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             value={field.value?.toString() || ""}
