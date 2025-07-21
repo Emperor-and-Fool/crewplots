@@ -314,7 +314,12 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing schema validation
   validateSchema: (data: any, operation: string) => {
-    const entityType = data.entityType;
+    const entityType = data.entityType || 'scheduleBlock'; // Default fallback
+    
+    // PHASE 4: Entity-type validation (Plan 067 requirement)
+    if (!['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType)) {
+      return { isValid: false, errors: [`Invalid scheduler entity type: ${entityType}`] };
+    }
     
     // Schedule Block routing
     if (entityType === 'scheduleBlock') {
@@ -494,9 +499,9 @@ export const schedulerEntitiesPackage: VE30Package = {
           const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(data.id);
           console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete for block ${data.id}`);
           
-          const invalidWeeks = weekSchedules.filter(week => week.scheduleBlockId !== data.id);
+          const invalidWeeks = weekSchedules.filter((week: any) => week.scheduleBlockId !== data.id);
           if (invalidWeeks.length > 0) {
-            throw new Error(`🚨 BOUNDARY VIOLATION: Found week schedules not belonging to block ${data.id}: ${invalidWeeks.map(w => w.id).join(', ')}`);
+            throw new Error(`🚨 BOUNDARY VIOLATION: Found week schedules not belonging to block ${data.id}: ${invalidWeeks.map((w: any) => w.id).join(', ')}`);
           }
           console.log(`✅ BOUNDARY CHECK PASSED: All ${weekSchedules.length} week schedules belong to block ${data.id}`);
           

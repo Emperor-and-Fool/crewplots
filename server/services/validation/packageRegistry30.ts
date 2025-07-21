@@ -40,8 +40,10 @@ export const packageRegistry30 = {
   messaging: messagingPackage,
   motivationNote: motivationNotePackage,
   
-  // Unified scheduler package (PLAN 067: replaces scheduleBlock, weekSchedule, shift)
-  schedulerEntities: schedulerEntitiesPackage,
+  // Unified scheduler package (PLAN 067: three entities, one package)
+  scheduleBlock: schedulerEntitiesPackage,
+  weekSchedule: schedulerEntitiesPackage,
+  shift: schedulerEntitiesPackage,
   
   // User management (non-auth) - NEW VE30 PACKAGES
   userList: userListPackage,
