@@ -38,7 +38,7 @@ export default function SchedulerEditPage() {
   
   // Creation mode detection
   const isCreationMode = scheduleId === 'new';
-  const scheduleIdNumber = isCreationMode ? null : parseInt(scheduleId);
+  const scheduleIdNumber = isCreationMode ? null : parseInt(scheduleId || '0');
   
   // Shift management hooks
   const deleteShiftMutation = useDeleteShift();
@@ -90,13 +90,13 @@ export default function SchedulerEditPage() {
     defaultValues: isCreationMode ? {
       name: '',
       description: '',
-      locationId: 0,
+      locationId: 1,  // Default to first location (Grand Hotel Amsterdam)
       maxWeeks: undefined,  // Start as undefined - user must explicitly select
       isActive: false  // Default to inactive for new schedules
     } : {
       name: '',
       description: '',
-      locationId: 0,
+      locationId: 1,  // Default to first location 
       maxWeeks: undefined,
       isActive: true
     }
@@ -414,7 +414,7 @@ export default function SchedulerEditPage() {
                   className={`${scheduleData.isActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white`}
                 >
                   {scheduleData.isActive ? 'Active' : 'Inactive'}
-                  {autoSave.isSaving && <span className="ml-1 animate-pulse">●</span>}
+                  {autoSave.status === 'saving' && <span className="ml-1 animate-pulse">●</span>}
                 </Badge>
               )}
               {isCreationMode && (
@@ -586,7 +586,6 @@ export default function SchedulerEditPage() {
                               if (!isCreationMode) {
                                 try {
                                   await updateMutation.mutateAsync({
-                                    id: scheduleIdNumber,
                                     name: form.getValues('name'),
                                     description: form.getValues('description'),
                                     locationId: form.getValues('locationId'),
@@ -645,7 +644,7 @@ export default function SchedulerEditPage() {
               </Card>
             ) : (
               <CompetencySelector 
-                scheduleBlockId={scheduleIdNumber} 
+                scheduleBlockId={scheduleIdNumber || 0} 
                 locationId={scheduleData?.locationId || 1}
               />
             )}
@@ -845,7 +844,7 @@ export default function SchedulerEditPage() {
 
               {/* Shift Management Interface */}
               <ShiftManagementInterface
-                scheduleBlockId={scheduleIdNumber}
+                scheduleBlockId={scheduleIdNumber || 0}
                 scheduleBlockName={scheduleData?.name || 'Schedule'}
                 weekSchedules={weekSchedules}
                 onShiftClick={handleShiftClick}
