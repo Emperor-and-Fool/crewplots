@@ -586,6 +586,52 @@ export const schedulerEntitiesPackage: VE30Package = {
       const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
+        // PHASE 2: Week Structure Lock Action Trigger
+        if (data.weekStructureAction === 'lock') {
+          console.log('🔒 WEEK STRUCTURE LOCK: Phase 2 triggered - Manager setting week count');
+          console.log('🔒 LOCK DATA:', { id: data.id, maxWeeks: data.maxWeeks, isActive: data.isActive });
+          
+          // Validate maxWeeks is provided for locking
+          if (!data.maxWeeks || data.maxWeeks < 1 || data.maxWeeks > 12) {
+            throw new Error('Week structure lock requires valid maxWeeks (1-12)');
+          }
+          
+          // Update scheduleBlock with maxWeeks and activation
+          const updateData = {
+            maxWeeks: data.maxWeeks,
+            isActive: data.isActive !== undefined ? data.isActive : true
+          };
+          
+          console.log('🔒 UPDATING SCHEDULE BLOCK: Setting maxWeeks and activation status');
+          const updatedScheduleBlock = await storage.updateScheduleBlock(data.id, updateData);
+          
+          // Create week schedules with weekStructureLocked = true
+          console.log(`🔒 CREATING WEEK STRUCTURE: ${data.maxWeeks} weeks for schedule block ${data.id}`);
+          const weekSchedules = [];
+          
+          for (let weekNumber = 1; weekNumber <= data.maxWeeks; weekNumber++) {
+            const weekScheduleData = {
+              scheduleBlockId: data.id,
+              weekNumber,
+              weekStructureLocked: true, // Lock the week structure immediately
+              createdBy: data.createdBy || updatedScheduleBlock.createdBy
+            };
+            
+            console.log(`🔒 CREATING WEEK ${weekNumber}: weekStructureLocked = true`);
+            const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
+            weekSchedules.push(weekSchedule);
+            console.log(`✅ Week ${weekNumber} created and locked with ID: ${weekSchedule.id}`);
+          }
+          
+          console.log(`🔒 WEEK STRUCTURE LOCKED: Created ${weekSchedules.length} locked weeks for schedule block ${data.id}`);
+          
+          return {
+            ...updatedScheduleBlock,
+            weekSchedules // Include created week schedules in response
+          };
+        }
+        
+        // Regular schedule block update (without week structure locking)
         return await storage.updateScheduleBlock(data.id, data);
       }
       if (entityType === 'weekSchedule') {
