@@ -563,7 +563,7 @@ export default function SchedulerEditPage() {
                         <div className="text-sm text-muted-foreground">
                           {weekSchedules?.some(w => w.weekStructureLocked)
                             ? `🔒 ${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)`
-                            : `${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} - use "Add Week Schedule" button to modify`
+                            : `${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''}`
                           }
                         </div>
                         {process.env.NODE_ENV === 'development' && (
