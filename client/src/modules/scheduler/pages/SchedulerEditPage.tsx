@@ -183,16 +183,30 @@ export default function SchedulerEditPage() {
       return response;
     },
     onSuccess: (data: any) => {
+      console.log('🔧 CREATE SUCCESS: Raw response data:', JSON.stringify(data, null, 2));
+      console.log('🔧 CREATE SUCCESS: data.id exists:', !!data?.id);
+      console.log('🔧 CREATE SUCCESS: data.name exists:', !!data?.name);
+      
+      // VALIDATION: Only show success toast if we actually have a created record
+      if (!data || !data.id) {
+        toast({
+          title: "❌ Creation Failed",
+          description: "Validation passed but no database record was created. Please check logs.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        console.error('🚨 TOAST VALIDATION FAILED: No valid record returned despite validation success');
+        return;
+      }
+      
       toast({
         title: "✅ Schedule Created",
-        description: "Schedule created successfully. You can now configure it.",
+        description: `Schedule "${data.name || 'Unnamed'}" created successfully with ID ${data.id}.`,
         duration: 3000,
       });
       
       // Navigate to edit mode with the new schedule ID
-      if (data && data.id) {
-        navigate(`/scheduler/edit/${data.id}`);
-      }
+      navigate(`/scheduler/edit/${data.id}`);
       
       // Invalidate cache
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
