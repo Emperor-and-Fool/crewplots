@@ -600,6 +600,7 @@ export default function SchedulerEditPage() {
                         
                         {weekSchedules?.some(w => w.weekStructureLocked) ? (
                           // Locked state - show read-only info
+                          console.log('🔒 LOCKED STATE: Showing locked week structure UI'),
                           <div className="space-y-2">
                             <div className="text-sm text-muted-foreground">
                               🔒 {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)
@@ -612,15 +613,20 @@ export default function SchedulerEditPage() {
                           </div>
                         ) : (
                           // Unlocked state - show dropdown for one-time configuration
+                          console.log('🔓 UNLOCKED STATE: Showing week count selector UI'),
                           <div className="space-y-3">
                             <div className="text-sm text-muted-foreground">
                               Current: {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''}
                             </div>
                             
                             <div className="flex items-center gap-3">
+                              {console.log('🔧 DROPDOWN: Rendering week count Select component')}
                               <Select 
                                 value={selectedWeekCount?.toString() || ""} 
-                                onValueChange={(value) => setSelectedWeekCount(parseInt(value))}
+                                onValueChange={(value) => {
+                                  console.log('🔧 DROPDOWN: Week selected =', value);
+                                  setSelectedWeekCount(parseInt(value));
+                                }}
                               >
                                 <SelectTrigger className="w-48">
                                   <SelectValue placeholder="Set number of weeks" />
