@@ -605,7 +605,7 @@ export const schedulerEntitiesPackage: VE30Package = {
           console.log('🔒 UPDATING SCHEDULE BLOCK: Setting maxWeeks and activation status');
           const updatedScheduleBlock = await storage.updateScheduleBlock(data.id, updateData);
           
-          // Create week schedules with weekStructureLocked = true
+          // Create week schedules for the locked structure
           console.log(`🔒 CREATING WEEK STRUCTURE: ${data.maxWeeks} weeks for schedule block ${data.id}`);
           const weekSchedules = [];
           
@@ -613,14 +613,13 @@ export const schedulerEntitiesPackage: VE30Package = {
             const weekScheduleData = {
               scheduleBlockId: data.id,
               weekNumber,
-              weekStructureLocked: true, // Lock the week structure immediately
               createdBy: data.createdBy || updatedScheduleBlock.createdBy
             };
             
-            console.log(`🔒 CREATING WEEK ${weekNumber}: weekStructureLocked = true`);
+            console.log(`🔒 CREATING WEEK ${weekNumber}`);
             const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
             weekSchedules.push(weekSchedule);
-            console.log(`✅ Week ${weekNumber} created and locked with ID: ${weekSchedule.id}`);
+            console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
           }
           
           console.log(`🔒 WEEK STRUCTURE LOCKED: Created ${weekSchedules.length} locked weeks for schedule block ${data.id}`);
