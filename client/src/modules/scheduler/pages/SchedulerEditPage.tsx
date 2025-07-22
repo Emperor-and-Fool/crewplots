@@ -238,34 +238,35 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // CORRECTED: ScheduleBlock update with week creation (PROPER ARCHITECTURE)
+  // CORRECTED: ScheduleBlock week structure lock (PROPER ARCHITECTURE)
   const createWeeksMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
-      console.log('🔄 SCHEDULEBLOCK UPDATE: Setting maxWeeks =', weekCount, 'for scheduleBlock', scheduleIdNumber);
-      console.log('🔄 SCHEDULEBLOCK UPDATE: Backend will automatically create', weekCount, 'weeks via scheduleBlock authority');
+      console.log('🔄 SCHEDULEBLOCK WEEK LOCK: Setting maxWeeks =', weekCount, 'for scheduleBlock', scheduleIdNumber);
+      console.log('🔄 SCHEDULEBLOCK WEEK LOCK: Using weekStructureAction="lock" to trigger backend week creation');
       
-      // Update the scheduleBlock with maxWeeks - backend creates weeks automatically
+      // Use the existing weekStructureAction="lock" pattern to trigger week creation
       const requestData = {
         operation: 'update',
         entityType: 'scheduleBlock',
         data: {
           id: scheduleIdNumber,
           maxWeeks: weekCount,
-          isActive: true // Activate schedule after setting weeks
+          weekStructureAction: 'lock', // This triggers the backend week creation logic
+          isActive: true // Activate schedule after locking structure
         },
         context: {}
       };
       
-      console.log('🔄 SCHEDULEBLOCK UPDATE: Request data:', requestData);
+      console.log('🔄 SCHEDULEBLOCK WEEK LOCK: Request data:', requestData);
       const result = await apiRequest('POST', '/api/validation/v3/execute', requestData);
-      console.log('✅ SCHEDULEBLOCK UPDATE: Completed, backend created weeks automatically');
+      console.log('✅ SCHEDULEBLOCK WEEK LOCK: Completed, backend created', weekCount, 'locked weeks');
       
       return { success: true, weekCount, scheduleBlockResult: result };
     },
     onSuccess: ({ weekCount }) => {
       toast({
-        title: "✅ Weeks Created",
-        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully via schedule block update.`,
+        title: "✅ Week Structure Locked",
+        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created and locked successfully.`,
         duration: 4000,
       });
       
@@ -274,10 +275,10 @@ export default function SchedulerEditPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
     },
     onError: (error: any) => {
-      console.error('❌ SCHEDULEBLOCK UPDATE FAILED:', error);
+      console.error('❌ SCHEDULEBLOCK WEEK LOCK FAILED:', error);
       toast({
-        title: "Week Creation Failed",
-        description: error?.message || "Failed to update schedule block. Please try again.",
+        title: "Week Structure Lock Failed",
+        description: error?.message || "Failed to lock week structure. Please try again.",
         variant: "destructive",
       });
     },
