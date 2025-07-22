@@ -461,10 +461,44 @@ export const schedulerEntitiesPackage: VE30Package = {
       if (entityType === 'scheduleBlock') {
         return await storage.createScheduleBlock(data);
       }
+      
       if (entityType === 'weekSchedule') {
+        // RUSSIAN DOLL CASCADE CREATE: weekSchedule requires scheduleBlock authentication
+        console.log('🔧 WEEK SCHEDULE CREATE: Starting Russian Doll cascade creation');
+        
+        if (!data.scheduleBlockId) {
+          throw new Error('🚨 RUSSIAN DOLL VIOLATION: weekSchedule creation requires scheduleBlockId for cascade authentication');
+        }
+        
+        // Validate parent scheduleBlock exists and user has access
+        const parentBlock = await storage.getScheduleBlock(data.scheduleBlockId);
+        if (!parentBlock) {
+          throw new Error(`🚨 CASCADE AUTHENTICATION FAILED: Schedule block ${data.scheduleBlockId} not found`);
+        }
+        
+        console.log(`✅ CASCADE AUTHENTICATION: Parent block verified - ID: ${parentBlock.id}, Name: "${parentBlock.name}"`);
+        console.log('🔧 WEEK SCHEDULE CREATE: Foreign key established, proceeding with creation');
+        
         return await storage.createWeekSchedule(data);
       }
+      
       if (entityType === 'shift') {
+        // RUSSIAN DOLL CASCADE CREATE: shift requires weekSchedule authentication
+        console.log('🔧 SHIFT CREATE: Starting Russian Doll cascade creation');
+        
+        if (!data.weekScheduleId) {
+          throw new Error('🚨 RUSSIAN DOLL VIOLATION: shift creation requires weekScheduleId for cascade authentication');
+        }
+        
+        // Validate parent weekSchedule exists and user has access
+        const parentWeek = await storage.getWeekSchedule(data.weekScheduleId);
+        if (!parentWeek) {
+          throw new Error(`🚨 CASCADE AUTHENTICATION FAILED: Week schedule ${data.weekScheduleId} not found`);
+        }
+        
+        console.log(`✅ CASCADE AUTHENTICATION: Parent week verified - ID: ${parentWeek.id}, Week: ${parentWeek.weekNumber}`);
+        console.log('🔧 SHIFT CREATE: Foreign key established, proceeding with creation');
+        
         // PHASE 4: Multi-day shift creation logic (copied from shiftPackage.ts lines 190-225)
         if (data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 1) {
           console.log(`🔄 MULTI-DAY SHIFT CREATION: Creating ${data.daysOfWeek.length} shifts for days:`, data.daysOfWeek);
