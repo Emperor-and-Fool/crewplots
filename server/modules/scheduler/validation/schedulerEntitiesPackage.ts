@@ -224,7 +224,10 @@ const shiftBusinessRules = [
 // Schedule Block Assembly (copied from scheduleBlockPackage.ts lines 88-113)
 const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'read') {
-    return { id: rawData.id };
+    return { 
+      id: rawData.id,
+      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
+    };
   }
 
   if (operation === 'list') {
@@ -240,6 +243,7 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'delete') {
     return {
       id: rawData.id,
+      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
       cascadeDelete: rawData.cascadeDelete || false
     };
   }
@@ -257,7 +261,10 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
 // Week Schedule Assembly (copied from weekSchedulePackage.ts lines 88-113)
 const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'read') {
-    return { id: rawData.id };
+    return { 
+      id: rawData.id,
+      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
+    };
   }
 
   if (operation === 'list') {
@@ -283,7 +290,10 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
 // Shift Assembly (copied from shiftPackage.ts lines 135-175)
 const shiftAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'read') {
-    return { id: rawData.id };
+    return { 
+      id: rawData.id,
+      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
+    };
   }
 
   if (operation === 'list') {
@@ -423,8 +433,8 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing storage actions (PHASE 3: Russian Doll Logic Integration)
   storageActions: {
-    executeCreate: async (data, storage, context) => {
-      const entityType = context.entityType;
+    executeCreate: async (data, storage) => {
+      const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.createScheduleBlock(data);
@@ -462,8 +472,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Create operation not supported for entity type: ${entityType}`);
     },
     
-    executeRead: async (data, storage, context) => {
-      const entityType = context.entityType;
+    executeRead: async (data, storage) => {
+      const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.getScheduleBlock(data.id);
@@ -478,8 +488,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Read operation not supported for entity type: ${entityType}`);
     },
     
-    executeUpdate: async (data, storage, context) => {
-      const entityType = context.entityType;
+    executeUpdate: async (data, storage) => {
+      const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.updateScheduleBlock(data.id, data);
@@ -494,8 +504,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Update operation not supported for entity type: ${entityType}`);
     },
     
-    executeDelete: async (data, storage, context) => {
-      const entityType = context.entityType;
+    executeDelete: async (data, storage) => {
+      const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
         // PHASE 3: Russian Doll cascade delete logic (copied from scheduleBlockPackage.ts lines 207-284)
