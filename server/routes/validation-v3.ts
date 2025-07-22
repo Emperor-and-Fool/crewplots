@@ -147,6 +147,13 @@ router.post('/execute', authenticateUser, async (req, res) => {
     const { operation, entityType, data, context } = req.body;
     
     console.log(`🎯 VALIDATION ENGINE 30: Direct execution ${operation} for ${entityType}`);
+    console.log('🗑️ EXECUTE ENDPOINT: Request body:', JSON.stringify(req.body, null, 2));
+    
+    // CRITICAL DEBUG: Check if this is a delete operation for scheduler
+    if (operation === 'delete' && entityType === 'scheduleBlock') {
+      console.log('🔥 DELETE REQUEST DETECTED: scheduleBlock delete operation in /execute endpoint');
+      console.log('🔥 DELETE DATA:', JSON.stringify(data, null, 2));
+    }
     
     // Use centralized permission mapper to convert user context to validation permissions
     const userRole = (req.user as any)?.role;

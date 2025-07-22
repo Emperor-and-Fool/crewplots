@@ -418,6 +418,13 @@ export class ValidationEngine30 {
     const startTime = Date.now();
     
     console.log(`🎯 VALIDATION ENGINE 30: Starting ${operation} for ${entityType}`, { packageId });
+    
+    // CRITICAL DEBUG: Check if this is a delete operation reaching ValidationEngine30
+    if (operation === 'delete' && entityType === 'scheduleBlock') {
+      console.log('🔥 VE30 ENTRY: scheduleBlock delete operation reached ValidationEngine30.validateAndExecute()');
+      console.log('🔥 VE30 ENTRY: entityId =', entityId);
+      console.log('🔥 VE30 ENTRY: data =', JSON.stringify(data, null, 2));
+    }
 
     try {
       // Get validation package (PROVEN PATTERN from ValidationEngine.ts)
