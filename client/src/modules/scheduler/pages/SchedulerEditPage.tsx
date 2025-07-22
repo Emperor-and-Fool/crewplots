@@ -248,8 +248,6 @@ export default function SchedulerEditPage() {
           data: {
             scheduleBlockId: scheduleIdNumber,
             weekNumber: index + 1,
-            name: `Week ${index + 1}`,
-            isActive: true,
             weekStructureLocked: true
           },
           context: {}
