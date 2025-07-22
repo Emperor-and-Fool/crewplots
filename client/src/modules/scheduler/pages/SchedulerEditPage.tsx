@@ -88,6 +88,7 @@ export default function SchedulerEditPage() {
   const [groupEditDialogShift, setGroupEditDialogShift] = useState<any>(null);
   const [showWeekConfirmDialog, setShowWeekConfirmDialog] = useState(false);
   const [pendingWeekCount, setPendingWeekCount] = useState<number | null>(null);
+  const [selectedWeekCount, setSelectedWeekCount] = useState<number | null>(null);
 
   // Form setup - different defaults for creation vs edit mode
   const form = useForm<InsertScheduleBlock>({
@@ -346,14 +347,16 @@ export default function SchedulerEditPage() {
       // Lock the structure and create week blocks
       await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
       
-      // Reset pending state
+      // Reset all week-related state
       setPendingWeekCount(null);
+      setSelectedWeekCount(null);
       setShowWeekConfirmDialog(false);
     }
   };
 
   const handleWeekCountCancel = () => {
     setPendingWeekCount(null);
+    setSelectedWeekCount(null);
     setShowWeekConfirmDialog(false);
   };
 
@@ -555,20 +558,72 @@ export default function SchedulerEditPage() {
                     )}
                   />
 
-                  {/* Week Count Display - Now read-only, calculated from weekSchedules.length */}
+                  {/* Week Count Configuration */}
                   {!isCreationMode && (
                     <div className="rounded-lg border p-4">
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <div className="text-sm font-medium">Week Structure</div>
-                        <div className="text-sm text-muted-foreground">
-                          {weekSchedules?.some(w => w.weekStructureLocked)
-                            ? `🔒 ${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)`
-                            : `${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''}`
-                          }
-                        </div>
-                        {process.env.NODE_ENV === 'development' && (
-                          <div className="text-xs text-blue-600">
-                            DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}
+                        
+                        {weekSchedules?.some(w => w.weekStructureLocked) ? (
+                          // Locked state - show read-only info
+                          <div className="space-y-2">
+                            <div className="text-sm text-muted-foreground">
+                              🔒 {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)
+                            </div>
+                            {process.env.NODE_ENV === 'development' && (
+                              <div className="text-xs text-blue-600">
+                                DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Unlocked state - show dropdown for one-time configuration
+                          <div className="space-y-3">
+                            <div className="text-sm text-muted-foreground">
+                              Current: {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''}
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <Select 
+                                value={selectedWeekCount?.toString() || ""} 
+                                onValueChange={(value) => setSelectedWeekCount(parseInt(value))}
+                              >
+                                <SelectTrigger className="w-48">
+                                  <SelectValue placeholder="Set number of weeks" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => (
+                                    <SelectItem key={week} value={week.toString()}>
+                                      {week} week{week > 1 ? 's' : ''}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!selectedWeekCount || lockWeekStructureMutation.isPending}
+                                onClick={() => {
+                                  if (selectedWeekCount) {
+                                    setPendingWeekCount(selectedWeekCount);
+                                    setShowWeekConfirmDialog(true);
+                                  }
+                                }}
+                              >
+                                {lockWeekStructureMutation.isPending ? 'Processing...' : 'Confirm Week Count'}
+                              </Button>
+                            </div>
+                            
+                            <div className="text-xs text-orange-600">
+                              ⚠️ Warning: You can only set the week count once. After confirmation, the structure will be locked permanently.
+                            </div>
+                            
+                            {process.env.NODE_ENV === 'development' && (
+                              <div className="text-xs text-blue-600">
+                                DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}, selectedWeekCount={selectedWeekCount}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
