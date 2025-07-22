@@ -488,14 +488,13 @@ export const schedulerEntitiesPackage: VE30Package = {
           const weekScheduleData = {
             scheduleBlockId: scheduleBlock.id,
             weekNumber,
-            weekStructureLocked: true, // ENHANCEMENT: Default weekStructureLocked behavior
             createdBy: data.createdBy
           };
           
           console.log(`🔄 WEEK SCHEDULE CREATE: Creating week ${weekNumber} for block ${scheduleBlock.id}`);
           const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
           weekSchedules.push(weekSchedule);
-          console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}, weekStructureLocked: ${weekSchedule.weekStructureLocked}`);
+          console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
         }
         
         console.log(`🔄 SCHEDULE BLOCK CREATE: Created ${weekSchedules.length} week schedules`);
@@ -507,15 +506,10 @@ export const schedulerEntitiesPackage: VE30Package = {
       }
       
       if (entityType === 'weekSchedule') {
-        // ENHANCED: weekStructureLocked behavior for individual week creation
-        const weekData = {
-          ...data,
-          weekStructureLocked: data.weekStructureLocked !== undefined ? data.weekStructureLocked : true // Default true
-        };
-        
-        console.log(`🔄 WEEK SCHEDULE CREATE: Creating individual week with weekStructureLocked: ${weekData.weekStructureLocked}`);
-        const result = await storage.createWeekSchedule(weekData);
-        console.log(`✅ Individual week created with ID: ${result.id}, weekStructureLocked: ${result.weekStructureLocked}`);
+        // Individual week schedule creation (weekStructureLocked is a scheduleBlock field, not weekSchedule)
+        console.log(`🔄 WEEK SCHEDULE CREATE: Creating individual week schedule`);
+        const result = await storage.createWeekSchedule(data);
+        console.log(`✅ Individual week created with ID: ${result.id}`);
         
         return result;
       }
