@@ -55,7 +55,7 @@ export default function SchedulerEditPage() {
         entityType: 'weekSchedule',
         data: { scheduleBlockId: scheduleIdNumber },
         context: {}
-      });
+      }, { unpackVE30: true });
       
       console.log('🔍 WEEK SCHEDULES: Response (VE30 unpacked):', response);
       return Array.isArray(response) ? response : [];
@@ -126,7 +126,7 @@ export default function SchedulerEditPage() {
         entityType: 'scheduleBlock',
         data: { id: scheduleIdNumber },
         context: {}
-      });
+      }, { unpackVE30: true });
       
       console.log('🔍 SCHEDULER EDIT: VE30 unpacker result:', scheduleData);
       return scheduleData;
@@ -175,7 +175,7 @@ export default function SchedulerEditPage() {
           // maxWeeks removed - week count is now calculated from weekSchedules.length
         },
         context: {}
-      });
+      }, { unpackVE30: true });
       return response;
     },
     onSuccess: (data: any) => {
