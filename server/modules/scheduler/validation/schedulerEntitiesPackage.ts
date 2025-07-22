@@ -291,11 +291,15 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
     return assembled;
   }
 
+  // 🔧 FIELD ENRICHMENT: Add missing fields for schema validation
   return {
     scheduleBlockId: parseInt(rawData.scheduleBlockId) || rawData.scheduleBlockId,
     weekNumber: parseInt(rawData.weekNumber) || rawData.weekNumber,
+    name: rawData.name?.trim() || `Week ${rawData.weekNumber}`,  // Frontend sends this
+    isActive: rawData.isActive !== undefined ? Boolean(rawData.isActive) : true,  // Frontend sends this
     templateId: rawData.templateId ? parseInt(rawData.templateId) : null,
-    createdBy: user?.id || rawData.createdBy,
+    createdBy: user?.id || rawData.createdBy,  // Enriched from user context
+    // locationId will be enriched during Russian Doll cascade
     ...(operation === 'update' && rawData.id && { id: rawData.id })
   };
 };
@@ -479,7 +483,14 @@ export const schedulerEntitiesPackage: VE30Package = {
         console.log(`✅ CASCADE AUTHENTICATION: Parent block verified - ID: ${parentBlock.id}, Name: "${parentBlock.name}"`);
         console.log('🔧 WEEK SCHEDULE CREATE: Foreign key established, proceeding with creation');
         
-        return await storage.createWeekSchedule(data);
+        // 🔧 RUSSIAN DOLL FIELD ENRICHMENT: Inherit locationId from parent scheduleBlock
+        const enrichedData = {
+          ...data,
+          locationId: parentBlock.locationId  // Critical missing field for schema validation
+        };
+        console.log(`🔧 FIELD ENRICHMENT: Added locationId ${parentBlock.locationId} from parent block`);
+        
+        return await storage.createWeekSchedule(enrichedData);
       }
       
       if (entityType === 'shift') {
