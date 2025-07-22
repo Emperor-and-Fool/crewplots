@@ -38,7 +38,10 @@ export async function apiRequest(
       const jsonResponse = await res.json();
       if (jsonResponse?.threads?.transaction?.data) {
         console.log('🔧 VE30 UNPACKER: Extracting data from ValidationEngine30 response');
-        return jsonResponse.threads.transaction.data;
+        console.log('🔧 VE30 UNPACKER: Raw jsonResponse.threads.transaction.data:', JSON.stringify(jsonResponse.threads.transaction.data, null, 2));
+        const extracted = jsonResponse.threads.transaction.data;
+        console.log('🔧 VE30 UNPACKER: Extracted data weekStructureLocked:', extracted.weekStructureLocked);
+        return extracted;
       }
       return jsonResponse;
     }
