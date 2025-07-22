@@ -284,7 +284,7 @@ export default function SchedulerEditPage() {
     method: 'POST',
     debounceMs: 2000,
     minContentLength: 1,
-    enabled: !isCreationMode && permissions.canEditSchedules && !!scheduleData,
+    enabled: false, // TEMPORARILY DISABLED FOR DEBUGGING
     validateData: (data) => {
       // Only auto-save if data is valid and has changed from initial values
       return !!(data.name && data.name.trim().length > 0) || data.isActive !== undefined;
