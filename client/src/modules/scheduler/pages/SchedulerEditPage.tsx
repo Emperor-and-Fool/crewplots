@@ -588,6 +588,12 @@ export default function SchedulerEditPage() {
 
                   {/* Week Count Configuration */}
                   {!isCreationMode && (
+                    console.log('🔍 WEEK SECTION: Rendering week count configuration section'),
+                    console.log('🔍 WEEK SECTION: isCreationMode =', isCreationMode),
+                    console.log('🔍 WEEK SECTION: scheduleId =', scheduleId),
+                    console.log('🔍 WEEK SECTION: weekSchedules =', weekSchedules),
+                    console.log('🔍 WEEK SECTION: weekSchedules.length =', weekSchedules?.length),
+                    console.log('🔍 WEEK SECTION: weekSchedules.some(w => w.weekStructureLocked) =', weekSchedules?.some(w => w.weekStructureLocked)),
                     <div className="rounded-lg border p-4">
                       <div className="space-y-4">
                         <div className="text-sm font-medium">Week Structure</div>
