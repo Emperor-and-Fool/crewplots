@@ -237,18 +237,7 @@ export default function SchedulerEditPage() {
   // Mutation to lock week structure and create week blocks
   const lockWeekStructureMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
-      // 1. Lock the week structure
-      const lockResponse = await apiRequest('POST', '/api/validation/v3/execute', {
-        operation: 'update',
-        entityType: 'scheduleBlock',
-        data: { 
-          id: scheduleIdNumber, 
-          weekStructureLocked: true 
-        },
-        context: {}
-      });
-
-      // 2. Create week schedules for each week
+      // Create week schedules for each week with weekStructureLocked = true
       const weekSchedulePromises = Array.from({ length: weekCount }, (_, index) => 
         apiRequest('POST', '/api/validation/v3/execute', {
           operation: 'create',
@@ -257,7 +246,8 @@ export default function SchedulerEditPage() {
             scheduleBlockId: scheduleIdNumber,
             weekNumber: index + 1,
             name: `Week ${index + 1}`,
-            isActive: true
+            isActive: true,
+            weekStructureLocked: true
           },
           context: {}
         })
@@ -569,14 +559,14 @@ export default function SchedulerEditPage() {
                       <div className="space-y-2">
                         <div className="text-sm font-medium">Week Structure</div>
                         <div className="text-sm text-muted-foreground">
-                          {scheduleData?.weekStructureLocked
+                          {weekSchedules?.some(w => w.weekStructureLocked)
                             ? `🔒 ${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)`
                             : `${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} - use "Add Week Schedule" button to modify`
                           }
                         </div>
                         {process.env.NODE_ENV === 'development' && (
                           <div className="text-xs text-blue-600">
-                            DEBUG: weekSchedules.length={weekSchedules?.length}, weekStructureLocked={scheduleData?.weekStructureLocked}
+                            DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}
                           </div>
                         )}
                       </div>
