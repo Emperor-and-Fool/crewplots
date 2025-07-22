@@ -423,8 +423,8 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing storage actions (PHASE 3: Russian Doll Logic Integration)
   storageActions: {
-    executeCreate: async (data, storage) => {
-      const entityType = data.entityType;
+    executeCreate: async (data, storage, context) => {
+      const entityType = context.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.createScheduleBlock(data);
@@ -462,8 +462,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Create operation not supported for entity type: ${entityType}`);
     },
     
-    executeRead: async (data, storage) => {
-      const entityType = data.entityType;
+    executeRead: async (data, storage, context) => {
+      const entityType = context.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.getScheduleBlock(data.id);
@@ -478,8 +478,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Read operation not supported for entity type: ${entityType}`);
     },
     
-    executeUpdate: async (data, storage) => {
-      const entityType = data.entityType;
+    executeUpdate: async (data, storage, context) => {
+      const entityType = context.entityType;
       
       if (entityType === 'scheduleBlock') {
         return await storage.updateScheduleBlock(data.id, data);
@@ -494,8 +494,8 @@ export const schedulerEntitiesPackage: VE30Package = {
       throw new Error(`Update operation not supported for entity type: ${entityType}`);
     },
     
-    executeDelete: async (data, storage) => {
-      const entityType = data.entityType;
+    executeDelete: async (data, storage, context) => {
+      const entityType = context.entityType;
       
       if (entityType === 'scheduleBlock') {
         // PHASE 3: Russian Doll cascade delete logic (copied from scheduleBlockPackage.ts lines 207-284)
