@@ -572,8 +572,12 @@ export class ValidationEngine30 {
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${entityType}.${operation} - calling ${operationMethod}`);
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: pkg.storageActions exists:`, !!pkg.storageActions);
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: method exists:`, !!pkg.storageActions[operationMethod]);
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: assembledData:`, JSON.stringify(assembledData, null, 2));
-          transactionResult = await pkg.storageActions[operationMethod](assembledData, storage);
+          
+          // CRITICAL FIX: Include entityType in assembled data for unified package routing
+          const enrichedAssembledData = { ...assembledData, entityType };
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: enrichedAssembledData:`, JSON.stringify(enrichedAssembledData, null, 2));
+          
+          transactionResult = await pkg.storageActions[operationMethod](enrichedAssembledData, storage);
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${operationMethod} completed, result:`, transactionResult);
         }
         // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
