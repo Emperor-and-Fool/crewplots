@@ -242,6 +242,7 @@ export default function SchedulerEditPage() {
   const createWeeksMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
       console.log('🔄 DIRECT WEEK CREATION: Creating', weekCount, 'weeks for scheduleBlock', scheduleIdNumber);
+      console.log('🔄 DIRECT WEEK CREATION: Using correct weekSchedules schema (scheduleBlockId, weekNumber, templateId, weekStructureLocked)');
       
       // Create week schedules directly, bypassing scheduleBlock.maxWeeks entirely
       const weekPromises = [];
@@ -252,11 +253,9 @@ export default function SchedulerEditPage() {
           data: {
             scheduleBlockId: scheduleIdNumber,
             weekNumber: weekNumber,
-            title: `Week ${weekNumber}`,
-            startDate: null, // Will be set later when shifts are created
-            endDate: null,
-            notes: null,
-            weekStructureLocked: false // Individual weeks are not locked
+            templateId: null, // Optional: Can be set later if user wants to apply a template
+            weekStructureLocked: false // Individual weeks are not locked by default
+            // createdBy will be automatically set by ValidationEngine30 from auth context
           },
           context: {}
         };
