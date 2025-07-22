@@ -347,7 +347,14 @@ export default function SchedulerEditPage() {
   };
 
   const handleWeekCountConfirmation = async () => {
+    console.log('🔘 BUTTON CLICK: handleWeekCountConfirmation called');
+    console.log('🔘 STATE CHECK: pendingWeekCount =', pendingWeekCount);
+    console.log('🔘 STATE CHECK: scheduleIdNumber =', scheduleIdNumber);
+    console.log('🔘 STATE CHECK: scheduleId (param) =', scheduleId);
+    console.log('🔘 STATE CHECK: Condition check =', !!(pendingWeekCount && scheduleIdNumber));
+    
     if (pendingWeekCount && scheduleIdNumber) {
+      console.log('🔘 CONDITION PASSED: Calling lockWeekStructureMutation.mutateAsync');
       // maxWeeks field removed - week count now calculated from weekSchedules.length
       
       // Lock the structure and create week blocks
@@ -357,6 +364,9 @@ export default function SchedulerEditPage() {
       setPendingWeekCount(null);
       setSelectedWeekCount(null);
       setShowWeekConfirmDialog(false);
+    } else {
+      console.log('🚨 CONDITION FAILED: Week count confirmation blocked');
+      console.log('🚨 FAILED REASON: pendingWeekCount:', pendingWeekCount, 'scheduleIdNumber:', scheduleIdNumber);
     }
   };
 
@@ -611,9 +621,13 @@ export default function SchedulerEditPage() {
                                 size="sm"
                                 disabled={!selectedWeekCount || lockWeekStructureMutation.isPending}
                                 onClick={() => {
+                                  console.log('🔘 CONFIRM BUTTON: Clicked, selectedWeekCount =', selectedWeekCount);
                                   if (selectedWeekCount) {
+                                    console.log('🔘 CONFIRM BUTTON: Setting pendingWeekCount to', selectedWeekCount);
                                     setPendingWeekCount(selectedWeekCount);
                                     setShowWeekConfirmDialog(true);
+                                  } else {
+                                    console.log('🚨 CONFIRM BUTTON: selectedWeekCount is null/undefined');
                                   }
                                 }}
                               >
