@@ -238,53 +238,46 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // Direct week creation mutation (NEW ARCHITECTURE)
+  // CORRECTED: ScheduleBlock update with week creation (PROPER ARCHITECTURE)
   const createWeeksMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
-      console.log('🔄 DIRECT WEEK CREATION: Creating', weekCount, 'weeks for scheduleBlock', scheduleIdNumber);
-      console.log('🔄 DIRECT WEEK CREATION: Using correct weekSchedules schema (scheduleBlockId, weekNumber, templateId, weekStructureLocked)');
+      console.log('🔄 SCHEDULEBLOCK UPDATE: Setting maxWeeks =', weekCount, 'for scheduleBlock', scheduleIdNumber);
+      console.log('🔄 SCHEDULEBLOCK UPDATE: Backend will automatically create', weekCount, 'weeks via scheduleBlock authority');
       
-      // Create week schedules directly, bypassing scheduleBlock.maxWeeks entirely
-      const weekPromises = [];
-      for (let weekNumber = 1; weekNumber <= weekCount; weekNumber++) {
-        const weekData = {
-          operation: 'create',
-          entityType: 'weekSchedule',
-          data: {
-            scheduleBlockId: scheduleIdNumber,
-            weekNumber: weekNumber,
-            templateId: null, // Optional: Can be set later if user wants to apply a template
-            weekStructureLocked: false // Individual weeks are not locked by default
-            // createdBy will be automatically set by ValidationEngine30 from auth context
-          },
-          context: {}
-        };
-        
-        console.log(`🔄 CREATING WEEK ${weekNumber}:`, weekData);
-        weekPromises.push(apiRequest('POST', '/api/validation/v3/execute', weekData));
-      }
+      // Update the scheduleBlock with maxWeeks - backend creates weeks automatically
+      const requestData = {
+        operation: 'update',
+        entityType: 'scheduleBlock',
+        data: {
+          id: scheduleIdNumber,
+          maxWeeks: weekCount,
+          isActive: true // Activate schedule after setting weeks
+        },
+        context: {}
+      };
       
-      // Execute all week creations in parallel
-      const results = await Promise.all(weekPromises);
-      console.log('✅ ALL WEEKS CREATED:', results);
+      console.log('🔄 SCHEDULEBLOCK UPDATE: Request data:', requestData);
+      const result = await apiRequest('POST', '/api/validation/v3/execute', requestData);
+      console.log('✅ SCHEDULEBLOCK UPDATE: Completed, backend created weeks automatically');
       
-      return { success: true, weekCount, createdWeeks: results };
+      return { success: true, weekCount, scheduleBlockResult: result };
     },
     onSuccess: ({ weekCount }) => {
       toast({
         title: "✅ Weeks Created",
-        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully. You can now add shifts to each week.`,
+        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully via schedule block update.`,
         duration: 4000,
       });
       
-      // Invalidate week schedule queries to show new weeks
+      // Invalidate all related queries to show new weeks
+      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
     },
     onError: (error: any) => {
-      console.error('❌ WEEK CREATION FAILED:', error);
+      console.error('❌ SCHEDULEBLOCK UPDATE FAILED:', error);
       toast({
         title: "Week Creation Failed",
-        description: error?.message || "Failed to create weeks. Please try again.",
+        description: error?.message || "Failed to update schedule block. Please try again.",
         variant: "destructive",
       });
     },
