@@ -271,8 +271,8 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   };
 };
 
-// Week Schedule Assembly (copied from weekSchedulePackage.ts lines 88-113)
-const weekScheduleAssembly = async (rawData: any, user: any, operation: string) => {
+// Week Schedule Assembly (restored from working commit 511c2020)
+const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
   if (operation === 'read') {
     return { 
       id: rawData.id,
@@ -291,24 +291,7 @@ const weekScheduleAssembly = async (rawData: any, user: any, operation: string) 
     return assembled;
   }
 
-  // 🔧 RUSSIAN DOLL FIELD ENRICHMENT: Moved from transaction to assembly phase
-  // This ensures locationId is available during schema validation
-  let locationId = rawData.locationId;
-  
-  if (!locationId && rawData.scheduleBlockId && operation === 'create') {
-    try {
-      console.log('🔧 ASSEMBLY ENRICHMENT: Fetching parent schedule block for locationId');
-      const { storage } = await import('../../../storage');
-      const parentBlock = await storage.getScheduleBlock(rawData.scheduleBlockId);
-      if (parentBlock) {
-        locationId = parentBlock.locationId;
-        console.log(`🔧 ASSEMBLY ENRICHMENT: Added locationId ${locationId} from parent block`);
-      }
-    } catch (error) {
-      console.warn('🔧 ASSEMBLY ENRICHMENT: Failed to fetch parent block locationId:', error);
-    }
-  }
-
+  // Simple assembly like working commit - NO locationId enrichment
   return {
     scheduleBlockId: parseInt(rawData.scheduleBlockId) || rawData.scheduleBlockId,
     weekNumber: parseInt(rawData.weekNumber) || rawData.weekNumber,
@@ -316,7 +299,6 @@ const weekScheduleAssembly = async (rawData: any, user: any, operation: string) 
     isActive: rawData.isActive !== undefined ? Boolean(rawData.isActive) : true,  // Frontend sends this
     templateId: rawData.templateId ? parseInt(rawData.templateId) : null,
     createdBy: user?.id || rawData.createdBy,  // Enriched from user context
-    locationId: locationId,  // Enriched from parent schedule block during assembly
     ...(operation === 'update' && rawData.id && { id: rawData.id })
   };
 };
@@ -456,19 +438,19 @@ export const schedulerEntitiesPackage: VE30Package = {
     return { isValid: false, errors: [`Unknown entity type: ${entityType}`] };
   },
   
-  // Entity-routing package assembly
-  assemblePackage: async (data: any, user: any, operation: string) => {
+  // Entity-routing package assembly (restored from working commit 511c2020)
+  assemblePackage: (data: any, user: any, operation: string) => {
     // FIXED: EntityType passed via registry wrapper in packageRegistry30.ts
     const entityType = data.entityType;
     
     if (entityType === 'scheduleBlock') {
-      return scheduleBlockAssembly(data, user, operation);
+      return VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly);
     }
     if (entityType === 'weekSchedule') {
-      return await weekScheduleAssembly(data, user, operation);
+      return VE30PackageBuilder.assemblePackage(data, user, operation, weekScheduleAssembly);
     }
     if (entityType === 'shift') {
-      return shiftAssembly(data, user, operation);
+      return VE30PackageBuilder.assemblePackage(data, user, operation, shiftAssembly);
     }
     
     return Promise.resolve(data);
@@ -484,22 +466,7 @@ export const schedulerEntitiesPackage: VE30Package = {
       }
       
       if (entityType === 'weekSchedule') {
-        // RUSSIAN DOLL CASCADE CREATE: weekSchedule requires scheduleBlock authentication
-        console.log('🔧 WEEK SCHEDULE CREATE: Starting Russian Doll cascade creation');
-        
-        if (!data.scheduleBlockId) {
-          throw new Error('🚨 RUSSIAN DOLL VIOLATION: weekSchedule creation requires scheduleBlockId for cascade authentication');
-        }
-        
-        // Validate parent scheduleBlock exists and user has access
-        const parentBlock = await storage.getScheduleBlock(data.scheduleBlockId);
-        if (!parentBlock) {
-          throw new Error(`🚨 CASCADE AUTHENTICATION FAILED: Schedule block ${data.scheduleBlockId} not found`);
-        }
-        
-        console.log(`✅ CASCADE AUTHENTICATION: Parent block verified - ID: ${parentBlock.id}, Name: "${parentBlock.name}"`);
-        console.log('🔧 FIELD ENRICHMENT: locationId already enriched during assembly phase');
-        
+        // Simple storage like working commit - NO Russian Doll enrichment
         return await storage.createWeekSchedule(data);
       }
       
