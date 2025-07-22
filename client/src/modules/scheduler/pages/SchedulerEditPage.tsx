@@ -349,18 +349,33 @@ export default function SchedulerEditPage() {
     console.log('🔘 STATE CHECK: scheduleIdNumber =', scheduleIdNumber);
     console.log('🔘 STATE CHECK: scheduleId (param) =', scheduleId);
     console.log('🔘 STATE CHECK: Condition check =', !!(pendingWeekCount && scheduleIdNumber));
+    console.log('🔘 MUTATION STATUS: lockWeekStructureMutation.isPending =', lockWeekStructureMutation?.isPending);
+    console.log('🔘 MUTATION STATUS: lockWeekStructureMutation exists =', !!lockWeekStructureMutation);
     
     if (pendingWeekCount && scheduleIdNumber) {
       console.log('🔘 CONDITION PASSED: Calling lockWeekStructureMutation.mutateAsync');
-      // maxWeeks field removed - week count now calculated from weekSchedules.length
+      console.log('🔘 MUTATION PAYLOAD: weekCount =', pendingWeekCount);
       
-      // Lock the structure and create week blocks
-      await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
-      
-      // Reset all week-related state
-      setPendingWeekCount(null);
-      setSelectedWeekCount(null);
-      setShowWeekConfirmDialog(false);
+      try {
+        console.log('🔄 STARTING WEEK LOCK MUTATION...');
+        // Lock the structure and create week blocks
+        const result = await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
+        console.log('✅ WEEK LOCK MUTATION SUCCESS:', result);
+        
+        // Reset all week-related state
+        setPendingWeekCount(null);
+        setSelectedWeekCount(null);
+        setShowWeekConfirmDialog(false);
+        console.log('🔄 DIALOG STATE RESET COMPLETE');
+      } catch (error) {
+        console.error('❌ WEEK LOCK MUTATION FAILED:', error);
+        toast({
+          title: "❌ Week Lock Failed",
+          description: `Failed to lock week structure: ${error}`,
+          variant: "destructive",
+          duration: 4000,
+        });
+      }
     } else {
       console.log('🚨 CONDITION FAILED: Week count confirmation blocked');
       console.log('🚨 FAILED REASON: pendingWeekCount:', pendingWeekCount, 'scheduleIdNumber:', scheduleIdNumber);
@@ -616,13 +631,18 @@ export default function SchedulerEditPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={!selectedWeekCount || lockWeekStructureMutation.isPending}
+                                disabled={!selectedWeekCount || lockWeekStructureMutation?.isPending}
                                 onClick={() => {
                                   console.log('🔘 CONFIRM BUTTON: Clicked, selectedWeekCount =', selectedWeekCount);
+                                  console.log('🔘 CONFIRM BUTTON: scheduleIdNumber =', scheduleIdNumber);
+                                  console.log('🔘 CONFIRM BUTTON: lockWeekStructureMutation exists =', !!lockWeekStructureMutation);
+                                  console.log('🔘 CONFIRM BUTTON: Button disabled status =', (!selectedWeekCount || lockWeekStructureMutation?.isPending));
+                                  
                                   if (selectedWeekCount) {
                                     console.log('🔘 CONFIRM BUTTON: Setting pendingWeekCount to', selectedWeekCount);
                                     setPendingWeekCount(selectedWeekCount);
                                     setShowWeekConfirmDialog(true);
+                                    console.log('🔘 CONFIRM BUTTON: Dialog should now be visible');
                                   } else {
                                     console.log('🚨 CONFIRM BUTTON: selectedWeekCount is null/undefined');
                                   }
