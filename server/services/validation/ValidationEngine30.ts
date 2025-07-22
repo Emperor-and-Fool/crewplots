@@ -520,52 +520,6 @@ export class ValidationEngine30 {
           transactionResult = hybridResult.data;
           console.log('💾 Messaging operation completed via hybrid handler');
         }
-        // PLAN 067: FALLBACK LOGIC ELIMINATION - All scheduler operations now use unified package routing
-        /* COMMENTED OUT: Redundant fallback logic blocks - unified package handles all scheduler operations
-        else if (false && entityType === 'scheduleBlock' && operation === 'create') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.create must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: scheduleBlock.create disabled to force package-driven architecture');
-        } else if (false && entityType === 'scheduleBlock' && operation === 'update') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.update must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: scheduleBlock.update disabled to force package-driven architecture');
-        } else if (false && entityType === 'weekSchedule' && operation === 'create') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.create must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: weekSchedule.create disabled to force package-driven architecture');
-        } else if (false && entityType === 'weekSchedule' && operation === 'update') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.update must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: weekSchedule.update disabled to force package-driven architecture');
-        } else if (false && entityType === 'shift' && operation === 'create') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: shift.create must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: shift.create disabled to force package-driven architecture');
-        } else if (false && entityType === 'shift' && operation === 'update') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: shift.update must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: shift.update disabled to force package-driven architecture');
-        */
-        /* PLAN 067: REMAINING FALLBACK BLOCKS COMMENTED OUT - unified package handles all operations
-        else if (false && entityType === 'scheduleBlock' && operation === 'read') {
-          // [Large block of disabled cascade deletion code - commented out]
-        } else if (false && entityType === 'scheduleBlock' && operation === 'delete') {
-          // [Large block of disabled cascade deletion code - commented out]  
-        } else if (false && entityType === 'weekSchedule' && operation === 'read') {
-          // [Disabled weekSchedule operations - commented out]
-        } else if (false && entityType === 'weekSchedule' && operation === 'list') {
-          // [Disabled weekSchedule operations - commented out]
-        } else if (false && entityType === 'weekSchedule' && operation === 'delete') {
-          // [Disabled weekSchedule operations - commented out]
-        } else if (false && entityType === 'shift' && operation === 'read') {
-          // [Disabled shift operations - commented out]
-        } else if (false && entityType === 'shift' && operation === 'list') {
-          // [Disabled shift operations - commented out]
-        } else if (false && entityType === 'shift' && operation === 'delete') {
-          // [Disabled shift operations - commented out]
-        }
-        */
         // Handle scheduler operations with package-driven execution
         else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
           const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
@@ -573,14 +527,14 @@ export class ValidationEngine30 {
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: pkg.storageActions exists:`, !!pkg.storageActions);
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: method exists:`, !!pkg.storageActions[operationMethod]);
           
-          // CRITICAL FIX: Include entityType in assembled data for unified package routing
+          // Include entityType in assembled data for unified package routing
           const enrichedAssembledData = { ...assembledData, entityType };
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: enrichedAssembledData:`, JSON.stringify(enrichedAssembledData, null, 2));
           
           transactionResult = await pkg.storageActions[operationMethod](enrichedAssembledData, storage);
           console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${operationMethod} completed, result:`, transactionResult);
         }
-        // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
+        // Generic package-driven execution for all other entity types
         else if (pkg.storageActions) {
           const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
           console.log(`📦 PACKAGE-DRIVEN: Checking for storageAction method: ${operationMethod}`);
