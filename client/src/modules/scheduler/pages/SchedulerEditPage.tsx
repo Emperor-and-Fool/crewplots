@@ -29,6 +29,7 @@ import ShiftManagementInterface from '../components/ShiftManagementInterface';
 import { useDeleteShift, useWeekScheduleShifts, useUpdateShift } from '../hooks/useSchedulerData';
 
 export default function SchedulerEditPage() {
+  console.log('🚨 SCHEDULER EDIT PAGE: Component function executing!');
   const params = useParams();
   const { scheduleId } = params;
   const [, navigate] = useLocation();
