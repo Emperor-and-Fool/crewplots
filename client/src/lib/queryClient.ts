@@ -36,14 +36,23 @@ export async function apiRequest(
     // Handle VE30 unpacking if requested
     if (options?.unpackVE30) {
       const jsonResponse = await res.json();
+      console.log('🔧 VE30 UNPACKER: Full ValidationEngine30 response structure:', JSON.stringify(jsonResponse, null, 2));
+      console.log('🔧 VE30 UNPACKER: Checking path jsonResponse?.threads?.transaction?.data');
+      console.log('🔧 VE30 UNPACKER: jsonResponse.threads exists:', !!jsonResponse?.threads);
+      console.log('🔧 VE30 UNPACKER: jsonResponse.threads.transaction exists:', !!jsonResponse?.threads?.transaction);
+      console.log('🔧 VE30 UNPACKER: jsonResponse.threads.transaction.data exists:', !!jsonResponse?.threads?.transaction?.data);
+      
       if (jsonResponse?.threads?.transaction?.data) {
-        console.log('🔧 VE30 UNPACKER: Extracting data from ValidationEngine30 response');
+        console.log('🔧 VE30 UNPACKER: ✅ EXTRACTION PATH FOUND - Extracting data from ValidationEngine30 response');
         console.log('🔧 VE30 UNPACKER: Raw jsonResponse.threads.transaction.data:', JSON.stringify(jsonResponse.threads.transaction.data, null, 2));
         const extracted = jsonResponse.threads.transaction.data;
         console.log('🔧 VE30 UNPACKER: Extracted data weekStructureLocked:', extracted.weekStructureLocked);
         return extracted;
+      } else {
+        console.log('🔧 VE30 UNPACKER: ❌ EXTRACTION PATH NOT FOUND - Returning full jsonResponse');
+        console.log('🔧 VE30 UNPACKER: Full response keys:', Object.keys(jsonResponse));
+        return jsonResponse;
       }
-      return jsonResponse;
     }
     
     return res;
