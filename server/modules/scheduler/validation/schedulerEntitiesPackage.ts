@@ -55,24 +55,27 @@ const shiftListSchema = z.object({
 
 // ===== CONSOLIDATED BUSINESS RULES =====
 
-// Schedule Block Business Rules (copied from scheduleBlockPackage.ts lines 38-70)
+// Schedule Block Business Rules (CORRECTED: conditional validation, no bypass)
 const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
-    }
-
-    if (!data.name || data.name.trim().length === 0) {
-      errors.push('Schedule block name is required');
-    } else if (data.name.length > 100) {
+    // Name validation (conditional)
+    if (data.name && data.name.trim().length === 0) {
+      errors.push('Schedule block name cannot be empty');
+    } else if (data.name && data.name.length > 100) {
       errors.push('Schedule block name must be 100 characters or less');
     }
 
+    // Location validation (conditional)
+    if (data.locationId && (typeof data.locationId !== 'number' || data.locationId <= 0)) {
+      errors.push('Valid location ID is required');
+    }
+
+    // Description validation (conditional)
     if (data.description && data.description.length > 500) {
-      warnings.push('Schedule block description is quite long - consider shortening for better readability');
+      warnings.push('Description is quite long - consider being more concise');
     }
 
     return { warnings, errors };
@@ -82,41 +85,49 @@ const scheduleBlockBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
+    // User context validation (conditional on operation)
+    if (context?.user && context.operation !== 'list' && context.operation !== 'read') {
+      // Active status validation
+      if (data.hasOwnProperty('isActive') && typeof data.isActive !== 'boolean') {
+        errors.push('Active status must be true or false');
+      }
     }
 
-    if (!context?.user) {
-      errors.push('User context required for schedule block operations');
-      return { warnings, errors };
-    }
+    return { warnings, errors };
+  },
 
-    if (!data.locationId) {
-      errors.push('Location ID is required for schedule blocks');
+  // Cascade deletion validation rule
+  (data: any, context: any) => {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    if (context?.operation === 'delete' && data.id) {
+      // Warning about cascade effects
+      warnings.push('This will permanently delete all week schedules and shifts within this schedule block');
     }
 
     return { warnings, errors };
   }
 ];
 
-// Week Schedule Business Rules (copied from weekSchedulePackage.ts lines 38-85)
+// Week Schedule Business Rules (CORRECTED: conditional validation, no bypass)
 const weekScheduleBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
-    }
+    // Week number validation (conditional on operation)
+    if (context?.operation !== 'read' && context?.operation !== 'list') {
+      if (!data.weekNumber || typeof data.weekNumber !== 'number') {
+        errors.push('Week number is required and must be a number');
+      } else if (data.weekNumber < 1 || data.weekNumber > 53) {
+        errors.push('Week number must be between 1 and 53');
+      }
 
-    if (!data.weekNumber || typeof data.weekNumber !== 'number') {
-      errors.push('Week number is required and must be a number');
-    } else if (data.weekNumber < 1 || data.weekNumber > 53) {
-      errors.push('Week number must be between 1 and 53');
-    }
-
-    if (!data.scheduleBlockId && data.id === undefined) {
-      errors.push('Schedule block ID is required for new week schedules');
+      // Schedule block validation for creation (conditional)
+      if (!data.scheduleBlockId && data.id === undefined) {
+        errors.push('Schedule block ID is required for new week schedules');
+      }
     }
 
     return { warnings, errors };
@@ -126,65 +137,66 @@ const weekScheduleBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
-    }
+    // User context validation (conditional on operation)
+    if (context?.operation !== 'read' && context?.operation !== 'list') {
+      if (!context?.user) {
+        errors.push('User context required for week schedule operations');
+        return { warnings, errors };
+      }
 
-    if (!context?.user) {
-      errors.push('User context required for week schedule operations');
-      return { warnings, errors };
-    }
-
-    if (data.templateId && (typeof data.templateId !== 'number' || data.templateId <= 0)) {
-      warnings.push('Invalid template ID provided - will proceed without template');
+      // Template validation (conditional)
+      if (data.templateId && (typeof data.templateId !== 'number' || data.templateId <= 0)) {
+        warnings.push('Invalid template ID provided - will proceed without template');
+      }
     }
 
     return { warnings, errors };
   }
 ];
 
-// Shift Business Rules (copied from shiftPackage.ts lines 38-132)
+// Shift Business Rules (CORRECTED: conditional validation, no bypass)
 const shiftBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
-    }
-
-    if (!data.title || data.title.trim().length === 0) {
-      errors.push('Shift title is required');
-    } else if (data.title.length > 100) {
-      errors.push('Shift title must be 100 characters or less');
-    }
-
-    if (!data.startTime) {
-      errors.push('Start time is required');
-    }
-    if (!data.endTime) {
-      errors.push('End time is required');
-    }
-    if (data.startTime && data.endTime && data.startTime >= data.endTime) {
-      errors.push('End time must be after start time');
-    }
-
-    if (!data.maxSlots || typeof data.maxSlots !== 'number' || data.maxSlots < 1) {
-      errors.push('Max slots must be a positive number');
-    } else if (data.maxSlots > 50) {
-      warnings.push('Large number of slots - verify this is correct');
-    }
-
-    if (context?.operation === 'create') {
-      if (!data.daysOfWeek || !Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0) {
-        errors.push('At least one day of the week must be selected');
+    // Validation only for create/update operations (conditional)
+    if (context?.operation !== 'read' && context?.operation !== 'list') {
+      // Title validation (conditional)
+      if (data.title && data.title.trim().length === 0) {
+        errors.push('Shift title cannot be empty');
+      } else if (data.title && data.title.length > 100) {
+        errors.push('Shift title must be 100 characters or less');
       }
-    } else if (context?.operation === 'update') {
-      const hasDayOfWeek = data.dayOfWeek && typeof data.dayOfWeek === 'string';
-      const hasDaysOfWeek = data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 0;
-      
-      if (!hasDayOfWeek && !hasDaysOfWeek) {
-        errors.push('Day of week is required for shift editing (dayOfWeek or daysOfWeek)');
+
+      // Time validation (conditional)
+      if (data.startTime && data.endTime && data.startTime >= data.endTime) {
+        errors.push('End time must be after start time');
+      }
+
+      // Max slots validation (conditional)
+      if (data.maxSlots && (typeof data.maxSlots !== 'number' || data.maxSlots < 1)) {
+        errors.push('Max slots must be a positive number');
+      } else if (data.maxSlots && data.maxSlots > 50) {
+        warnings.push('Large number of slots - verify this is correct');
+      }
+
+      // Days of week validation - Context-aware for Russian Doll operations
+      if (context?.operation === 'create') {
+        // Multi-day creation requires daysOfWeek array
+        if (data.daysOfWeek && (!Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0)) {
+          errors.push('At least one day of the week must be selected');
+        }
+      } else if (context?.operation === 'update') {
+        // Single-shift editing - Russian Doll constraint (flexible data format)
+        const hasDayOfWeek = data.dayOfWeek && typeof data.dayOfWeek === 'string';
+        const hasDaysOfWeek = data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 0;
+        
+        if (data.dayOfWeek || data.daysOfWeek) {
+          if (!hasDayOfWeek && !hasDaysOfWeek) {
+            errors.push('Day of week is required for shift editing (dayOfWeek or daysOfWeek)');
+          }
+        }
       }
     }
 
@@ -195,23 +207,24 @@ const shiftBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    if (context?.operation === 'read' || context?.operation === 'list') {
-      return { warnings, errors };
-    }
+    // User context validation (conditional on operation)
+    if (context?.operation !== 'read' && context?.operation !== 'list') {
+      if (!context?.user) {
+        errors.push('User context required for shift operations');
+        return { warnings, errors };
+      }
 
-    if (!context?.user) {
-      errors.push('User context required for shift operations');
-      return { warnings, errors };
-    }
+      // Week schedule validation for creation (conditional)
+      if (!data.weekScheduleId && data.id === undefined && context?.operation === 'create') {
+        errors.push('Week schedule ID is required for new shifts');
+      }
 
-    if (!data.weekScheduleId && data.id === undefined) {
-      errors.push('Week schedule ID is required for new shifts');
-    }
-
-    if (data.subscriptionDeadline) {
-      const deadline = new Date(data.subscriptionDeadline);
-      if (isNaN(deadline.getTime())) {
-        warnings.push('Invalid subscription deadline format');
+      // Subscription deadline validation (conditional)
+      if (data.subscriptionDeadline) {
+        const deadline = new Date(data.subscriptionDeadline);
+        if (isNaN(deadline.getTime())) {
+          warnings.push('Invalid subscription deadline format');
+        }
       }
     }
 
