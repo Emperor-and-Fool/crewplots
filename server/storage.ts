@@ -1014,6 +1014,8 @@ class DatabaseStorage {
       scheduleBlockId,
       weekNumber,
       templateId: sourceWeek.templateId,
+      weekStructureLocked: sourceWeek.weekStructureLocked || false,
+      createdBy: sourceWeek.createdBy,
     };
 
     const [newWeek] = await db.insert(weekSchedules).values(newWeekData).returning();
@@ -1528,6 +1530,8 @@ class DatabaseStorage {
         scheduleBlockId: weekSchedules.scheduleBlockId,
         weekNumber: weekSchedules.weekNumber,
         templateId: weekSchedules.templateId,
+        weekStructureLocked: weekSchedules.weekStructureLocked,
+        createdBy: weekSchedules.createdBy,
         createdAt: weekSchedules.createdAt,
         updatedAt: weekSchedules.updatedAt
       })

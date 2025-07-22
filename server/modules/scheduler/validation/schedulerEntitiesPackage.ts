@@ -148,6 +148,16 @@ const weekScheduleBusinessRules = [
       if (data.templateId && (typeof data.templateId !== 'number' || data.templateId <= 0)) {
         warnings.push('Invalid template ID provided - will proceed without template');
       }
+
+      // Week structure lock validation
+      if (data.hasOwnProperty('weekStructureLocked')) {
+        if (typeof data.weekStructureLocked !== 'boolean') {
+          errors.push('Week structure lock status must be true or false');
+        }
+        if (data.weekStructureLocked === true && context?.operation === 'update') {
+          warnings.push('Week structure is locked - changes may be restricted');
+        }
+      }
     }
 
     return { warnings, errors };
