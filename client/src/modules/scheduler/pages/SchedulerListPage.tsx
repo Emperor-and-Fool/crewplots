@@ -278,26 +278,29 @@ export default function SchedulerListPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{schedule.name}"? 
-              {deletionInfoQuery.data && (
-                <div className="mt-2 p-3 bg-red-50 rounded-md">
-                  <div className="text-sm text-red-800">
-                    This will permanently remove:
-                    <ul className="mt-1 list-disc list-inside">
-                      <li>{deletionInfoQuery.data.weekSchedulesCount} week schedule{deletionInfoQuery.data.weekSchedulesCount !== 1 ? 's' : ''}</li>
-                      <li>{deletionInfoQuery.data.shiftsCount} shift{deletionInfoQuery.data.shiftsCount !== 1 ? 's' : ''}</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-              {deletionInfoQuery.isLoading && (
-                <div className="mt-2 text-sm text-gray-500">Loading deletion details...</div>
-              )}
-              <div className="mt-2 text-sm text-gray-600">
-                This action cannot be undone.
-              </div>
+              Are you sure you want to delete "{schedule.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {/* Move complex content outside of AlertDialogDescription to avoid DOM nesting issues */}
+          {deletionInfoQuery.data && (
+            <div className="px-6 pb-4">
+              <div className="p-3 bg-red-50 rounded-md">
+                <div className="text-sm text-red-800">
+                  This will permanently remove:
+                  <ul className="mt-1 list-disc list-inside">
+                    <li>{deletionInfoQuery.data.weekSchedulesCount} week schedule{deletionInfoQuery.data.weekSchedulesCount !== 1 ? 's' : ''}</li>
+                    <li>{deletionInfoQuery.data.shiftsCount} shift{deletionInfoQuery.data.shiftsCount !== 1 ? 's' : ''}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+          {deletionInfoQuery.isLoading && (
+            <div className="px-6 pb-4">
+              <div className="text-sm text-gray-500">Loading deletion details...</div>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
