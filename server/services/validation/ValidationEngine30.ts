@@ -520,19 +520,13 @@ export class ValidationEngine30 {
           transactionResult = hybridResult.data;
           console.log('💾 Messaging operation completed via hybrid handler');
         }
-        // Handle scheduler operations with package-driven execution
-        else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
-          const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${entityType}.${operation} - calling ${operationMethod}`);
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: pkg.storageActions exists:`, !!pkg.storageActions);
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: method exists:`, !!pkg.storageActions[operationMethod]);
+        // Handle scheduler operations with UNIFIED GENERIC CRUD (eliminates duplication)
+        else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType)) {
+          console.log(`🎯 UNIFIED GENERIC CRUD: Using centralized ${entityType}.${operation} method`);
+          console.log(`🎯 ARCHITECTURAL FIX: Eliminated duplicate package-driven logic`);
           
-          // Include entityType in assembled data for unified package routing
-          const enrichedAssembledData = { ...assembledData, entityType };
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: enrichedAssembledData:`, JSON.stringify(enrichedAssembledData, null, 2));
-          
-          transactionResult = await pkg.storageActions[operationMethod](enrichedAssembledData, storage);
-          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${operationMethod} completed, result:`, transactionResult);
+          transactionResult = await this.executeGenericCrud(entityType, operation, assembledData);
+          console.log(`🎯 UNIFIED GENERIC CRUD: ${operation} completed, result:`, transactionResult?.id ? `ID: ${transactionResult.id}` : 'Success');
         }
         // Generic package-driven execution for all other entity types
         else if (pkg.storageActions) {
