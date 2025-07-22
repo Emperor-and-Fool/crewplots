@@ -240,9 +240,11 @@ export default function SchedulerEditPage() {
   // Mutation to lock week structure and create week blocks
   const lockWeekStructureMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
+      console.log('🔄 LOCK MUTATION: Starting week structure lock', { weekCount, scheduleBlockId: scheduleIdNumber });
+      
       // Create week schedules for each week with weekStructureLocked = true
-      const weekSchedulePromises = Array.from({ length: weekCount }, (_, index) => 
-        apiRequest('POST', '/api/validation/v3/execute', {
+      const weekSchedulePromises = Array.from({ length: weekCount }, (_, index) => {
+        const requestData = {
           operation: 'create',
           entityType: 'weekSchedule',
           data: {
@@ -251,10 +253,16 @@ export default function SchedulerEditPage() {
             weekStructureLocked: true
           },
           context: {}
-        })
-      );
+        };
+        console.log(`🔄 LOCK MUTATION: Creating week ${index + 1} with data:`, requestData);
+        
+        return apiRequest('POST', '/api/validation/v3/execute', requestData);
+      });
 
-      await Promise.all(weekSchedulePromises);
+      console.log('🔄 LOCK MUTATION: Sending parallel requests for', weekCount, 'weeks');
+      const results = await Promise.all(weekSchedulePromises);
+      console.log('🔄 LOCK MUTATION: All requests completed, results:', results);
+      
       return { success: true, weekCount };
     },
     onSuccess: ({ weekCount }) => {
