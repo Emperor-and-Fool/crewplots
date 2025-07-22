@@ -520,7 +520,8 @@ export class ValidationEngine30 {
           transactionResult = hybridResult.data;
           console.log('💾 Messaging operation completed via hybrid handler');
         }
-        // Handle scheduler operations with PostgreSQL storage (existing patterns)
+        // PLAN 067: FALLBACK LOGIC ELIMINATION - All scheduler operations now use unified package routing
+        /* COMMENTED OUT: Redundant fallback logic blocks - unified package handles all scheduler operations
         else if (false && entityType === 'scheduleBlock' && operation === 'create') {
           // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.create must use package-driven flow');
@@ -545,99 +546,26 @@ export class ValidationEngine30 {
           // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
           console.log('🚨 HARDCODED BYPASS DISABLED: shift.update must use package-driven flow');
           throw new Error('TROUBLESHOOTING MODE: shift.update disabled to force package-driven architecture');
-        } else if (false && entityType === 'scheduleBlock' && operation === 'read') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.read must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: scheduleBlock.read disabled to force package-driven architecture');
-          
-          // DISABLED CODE: deletion info queries (historical ValidationPackageService pattern)
-          if (false && assembledData.includeDeleteInfo) {
-            console.log('🔍 CASCADE INFO: Calculating deletion impact for schedule block:', assembledData.id);
-            
-            // Count related records for deletion warning (Russian Doll architecture)
-            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.id);
-            let totalShifts = 0;
-            
-            for (const week of weekSchedules) {
-              const shifts = await storage.getShiftsByWeekSchedule(week.id);
-              totalShifts += shifts.length;
-            }
-            
-            const scheduleBlock = await storage.getScheduleBlock(assembledData.id);
-            if (!scheduleBlock) {
-              throw new Error(`Schedule block not found: ${assembledData.id}`);
-            }
-            
-            transactionResult = {
-              ...scheduleBlock,
-              weekSchedulesCount: weekSchedules.length,
-              shiftsCount: totalShifts
-            };
-            
-            console.log(`💾 Deletion info compiled: ${weekSchedules.length} week schedules, ${totalShifts} shifts`);
-          } else {
-            // Standard read operation
-            transactionResult = await storage.getScheduleBlock(assembledData.id);
-            if (!transactionResult) {
-              throw new Error(`Schedule block not found: ${assembledData.id}`);
-            }
-            console.log('💾 Schedule block read completed ID:', assembledData.id);
-          }
+        */
+        /* PLAN 067: REMAINING FALLBACK BLOCKS COMMENTED OUT - unified package handles all operations
+        else if (false && entityType === 'scheduleBlock' && operation === 'read') {
+          // [Large block of disabled cascade deletion code - commented out]
         } else if (false && entityType === 'scheduleBlock' && operation === 'delete') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: scheduleBlock.delete must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: scheduleBlock.delete disabled to force package-driven architecture');
-          
-          // DISABLED CODE: cascade deletion (historical ValidationPackageService pattern)  
-          if (false && assembledData.cascadeDelete) {
-            console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', assembledData.id);
-            
-            // Step 1: Get all week schedules for this block
-            const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(assembledData.id);
-            console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete`);
-            
-            // Step 2: Delete all week schedules (which cascade delete their shifts automatically)
-            for (const week of weekSchedules) {
-              console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (including its shifts)`);
-              await storage.deleteWeekSchedule(week.id);  // This already cascades to shifts in storage layer
-            }
-            
-            // Step 3: Delete the schedule block itself
-            console.log('🔥 CASCADE DELETE: Deleting schedule block (final step)');
-            transactionResult = await storage.deleteScheduleBlock(assembledData.id);
-            
-            console.log(`💾 CASCADE DELETE COMPLETED: Schedule block ${assembledData.id} and all related data deleted`);
-          } else {
-            // Standard simple deletion (may fail with foreign key constraints)
-            console.log('⚠️  SIMPLE DELETE: Attempting non-cascade deletion (may fail with foreign keys)');
-            transactionResult = await storage.deleteScheduleBlock(assembledData.id);
-            console.log('💾 Schedule block deleted ID:', assembledData.id);
-          }
+          // [Large block of disabled cascade deletion code - commented out]  
         } else if (false && entityType === 'weekSchedule' && operation === 'read') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.read must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: weekSchedule.read disabled to force package-driven architecture');
+          // [Disabled weekSchedule operations - commented out]
         } else if (false && entityType === 'weekSchedule' && operation === 'list') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.list must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: weekSchedule.list disabled to force package-driven architecture');
+          // [Disabled weekSchedule operations - commented out]
         } else if (false && entityType === 'weekSchedule' && operation === 'delete') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: weekSchedule.delete must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: weekSchedule.delete disabled to force package-driven architecture');
+          // [Disabled weekSchedule operations - commented out]
         } else if (false && entityType === 'shift' && operation === 'read') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: shift.read must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: shift.read disabled to force package-driven architecture');
+          // [Disabled shift operations - commented out]
         } else if (false && entityType === 'shift' && operation === 'list') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: shift.list must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: shift.list disabled to force package-driven architecture');
+          // [Disabled shift operations - commented out]
         } else if (false && entityType === 'shift' && operation === 'delete') {
-          // HARDCODED OPERATIONS DISABLED - FALLS THROUGH TO PACKAGE-DRIVEN FALLBACK
-          console.log('🚨 HARDCODED BYPASS DISABLED: shift.delete must use package-driven flow');
-          throw new Error('TROUBLESHOOTING MODE: shift.delete disabled to force package-driven architecture');
+          // [Disabled shift operations - commented out]
         }
+        */
         // Handle scheduler operations with package-driven execution
         else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
           const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
