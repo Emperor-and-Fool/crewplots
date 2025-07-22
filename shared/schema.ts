@@ -228,7 +228,6 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   description: text("description"),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  weekStructureLocked: boolean("week_structure_locked").notNull().default(false), // Controls week count immutability
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -596,7 +595,7 @@ export type InsertKbArticle = z.infer<typeof insertKbArticleSchema>;
 export type InsertMessage = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteRef = z.infer<typeof insertNoteRefSchema>;
 export type InsertNoteFile = z.infer<typeof insertNoteFileSchema>;
-export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
+// export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>; // near-future-removal: Upload system removed
 // export type InsertNoteAttachment = z.infer<typeof insertNoteAttachmentSchema>; // near-future-removal
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
