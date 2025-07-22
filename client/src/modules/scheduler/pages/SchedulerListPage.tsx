@@ -28,7 +28,7 @@ export default function SchedulerListPage() {
         entityType: "scheduleBlock",
         entityId: null,
         data: {}
-      }, { unpackVE30: true });
+      });
       
       return scheduleBlocks;
     }
@@ -43,7 +43,7 @@ export default function SchedulerListPage() {
         entityType: "location",
         entityId: null,
         data: {}
-      }, { unpackVE30: true });
+      });
       
       return locations;
     }
