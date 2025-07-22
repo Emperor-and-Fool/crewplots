@@ -398,18 +398,27 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing business rules validation
   validateBusinessRules: async (data: any, context: any) => {
-    const entityType = context.entityType;
+    // Fix: Get entityType from data (where it's stored) instead of context
+    const entityType = data.entityType || context.entityType;
+    
+    console.log('🔥 UNIFIED BUSINESS RULES: entityType from data.entityType:', data.entityType);
+    console.log('🔥 UNIFIED BUSINESS RULES: entityType from context.entityType:', context.entityType);
+    console.log('🔥 UNIFIED BUSINESS RULES: Using entityType:', entityType);
     
     if (entityType === 'scheduleBlock') {
+      console.log('🔥 UNIFIED BUSINESS RULES: Routing to scheduleBlock business rules');
       return await VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules);
     }
     if (entityType === 'weekSchedule') {
+      console.log('🔥 UNIFIED BUSINESS RULES: Routing to weekSchedule business rules');
       return await VE30PackageBuilder.validateBusinessRules(data, context, weekScheduleBusinessRules);
     }
     if (entityType === 'shift') {
+      console.log('🔥 UNIFIED BUSINESS RULES: Routing to shift business rules');
       return await VE30PackageBuilder.validateBusinessRules(data, context, shiftBusinessRules);
     }
     
+    console.log('🔥 UNIFIED BUSINESS RULES: ERROR - Unknown entity type:', entityType);
     return { isValid: false, errors: [`Unknown entity type: ${entityType}`] };
   },
   
