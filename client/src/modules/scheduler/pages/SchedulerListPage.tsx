@@ -158,15 +158,16 @@ export default function SchedulerListPage() {
       
       const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
       
-      console.log('🗑️ FRONTEND DELETE: Response status:', response.status);
-      console.log('🗑️ FRONTEND DELETE: Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🗑️ FRONTEND DELETE: Response received:', response);
       
-      const result = await response.json();
+      // apiRequest returns parsed JSON data, not a Response object
+      const result = response;
       console.log('🗑️ FRONTEND DELETE: Response body:', result);
       
-      if (!response.ok) {
+      // Check if result indicates an error
+      if (result.error) {
         console.error('🗑️ FRONTEND DELETE: Request failed with error:', result);
-        throw new Error(result.message || 'Failed to delete schedule');
+        throw new Error(result.error || 'Failed to delete schedule');
       }
       
       // ValidationEngine30 response structure for delete operations
