@@ -41,9 +41,28 @@ export const packageRegistry30 = {
   motivationNote: motivationNotePackage,
   
   // Unified scheduler package (PLAN 067: three entities, one package)
-  scheduleBlock: schedulerEntitiesPackage,
-  weekSchedule: schedulerEntitiesPackage,
-  shift: schedulerEntitiesPackage,
+  // Create entity-specific package instances that know their target entity
+  scheduleBlock: {
+    ...schedulerEntitiesPackage,
+    assemblePackage: (data: any, user: any, operation: string) => {
+      const assembled = schedulerEntitiesPackage.assemblePackage({ ...data, entityType: 'scheduleBlock' }, user, operation);
+      return assembled;
+    }
+  },
+  weekSchedule: {
+    ...schedulerEntitiesPackage,
+    assemblePackage: (data: any, user: any, operation: string) => {
+      const assembled = schedulerEntitiesPackage.assemblePackage({ ...data, entityType: 'weekSchedule' }, user, operation);
+      return assembled;
+    }
+  },
+  shift: {
+    ...schedulerEntitiesPackage,
+    assemblePackage: (data: any, user: any, operation: string) => {
+      const assembled = schedulerEntitiesPackage.assemblePackage({ ...data, entityType: 'shift' }, user, operation);
+      return assembled;
+    }
+  },
   
   // User management (non-auth) - NEW VE30 PACKAGES
   userList: userListPackage,

@@ -228,7 +228,13 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
   }
 
   if (operation === 'list') {
-    return rawData.filters || {};
+    const assembled = {
+      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
+      filters: rawData.filters || {}
+    };
+    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [LIST]: Raw entityType:', rawData.entityType);
+    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [LIST]: Assembled data:', assembled);
+    return assembled;
   }
 
   if (operation === 'delete') {
@@ -255,10 +261,14 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
   }
 
   if (operation === 'list') {
+    const assembled: any = {
+      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
+      filters: rawData.filters || {}
+    };
     if (rawData.scheduleBlockId) {
-      return { scheduleBlockId: parseInt(rawData.scheduleBlockId) };
+      assembled.scheduleBlockId = parseInt(rawData.scheduleBlockId);
     }
-    return rawData.filters || {};
+    return assembled;
   }
 
   return {
@@ -277,7 +287,14 @@ const shiftAssembly = (rawData: any, user: any, operation: string) => {
   }
 
   if (operation === 'list') {
-    return rawData.filters || {};
+    const assembled: any = {
+      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
+      filters: rawData.filters || {}
+    };
+    if (rawData.weekScheduleId) {
+      assembled.weekScheduleId = parseInt(rawData.weekScheduleId);
+    }
+    return assembled;
   }
 
   if (operation === 'create') {
@@ -371,9 +388,7 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing business rules validation
   validateBusinessRules: async (data: any, context: any) => {
-    console.log('🔍 SCHEDULER ENTITIES: validateBusinessRules context:', JSON.stringify(context, null, 2));
     const entityType = context.entityType;
-    console.log('🔍 SCHEDULER ENTITIES: Extracted entityType:', entityType);
     
     if (entityType === 'scheduleBlock') {
       return await VE30PackageBuilder.validateBusinessRules(data, context, scheduleBlockBusinessRules);
@@ -390,16 +405,17 @@ export const schedulerEntitiesPackage: VE30Package = {
   
   // Entity-routing package assembly
   assemblePackage: (data: any, user: any, operation: string) => {
+    // FIXED: EntityType passed via registry wrapper in packageRegistry30.ts
     const entityType = data.entityType;
     
     if (entityType === 'scheduleBlock') {
-      return VE30PackageBuilder.assemblePackage(data, user, operation, scheduleBlockAssembly);
+      return scheduleBlockAssembly(data, user, operation);
     }
     if (entityType === 'weekSchedule') {
-      return VE30PackageBuilder.assemblePackage(data, user, operation, weekScheduleAssembly);
+      return weekScheduleAssembly(data, user, operation);
     }
     if (entityType === 'shift') {
-      return VE30PackageBuilder.assemblePackage(data, user, operation, shiftAssembly);
+      return shiftAssembly(data, user, operation);
     }
     
     return Promise.resolve(data);
@@ -556,7 +572,9 @@ export const schedulerEntitiesPackage: VE30Package = {
     },
     
     executeList: async (data, storage) => {
+      console.log('📦 STORAGE ACTION DEBUG: executeList received data:', JSON.stringify(data));
       const entityType = data.entityType;
+      console.log('📦 STORAGE ACTION DEBUG: Extracted entityType:', entityType);
       
       if (entityType === 'scheduleBlock') {
         // Handle location filtering (copied from scheduleBlockPackage.ts lines 285-298)
