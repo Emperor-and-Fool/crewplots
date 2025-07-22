@@ -621,7 +621,7 @@ export const schedulerEntitiesPackage: VE30Package = {
             console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
           }
           
-          console.log(`🔒 WEEK STRUCTURE LOCKED: Created ${weekSchedules.length} locked weeks for schedule block ${data.id}`);
+          console.log(`🔒 WEEK STRUCTURE LOCKED: Created ${scheduleBlock.weekStructureLocked} locked weeks for schedule block ${data.id}`);
           
           return {
             ...updatedScheduleBlock,
