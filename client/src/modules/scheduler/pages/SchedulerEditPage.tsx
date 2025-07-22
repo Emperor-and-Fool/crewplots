@@ -252,7 +252,7 @@ export default function SchedulerEditPage() {
           id: scheduleIdNumber,
           maxWeeks: weekCount,
           weekStructureAction: 'lock', // This triggers the backend week creation logic
-          isActive: true // Activate schedule after locking structure
+          // Note: isActive not set - schedule remains inactive until manually activated
         },
         context: {}
       };
