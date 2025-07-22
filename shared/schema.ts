@@ -229,6 +229,7 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   maxWeeks: integer("max_weeks"), // Week count - NULL until manager sets it, then immutable
+  weekStructureLocked: boolean("week_structure_locked").notNull().default(false), // Controls week structure immutability
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -243,7 +244,6 @@ export const weekSchedules = pgTable("week_schedules", {
   scheduleBlockId: integer("schedule_block_id").references(() => scheduleBlocks.id).notNull(),
   weekNumber: integer("week_number").notNull(), // Week position within schedule block
   templateId: integer("template_id").references(() => scheduleTemplates.id),
-  weekStructureLocked: boolean("week_structure_locked").notNull().default(false), // Controls week structure immutability
   createdBy: integer("created_by").references(() => users.id).notNull(), // Database has this field
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
