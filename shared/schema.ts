@@ -228,6 +228,7 @@ export const scheduleBlocks = pgTable("schedule_blocks", {
   description: text("description"),
   locationId: integer("location_id").references(() => locations.id).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
+  maxWeeks: integer("max_weeks"), // Week count - NULL until manager sets it, then immutable
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
