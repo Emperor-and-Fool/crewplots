@@ -77,7 +77,7 @@ export function useAutoSave<T = any>(
       const finalData = transformData ? transformData(saveData) : saveData;
       
       // Use apiRequest with VE30 unpacker for ValidationEngine30 endpoints
-      const response = await apiRequest(method, endpoint, finalData, { unpackVE30: true });
+      const response = await apiRequest(method, endpoint, finalData);
       return response;
     },
     onMutate: () => {

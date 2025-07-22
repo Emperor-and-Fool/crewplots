@@ -92,7 +92,7 @@ export default function MultiWeekCalendarPreview({
           entityType: 'shift',
           data: { weekScheduleId: weekSchedule.id },
           context: {}
-        }, { unpackVE30: true });
+        });
         
         if (!response || !Array.isArray(response)) {
           console.warn(`Failed to fetch shifts for week schedule ${weekSchedule.id}`);
