@@ -598,8 +598,7 @@ export const schedulerEntitiesPackage: VE30Package = {
           
           // Update scheduleBlock with maxWeeks and activation
           const updateData = {
-            maxWeeks: data.maxWeeks,
-            isActive: data.isActive !== undefined ? data.isActive : true
+            maxWeeks: data.maxWeeks
           };
           
           console.log('🔒 UPDATING SCHEDULE BLOCK: Setting maxWeeks and activation status');
