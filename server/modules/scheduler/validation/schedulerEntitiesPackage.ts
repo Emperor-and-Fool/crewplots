@@ -472,12 +472,52 @@ export const schedulerEntitiesPackage: VE30Package = {
       const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
-        return await storage.createScheduleBlock(data);
+        // COPIED FROM COMMIT 907088a: Multi-week creation logic with weekStructureLocked enhancement
+        console.log('🔄 SCHEDULE BLOCK CREATE: Starting multi-week creation process');
+        
+        const scheduleBlock = await storage.createScheduleBlock(data);
+        console.log(`✅ SCHEDULE BLOCK CREATED: ID ${scheduleBlock.id}, Name: "${scheduleBlock.name}"`);
+        
+        // Multi-week creation logic from commit 907088a (enhanced with weekStructureLocked)
+        const maxWeeks = data.maxWeeks || data.weekCount || 1; // Frontend compatibility
+        console.log(`🔄 MULTI-WEEK CREATION: Creating ${maxWeeks} weeks for schedule block ${scheduleBlock.id}`);
+        
+        const weekSchedules = [];
+        
+        for (let weekNumber = 1; weekNumber <= maxWeeks; weekNumber++) {
+          const weekScheduleData = {
+            scheduleBlockId: scheduleBlock.id,
+            weekNumber,
+            weekStructureLocked: true, // ENHANCEMENT: Default weekStructureLocked behavior
+            createdBy: data.createdBy
+          };
+          
+          console.log(`🔄 WEEK SCHEDULE CREATE: Creating week ${weekNumber} for block ${scheduleBlock.id}`);
+          const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
+          weekSchedules.push(weekSchedule);
+          console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}, weekStructureLocked: ${weekSchedule.weekStructureLocked}`);
+        }
+        
+        console.log(`🔄 SCHEDULE BLOCK CREATE: Created ${weekSchedules.length} week schedules`);
+        
+        return {
+          ...scheduleBlock,
+          weekSchedules  // Include created week schedules in response (commit 907088a pattern)
+        };
       }
       
       if (entityType === 'weekSchedule') {
-        // Simple storage like working commit - NO Russian Doll enrichment
-        return await storage.createWeekSchedule(data);
+        // ENHANCED: weekStructureLocked behavior for individual week creation
+        const weekData = {
+          ...data,
+          weekStructureLocked: data.weekStructureLocked !== undefined ? data.weekStructureLocked : true // Default true
+        };
+        
+        console.log(`🔄 WEEK SCHEDULE CREATE: Creating individual week with weekStructureLocked: ${weekData.weekStructureLocked}`);
+        const result = await storage.createWeekSchedule(weekData);
+        console.log(`✅ Individual week created with ID: ${result.id}, weekStructureLocked: ${result.weekStructureLocked}`);
+        
+        return result;
       }
       
       if (entityType === 'shift') {
