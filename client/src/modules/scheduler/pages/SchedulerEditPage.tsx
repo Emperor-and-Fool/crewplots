@@ -58,6 +58,8 @@ export default function SchedulerEditPage() {
       }, { unpackVE30: true });
       
       console.log('🔍 WEEK SCHEDULES: Response (VE30 unpacked):', response);
+      console.log('🔍 WEEK SCHEDULES: First item structure:', response?.[0]);
+      console.log('🔍 WEEK SCHEDULES: Has weekStructureLocked field?', response?.[0]?.weekStructureLocked);
       return Array.isArray(response) ? response : [];
     },
     enabled: !isCreationMode && !!scheduleIdNumber,
