@@ -272,7 +272,7 @@ const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
 };
 
 // Week Schedule Assembly (copied from weekSchedulePackage.ts lines 88-113)
-const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
+const weekScheduleAssembly = async (rawData: any, user: any, operation: string) => {
   if (operation === 'read') {
     return { 
       id: rawData.id,
@@ -291,7 +291,24 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
     return assembled;
   }
 
-  // 🔧 FIELD ENRICHMENT: Add missing fields for schema validation
+  // 🔧 RUSSIAN DOLL FIELD ENRICHMENT: Moved from transaction to assembly phase
+  // This ensures locationId is available during schema validation
+  let locationId = rawData.locationId;
+  
+  if (!locationId && rawData.scheduleBlockId && operation === 'create') {
+    try {
+      console.log('🔧 ASSEMBLY ENRICHMENT: Fetching parent schedule block for locationId');
+      const { storage } = await import('../../../storage');
+      const parentBlock = await storage.getScheduleBlock(rawData.scheduleBlockId);
+      if (parentBlock) {
+        locationId = parentBlock.locationId;
+        console.log(`🔧 ASSEMBLY ENRICHMENT: Added locationId ${locationId} from parent block`);
+      }
+    } catch (error) {
+      console.warn('🔧 ASSEMBLY ENRICHMENT: Failed to fetch parent block locationId:', error);
+    }
+  }
+
   return {
     scheduleBlockId: parseInt(rawData.scheduleBlockId) || rawData.scheduleBlockId,
     weekNumber: parseInt(rawData.weekNumber) || rawData.weekNumber,
@@ -299,7 +316,7 @@ const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
     isActive: rawData.isActive !== undefined ? Boolean(rawData.isActive) : true,  // Frontend sends this
     templateId: rawData.templateId ? parseInt(rawData.templateId) : null,
     createdBy: user?.id || rawData.createdBy,  // Enriched from user context
-    // locationId will be enriched during Russian Doll cascade
+    locationId: locationId,  // Enriched from parent schedule block during assembly
     ...(operation === 'update' && rawData.id && { id: rawData.id })
   };
 };
@@ -440,7 +457,7 @@ export const schedulerEntitiesPackage: VE30Package = {
   },
   
   // Entity-routing package assembly
-  assemblePackage: (data: any, user: any, operation: string) => {
+  assemblePackage: async (data: any, user: any, operation: string) => {
     // FIXED: EntityType passed via registry wrapper in packageRegistry30.ts
     const entityType = data.entityType;
     
@@ -448,7 +465,7 @@ export const schedulerEntitiesPackage: VE30Package = {
       return scheduleBlockAssembly(data, user, operation);
     }
     if (entityType === 'weekSchedule') {
-      return weekScheduleAssembly(data, user, operation);
+      return await weekScheduleAssembly(data, user, operation);
     }
     if (entityType === 'shift') {
       return shiftAssembly(data, user, operation);
@@ -481,16 +498,9 @@ export const schedulerEntitiesPackage: VE30Package = {
         }
         
         console.log(`✅ CASCADE AUTHENTICATION: Parent block verified - ID: ${parentBlock.id}, Name: "${parentBlock.name}"`);
-        console.log('🔧 WEEK SCHEDULE CREATE: Foreign key established, proceeding with creation');
+        console.log('🔧 FIELD ENRICHMENT: locationId already enriched during assembly phase');
         
-        // 🔧 RUSSIAN DOLL FIELD ENRICHMENT: Inherit locationId from parent scheduleBlock
-        const enrichedData = {
-          ...data,
-          locationId: parentBlock.locationId  // Critical missing field for schema validation
-        };
-        console.log(`🔧 FIELD ENRICHMENT: Added locationId ${parentBlock.locationId} from parent block`);
-        
-        return await storage.createWeekSchedule(enrichedData);
+        return await storage.createWeekSchedule(data);
       }
       
       if (entityType === 'shift') {
