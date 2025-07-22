@@ -55,7 +55,7 @@ export async function apiRequest(
       }
     }
     
-    return res;
+    return res.json();
   } catch (error: any) {
     clearTimeout(timeoutId); // Clean up timeout
     
