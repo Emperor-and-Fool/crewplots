@@ -121,27 +121,15 @@ export default function SchedulerEditPage() {
     queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'read', scheduleId],
     queryFn: async () => {
       console.log('🔍 SCHEDULER EDIT: Loading schedule ID:', scheduleId);
-      const validationData = {
+      const scheduleData = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: 'read',
         entityType: 'scheduleBlock',
         data: { id: scheduleIdNumber },
         context: {}
-      };
+      }, { unpackVE30: true });
       
-      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch schedule block');
-      }
-      
-      // ValidationEngine30 response structure: result.overall.isValid && result.threads.transaction.data
-      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
-        console.log('🔍 SCHEDULER EDIT: Manual VE30 extraction result:', result.threads.transaction.data);
-        return result.threads.transaction.data;
-      }
-      
-      throw new Error('Schedule block validation failed');
+      console.log('🔍 SCHEDULER EDIT: VE30 unpacker result:', scheduleData);
+      return scheduleData;
     },
     enabled: !isCreationMode && !!scheduleIdNumber,
   });

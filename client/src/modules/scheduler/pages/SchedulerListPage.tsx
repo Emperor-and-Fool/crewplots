@@ -23,26 +23,14 @@ export default function SchedulerListPage() {
   const { data: scheduleBlocks, isLoading } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'scheduleBlock', 'list'],
     queryFn: async () => {
-      const validationData = {
+      const scheduleBlocks = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: "list",
         entityType: "scheduleBlock",
         entityId: null,
         data: {}
-      };
+      }, { unpackVE30: true });
       
-      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch schedule blocks');
-      }
-      
-      // ValidationEngine30 response structure: result.overall.isValid && result.threads.transaction.data
-      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
-        return result.threads.transaction.data;
-      }
-      
-      throw new Error('Schedule blocks validation failed');
+      return scheduleBlocks;
     }
   });
 
@@ -50,26 +38,14 @@ export default function SchedulerListPage() {
   const { data: locations } = useQuery({
     queryKey: ['/api/validation/v3/execute', 'location', 'list'],
     queryFn: async () => {
-      const validationData = {
+      const locations = await apiRequest('POST', '/api/validation/v3/execute', {
         operation: "list",
         entityType: "location",
         entityId: null,
         data: {}
-      };
+      }, { unpackVE30: true });
       
-      const response = await apiRequest('POST', '/api/validation/v3/execute', validationData);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch locations');
-      }
-      
-      // ValidationEngine30 response structure: result.overall.isValid && result.threads.transaction.data
-      if (result.overall && result.overall.isValid && result.threads && result.threads.transaction && result.threads.transaction.data) {
-        return result.threads.transaction.data;
-      }
-      
-      throw new Error('Locations validation failed');
+      return locations;
     }
   });
 
