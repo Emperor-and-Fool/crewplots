@@ -410,7 +410,7 @@ export default function SchedulerListPage() {
                   
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4" />
-                    <span>Max {schedule.maxWeeks} weeks</span>
+                    <span>Schedule Template</span>
                   </div>
                   
                   <div className="flex gap-2 pt-2">

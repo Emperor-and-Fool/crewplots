@@ -94,13 +94,11 @@ export default function SchedulerEditPage() {
       name: '',
       description: '',
       locationId: 1,  // Default to first location (Grand Hotel Amsterdam)
-      maxWeeks: undefined,  // Start as undefined - user must explicitly select
       isActive: false  // Default to inactive for new schedules
     } : {
       name: '',
       description: '',
       locationId: 1,  // Default to first location 
-      maxWeeks: undefined,
       isActive: true
     }
   });
@@ -158,7 +156,6 @@ export default function SchedulerEditPage() {
         name: scheduleData.name || '',
         description: scheduleData.description || '',
         locationId: scheduleData.locationId || 0,
-        maxWeeks: scheduleData.maxWeeks,  // Include maxWeeks from database
         isActive: scheduleData.isActive
       });
     }
@@ -175,7 +172,7 @@ export default function SchedulerEditPage() {
           description: data.description,
           locationId: data.locationId,
           isActive: data.isActive,
-          ...(data.maxWeeks && { maxWeeks: data.maxWeeks })  // Include maxWeeks only if explicitly set
+          // maxWeeks removed - week count is now calculated from weekSchedules.length
         },
         context: {}
       }, { unpackVE30: true });
@@ -246,7 +243,6 @@ export default function SchedulerEditPage() {
         entityType: 'scheduleBlock',
         data: { 
           id: scheduleIdNumber, 
-          maxWeeks: weekCount,
           weekStructureLocked: true 
         },
         context: {}
@@ -353,8 +349,7 @@ export default function SchedulerEditPage() {
 
   const handleWeekCountConfirmation = async () => {
     if (pendingWeekCount && scheduleIdNumber) {
-      // Update the form field
-      form.setValue('maxWeeks', pendingWeekCount);
+      // maxWeeks field removed - week count now calculated from weekSchedules.length
       
       // Lock the structure and create week blocks
       await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
@@ -568,56 +563,25 @@ export default function SchedulerEditPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="maxWeeks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Weeks</FormLabel>
-                        {/* Debug info - remove after testing */}
-                        {process.env.NODE_ENV === 'development' && (
-                          <div className="text-xs text-blue-600 mb-2">
-                            DEBUG: isCreationMode={isCreationMode.toString()}, scheduleData.maxWeeks={scheduleData?.maxWeeks}, field.value={field.value}
-                          </div>
-                        )}
-                        <FormControl>
-                          <Select 
-                            onValueChange={(value) => {
-                              const newWeekCount = parseInt(value);
-                              if (!isCreationMode && !scheduleData?.weekStructureLocked) {
-                                // Show confirmation dialog for existing schedules
-                                setPendingWeekCount(newWeekCount);
-                                setShowWeekConfirmDialog(true);
-                              } else {
-                                // For creation mode, set directly
-                                field.onChange(newWeekCount);
-                              }
-                            }} 
-                            value={field.value?.toString() || ""}
-                            disabled={!isCreationMode && scheduleData?.weekStructureLocked}  // Only disable when week structure is locked
-                          >
-                            <SelectTrigger className={(!isCreationMode && scheduleData?.weekStructureLocked) ? "opacity-50 cursor-not-allowed" : ""}>
-                              <SelectValue placeholder="Select number of weeks" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 9 }, (_, i) => i + 1).map((weekNum) => (
-                                <SelectItem key={weekNum} value={weekNum.toString()}>
-                                  {weekNum} {weekNum === 1 ? 'Week' : 'Weeks'}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <div className="text-xs text-muted-foreground">
-                          {(!isCreationMode && scheduleData?.weekStructureLocked)
-                            ? `🔒 Week structure is locked at ${field.value || scheduleData?.maxWeeks || 1} week${(field.value || scheduleData?.maxWeeks || 1) > 1 ? 's' : ''} and cannot be modified`
-                            : `Creates ${field.value || 1} week schedule${(field.value || 1) > 1 ? 's' : ''} for shift planning. Week count can be changed until first week schedule is created.`
+                  {/* Week Count Display - Now read-only, calculated from weekSchedules.length */}
+                  {!isCreationMode && (
+                    <div className="rounded-lg border p-4">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Week Structure</div>
+                        <div className="text-sm text-muted-foreground">
+                          {scheduleData?.weekStructureLocked
+                            ? `🔒 ${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)`
+                            : `${weekSchedules?.length || 0} week${(weekSchedules?.length || 0) !== 1 ? 's' : ''} - use "Add Week Schedule" button to modify`
                           }
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="text-xs text-blue-600">
+                            DEBUG: weekSchedules.length={weekSchedules?.length}, weekStructureLocked={scheduleData?.weekStructureLocked}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}
