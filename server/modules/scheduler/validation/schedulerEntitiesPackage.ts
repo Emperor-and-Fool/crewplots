@@ -598,7 +598,8 @@ export const schedulerEntitiesPackage: VE30Package = {
           
           // Update scheduleBlock with maxWeeks and activation
           const updateData = {
-            maxWeeks: data.maxWeeks
+            maxWeeks: data.maxWeeks,
+            weekStructureLocked: true
           };
           
           console.log('🔒 UPDATING SCHEDULE BLOCK: Setting maxWeeks and activation status');
@@ -620,8 +621,6 @@ export const schedulerEntitiesPackage: VE30Package = {
             weekSchedules.push(weekSchedule);
             console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
           }
-          
-          console.log(`🔒 WEEK STRUCTURE LOCKED: Created ${scheduleBlock.weekStructureLocked} locked weeks for schedule block ${data.id}`);
           
           return {
             ...updatedScheduleBlock,
