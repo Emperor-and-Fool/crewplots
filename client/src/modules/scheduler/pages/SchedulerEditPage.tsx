@@ -238,45 +238,54 @@ export default function SchedulerEditPage() {
     },
   });
 
-  // Mutation to lock week structure and create week blocks
-  const lockWeekStructureMutation = useMutation({
+  // Direct week creation mutation (NEW ARCHITECTURE)
+  const createWeeksMutation = useMutation({
     mutationFn: async ({ weekCount }: { weekCount: number }) => {
-      console.log('🔄 LOCK MUTATION: Starting week structure lock via scheduleBlock update', { weekCount, scheduleBlockId: scheduleIdNumber });
+      console.log('🔄 DIRECT WEEK CREATION: Creating', weekCount, 'weeks for scheduleBlock', scheduleIdNumber);
       
-      // Phase 2: Update scheduleBlock with maxWeeks and trigger week creation
-      const requestData = {
-        operation: 'update',
-        entityType: 'scheduleBlock',
-        data: {
-          id: scheduleIdNumber,
-          maxWeeks: weekCount,
-          weekStructureAction: 'lock', // Triggers backend week creation
-          isActive: true // Activate schedule after locking
-        },
-        context: {}
-      };
+      // Create week schedules directly, bypassing scheduleBlock.maxWeeks entirely
+      const weekPromises = [];
+      for (let weekNumber = 1; weekNumber <= weekCount; weekNumber++) {
+        const weekData = {
+          operation: 'create',
+          entityType: 'weekSchedule',
+          data: {
+            scheduleBlockId: scheduleIdNumber,
+            weekNumber: weekNumber,
+            title: `Week ${weekNumber}`,
+            startDate: null, // Will be set later when shifts are created
+            endDate: null,
+            notes: null,
+            weekStructureLocked: false // Individual weeks are not locked
+          },
+          context: {}
+        };
+        
+        console.log(`🔄 CREATING WEEK ${weekNumber}:`, weekData);
+        weekPromises.push(apiRequest('POST', '/api/validation/v3/execute', weekData));
+      }
       
-      console.log('🔄 LOCK MUTATION: Updating scheduleBlock with week lock data:', requestData);
-      const result = await apiRequest('POST', '/api/validation/v3/execute', requestData);
-      console.log('🔄 LOCK MUTATION: ScheduleBlock update completed, result:', result);
+      // Execute all week creations in parallel
+      const results = await Promise.all(weekPromises);
+      console.log('✅ ALL WEEKS CREATED:', results);
       
-      return { success: true, weekCount };
+      return { success: true, weekCount, createdWeeks: results };
     },
     onSuccess: ({ weekCount }) => {
       toast({
-        title: "✅ Week Structure Locked",
-        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully. Structure is now immutable.`,
+        title: "✅ Weeks Created",
+        description: `${weekCount} week${weekCount > 1 ? 's' : ''} created successfully. You can now add shifts to each week.`,
         duration: 4000,
       });
       
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'scheduleBlock'] });
+      // Invalidate week schedule queries to show new weeks
       queryClient.invalidateQueries({ queryKey: ['/api/validation/v3/execute', 'weekSchedule'] });
     },
     onError: (error: any) => {
+      console.error('❌ WEEK CREATION FAILED:', error);
       toast({
-        title: "Lock Failed",
-        description: error?.message || "Failed to lock week structure. Please try again.",
+        title: "Week Creation Failed",
+        description: error?.message || "Failed to create weeks. Please try again.",
         variant: "destructive",
       });
     },
@@ -344,23 +353,17 @@ export default function SchedulerEditPage() {
   };
 
   const handleWeekCountConfirmation = async () => {
-    console.log('🔘 BUTTON CLICK: handleWeekCountConfirmation called');
+    console.log('🔘 DIRECT WEEK CREATION: handleWeekCountConfirmation called');
     console.log('🔘 STATE CHECK: pendingWeekCount =', pendingWeekCount);
     console.log('🔘 STATE CHECK: scheduleIdNumber =', scheduleIdNumber);
-    console.log('🔘 STATE CHECK: scheduleId (param) =', scheduleId);
-    console.log('🔘 STATE CHECK: Condition check =', !!(pendingWeekCount && scheduleIdNumber));
-    console.log('🔘 MUTATION STATUS: lockWeekStructureMutation.isPending =', lockWeekStructureMutation?.isPending);
-    console.log('🔘 MUTATION STATUS: lockWeekStructureMutation exists =', !!lockWeekStructureMutation);
     
     if (pendingWeekCount && scheduleIdNumber) {
-      console.log('🔘 CONDITION PASSED: Calling lockWeekStructureMutation.mutateAsync');
-      console.log('🔘 MUTATION PAYLOAD: weekCount =', pendingWeekCount);
+      console.log('🔘 CONDITION PASSED: Starting direct week creation');
       
       try {
-        console.log('🔄 STARTING WEEK LOCK MUTATION...');
-        // Lock the structure and create week blocks
-        const result = await lockWeekStructureMutation.mutateAsync({ weekCount: pendingWeekCount });
-        console.log('✅ WEEK LOCK MUTATION SUCCESS:', result);
+        console.log('🔄 STARTING DIRECT WEEK CREATION...');
+        const result = await createWeeksMutation.mutateAsync({ weekCount: pendingWeekCount });
+        console.log('✅ DIRECT WEEK CREATION SUCCESS:', result);
         
         // Reset all week-related state
         setPendingWeekCount(null);
@@ -368,16 +371,16 @@ export default function SchedulerEditPage() {
         setShowWeekConfirmDialog(false);
         console.log('🔄 DIALOG STATE RESET COMPLETE');
       } catch (error) {
-        console.error('❌ WEEK LOCK MUTATION FAILED:', error);
+        console.error('❌ DIRECT WEEK CREATION FAILED:', error);
         toast({
-          title: "❌ Week Lock Failed",
-          description: `Failed to lock week structure: ${error}`,
+          title: "❌ Week Creation Failed",
+          description: `Failed to create weeks: ${error}`,
           variant: "destructive",
           duration: 4000,
         });
       }
     } else {
-      console.log('🚨 CONDITION FAILED: Week count confirmation blocked');
+      console.log('🚨 CONDITION FAILED: Week creation blocked');
       console.log('🚨 FAILED REASON: pendingWeekCount:', pendingWeekCount, 'scheduleIdNumber:', scheduleIdNumber);
     }
   };
@@ -598,38 +601,32 @@ export default function SchedulerEditPage() {
                       <div className="space-y-4">
                         <div className="text-sm font-medium">Week Structure</div>
                         
-                        {weekSchedules?.some(w => w.weekStructureLocked) ? (
-                          // Locked state - show read-only info
-                          console.log('🔒 LOCKED STATE: Showing locked week structure UI'),
+                        {weekSchedules?.length > 0 ? (
+                          // Week structure exists - show current state
                           <div className="space-y-2">
                             <div className="text-sm text-muted-foreground">
-                              🔒 {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''} (locked and cannot be modified)
+                              📅 {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''} configured
                             </div>
                             {process.env.NODE_ENV === 'development' && (
                               <div className="text-xs text-blue-600">
-                                DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}
+                                DEBUG: weekSchedules.length={weekSchedules?.length}
                               </div>
                             )}
                           </div>
                         ) : (
-                          // Unlocked state - show dropdown for one-time configuration
-                          console.log('🔓 UNLOCKED STATE: Showing week count selector UI'),
+                          // No weeks exist - show direct creation interface
                           <div className="space-y-3">
                             <div className="text-sm text-muted-foreground">
-                              Current: {weekSchedules?.length || 0} week{(weekSchedules?.length || 0) !== 1 ? 's' : ''}
+                              Current: {weekSchedules?.length || 0} weeks
                             </div>
                             
                             <div className="flex items-center gap-3">
-                              {console.log('🔧 DROPDOWN: Rendering week count Select component')}
                               <Select 
                                 value={selectedWeekCount?.toString() || ""} 
-                                onValueChange={(value) => {
-                                  console.log('🔧 DROPDOWN: Week selected =', value);
-                                  setSelectedWeekCount(parseInt(value));
-                                }}
+                                onValueChange={(value) => setSelectedWeekCount(parseInt(value))}
                               >
                                 <SelectTrigger className="w-48">
-                                  <SelectValue placeholder="Set number of weeks" />
+                                  <SelectValue placeholder="Create weeks" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => (
@@ -643,36 +640,22 @@ export default function SchedulerEditPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={!selectedWeekCount || lockWeekStructureMutation?.isPending}
+                                disabled={!selectedWeekCount || createWeeksMutation.isPending}
                                 onClick={() => {
-                                  console.log('🔘 CONFIRM BUTTON: Clicked, selectedWeekCount =', selectedWeekCount);
-                                  console.log('🔘 CONFIRM BUTTON: scheduleIdNumber =', scheduleIdNumber);
-                                  console.log('🔘 CONFIRM BUTTON: lockWeekStructureMutation exists =', !!lockWeekStructureMutation);
-                                  console.log('🔘 CONFIRM BUTTON: Button disabled status =', (!selectedWeekCount || lockWeekStructureMutation?.isPending));
-                                  
+                                  console.log('🔘 CREATE WEEKS BUTTON: Clicked with selectedWeekCount =', selectedWeekCount);
                                   if (selectedWeekCount) {
-                                    console.log('🔘 CONFIRM BUTTON: Setting pendingWeekCount to', selectedWeekCount);
                                     setPendingWeekCount(selectedWeekCount);
                                     setShowWeekConfirmDialog(true);
-                                    console.log('🔘 CONFIRM BUTTON: Dialog should now be visible');
-                                  } else {
-                                    console.log('🚨 CONFIRM BUTTON: selectedWeekCount is null/undefined');
                                   }
                                 }}
                               >
-                                {lockWeekStructureMutation.isPending ? 'Processing...' : 'Confirm Week Count'}
+                                {createWeeksMutation.isPending ? 'Creating...' : 'Create Weeks'}
                               </Button>
                             </div>
                             
-                            <div className="text-xs text-orange-600">
-                              ⚠️ Warning: You can only set the week count once. After confirmation, the structure will be locked permanently.
+                            <div className="text-xs text-blue-600">
+                              💡 This will create individual week schedules that you can configure separately.
                             </div>
-                            
-                            {process.env.NODE_ENV === 'development' && (
-                              <div className="text-xs text-blue-600">
-                                DEBUG: weekSchedules.length={weekSchedules?.length}, anyWeekLocked={weekSchedules?.some(w => w.weekStructureLocked)}, selectedWeekCount={selectedWeekCount}
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
@@ -1065,11 +1048,11 @@ export default function SchedulerEditPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Set Number of Weeks?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to set the number of weeks to <strong>{pendingWeekCount}</strong>? 
+              Are you sure you want to create <strong>{pendingWeekCount}</strong> week schedule{(pendingWeekCount || 0) > 1 ? 's' : ''}? 
               <br /><br />
-              <span className="text-orange-600 font-medium">⚠️ You can only set this number once.</span>
+              <span className="text-blue-600 font-medium">💡 Each week will be created separately and can be configured independently.</span>
               <br />
-              After confirmation, the week structure will be locked and {pendingWeekCount} week schedule{(pendingWeekCount || 0) > 1 ? 's' : ''} will be created.
+              You can add more weeks later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1078,10 +1061,10 @@ export default function SchedulerEditPage() {
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleWeekCountConfirmation}
-              disabled={lockWeekStructureMutation.isPending}
+              disabled={createWeeksMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {lockWeekStructureMutation.isPending ? 'Creating...' : `Yes, Create ${pendingWeekCount} Week${(pendingWeekCount || 0) > 1 ? 's' : ''}`}
+              {createWeeksMutation.isPending ? 'Creating...' : `Yes, Create ${pendingWeekCount} Week${(pendingWeekCount || 0) > 1 ? 's' : ''}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
