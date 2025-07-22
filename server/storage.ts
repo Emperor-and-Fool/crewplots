@@ -1566,6 +1566,49 @@ class DatabaseStorage {
     return created;
   }
 
+  // CENTRALIZED MULTI-WEEK CREATION: Single source of truth for all week schedule creation
+  async createMultiWeekSchedules(scheduleBlockId: number, maxWeeks: number, createdBy: number): Promise<WeekSchedule[]> {
+    console.log(`🔄 CENTRALIZED MULTI-WEEK: Creating ${maxWeeks} weeks for schedule block ${scheduleBlockId}`);
+    
+    const weekSchedules = [];
+    for (let weekNumber = 1; weekNumber <= maxWeeks; weekNumber++) {
+      const weekScheduleData = {
+        scheduleBlockId,
+        weekNumber,
+        createdBy
+      };
+      
+      console.log(`🔄 CENTRALIZED WEEK CREATE: Week ${weekNumber} for block ${scheduleBlockId}`);
+      const weekSchedule = await this.createWeekSchedule(weekScheduleData);
+      weekSchedules.push(weekSchedule);
+      console.log(`✅ Centralized week ${weekNumber} created with ID: ${weekSchedule.id}`);
+    }
+    
+    console.log(`🔄 CENTRALIZED MULTI-WEEK: Created ${weekSchedules.length} week schedules`);
+    return weekSchedules;
+  }
+
+  // CENTRALIZED SCHEDULE BLOCK WITH WEEKS: Single method combining block + multi-week creation
+  async createScheduleBlockWithWeeks(scheduleBlockData: InsertScheduleBlock, maxWeeks: number = 1): Promise<ScheduleBlock & { weekSchedules: WeekSchedule[] }> {
+    console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Creating schedule block with ${maxWeeks} weeks`);
+    
+    // Create the schedule block first
+    const scheduleBlock = await this.createScheduleBlock(scheduleBlockData);
+    console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Created block with ID ${scheduleBlock.id}`);
+    
+    // Create the week schedules using centralized method
+    const weekSchedules = await this.createMultiWeekSchedules(
+      scheduleBlock.id, 
+      maxWeeks, 
+      scheduleBlockData.createdBy
+    );
+    
+    return {
+      ...scheduleBlock,
+      weekSchedules
+    };
+  }
+
   async updateScheduleBlock(id: number, updates: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined> {
     const [updated] = await db.update(scheduleBlocks).set(updates).where(eq(scheduleBlocks.id, id)).returning();
     return updated;
