@@ -634,7 +634,12 @@ export class ValidationEngine30 {
         // Handle scheduler operations with package-driven execution
         else if (['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType) && pkg.storageActions) {
           const operationMethod = `execute${operation.charAt(0).toUpperCase() + operation.slice(1)}`;
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${entityType}.${operation} - calling ${operationMethod}`);
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: pkg.storageActions exists:`, !!pkg.storageActions);
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: method exists:`, !!pkg.storageActions[operationMethod]);
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: assembledData:`, JSON.stringify(assembledData, null, 2));
           transactionResult = await pkg.storageActions[operationMethod](assembledData, storage);
+          console.log(`🎯 SCHEDULER PACKAGE-DRIVEN: ${operationMethod} completed, result:`, transactionResult);
         }
         // PACKAGE-DRIVEN FALLBACK: Execute package storageActions when hardcoded operations are disabled
         else if (pkg.storageActions) {
