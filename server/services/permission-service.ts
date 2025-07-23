@@ -2,7 +2,7 @@ import { User } from '../../shared/schema'
 
 export class PermissionService {
 
-private static readonly ENTITY_MAPPINGS: Record<string, string> = {
+private static readonly MODULE_MAPPINGS: Record<string, string> = {
   // Users Module
   user: 'user',
   userList: 'user', 
