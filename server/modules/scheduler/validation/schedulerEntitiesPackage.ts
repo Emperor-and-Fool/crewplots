@@ -5,6 +5,19 @@ import { z } from 'zod';
 // UNIFIED SCHEDULER ENTITIES PACKAGE - PLAN 067
 // Consolidates scheduleBlockPackage.ts, weekSchedulePackage.ts, shiftPackage.ts
 // Exact code copying from existing packages with entity-routing logic
+// ===== CONSOLIDATED PERMISSION-MAPPING =====
+// Source: users.workflowPermissions JSON column
+const workflowPerms = user.workflowPermissions || {};
+
+// Package: Schedule/Scheduler validation packages
+if (workflowPerms.scheduling) {
+  if (workflowPerms.scheduling.includes('create')) validationPermissions.push('schedule.create');
+  if (workflowPerms.scheduling.includes('view')) validationPermissions.push('schedule.read');
+  if (workflowPerms.scheduling.includes('edit')) validationPermissions.push('schedule.update');
+  if (workflowPerms.scheduling.includes('delete')) validationPermissions.push('schedule.delete');
+  console.log('🔐 MAPPER: Added scheduling permissions from workflow');
+}
+
 
 // ===== CONSOLIDATED SCHEMAS =====
 

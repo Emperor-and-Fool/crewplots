@@ -43,14 +43,7 @@ export function mapWorkflowToValidationPermissions(user: UserPermissionContext):
   // Source: users.workflowPermissions JSON column
   const workflowPerms = user.workflowPermissions || {};
   
-  // Package: Schedule/Scheduler validation packages
-  if (workflowPerms.scheduling) {
-    if (workflowPerms.scheduling.includes('create')) validationPermissions.push('schedule.create');
-    if (workflowPerms.scheduling.includes('view')) validationPermissions.push('schedule.read');
-    if (workflowPerms.scheduling.includes('edit')) validationPermissions.push('schedule.update');
-    if (workflowPerms.scheduling.includes('delete')) validationPermissions.push('schedule.delete');
-    console.log('🔐 MAPPER: Added scheduling permissions from workflow');
-  }
+
   
   // Package: Location validation packages
   if (workflowPerms.location) {
