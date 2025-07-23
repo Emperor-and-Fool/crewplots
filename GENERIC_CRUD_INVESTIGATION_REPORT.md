@@ -104,40 +104,53 @@ The ValidationEngine30 system appears to be calling non-existent generic methods
 
 | Module | Entity Type | Expected CRUD | Expected Generic Method | Actual Storage Method | Status |
 |--------|-------------|---------------|------------------------|----------------------|---------|
-| **Users Module** | user | **C** R U D | `storage.executeGenericCrud('user', 'create')` | `storage.createUser(data)` | ✅ EXISTS |
-| | user | C **R** U D | `storage.executeGenericCrud('user', 'read')` | `storage.getUser(id)` | ✅ EXISTS |
-| | user | C R **U** D | `storage.executeGenericCrud('user', 'update')` | `storage.updateUser(id, data)` | ✅ EXISTS |
-| | user | C R U **D** | `storage.executeGenericCrud('user', 'delete')` | `storage.deleteUser(id)` | ❓ NOT FOUND |
-| | user | **List** | `storage.executeGenericCrud('user', 'list')` | `storage.getUsers()` | ❓ NOT FOUND |
-| **Locations Module** | location | **C** R U D | `storage.executeGenericCrud('location', 'create')` | `storage.createLocation(data)` | ✅ EXISTS |
-| | location | C **R** U D | `storage.executeGenericCrud('location', 'read')` | `storage.getLocation(id)` | ✅ EXISTS |
-| | location | C R **U** D | `storage.executeGenericCrud('location', 'update')` | `storage.updateLocation(id, data)` | ✅ EXISTS |
-| | location | C R U **D** | `storage.executeGenericCrud('location', 'delete')` | `storage.deleteLocation(id)` | ❓ NOT FOUND |
-| | location | **List** | `storage.executeGenericCrud('location', 'list')` | `storage.getLocations()` | ✅ EXISTS |
-| **Competencies Module** | competency | **C** R U D | `storage.executeGenericCrud('competency', 'create')` | `storage.createCompetency(data)` | ✅ EXISTS |
-| | competency | C **R** U D | `storage.executeGenericCrud('competency', 'read')` | `storage.getCompetency(id)` | ✅ EXISTS |
-| | competency | C R **U** D | `storage.executeGenericCrud('competency', 'update')` | `storage.updateCompetency(id, data)` | ✅ EXISTS |
-| | competency | C R U **D** | `storage.executeGenericCrud('competency', 'delete')` | `storage.deleteCompetency(id)` | ❓ NOT FOUND |
-| | competency | **List** | `storage.executeGenericCrud('competency', 'list')` | `storage.getCompetencies()` | ✅ EXISTS |
-| **Scheduler Module** | scheduleBlock | **C** R U D | `storage.executeGenericCrud('scheduleBlock', 'create')` | `storage.createScheduleBlock(data)` | ✅ EXISTS |
-| | scheduleBlock | C **R** U D | `storage.executeGenericCrud('scheduleBlock', 'read')` | `storage.getScheduleBlock(id)` | ✅ EXISTS |
-| | scheduleBlock | C R **U** D | `storage.executeGenericCrud('scheduleBlock', 'update')` | `storage.updateScheduleBlock(id, data)` | ✅ EXISTS |
-| | scheduleBlock | C R U **D** | `storage.executeGenericCrud('scheduleBlock', 'delete')` | `storage.deleteScheduleBlock(id)` | ❓ NOT FOUND |
-| | scheduleBlock | **List** | `storage.executeGenericCrud('scheduleBlock', 'list')` | `storage.getScheduleBlocks()` | ✅ EXISTS |
-| | weekSchedule | **C** R U D | `storage.executeGenericCrud('weekSchedule', 'create')` | `storage.createWeekSchedule(data)` | ✅ EXISTS |
-| | weekSchedule | C **R** U D | `storage.executeGenericCrud('weekSchedule', 'read')` | `storage.getWeekSchedule(id)` | ✅ EXISTS |
-| | weekSchedule | C R **U** D | `storage.executeGenericCrud('weekSchedule', 'update')` | `storage.updateWeekSchedule(id, data)` | ✅ EXISTS |
-| | weekSchedule | C R U **D** | `storage.executeGenericCrud('weekSchedule', 'delete')` | `storage.deleteWeekSchedule(id)` | ✅ EXISTS |
-| | weekSchedule | **List** | `storage.executeGenericCrud('weekSchedule', 'list')` | `storage.getWeekSchedules()` | ✅ EXISTS |
-| | **shift** | **C** R U D | `storage.executeGenericCrud('shift', 'create')` | `storage.createShift(data)` | ❌ **MISSING** |
-| | **shift** | C **R** U D | `storage.executeGenericCrud('shift', 'read')` | `storage.getShift(id)` | ❌ **MISSING** |
-| | **shift** | C R **U** D | `storage.executeGenericCrud('shift', 'update')` | `storage.updateShift(id, data)` | ❌ **MISSING** |
-| | **shift** | C R U **D** | `storage.executeGenericCrud('shift', 'delete')` | `storage.deleteShift(id)` | ❌ **MISSING** |
-| | **shift** | **List** | `storage.executeGenericCrud('shift', 'list')` | `storage.getShifts()` | ❌ **MISSING** |
-| **Knowledge Base** | kbCategory | **C** R U D | `storage.executeGenericCrud('kbCategory', 'create')` | `storage.createKbCategory(data)` | ❓ NOT FOUND |
-| | kbCategory | C **R** U D | `storage.executeGenericCrud('kbCategory', 'read')` | `storage.getKbCategory(id)` | ❓ NOT FOUND |
-| | kbArticle | **C** R U D | `storage.executeGenericCrud('kbArticle', 'create')` | `storage.createKbArticle(data)` | ❓ NOT FOUND |
-| | kbArticle | C **R** U D | `storage.executeGenericCrud('kbArticle', 'read')` | `storage.getKbArticle(id)` | ❓ NOT FOUND |
+| **Users Module** | user | <span style="color:green">**C**</span> R U D L | `storage.executeGenericCrud('user', 'create')` | `storage.createUser(data)` | ✅ EXISTS |
+| | user | C <span style="color:green">**R**</span> U D L | `storage.executeGenericCrud('user', 'read')` | `storage.getUser(id)` | ✅ EXISTS |
+| | user | C R <span style="color:green">**U**</span> D L | `storage.executeGenericCrud('user', 'update')` | `storage.updateUser(id, data)` | ✅ EXISTS |
+| | user | C R U <span style="color:red">**D**</span> L | `storage.executeGenericCrud('user', 'delete')` | `storage.deleteUser(id)` | ❓ NOT FOUND |
+| | user | C R U D <span style="color:red">**L**</span> | `storage.executeGenericCrud('user', 'list')` | `storage.getUsers()` | ❓ NOT FOUND |
+| **Locations Module** | location | <span style="color:green">**C**</span> R U D L | `storage.executeGenericCrud('location', 'create')` | `storage.createLocation(data)` | ✅ EXISTS |
+| | location | C <span style="color:green">**R**</span> U D L | `storage.executeGenericCrud('location', 'read')` | `storage.getLocation(id)` | ✅ EXISTS |
+| | location | C R <span style="color:green">**U**</span> D L | `storage.executeGenericCrud('location', 'update')` | `storage.updateLocation(id, data)` | ✅ EXISTS |
+| | location | C R U <span style="color:red">**D**</span> L | `storage.executeGenericCrud('location', 'delete')` | `storage.deleteLocation(id)` | ❓ NOT FOUND |
+| | location | C R U D <span style="color:green">**L**</span> | `storage.executeGenericCrud('location', 'list')` | `storage.getLocations()` | ✅ EXISTS |
+| **Competencies Module** | competency | <span style="color:green">**C**</span> R U D L | `storage.executeGenericCrud('competency', 'create')` | `storage.createCompetency(data)` | ✅ EXISTS |
+| | competency | C <span style="color:green">**R**</span> U D L | `storage.executeGenericCrud('competency', 'read')` | `storage.getCompetency(id)` | ✅ EXISTS |
+| | competency | C R <span style="color:green">**U**</span> D L | `storage.executeGenericCrud('competency', 'update')` | `storage.updateCompetency(id, data)` | ✅ EXISTS |
+| | competency | C R U <span style="color:red">**D**</span> L | `storage.executeGenericCrud('competency', 'delete')` | `storage.deleteCompetency(id)` | ❓ NOT FOUND |
+| | competency | C R U D <span style="color:green">**L**</span> | `storage.executeGenericCrud('competency', 'list')` | `storage.getCompetencies()` | ✅ EXISTS |
+| **Scheduler Module** | scheduleBlock | <span style="color:green">**C**</span> R U D L | `storage.executeGenericCrud('scheduleBlock', 'create')` | `storage.createScheduleBlock(data)` | ✅ EXISTS |
+| | scheduleBlock | C <span style="color:green">**R**</span> U D L | `storage.executeGenericCrud('scheduleBlock', 'read')` | `storage.getScheduleBlock(id)` | ✅ EXISTS |
+| | scheduleBlock | C R <span style="color:green">**U**</span> D L | `storage.executeGenericCrud('scheduleBlock', 'update')` | `storage.updateScheduleBlock(id, data)` | ✅ EXISTS |
+| | scheduleBlock | C R U <span style="color:red">**D**</span> L | `storage.executeGenericCrud('scheduleBlock', 'delete')` | `storage.deleteScheduleBlock(id)` | ❓ NOT FOUND |
+| | scheduleBlock | C R U D <span style="color:green">**L**</span> | `storage.executeGenericCrud('scheduleBlock', 'list')` | `storage.getScheduleBlocks()` | ✅ EXISTS |
+| | weekSchedule | <span style="color:green">**C**</span> R U D L | `storage.executeGenericCrud('weekSchedule', 'create')` | `storage.createWeekSchedule(data)` | ✅ EXISTS |
+| | weekSchedule | C <span style="color:green">**R**</span> U D L | `storage.executeGenericCrud('weekSchedule', 'read')` | `storage.getWeekSchedule(id)` | ✅ EXISTS |
+| | weekSchedule | C R <span style="color:green">**U**</span> D L | `storage.executeGenericCrud('weekSchedule', 'update')` | `storage.updateWeekSchedule(id, data)` | ✅ EXISTS |
+| | weekSchedule | C R U <span style="color:green">**D**</span> L | `storage.executeGenericCrud('weekSchedule', 'delete')` | `storage.deleteWeekSchedule(id)` | ✅ EXISTS |
+| | weekSchedule | C R U D <span style="color:green">**L**</span> | `storage.executeGenericCrud('weekSchedule', 'list')` | `storage.getWeekSchedules()` | ✅ EXISTS |
+| | **shift** | <span style="color:red">**C**</span> R U D L | `storage.executeGenericCrud('shift', 'create')` | `storage.createShift(data)` | ❌ **MISSING** |
+| | **shift** | C <span style="color:red">**R**</span> U D L | `storage.executeGenericCrud('shift', 'read')` | `storage.getShift(id)` | ❌ **MISSING** |
+| | **shift** | C R <span style="color:red">**U**</span> D L | `storage.executeGenericCrud('shift', 'update')` | `storage.updateShift(id, data)` | ❌ **MISSING** |
+| | **shift** | C R U <span style="color:red">**D**</span> L | `storage.executeGenericCrud('shift', 'delete')` | `storage.deleteShift(id)` | ❌ **MISSING** |
+| | **shift** | C R U D <span style="color:red">**L**</span> | `storage.executeGenericCrud('shift', 'list')` | `storage.getShifts()` | ❌ **MISSING** |
+| **Knowledge Base** | kbCategory | <span style="color:red">**C**</span> R U D L | `storage.executeGenericCrud('kbCategory', 'create')` | `storage.createKbCategory(data)` | ❓ NOT FOUND |
+| | kbCategory | C <span style="color:red">**R**</span> U D L | `storage.executeGenericCrud('kbCategory', 'read')` | `storage.getKbCategory(id)` | ❓ NOT FOUND |
+| | kbArticle | <span style="color:red">**C**</span> R U D L | `storage.executeGenericCrud('kbArticle', 'create')` | `storage.createKbArticle(data)` | ❓ NOT FOUND |
+| | kbArticle | C <span style="color:red">**R**</span> U D L | `storage.executeGenericCrud('kbArticle', 'read')` | `storage.getKbArticle(id)` | ❓ NOT FOUND |
+
+### CRUD + List Operations Explanation
+
+**Standard CRUD Operations:**
+- **C**reate - Insert new records
+- **R**ead - Retrieve single record by ID  
+- **U**pdate - Modify existing records
+- **D**elete - Remove records
+
+**List Operation (L):**
+- **L**ist - Retrieve multiple records (with optional filtering)
+- This is separate from CRUD because it returns arrays vs single entities
+- Common patterns: `getUsers()`, `getLocations()`, `getScheduleBlocks(locationId?)`
 
 ### Summary Statistics
 
