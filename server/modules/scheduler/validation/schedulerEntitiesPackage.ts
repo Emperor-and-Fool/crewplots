@@ -5,6 +5,7 @@ import { z } from 'zod';
 // UNIFIED SCHEDULER ENTITIES PACKAGE - PLAN 067
 // Consolidates scheduleBlockPackage.ts, weekSchedulePackage.ts, shiftPackage.ts
 // Exact code copying from existing packages with entity-routing logic
+
 // ===== CONSOLIDATED PERMISSION-MAPPING =====
 // Source: users.workflowPermissions JSON column
 const workflowPerms = user.workflowPermissions || {};
