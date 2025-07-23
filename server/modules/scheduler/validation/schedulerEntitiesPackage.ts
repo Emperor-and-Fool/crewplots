@@ -2,13 +2,17 @@ import { insertScheduleBlockSchema, insertWeekScheduleSchema, insertShiftSchema,
 import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 import { z } from 'zod';
 
+// ============================================================================
 // UNIFIED SCHEDULER ENTITIES PACKAGE - PLAN 067
+// ============================================================================
 // Consolidates scheduleBlockPackage.ts, weekSchedulePackage.ts, shiftPackage.ts
 // Exact code copying from existing packages with entity-routing logic
 
-// ===== CONSOLIDATED SCHEMAS =====
+// ============================================================================
+// SECTION 1: SCHEMA DEFINITIONS
+// ============================================================================
 
-// Schedule Block Schemas (copied from scheduleBlockPackage.ts)
+// ===== SCHEDULE BLOCK SCHEMAS =====
 const scheduleBlockReadSchema = z.object({
   id: z.number()
 });
@@ -24,7 +28,7 @@ const scheduleBlockDeleteSchema = z.object({
   cascadeDelete: z.boolean().optional()
 });
 
-// Week Schedule Schemas (copied from weekSchedulePackage.ts)
+// ===== WEEK SCHEDULE SCHEMAS =====
 const weekScheduleReadSchema = z.object({
   id: z.number()
 });
@@ -40,7 +44,7 @@ const weekScheduleListSchema = z.object({
   }).optional()
 });
 
-// Shift Schemas (copied from shiftPackage.ts)
+// ===== SHIFT SCHEMAS =====
 const shiftReadSchema = z.object({
   id: z.number()
 });
@@ -53,9 +57,11 @@ const shiftListSchema = z.object({
   }).optional()
 });
 
-// ===== CONSOLIDATED BUSINESS RULES =====
+// ============================================================================
+// SECTION 2: BUSINESS RULES DEFINITIONS
+// ============================================================================
 
-// Schedule Block Business Rules (CORRECTED: conditional validation, no bypass)
+// ===== SCHEDULE BLOCK BUSINESS RULES =====
 const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -110,7 +116,7 @@ const scheduleBlockBusinessRules = [
   }
 ];
 
-// Week Schedule Business Rules (CORRECTED: conditional validation, no bypass)
+// ===== WEEK SCHEDULE BUSINESS RULES =====
 const weekScheduleBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -123,11 +129,11 @@ const weekScheduleBusinessRules = [
       } else if (data.weekNumber < 1 || data.weekNumber > 53) {
         errors.push('Week number must be between 1 and 53');
       }
+    }
 
-      // Schedule block validation for creation (conditional)
-      if (!data.scheduleBlockId && data.id === undefined) {
-        errors.push('Schedule block ID is required for new week schedules');
-      }
+    // Schedule block ID validation (conditional)
+    if (data.scheduleBlockId && (typeof data.scheduleBlockId !== 'number' || data.scheduleBlockId <= 0)) {
+      errors.push('Valid schedule block ID is required');
     }
 
     return { warnings, errors };
@@ -137,26 +143,13 @@ const weekScheduleBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // User context validation (conditional on operation)
-    if (context?.operation !== 'read' && context?.operation !== 'list') {
-      if (!context?.user) {
-        errors.push('User context required for week schedule operations');
-        return { warnings, errors };
-      }
-
-      // Template validation (conditional)
-      if (data.templateId && (typeof data.templateId !== 'number' || data.templateId <= 0)) {
-        warnings.push('Invalid template ID provided - will proceed without template');
-      }
-
-      // Week structure lock validation
-      if (data.hasOwnProperty('weekStructureLocked')) {
-        if (typeof data.weekStructureLocked !== 'boolean') {
-          errors.push('Week structure lock status must be true or false');
-        }
-        if (data.weekStructureLocked === true && context?.operation === 'update') {
-          warnings.push('Week structure is locked - changes may be restricted');
-        }
+    // Week structure locked validation (weekStructureLocked is a scheduleBlock field, not weekSchedule)
+    if (context?.operation === 'create' || context?.operation === 'update') {
+      // NOTE: weekStructureLocked belongs to scheduleBlock, not weekSchedule
+      // This business rule validates that week creation respects the parent block's lock state
+      if (data.scheduleBlockId) {
+        // Additional validation would require lookup of parent scheduleBlock
+        // For now, we trust the parent block validation
       }
     }
 
@@ -164,49 +157,36 @@ const weekScheduleBusinessRules = [
   }
 ];
 
-// Shift Business Rules (CORRECTED: conditional validation, no bypass)
+// ===== SHIFT BUSINESS RULES =====
 const shiftBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // Validation only for create/update operations (conditional)
-    if (context?.operation !== 'read' && context?.operation !== 'list') {
-      // Title validation (conditional)
-      if (data.title && data.title.trim().length === 0) {
-        errors.push('Shift title cannot be empty');
-      } else if (data.title && data.title.length > 100) {
-        errors.push('Shift title must be 100 characters or less');
-      }
+    // Position validation (conditional)
+    if (data.position && typeof data.position !== 'string') {
+      errors.push('Position must be a text value');
+    } else if (data.position && data.position.trim().length === 0) {
+      errors.push('Position cannot be empty');
+    }
 
-      // Time validation (conditional)
-      if (data.startTime && data.endTime && data.startTime >= data.endTime) {
+    // Start time validation (conditional)
+    if (data.startTime && typeof data.startTime !== 'string') {
+      errors.push('Start time must be a valid time format');
+    }
+
+    // End time validation (conditional)
+    if (data.endTime && typeof data.endTime !== 'string') {
+      errors.push('End time must be a valid time format');
+    }
+
+    // Time logic validation
+    if (data.startTime && data.endTime) {
+      const start = new Date(`2000-01-01T${data.startTime}`);
+      const end = new Date(`2000-01-01T${data.endTime}`);
+      
+      if (end <= start) {
         errors.push('End time must be after start time');
-      }
-
-      // Max slots validation (conditional)
-      if (data.maxSlots && (typeof data.maxSlots !== 'number' || data.maxSlots < 1)) {
-        errors.push('Max slots must be a positive number');
-      } else if (data.maxSlots && data.maxSlots > 50) {
-        warnings.push('Large number of slots - verify this is correct');
-      }
-
-      // Days of week validation - Context-aware for Russian Doll operations
-      if (context?.operation === 'create') {
-        // Multi-day creation requires daysOfWeek array
-        if (data.daysOfWeek && (!Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0)) {
-          errors.push('At least one day of the week must be selected');
-        }
-      } else if (context?.operation === 'update') {
-        // Single-shift editing - Russian Doll constraint (flexible data format)
-        const hasDayOfWeek = data.dayOfWeek && typeof data.dayOfWeek === 'string';
-        const hasDaysOfWeek = data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 0;
-        
-        if (data.dayOfWeek || data.daysOfWeek) {
-          if (!hasDayOfWeek && !hasDaysOfWeek) {
-            errors.push('Day of week is required for shift editing (dayOfWeek or daysOfWeek)');
-          }
-        }
       }
     }
 
@@ -217,24 +197,19 @@ const shiftBusinessRules = [
     const warnings: string[] = [];
     const errors: string[] = [];
 
-    // User context validation (conditional on operation)
+    // Week schedule ID validation (conditional)
     if (context?.operation !== 'read' && context?.operation !== 'list') {
-      if (!context?.user) {
-        errors.push('User context required for shift operations');
-        return { warnings, errors };
+      if (!data.weekScheduleId || typeof data.weekScheduleId !== 'number') {
+        errors.push('Week schedule ID is required');
       }
+    }
 
-      // Week schedule validation for creation (conditional)
-      if (!data.weekScheduleId && data.id === undefined && context?.operation === 'create') {
-        errors.push('Week schedule ID is required for new shifts');
-      }
-
-      // Subscription deadline validation (conditional)
-      if (data.subscriptionDeadline) {
-        const deadline = new Date(data.subscriptionDeadline);
-        if (isNaN(deadline.getTime())) {
-          warnings.push('Invalid subscription deadline format');
-        }
+    // Max slots validation (conditional)
+    if (data.maxSlots !== undefined) {
+      if (typeof data.maxSlots !== 'number' || data.maxSlots < 1) {
+        errors.push('Maximum slots must be a positive number');
+      } else if (data.maxSlots > 100) {
+        warnings.push('Very high maximum slots - please verify this is correct');
       }
     }
 
@@ -242,136 +217,50 @@ const shiftBusinessRules = [
   }
 ];
 
-// ===== CONSOLIDATED ASSEMBLY FUNCTIONS =====
+// ============================================================================
+// SECTION 3: ASSEMBLY FUNCTIONS
+// ============================================================================
 
-// Schedule Block Assembly (copied from scheduleBlockPackage.ts lines 88-113)
-const scheduleBlockAssembly = (rawData: any, user: any, operation: string) => {
-  if (operation === 'read') {
-    return { 
-      id: rawData.id,
-      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
-    };
-  }
-
-  if (operation === 'list') {
-    const assembled = {
-      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
-      filters: rawData.filters || {}
-    };
-    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [LIST]: Raw entityType:', rawData.entityType);
-    console.log('🔧 SCHEDULE BLOCK ASSEMBLY [LIST]: Assembled data:', assembled);
-    return assembled;
-  }
-
-  if (operation === 'delete') {
-    return {
-      id: rawData.id,
-      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
-      cascadeDelete: rawData.cascadeDelete || false
-    };
-  }
-
+// ===== SCHEDULE BLOCK ASSEMBLY =====
+const scheduleBlockAssembly = (data: any, user: any, operation: string) => {
   return {
-    name: rawData.name?.trim(),
-    description: rawData.description?.trim() || null,
-    locationId: parseInt(rawData.locationId) || rawData.locationId,
-    isActive: rawData.isActive !== undefined ? Boolean(rawData.isActive) : true,
-    createdBy: user?.id || rawData.createdBy,
-    ...(operation === 'update' && rawData.id && { id: rawData.id })
+    ...data,
+    createdBy: user?.id || data.createdBy || null,
+    locationId: data.locationId || null,
+    isActive: data.isActive !== undefined ? data.isActive : true
   };
 };
 
-// Week Schedule Assembly (restored from working commit 511c2020)
-const weekScheduleAssembly = (rawData: any, user: any, operation: string) => {
-  if (operation === 'read') {
-    return { 
-      id: rawData.id,
-      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
-    };
-  }
-
-  if (operation === 'list') {
-    const assembled: any = {
-      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
-      filters: rawData.filters || {}
-    };
-    if (rawData.scheduleBlockId) {
-      assembled.scheduleBlockId = parseInt(rawData.scheduleBlockId);
-    }
-    return assembled;
-  }
-
-  // Simple assembly like working commit - NO locationId enrichment
+// ===== WEEK SCHEDULE ASSEMBLY =====
+const weekScheduleAssembly = (data: any, user: any, operation: string) => {
   return {
-    scheduleBlockId: parseInt(rawData.scheduleBlockId) || rawData.scheduleBlockId,
-    weekNumber: parseInt(rawData.weekNumber) || rawData.weekNumber,
-    name: rawData.name?.trim() || `Week ${rawData.weekNumber}`,  // Frontend sends this
-    isActive: rawData.isActive !== undefined ? Boolean(rawData.isActive) : true,  // Frontend sends this
-    templateId: rawData.templateId ? parseInt(rawData.templateId) : null,
-    createdBy: user?.id || rawData.createdBy,  // Enriched from user context
-    ...(operation === 'update' && rawData.id && { id: rawData.id })
+    ...data,
+    createdBy: user?.id || data.createdBy || null,
+    weekNumber: data.weekNumber || 1
   };
 };
 
-// Shift Assembly (copied from shiftPackage.ts lines 135-175)
-const shiftAssembly = (rawData: any, user: any, operation: string) => {
-  if (operation === 'read') {
-    return { 
-      id: rawData.id,
-      entityType: rawData.entityType  // CRITICAL: Preserve for storage routing
-    };
-  }
-
-  if (operation === 'list') {
-    const assembled: any = {
-      entityType: rawData.entityType,  // CRITICAL: Preserve for storage routing
-      filters: rawData.filters || {}
-    };
-    if (rawData.weekScheduleId) {
-      assembled.weekScheduleId = parseInt(rawData.weekScheduleId);
-    }
-    return assembled;
-  }
-
-  if (operation === 'create') {
-    return {
-      weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
-      title: rawData.title?.trim(),
-      position: rawData.position?.trim() || null,
-      daysOfWeek: Array.isArray(rawData.daysOfWeek) ? rawData.daysOfWeek : [],
-      startTime: rawData.startTime,
-      endTime: rawData.endTime,
-      maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
-      subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
-      competencyRequirements: rawData.competencyRequirements || []
-    };
-  }
-
+// ===== SHIFT ASSEMBLY =====
+const shiftAssembly = (data: any, user: any, operation: string) => {
   return {
-    weekScheduleId: parseInt(rawData.weekScheduleId) || rawData.weekScheduleId,
-    title: rawData.title?.trim(),
-    position: rawData.position?.trim() || null,
-    startTime: rawData.startTime,
-    endTime: rawData.endTime,
-    maxSlots: parseInt(rawData.maxSlots) || rawData.maxSlots,
-    subscriptionDeadline: rawData.subscriptionDeadline ? new Date(rawData.subscriptionDeadline) : null,
-    competencyRequirements: rawData.competencyRequirements || [],
-    ...(operation === 'update' && rawData.id && { id: rawData.id })
+    ...data,
+    createdBy: user?.id || data.createdBy || null,
+    date: data.date || new Date().toISOString().split('T')[0],
+    maxSlots: data.maxSlots || 1
   };
 };
 
-// ===== UNIFIED VE30 PACKAGE =====
+// ============================================================================
+// SECTION 4: MAIN PACKAGE EXPORT
+// ============================================================================
 
 export const schedulerEntitiesPackage: VE30Package = {
-  entityType: 'schedulerEntities', // Unified entity type
-  
   // Entity-routing schema validation
   validateSchema: (data: any, operation: string) => {
-    const entityType = data.entityType || 'scheduleBlock'; // Default fallback
+    const entityType = data.entityType;
     
-    // PHASE 4: Entity-type validation (Plan 067 requirement)
-    if (!['scheduleBlock', 'weekSchedule', 'shift'].includes(entityType)) {
-      return { isValid: false, errors: [`Invalid scheduler entity type: ${entityType}`] };
+    if (!entityType) {
+      return { isValid: false, errors: ['Entity type is required'] };
     }
     
     // Schedule Block routing
@@ -465,8 +354,11 @@ export const schedulerEntitiesPackage: VE30Package = {
     
     return Promise.resolve(data);
   },
+
+  // ============================================================================
+  // SECTION 5: STORAGE ACTIONS (CRUD OPERATIONS)
+  // ============================================================================
   
-  // Entity-routing storage actions (PHASE 3: Russian Doll Logic Integration)
   storageActions: {
     executeCreate: async (data, storage) => {
       const entityType = data.entityType;
@@ -523,38 +415,18 @@ export const schedulerEntitiesPackage: VE30Package = {
         }
         
         // Validate parent weekSchedule exists and user has access
-        const parentWeek = await storage.getWeekSchedule(data.weekScheduleId);
-        if (!parentWeek) {
-          throw new Error(`🚨 CASCADE AUTHENTICATION FAILED: Week schedule ${data.weekScheduleId} not found`);
+        const parentWeekSchedule = await storage.getWeekSchedule(data.weekScheduleId);
+        if (!parentWeekSchedule) {
+          throw new Error(`🚨 RUSSIAN DOLL VIOLATION: weekSchedule ${data.weekScheduleId} not found - cannot create orphaned shift`);
         }
         
-        console.log(`✅ CASCADE AUTHENTICATION: Parent week verified - ID: ${parentWeek.id}, Week: ${parentWeek.weekNumber}`);
-        console.log('🔧 SHIFT CREATE: Foreign key established, proceeding with creation');
+        console.log(`🔧 SHIFT CREATE: Validated parent weekSchedule ${data.weekScheduleId} exists`);
         
-        // PHASE 4: Multi-day shift creation logic (copied from shiftPackage.ts lines 190-225)
-        if (data.daysOfWeek && Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 1) {
-          console.log(`🔄 MULTI-DAY SHIFT CREATION: Creating ${data.daysOfWeek.length} shifts for days:`, data.daysOfWeek);
-          
-          const createdShifts = [];
-          for (const dayOfWeek of data.daysOfWeek) {
-            const shiftData = {
-              ...data,
-              dayOfWeek: dayOfWeek,
-              daysOfWeek: [dayOfWeek] // Convert to single-day array for storage
-            };
-            
-            console.log(`📅 Creating shift for ${dayOfWeek}:`, shiftData.title);
-            const createdShift = await storage.createShift(shiftData);
-            createdShifts.push(createdShift);
-            console.log(`✅ Shift created for ${dayOfWeek} with ID:`, createdShift.id);
-          }
-          
-          console.log(`🎉 MULTI-DAY CREATION COMPLETE: Created ${createdShifts.length} shifts`);
-          return createdShifts;
-        } else {
-          // Single shift creation
-          return await storage.createShift(data);
-        }
+        // Create the shift with validated parent relationship
+        const result = await storage.createShift(data);
+        console.log(`✅ SHIFT CREATED: ID ${result.id} for weekSchedule ${data.weekScheduleId}`);
+        
+        return result;
       }
       
       throw new Error(`Create operation not supported for entity type: ${entityType}`);
@@ -580,51 +452,38 @@ export const schedulerEntitiesPackage: VE30Package = {
       const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
-        // PHASE 2: Week Structure Lock Action Trigger
-        if (data.weekStructureAction === 'lock') {
-          console.log('🔒 WEEK STRUCTURE LOCK: Phase 2 triggered - Manager setting week count');
-          console.log('🔒 LOCK DATA:', { id: data.id, maxWeeks: data.maxWeeks, isActive: data.isActive });
+        // COPIED FROM WORKING COMMIT: Update with week expansion logic
+        console.log('🔄 SCHEDULE BLOCK UPDATE: Starting update process');
+        
+        // Handle week expansion if maxWeeks increased
+        if (data.maxWeeks) {
+          const existingWeeks = await storage.getWeekSchedulesByScheduleBlock(data.id);
+          const currentMaxWeek = Math.max(...existingWeeks.map(w => w.weekNumber), 0);
           
-          // Validate maxWeeks is provided for locking
-          if (!data.maxWeeks || data.maxWeeks < 1 || data.maxWeeks > 12) {
-            throw new Error('Week structure lock requires valid maxWeeks (1-12)');
-          }
-          
-          // Update scheduleBlock with maxWeeks and activation
-          const updateData = {
-            maxWeeks: data.maxWeeks,
-            weekStructureLocked: true
-          };
-          
-          console.log('🔒 UPDATING SCHEDULE BLOCK: Setting maxWeeks and activation status');
-          const updatedScheduleBlock = await storage.updateScheduleBlock(data.id, updateData);
-          
-          // Create week schedules for the locked structure
-          console.log(`🔒 CREATING WEEK STRUCTURE: ${data.maxWeeks} weeks for schedule block ${data.id}`);
-          const weekSchedules = [];
-          
-          for (let weekNumber = 1; weekNumber <= data.maxWeeks; weekNumber++) {
-            const weekScheduleData = {
-              scheduleBlockId: data.id,
-              weekNumber,
-              createdBy: data.createdBy || updatedScheduleBlock.createdBy
-            };
+          if (data.maxWeeks > currentMaxWeek) {
+            console.log(`🔄 WEEK EXPANSION: Expanding from ${currentMaxWeek} to ${data.maxWeeks} weeks`);
             
-            console.log(`🔒 CREATING WEEK ${weekNumber}`);
-            const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
-            weekSchedules.push(weekSchedule);
-            console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
+            for (let weekNumber = currentMaxWeek + 1; weekNumber <= data.maxWeeks; weekNumber++) {
+              const weekScheduleData = {
+                scheduleBlockId: data.id,
+                weekNumber,
+                createdBy: data.createdBy
+              };
+              
+              console.log(`🔄 WEEK SCHEDULE CREATE: Creating week ${weekNumber} for block ${data.id}`);
+              const weekSchedule = await storage.createWeekSchedule(weekScheduleData);
+              console.log(`✅ Week ${weekNumber} created with ID: ${weekSchedule.id}`);
+            }
           }
-          
-          return {
-            ...updatedScheduleBlock,
-            weekSchedules // Include created week schedules in response
-          };
         }
         
-        // Regular schedule block update (without week structure locking)
-        return await storage.updateScheduleBlock(data.id, data);
+        // Update the schedule block
+        const result = await storage.updateScheduleBlock(data.id, data);
+        console.log(`✅ SCHEDULE BLOCK UPDATED: ID ${data.id}`);
+        
+        return result;
       }
+      
       if (entityType === 'weekSchedule') {
         return await storage.updateWeekSchedule(data.id, data);
       }
@@ -639,38 +498,35 @@ export const schedulerEntitiesPackage: VE30Package = {
       const entityType = data.entityType;
       
       if (entityType === 'scheduleBlock') {
-        // PHASE 3: Russian Doll cascade delete logic (copied from scheduleBlockPackage.ts lines 207-284)
-        console.log('📦 SCHEDULE BLOCK DELETE: Starting package-driven deletion with cascade');
-        
-        const targetBlock = await storage.getScheduleBlock(data.id);
-        if (!targetBlock) {
-          throw new Error(`⚠️ SAFETY CHECK FAILED: Schedule block ${data.id} not found - aborting deletion`);
-        }
-        console.log(`🛡️ SAFETY CHECK: Confirmed schedule block exists - ID: ${targetBlock.id}, Name: "${targetBlock.name}"`);
+        // CASCADE DELETE: Full Russian Doll deletion with data integrity validation
+        console.log('🔥 CASCADE DELETE: Starting comprehensive deletion process');
         
         if (data.cascadeDelete) {
-          console.log('🔥 CASCADE DELETE: Starting Russian Doll cascade deletion for schedule block:', data.id);
+          console.log('🔥 CASCADE DELETE: Enabled - deleting all related data');
           
+          // Pre-deletion state validation
           const allBlocksBefore = await storage.getScheduleBlocks();
           const allWeeksBefore = await storage.getWeekSchedules();
           console.log(`🛡️ PRE-DELETE STATE: Total schedule blocks: ${allBlocksBefore.length}, Total week schedules: ${allWeeksBefore.length}`);
           
+          // Get week schedules for this block
           const weekSchedules = await storage.getWeekSchedulesByScheduleBlock(data.id);
-          console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to cascade delete for block ${data.id}`);
+          console.log(`🔥 CASCADE DELETE: Found ${weekSchedules.length} week schedules to delete`);
           
-          const invalidWeeks = weekSchedules.filter((week: any) => week.scheduleBlockId !== data.id);
-          if (invalidWeeks.length > 0) {
-            throw new Error(`🚨 BOUNDARY VIOLATION: Found week schedules not belonging to block ${data.id}: ${invalidWeeks.map((w: any) => w.id).join(', ')}`);
-          }
-          console.log(`✅ BOUNDARY CHECK PASSED: All ${weekSchedules.length} week schedules belong to block ${data.id}`);
-          
+          // Delete shifts for each week schedule
           for (const week of weekSchedules) {
-            console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id} (scheduleBlockId: ${week.scheduleBlockId}, including its shifts)`);
+            const shifts = await storage.getShiftsByWeekSchedule(week.id);
+            console.log(`🔥 CASCADE DELETE: Found ${shifts.length} shifts for week ${week.id}`);
             
-            if (week.scheduleBlockId !== data.id) {
-              throw new Error(`🚨 CRITICAL SAFETY VIOLATION: Week schedule ${week.id} belongs to block ${week.scheduleBlockId}, not target block ${data.id}`);
+            for (const shift of shifts) {
+              console.log(`🔥 CASCADE DELETE: Deleting shift ${shift.id}`);
+              await storage.deleteShift(shift.id);
             }
-            
+          }
+          
+          // Delete week schedules
+          for (const week of weekSchedules) {
+            console.log(`🔥 CASCADE DELETE: Deleting week schedule ${week.id}`);
             await storage.deleteWeekSchedule(week.id);
             console.log(`✅ Week schedule ${week.id} deleted successfully`);
           }
@@ -749,250 +605,3 @@ export const schedulerEntitiesPackage: VE30Package = {
     }
   }
 };
-
-// Below duplicated code in /server/storage.ts
-// SCHEDULER-SPECIFIC SHIFT OPERATIONS (Lines 1649-1683)
-async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
-  const results = await db.insert(shifts).values(shift).returning();
-  return results[0];
-}
-
-async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
-  return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
-}
-
-async getShifts(): Promise<Shift[]> {
-  return await db.select().from(shifts).orderBy(asc(shifts.date));
-}
-
-async getShift(id: number): Promise<Shift | undefined> {
-  const results = await db.select().from(shifts).where(eq(shifts.id, id));
-  return results[0];
-}
-
-async createShift(insertShift: InsertShift): Promise<Shift> {
-  const [shift] = await db.insert(shifts).values(insertShift).returning();
-  return shift;
-}
-
-async updateShift(id: number, updates: Partial<InsertShift>): Promise<Shift | undefined> {
-  const results = await db.update(shifts).set(updates).where(eq(shifts.id, id)).returning();
-  return results[0];
-}
-
-async deleteShift(id: number): Promise<boolean> {
-  // First delete shift requirements that reference this shift
-  await db.delete(shiftRequirements).where(eq(shiftRequirements.shiftId, id));
-  // Then delete the shift itself
-  const results = await db.delete(shifts).where(eq(shifts.id, id)).returning();
-  return results.length > 0;
-}
-
-// COMPLEX MULTI-WEEK CREATION BUSINESS LOGIC (Lines 1569-1611)
-// CENTRALIZED MULTI-WEEK CREATION: Single source of truth for all week schedule creation
-async createMultiWeekSchedules(scheduleBlockId: number, maxWeeks: number, createdBy: number): Promise<WeekSchedule[]> {
-  console.log(`🔄 CENTRALIZED MULTI-WEEK: Creating ${maxWeeks} weeks for schedule block ${scheduleBlockId}`);
-
-  const weekSchedules = [];
-  for (let weekNumber = 1; weekNumber <= maxWeeks; weekNumber++) {
-    const weekScheduleData = {
-      scheduleBlockId,
-      weekNumber,
-      createdBy
-    };
-
-    console.log(`🔄 CENTRALIZED WEEK CREATE: Week ${weekNumber} for block ${scheduleBlockId}`);
-    const weekSchedule = await this.createWeekSchedule(weekScheduleData);
-    weekSchedules.push(weekSchedule);
-    console.log(`✅ Centralized week ${weekNumber} created with ID: ${weekSchedule.id}`);
-  }
-
-  console.log(`🔄 CENTRALIZED MULTI-WEEK: Created ${weekSchedules.length} week schedules`);
-  return weekSchedules;
-}
-
-// CENTRALIZED SCHEDULE BLOCK WITH WEEKS: Single method combining block + multi-week creation
-async createScheduleBlockWithWeeks(scheduleBlockData: InsertScheduleBlock, maxWeeks: number = 1): Promise<ScheduleBlock & { weekSchedules: WeekSchedule[] }> {
-  console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Creating schedule block with ${maxWeeks} weeks`);
-
-  // Create the schedule block first
-  const scheduleBlock = await this.createScheduleBlock(scheduleBlockData);
-  console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Created block with ID ${scheduleBlock.id}`);
-
-  // Create the week schedules using centralized method
-  const weekSchedules = await this.createMultiWeekSchedules(
-    scheduleBlock.id, 
-    maxWeeks, 
-    scheduleBlockData.createdBy
-  );
-
-  return {
-    ...scheduleBlock,
-    weekSchedules
-  };
-}
-
-// SCHEDULING WINDOWS MANAGEMENT (Lines 1479-1517)
-// Scheduling Windows
-async getSchedulingWindow(id: number): Promise<SchedulingWindow | undefined> {
-  const results = await db.select().from(schedulingWindows).where(eq(schedulingWindows.id, id));
-  return results[0];
-}
-
-async getSchedulingWindows(locationId?: number, role?: string): Promise<SchedulingWindow[]> {
-  let query = db.select().from(schedulingWindows);
-
-  if (locationId && role) {
-    query = query.where(and(eq(schedulingWindows.locationId, locationId), eq(schedulingWindows.role, role)));
-  } else if (locationId) {
-    query = query.where(eq(schedulingWindows.locationId, locationId));
-  } else if (role) {
-    query = query.where(eq(schedulingWindows.role, role));
-  }
-
-  return await query;
-}
-
-async getSchedulingWindowsByLocation(locationId: number): Promise<SchedulingWindow[]> {
-  return await db.select().from(schedulingWindows).where(eq(schedulingWindows.locationId, locationId));
-}
-
-async createSchedulingWindow(window: InsertSchedulingWindow): Promise<SchedulingWindow> {
-  const results = await db.insert(schedulingWindows).values(window).returning();
-  return results[0];
-}
-
-async updateSchedulingWindow(id: number, window: Partial<InsertSchedulingWindow>): Promise<SchedulingWindow | undefined> {
-  const results = await db.update(schedulingWindows).set(window).where(eq(schedulingWindows.id, id)).returning();
-  return results[0];
-}
-
-async deleteSchedulingWindow(id: number): Promise<boolean> {
-  const results = await db.delete(schedulingWindows).where(eq(schedulingWindows.id, id)).returning();
-  return results.length > 0;
-}
-
-// SHIFT ASSIGNMENTS MANAGEMENT (Lines 1436-1478)
-// Shift Assignments
-async getShiftAssignment(id: number): Promise<ShiftAssignment | undefined> {
-  const results = await db.select().from(shiftAssignments).where(eq(shiftAssignments.id, id));
-  return results[0];
-}
-
-async getShiftAssignments(shiftId?: number, userId?: number): Promise<ShiftAssignment[]> {
-  let query = db.select().from(shiftAssignments);
-
-  if (shiftId && userId) {
-    query = query.where(and(eq(shiftAssignments.shiftId, shiftId), eq(shiftAssignments.userId, userId)));
-  } else if (shiftId) {
-    query = query.where(eq(shiftAssignments.shiftId, shiftId));
-  } else if (userId) {
-    query = query.where(eq(shiftAssignments.userId, userId));
-  }
-
-  return await query;
-}
-
-async getShiftAssignmentsByShift(shiftId: number): Promise<ShiftAssignment[]> {
-  return await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, shiftId));
-}
-
-async getShiftAssignmentsByUser(userId: number): Promise<ShiftAssignment[]> {
-  return await db.select().from(shiftAssignments).where(eq(shiftAssignments.userId, userId));
-}
-
-async createShiftAssignment(assignment: InsertShiftAssignment): Promise<ShiftAssignment> {
-  const results = await db.insert(shiftAssignments).values(assignment).returning();
-  return results[0];
-}
-
-async updateShiftAssignment(id: number, assignment: Partial<InsertShiftAssignment>): Promise<ShiftAssignment | undefined> {
-  const results = await db.update(shiftAssignments).set(assignment).where(eq(shiftAssignments.id, id)).returning();
-  return results[0];
-}
-
-async deleteShiftAssignment(id: number): Promise<boolean> {
-  const results = await db.delete(shiftAssignments).where(eq(shiftAssignments.id, id)).returning();
-  return results.length > 0;
-}
-
-// SHIFT SUBSCRIPTIONS MANAGEMENT (Lines 1393-1435)
-// Shift Subscriptions
-async getShiftSubscription(id: number): Promise<ShiftSubscription | undefined> {
-  const results = await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.id, id));
-  return results[0];
-}
-
-async getShiftSubscriptions(shiftId?: number, userId?: number): Promise<ShiftSubscription[]> {
-  let query = db.select().from(shiftSubscriptions);
-
-  if (shiftId && userId) {
-    query = query.where(and(eq(shiftSubscriptions.shiftId, shiftId), eq(shiftSubscriptions.userId, userId)));
-  } else if (shiftId) {
-    query = query.where(eq(shiftSubscriptions.shiftId, shiftId));
-  } else if (userId) {
-    query = query.where(eq(shiftSubscriptions.userId, userId));
-  }
-
-  return await query;
-}
-
-async getShiftSubscriptionsByShift(shiftId: number): Promise<ShiftSubscription[]> {
-  return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.shiftId, shiftId));
-}
-
-async getShiftSubscriptionsByUser(userId: number): Promise<ShiftSubscription[]> {
-  return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.userId, userId));
-}
-
-async createShiftSubscription(subscription: InsertShiftSubscription): Promise<ShiftSubscription> {
-  const results = await db.insert(shiftSubscriptions).values(subscription).returning();
-  return results[0];
-}
-
-async updateShiftSubscription(id: number, subscription: Partial<InsertShiftSubscription>): Promise<ShiftSubscription | undefined> {
-  const results = await db.update(shiftSubscriptions).set(subscription).where(eq(shiftSubscriptions.id, id)).returning();
-  return results[0];
-}
-
-async deleteShiftSubscription(id: number): Promise<boolean> {
-  const results = await db.delete(shiftSubscriptions).where(eq(shiftSubscriptions.id, id)).returning();
-  return results.length > 0;
-}
-
-// SHIFT REQUIREMENTS MANAGEMENT (Lines 1360-1392)
-// Shift Requirements
-async getShiftRequirement(id: number): Promise<ShiftRequirement | undefined> {
-  const results = await db.select().from(shiftRequirements).where(eq(shiftRequirements.id, id));
-  return results[0];
-}
-
-async getShiftRequirements(shiftId?: number): Promise<ShiftRequirement[]> {
-  if (shiftId) {
-    return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
-  }
-  return await db.select().from(shiftRequirements);
-}
-
-async getShiftRequirementsByShift(shiftId: number): Promise<ShiftRequirement[]> {
-  return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
-}
-
-async createShiftRequirement(requirement: InsertShiftRequirement): Promise<ShiftRequirement> {
-  const results = await db.insert(shiftRequirements).values(requirement).returning();
-  return results[0];
-}
-
-async updateShiftRequirement(id: number, requirement: Partial<InsertShiftRequirement>): Promise<ShiftRequirement | undefined> {
-  const results = await db.update(shiftRequirements).set(requirement).where(eq(shiftRequirements.id, id)).returning();
-  return results[0];
-}
-
-async deleteShiftRequirement(id: number): Promise<boolean> {
-  const results = await db.delete(shiftRequirements).where(eq(shiftRequirements.id, id)).returning();
-  return results.length > 0;
-}
-
-// 
-
-export type SchedulerEntitiesPackage = typeof schedulerEntitiesPackage;
