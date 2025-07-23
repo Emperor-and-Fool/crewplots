@@ -7,27 +7,7 @@ import { z } from 'zod';
 // Exact code copying from existing packages with entity-routing logic
 
 // ===== CONSOLIDATED PERMISSION-MAPPING =====
-
-// Unified permissions (same across all scheduler entities)
-getRequiredPermissions: (operation: string) => {
-  if (operation === 'list' || operation === 'read') return ['schedule.read'];
-  if (operation === 'create') return ['schedule.read', 'schedule.create'];
-  if (operation === 'update') return ['schedule.read', 'schedule.update'];
-  if (operation === 'delete') return ['schedule.read', 'schedule.delete'];
-  return ['schedule.read'];
-},
-
-// Source: users.workflowPermissions JSON column
-const workflowPerms = user.workflowPermissions || {};
-
-// Package: Schedule/Scheduler validation packages
-if (workflowPerms.scheduling) {
-  if (workflowPerms.scheduling.includes('create')) validationPermissions.push('schedule.create');
-  if (workflowPerms.scheduling.includes('view')) validationPermissions.push('schedule.read');
-  if (workflowPerms.scheduling.includes('edit')) validationPermissions.push('schedule.update');
-  if (workflowPerms.scheduling.includes('delete')) validationPermissions.push('schedule.delete');
-  console.log('🔐 MAPPER: Added scheduling permissions from workflow');
-}
+// Note: Permission mapping will be handled by centralized PermissionService
 
 
 // ===== CONSOLIDATED SCHEMAS =====
