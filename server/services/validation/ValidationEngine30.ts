@@ -10,6 +10,7 @@ import { MessageService } from '../../modules/messaging';
 import { mongoConnection } from '../../db-mongo';
 import type { User } from '@shared/schema';
 import { mapWorkflowToValidationPermissions } from './validation-perm-mapping';
+import { PermissionService } from '../../../services/permission-service.ts';
 
 // CORE AUTH PACKAGES - remain as direct imports for security
 // (Authentication packages stay in engine for security isolation)
