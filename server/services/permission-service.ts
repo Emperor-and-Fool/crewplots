@@ -24,7 +24,7 @@ export class PermissionService {
     modules.forEach(module => {
       const validationPrefix = this.MODULE_MAPPINGS[module]
       if (validationPrefix) {
-        const modulePerms = this.mapModuleWorkflowPermissions(
+        const modulePerms = this.mapWorkflowToValidationPermissions(
           user.workflowPermissions?.[module] || [],
           validationPrefix  // ← Uses mapping table
         )
@@ -36,7 +36,7 @@ export class PermissionService {
   }
 
   // Module-specific workflow mapping
-  private static mapModuleWorkflowPermissions(workflows: string[], validationPrefix: string): string[] {
+  private static mapWorkflowToValidationPermissions(workflows: string[], validationPrefix: string): string[] {
     return workflows.map(workflow => `${validationPrefix}.${workflow}`)
   }
 }
