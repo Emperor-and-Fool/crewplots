@@ -5,7 +5,7 @@ import weekSchedulesRoutes from './routes/week-schedules';
 import shiftsRoutes from './routes/shifts';
 import requirementsRoutes from './routes/requirements';
 import assignmentsRoutes from './routes/assignments';
-import packagesRoutes from './routes/packages';
+// 
 
 const router = express.Router();
 
@@ -15,6 +15,6 @@ router.use('/week-schedules', weekSchedulesRoutes);
 router.use('/shifts', shiftsRoutes);
 router.use('/shift-requirements', requirementsRoutes);
 router.use('/shift-assignments', assignmentsRoutes);
-router.use('/packages', packagesRoutes);
+
 
 export default router;
