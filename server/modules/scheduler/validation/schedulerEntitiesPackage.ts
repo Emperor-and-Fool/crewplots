@@ -2,17 +2,13 @@ import { insertScheduleBlockSchema, insertWeekScheduleSchema, insertShiftSchema,
 import { VE30PackageBuilder, type VE30Package } from '@shared/validation/VE30PackageBuilder';
 import { z } from 'zod';
 
-// ============================================================================
 // UNIFIED SCHEDULER ENTITIES PACKAGE - PLAN 067
-// ============================================================================
 // Consolidates scheduleBlockPackage.ts, weekSchedulePackage.ts, shiftPackage.ts
 // Exact code copying from existing packages with entity-routing logic
 
-// ============================================================================
-// SECTION 1: SCHEMA DEFINITIONS
-// ============================================================================
+// ===== CONSOLIDATED SCHEMAS =====
 
-// ===== SCHEDULE BLOCK SCHEMAS =====
+// Schedule Block Schemas (copied from scheduleBlockPackage.ts)
 const scheduleBlockReadSchema = z.object({
   id: z.number()
 });
@@ -28,7 +24,7 @@ const scheduleBlockDeleteSchema = z.object({
   cascadeDelete: z.boolean().optional()
 });
 
-// ===== WEEK SCHEDULE SCHEMAS =====
+// Week Schedule Schemas (copied from weekSchedulePackage.ts)
 const weekScheduleReadSchema = z.object({
   id: z.number()
 });
@@ -44,7 +40,7 @@ const weekScheduleListSchema = z.object({
   }).optional()
 });
 
-// ===== SHIFT SCHEMAS =====
+// Shift Schemas (copied from shiftPackage.ts)
 const shiftReadSchema = z.object({
   id: z.number()
 });
@@ -57,11 +53,9 @@ const shiftListSchema = z.object({
   }).optional()
 });
 
-// ============================================================================
-// SECTION 2: BUSINESS RULES DEFINITIONS
-// ============================================================================
+// ===== CONSOLIDATED BUSINESS RULES =====
 
-// ===== SCHEDULE BLOCK BUSINESS RULES =====
+// Schedule Block Business Rules (CORRECTED: conditional validation, no bypass)
 const scheduleBlockBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -116,7 +110,7 @@ const scheduleBlockBusinessRules = [
   }
 ];
 
-// ===== WEEK SCHEDULE BUSINESS RULES =====
+// Week Schedule Business Rules (CORRECTED: conditional validation, no bypass)
 const weekScheduleBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -157,7 +151,7 @@ const weekScheduleBusinessRules = [
   }
 ];
 
-// ===== SHIFT BUSINESS RULES =====
+// Shift Business Rules (CORRECTED: conditional validation, no bypass)
 const shiftBusinessRules = [
   (data: any, context: any) => {
     const warnings: string[] = [];
@@ -217,11 +211,9 @@ const shiftBusinessRules = [
   }
 ];
 
-// ============================================================================
-// SECTION 3: ASSEMBLY FUNCTIONS
-// ============================================================================
+// ===== CONSOLIDATED DATA ASSEMBLY =====
 
-// ===== SCHEDULE BLOCK ASSEMBLY =====
+// Schedule Block Assembly (copied from scheduleBlockPackage.ts)
 const scheduleBlockAssembly = (data: any, user: any, operation: string) => {
   return {
     ...data,
@@ -231,7 +223,7 @@ const scheduleBlockAssembly = (data: any, user: any, operation: string) => {
   };
 };
 
-// ===== WEEK SCHEDULE ASSEMBLY =====
+// Week Schedule Assembly (copied from weekSchedulePackage.ts)
 const weekScheduleAssembly = (data: any, user: any, operation: string) => {
   return {
     ...data,
@@ -240,7 +232,7 @@ const weekScheduleAssembly = (data: any, user: any, operation: string) => {
   };
 };
 
-// ===== SHIFT ASSEMBLY =====
+// Shift Assembly (copied from shiftPackage.ts)
 const shiftAssembly = (data: any, user: any, operation: string) => {
   return {
     ...data,
@@ -250,9 +242,7 @@ const shiftAssembly = (data: any, user: any, operation: string) => {
   };
 };
 
-// ============================================================================
-// SECTION 4: MAIN PACKAGE EXPORT
-// ============================================================================
+// ===== UNIFIED PACKAGE DEFINITION =====
 
 export const schedulerEntitiesPackage: VE30Package = {
   // Entity-routing schema validation
@@ -354,11 +344,8 @@ export const schedulerEntitiesPackage: VE30Package = {
     
     return Promise.resolve(data);
   },
-
-  // ============================================================================
-  // SECTION 5: STORAGE ACTIONS (CRUD OPERATIONS)
-  // ============================================================================
   
+  // Entity-routing storage actions (PHASE 3: Russian Doll Logic Integration)
   storageActions: {
     executeCreate: async (data, storage) => {
       const entityType = data.entityType;
