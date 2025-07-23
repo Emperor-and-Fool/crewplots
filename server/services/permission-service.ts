@@ -2,16 +2,47 @@ import { User } from '../../shared/schema'
 
 export class PermissionService {
 
-  // Module workflow → validation permission mappings
-  private static readonly MODULE_MAPPINGS: Record<string, string> = {
-    scheduling: 'schedule',
-    messaging: 'message', 
-    usermanagement: 'user',
-    locations: 'location',
-    email: 'email',
-    competencies: 'competency',
-    'knowledge-base': 'kb'
-  }
+private static readonly ENTITY_MAPPINGS: Record<string, string> = {
+  // Users Module
+  user: 'user',
+  userList: 'user', 
+  userManagement: 'user',
+  userBulk: 'user',
+  userSingle: 'user',
+  
+  // Locations Module  
+  location: 'location',
+  
+  // Competencies Module
+  competency: 'competency',
+  
+  // Scheduler Module
+  scheduleBlock: 'schedule',
+  weekSchedule: 'schedule', 
+  shift: 'schedule',
+  
+  // Knowledge Base Module
+  kbCategory: 'kb',
+  kbArticle: 'kb',
+  
+  // Messaging Module (from packageRegistry30.ts)
+  messaging: 'message',
+  motivationNote: 'message',
+  
+  // Email Module (from packageRegistry30.ts)
+  emailConfig: 'email',
+  emailSent: 'email',
+  emailVerification: 'email',
+  emailVerificationStatus: 'email',
+  emailTemplateInitialization: 'email',
+  emailTokenValidation: 'email',
+  emailTest: 'email',
+  
+  // Auth Module (from ValidationEngine30.ts)
+  userProfile: 'user',
+  authProfile: 'user',
+  userRegistration: 'user'
+}
 
   // Generic permission mapper for VE30 flow
   static mapUserPermissions(user: User, modules: string[]): string[] {
