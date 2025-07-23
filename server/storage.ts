@@ -1,32 +1,36 @@
 import {
   users, locations, competencies, userLocations, userCompetencies,
-  scheduleTemplates, templateShifts, scheduleBlocks, weekSchedules, shifts, shiftRequirements,
-  shiftSubscriptions, shiftAssignments, schedulingWindows, cashCounts,
-  kbCategories, kbArticles, noteRefs, hybridCache,
+  scheduleTemplates, templateShifts, scheduleBlocks, weekSchedules, shifts, 
+ // shiftRequirements,
+ // shiftSubscriptions, shiftAssignments, schedulingWindows, 
+  cashCounts,
+  kbCategories, kbArticles, noteRefs, 
+  // hybridCache,
   type User, type Location, type Competency, type UserLocation, type UserCompetency,
   type ScheduleTemplate, type TemplateShift, type ScheduleBlock,
-  type WeekSchedule, type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
-  type SchedulingWindow, type CashCount, type KbCategory, type KbArticle, type NoteRef,
-  type HybridCache, type UserModulePermissions, type SchedulerModulePermissions,
+  type WeekSchedule, 
+  //type Shift, type ShiftRequirement, type ShiftSubscription, type ShiftAssignment,
+  //type SchedulingWindow, 
+  type CashCount, type KbCategory, type KbArticle, type NoteRef,
+  // type HybridCache, 
+  type UserModulePermissions, type SchedulerModulePermissions,
   type LocationModulePermissions,
   type InsertUser, type InsertLocation, type InsertCompetency, type InsertUserLocation,
   type InsertUserCompetency, type InsertScheduleTemplate,
-  type InsertTemplateShift, type InsertScheduleBlock, type InsertWeekSchedule, type InsertShift,
-  type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
-  type InsertSchedulingWindow, type InsertCashCount, type InsertKbCategory, 
+  type InsertTemplateShift, type InsertScheduleBlock, type InsertWeekSchedule, 
+  //type InsertShift,
+  //type InsertShiftRequirement, type InsertShiftSubscription, type InsertShiftAssignment,
+  //type InsertSchedulingWindow, 
+  type InsertCashCount, type InsertKbCategory, 
   type InsertKbArticle, type InsertNoteRef, 
   generatePublicId
 } from "@shared/schema";
 
-// Aliases for backward compatibility - using correct weekSchedules table
-// const weekSchedules = weeks; // near-future-removal: Legacy alias removed
-// type WeekSchedule = Week; // near-future-removal: Legacy alias removed  
-// type InsertWeekSchedule = InsertWeek; // near-future-removal: Legacy alias removed
 import { db } from "./db";
 import { eq, and, gte, lte, sql, inArray, asc } from "drizzle-orm";
 import { OnDemandRedisService } from "../adapters-repl/redis-ondemand/on-demand-redis";
-import { onDemandMongoService } from "../adapters-repl/mongodb-ondemand/on-demand-mongodb";
-import { initializeWorkflowPermissions } from './utils/assign-default-permissions';
+// import { onDemandMongoService } from "../adapters-repl/mongodb-ondemand/on-demand-mongodb";
+// import { initializeWorkflowPermissions } from './utils/assign-default-permissions';
 
 // Simple in-memory cache for frequently accessed data
 const queryCache = new Map();
@@ -49,299 +53,6 @@ function setCache(key: string, data: any): void {
   queryCache.set(key, { data, timestamp: Date.now() });
 }
 
-// Legacy interface removed - modern implementation uses direct Drizzle ORM calls
-// near-future-removal: Clean up remaining DatabaseStorage class implementation
-
-// near-future-removal: MemStorage class - dead code, never used in production
-// Application uses DatabaseStorage exclusively, MemStorage missing 52+ IStorage methods
-// This was intended for development phase but app went directly to database storage
-/*
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private locations: Map<number, Location>;
-  private competencies: Map<number, Competency>;
-  private staff: Map<number, Staff>;
-  private staffCompetencies: Map<number, StaffCompetency>;
-  private applicants: Map<number, Applicant>;
-  private scheduleTemplates: Map<number, ScheduleTemplate>;
-  private templateShifts: Map<number, TemplateShift>;
-
-  private shifts: Map<number, Shift>;
-  private cashCounts: Map<number, CashCount>;
-  private kbCategories: Map<number, KbCategory>;
-  private kbArticles: Map<number, KbArticle>;
-  private uploadedFiles: Map<number, UploadedFile>;
-  // private documentAttachments: Map<number, DocumentAttachment>; // near-future-removal: Feature not implemented yet
-  private _userDocuments: Map<number, any>;
-
-  private currentUserId: number;
-  private currentLocationId: number;
-  private currentCompetencyId: number;
-  private currentStaffId: number;
-  private currentStaffCompetencyId: number;
-  private currentApplicantId: number;
-  private currentScheduleTemplateId: number;
-  private currentTemplateShiftId: number;
-
-  private currentShiftId: number;
-  private currentCashCountId: number;
-  private currentKbCategoryId: number;
-  private currentKbArticleId: number;
-  private currentUploadedFileId: number;
-  private currentDocumentAttachmentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.locations = new Map();
-    this.competencies = new Map();
-    this.staff = new Map();
-    this.staffCompetencies = new Map();
-    this.applicants = new Map();
-    this.scheduleTemplates = new Map();
-    this.templateShifts = new Map();
-
-    this.shifts = new Map();
-    this.cashCounts = new Map();
-    this.kbCategories = new Map();
-    this.kbArticles = new Map();
-    this.uploadedFiles = new Map();
-    // this.documentAttachments = new Map(); // near-future-removal: Feature not implemented yet
-    this._userDocuments = new Map();
-
-    this.currentUserId = 1;
-    this.currentLocationId = 1;
-    this.currentCompetencyId = 1;
-    this.currentUserLocationId = 1;
-    this.currentUserCompetencyId = 1;
-    this.currentApplicantId = 1;
-    this.currentScheduleTemplateId = 1;
-    this.currentTemplateShiftId = 1;
-
-    this.currentShiftId = 1;
-    this.currentCashCountId = 1;
-    this.currentKbCategoryId = 1;
-    this.currentKbArticleId = 1;
-    this.currentUploadedFileId = 1;
-    this.currentDocumentAttachmentId = 1;
-
-    // Add default admin user
-    this.createUser({
-      username: "admin",
-      password: "$2b$10$zKjZf0/ngR5c/xEJR8uMmeoaod8.MJopCz.lvabeSyOkw1RV2sIx2", // adminpass123
-      email: "manager@crewplots.nl",
-      name: "Pieter van der Meer",
-      role: "manager",
-      locationId: null
-    });
-  }
-
-  // Users
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const workflowPermissions = initializeWorkflowPermissions(user.role);
-    
-    const newUser: User = {
-      id: this.currentUserId++,
-      public_id: generatePublicId(12),
-      createdAt: new Date(),
-      firstName: user.firstName ?? null,
-      lastName: user.lastName ?? null,
-      locationId: user.locationId ?? null,
-      phoneNumber: user.phoneNumber ?? null,
-      resumeUrl: user.resumeUrl ?? null,
-      notes: user.notes ?? null,
-      workflowPermissions: workflowPermissions ?? null,
-      blockedPermissions: null,
-      ...user
-    };
-    this.users.set(newUser.id, newUser);
-    return newUser;
-  }
-
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
-    const existingUser = this.users.get(id);
-    if (!existingUser) {
-      return undefined;
-    }
-
-    const updatedUser = {
-      ...existingUser,
-      ...user
-    };
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    return this.users.delete(id);
-  }
-
-  async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
-
-  async getUsersByRole(role: string): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.role === role);
-  }
-
-  async getUsersByLocation(locationId: number): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.locationId === locationId);
-  }
-
-  // Locations
-  async getLocation(id: number): Promise<Location | undefined> {
-    return this.locations.get(id);
-  }
-
-  async getLocations(): Promise<Location[]> {
-    return Array.from(this.locations.values());
-  }
-
-  async createLocation(location: InsertLocation): Promise<Location> {
-    const newLocation: Location = {
-      id: this.currentLocationId++,
-      createdAt: new Date(),
-      ...location
-    };
-    this.locations.set(newLocation.id, newLocation);
-    return newLocation;
-  }
-
-  async updateLocation(id: number, location: Partial<InsertLocation>): Promise<Location | undefined> {
-    const existingLocation = this.locations.get(id);
-    if (!existingLocation) {
-      return undefined;
-    }
-
-    const updatedLocation = {
-      ...existingLocation,
-      ...location
-    };
-    this.locations.set(id, updatedLocation);
-    return updatedLocation;
-  }
-
-  async deleteLocation(id: number): Promise<boolean> {
-    return this.locations.delete(id);
-  }
-
-  // Competencies
-  async getCompetency(id: number): Promise<Competency | undefined> {
-    return this.competencies.get(id);
-  }
-
-  async getCompetencies(): Promise<Competency[]> {
-    return Array.from(this.competencies.values());
-  }
-
-  async getCompetenciesByLocation(locationId: number): Promise<Competency[]> {
-    return Array.from(this.competencies.values()).filter(competency => competency.locationId === locationId);
-  }
-
-  async createCompetency(competency: InsertCompetency): Promise<Competency> {
-    const newCompetency: Competency = {
-      id: this.currentCompetencyId++,
-      createdAt: new Date(),
-      ...competency
-    };
-    this.competencies.set(newCompetency.id, newCompetency);
-    return newCompetency;
-  }
-
-  async updateCompetency(id: number, competency: Partial<InsertCompetency>): Promise<Competency | undefined> {
-    const existingCompetency = this.competencies.get(id);
-    if (!existingCompetency) {
-      return undefined;
-    }
-
-    const updatedCompetency = {
-      ...existingCompetency,
-      ...competency
-    };
-    this.competencies.set(id, updatedCompetency);
-    return updatedCompetency;
-  }
-
-  async deleteCompetency(id: number): Promise<boolean> {
-    return this.competencies.delete(id);
-  }
-
-  // Staff
-  async getCrewMembersByLocation(locationId: number): Promise<User[]> {
-    // Get users who have crew roles at this location
-    const userLocationPairs = Array.from(this.userLocations.values())
-      .filter(ul => ul.locationId === locationId && 
-                   ['crew_member', 'crew_manager', 'floor_manager'].includes(ul.roleAtLocation));
-    
-    return userLocationPairs
-      .map(ul => this.users.get(ul.userId))
-      .filter(user => user !== undefined) as User[];
-  }
-
-  async getUserLocations(userId: number): Promise<UserLocation[]> {
-    return Array.from(this.userLocations.values())
-      .filter(ul => ul.userId === userId);
-  }
-
-  async assignUserToLocation(assignment: InsertUserLocation): Promise<UserLocation> {
-    const newAssignment: UserLocation = {
-      id: this.currentUserLocationId++,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...assignment
-    };
-    this.userLocations.set(newAssignment.id, newAssignment);
-    return newAssignment;
-  }
-
-  async removeUserFromLocation(userId: number, locationId: number): Promise<boolean> {
-    const assignment = Array.from(this.userLocations.values())
-      .find(ul => ul.userId === userId && ul.locationId === locationId);
-    
-    if (assignment) {
-      this.userLocations.delete(assignment.id);
-      return true;
-    }
-    return false;
-  }
-
-  // near-future-removal: Legacy Staff methods removed - use User-based crew management instead
-
-  // near-future-removal: Legacy StaffCompetency methods removed - use UserCompetency methods instead
-
-  // near-future-removal: All legacy Map-based methods removed - application uses database storage exclusively
-
-  // near-future-removal: Legacy Map-based schedule template methods removed - use database storage exclusively
-
-  // near-future-removal: Legacy Map-based template shift methods removed - use database storage exclusively
-
-  // Weekly Schedules
-
-
-  // near-future-removal: Legacy Map-based shift methods removed - use database storage exclusively
-
-  // near-future-removal: Legacy Map-based cash count methods removed - use database storage exclusively
-
-  // near-future-removal: Legacy Map-based KB category and article methods removed - use database storage exclusively
-
-  // near-future-removal: Legacy Map-based upload file methods removed - use database storage exclusively
-
-  // near-future-removal: Legacy Map-based document attachment methods removed - use database storage exclusively
-}
-*/
-
-// Legacy DatabaseStorage class removed - using direct Drizzle ORM exports instead
 // near-future-removal: Clean up remaining method implementations to export as individual functions
 
 class DatabaseStorage {
@@ -1358,162 +1069,13 @@ class DatabaseStorage {
 
   // === Scheduler Storage Methods ===
 
-  // Shift Requirements
-  async getShiftRequirement(id: number): Promise<ShiftRequirement | undefined> {
-    const results = await db.select().from(shiftRequirements).where(eq(shiftRequirements.id, id));
-    return results[0];
-  }
+// REMOVED SHIFT REQUIREMENTS MANAGEMENT (Lines 1360-1392)
 
-  async getShiftRequirements(shiftId?: number): Promise<ShiftRequirement[]> {
-    if (shiftId) {
-      return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
-    }
-    return await db.select().from(shiftRequirements);
-  }
+// REMOVED SHIFT SUBSCRIPTIONS MANAGEMENT (Lines 1393-1435)
 
-  async getShiftRequirementsByShift(shiftId: number): Promise<ShiftRequirement[]> {
-    return await db.select().from(shiftRequirements).where(eq(shiftRequirements.shiftId, shiftId));
-  }
+// REMOVED SHIFT ASSIGNMENTS MANAGEMENT (Lines 1436-1478)
 
-  async createShiftRequirement(requirement: InsertShiftRequirement): Promise<ShiftRequirement> {
-    const results = await db.insert(shiftRequirements).values(requirement).returning();
-    return results[0];
-  }
-
-  async updateShiftRequirement(id: number, requirement: Partial<InsertShiftRequirement>): Promise<ShiftRequirement | undefined> {
-    const results = await db.update(shiftRequirements).set(requirement).where(eq(shiftRequirements.id, id)).returning();
-    return results[0];
-  }
-
-  async deleteShiftRequirement(id: number): Promise<boolean> {
-    const results = await db.delete(shiftRequirements).where(eq(shiftRequirements.id, id)).returning();
-    return results.length > 0;
-  }
-
-  // Shift Subscriptions
-  async getShiftSubscription(id: number): Promise<ShiftSubscription | undefined> {
-    const results = await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.id, id));
-    return results[0];
-  }
-
-  async getShiftSubscriptions(shiftId?: number, userId?: number): Promise<ShiftSubscription[]> {
-    let query = db.select().from(shiftSubscriptions);
-    
-    if (shiftId && userId) {
-      query = query.where(and(eq(shiftSubscriptions.shiftId, shiftId), eq(shiftSubscriptions.userId, userId)));
-    } else if (shiftId) {
-      query = query.where(eq(shiftSubscriptions.shiftId, shiftId));
-    } else if (userId) {
-      query = query.where(eq(shiftSubscriptions.userId, userId));
-    }
-    
-    return await query;
-  }
-
-  async getShiftSubscriptionsByShift(shiftId: number): Promise<ShiftSubscription[]> {
-    return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.shiftId, shiftId));
-  }
-
-  async getShiftSubscriptionsByUser(userId: number): Promise<ShiftSubscription[]> {
-    return await db.select().from(shiftSubscriptions).where(eq(shiftSubscriptions.userId, userId));
-  }
-
-  async createShiftSubscription(subscription: InsertShiftSubscription): Promise<ShiftSubscription> {
-    const results = await db.insert(shiftSubscriptions).values(subscription).returning();
-    return results[0];
-  }
-
-  async updateShiftSubscription(id: number, subscription: Partial<InsertShiftSubscription>): Promise<ShiftSubscription | undefined> {
-    const results = await db.update(shiftSubscriptions).set(subscription).where(eq(shiftSubscriptions.id, id)).returning();
-    return results[0];
-  }
-
-  async deleteShiftSubscription(id: number): Promise<boolean> {
-    const results = await db.delete(shiftSubscriptions).where(eq(shiftSubscriptions.id, id)).returning();
-    return results.length > 0;
-  }
-
-  // Shift Assignments
-  async getShiftAssignment(id: number): Promise<ShiftAssignment | undefined> {
-    const results = await db.select().from(shiftAssignments).where(eq(shiftAssignments.id, id));
-    return results[0];
-  }
-
-  async getShiftAssignments(shiftId?: number, userId?: number): Promise<ShiftAssignment[]> {
-    let query = db.select().from(shiftAssignments);
-    
-    if (shiftId && userId) {
-      query = query.where(and(eq(shiftAssignments.shiftId, shiftId), eq(shiftAssignments.userId, userId)));
-    } else if (shiftId) {
-      query = query.where(eq(shiftAssignments.shiftId, shiftId));
-    } else if (userId) {
-      query = query.where(eq(shiftAssignments.userId, userId));
-    }
-    
-    return await query;
-  }
-
-  async getShiftAssignmentsByShift(shiftId: number): Promise<ShiftAssignment[]> {
-    return await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, shiftId));
-  }
-
-  async getShiftAssignmentsByUser(userId: number): Promise<ShiftAssignment[]> {
-    return await db.select().from(shiftAssignments).where(eq(shiftAssignments.userId, userId));
-  }
-
-  async createShiftAssignment(assignment: InsertShiftAssignment): Promise<ShiftAssignment> {
-    const results = await db.insert(shiftAssignments).values(assignment).returning();
-    return results[0];
-  }
-
-  async updateShiftAssignment(id: number, assignment: Partial<InsertShiftAssignment>): Promise<ShiftAssignment | undefined> {
-    const results = await db.update(shiftAssignments).set(assignment).where(eq(shiftAssignments.id, id)).returning();
-    return results[0];
-  }
-
-  async deleteShiftAssignment(id: number): Promise<boolean> {
-    const results = await db.delete(shiftAssignments).where(eq(shiftAssignments.id, id)).returning();
-    return results.length > 0;
-  }
-
-  // Scheduling Windows
-  async getSchedulingWindow(id: number): Promise<SchedulingWindow | undefined> {
-    const results = await db.select().from(schedulingWindows).where(eq(schedulingWindows.id, id));
-    return results[0];
-  }
-
-  async getSchedulingWindows(locationId?: number, role?: string): Promise<SchedulingWindow[]> {
-    let query = db.select().from(schedulingWindows);
-    
-    if (locationId && role) {
-      query = query.where(and(eq(schedulingWindows.locationId, locationId), eq(schedulingWindows.role, role)));
-    } else if (locationId) {
-      query = query.where(eq(schedulingWindows.locationId, locationId));
-    } else if (role) {
-      query = query.where(eq(schedulingWindows.role, role));
-    }
-    
-    return await query;
-  }
-
-  async getSchedulingWindowsByLocation(locationId: number): Promise<SchedulingWindow[]> {
-    return await db.select().from(schedulingWindows).where(eq(schedulingWindows.locationId, locationId));
-  }
-
-  async createSchedulingWindow(window: InsertSchedulingWindow): Promise<SchedulingWindow> {
-    const results = await db.insert(schedulingWindows).values(window).returning();
-    return results[0];
-  }
-
-  async updateSchedulingWindow(id: number, window: Partial<InsertSchedulingWindow>): Promise<SchedulingWindow | undefined> {
-    const results = await db.update(schedulingWindows).set(window).where(eq(schedulingWindows.id, id)).returning();
-    return results[0];
-  }
-
-  async deleteSchedulingWindow(id: number): Promise<boolean> {
-    const results = await db.delete(schedulingWindows).where(eq(schedulingWindows.id, id)).returning();
-    return results.length > 0;
-  }
+// REMOVED SCHEDULING WINDOWS MANAGEMENT (Lines 1479-1517)
 
   // === Week Schedule Management ===
 
@@ -1566,49 +1128,8 @@ class DatabaseStorage {
     return created;
   }
 
-  // CENTRALIZED MULTI-WEEK CREATION: Single source of truth for all week schedule creation
-  async createMultiWeekSchedules(scheduleBlockId: number, maxWeeks: number, createdBy: number): Promise<WeekSchedule[]> {
-    console.log(`🔄 CENTRALIZED MULTI-WEEK: Creating ${maxWeeks} weeks for schedule block ${scheduleBlockId}`);
-    
-    const weekSchedules = [];
-    for (let weekNumber = 1; weekNumber <= maxWeeks; weekNumber++) {
-      const weekScheduleData = {
-        scheduleBlockId,
-        weekNumber,
-        createdBy
-      };
-      
-      console.log(`🔄 CENTRALIZED WEEK CREATE: Week ${weekNumber} for block ${scheduleBlockId}`);
-      const weekSchedule = await this.createWeekSchedule(weekScheduleData);
-      weekSchedules.push(weekSchedule);
-      console.log(`✅ Centralized week ${weekNumber} created with ID: ${weekSchedule.id}`);
-    }
-    
-    console.log(`🔄 CENTRALIZED MULTI-WEEK: Created ${weekSchedules.length} week schedules`);
-    return weekSchedules;
-  }
-
-  // CENTRALIZED SCHEDULE BLOCK WITH WEEKS: Single method combining block + multi-week creation
-  async createScheduleBlockWithWeeks(scheduleBlockData: InsertScheduleBlock, maxWeeks: number = 1): Promise<ScheduleBlock & { weekSchedules: WeekSchedule[] }> {
-    console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Creating schedule block with ${maxWeeks} weeks`);
-    
-    // Create the schedule block first
-    const scheduleBlock = await this.createScheduleBlock(scheduleBlockData);
-    console.log(`🔄 CENTRALIZED BLOCK+WEEKS: Created block with ID ${scheduleBlock.id}`);
-    
-    // Create the week schedules using centralized method
-    const weekSchedules = await this.createMultiWeekSchedules(
-      scheduleBlock.id, 
-      maxWeeks, 
-      scheduleBlockData.createdBy
-    );
-    
-    return {
-      ...scheduleBlock,
-      weekSchedules
-    };
-  }
-
+// REMOVED COMPLEX MULTI-WEEK CREATION BUSINESS LOGIC (Lines 1569-1611)
+  
   async updateScheduleBlock(id: number, updates: Partial<InsertScheduleBlock>): Promise<ScheduleBlock | undefined> {
     const [updated] = await db.update(scheduleBlocks).set(updates).where(eq(scheduleBlocks.id, id)).returning();
     return updated;
@@ -1646,41 +1167,7 @@ class DatabaseStorage {
     return results.length > 0;
   }
 
-  async createShiftForWeekSchedule(shift: InsertShift): Promise<Shift> {
-    const results = await db.insert(shifts).values(shift).returning();
-    return results[0];
-  }
-
-  async getShiftsByWeekSchedule(weekScheduleId: number): Promise<Shift[]> {
-    return await db.select().from(shifts).where(eq(shifts.weekScheduleId, weekScheduleId));
-  }
-
-  async getShifts(): Promise<Shift[]> {
-    return await db.select().from(shifts).orderBy(asc(shifts.date));
-  }
-
-  async getShift(id: number): Promise<Shift | undefined> {
-    const results = await db.select().from(shifts).where(eq(shifts.id, id));
-    return results[0];
-  }
-
-  async createShift(insertShift: InsertShift): Promise<Shift> {
-    const [shift] = await db.insert(shifts).values(insertShift).returning();
-    return shift;
-  }
-
-  async updateShift(id: number, updates: Partial<InsertShift>): Promise<Shift | undefined> {
-    const results = await db.update(shifts).set(updates).where(eq(shifts.id, id)).returning();
-    return results[0];
-  }
-
-  async deleteShift(id: number): Promise<boolean> {
-    // First delete shift requirements that reference this shift
-    await db.delete(shiftRequirements).where(eq(shiftRequirements.shiftId, id));
-    // Then delete the shift itself
-    const results = await db.delete(shifts).where(eq(shifts.id, id)).returning();
-    return results.length > 0;
-  }
+// REMOVED Shift management with cascade delete logic  
 
   // Session consolidation support methods
   async getAllCompetencies(): Promise<Competency[]> {
