@@ -7,6 +7,16 @@ import { z } from 'zod';
 // Exact code copying from existing packages with entity-routing logic
 
 // ===== CONSOLIDATED PERMISSION-MAPPING =====
+
+// Unified permissions (same across all scheduler entities)
+getRequiredPermissions: (operation: string) => {
+  if (operation === 'list' || operation === 'read') return ['schedule.read'];
+  if (operation === 'create') return ['schedule.read', 'schedule.create'];
+  if (operation === 'update') return ['schedule.read', 'schedule.update'];
+  if (operation === 'delete') return ['schedule.read', 'schedule.delete'];
+  return ['schedule.read'];
+},
+
 // Source: users.workflowPermissions JSON column
 const workflowPerms = user.workflowPermissions || {};
 
@@ -306,14 +316,6 @@ export const schedulerEntitiesPackage: VE30Package = {
     return { isValid: false, errors: [`Unknown entity type: ${entityType}`] };
   },
   
-  // Unified permissions (same across all scheduler entities)
-  getRequiredPermissions: (operation: string) => {
-    if (operation === 'list' || operation === 'read') return ['schedule.read'];
-    if (operation === 'create') return ['schedule.read', 'schedule.create'];
-    if (operation === 'update') return ['schedule.read', 'schedule.update'];
-    if (operation === 'delete') return ['schedule.read', 'schedule.delete'];
-    return ['schedule.read'];
-  },
   
   // Entity-routing business rules validation
   validateBusinessRules: async (data: any, context: any) => {
