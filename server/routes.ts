@@ -71,6 +71,7 @@ import schedulerRoutes from './modules/scheduler';
 
 import validationV3Routes from './routes/validation-v3';
 import securityRoutes from './modules/security';
+import administrationRoutes from './modules/administration';
 import { OnDemandRedisService } from '../adapters-repl/redis-ondemand/on-demand-redis';
 
 // Monitor route imports
@@ -158,6 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Settings and configuration
   app.use('/api/security', securityRoutes);
+  app.use('/api/administration', administrationRoutes);
   
 
   
