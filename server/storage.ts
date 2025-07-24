@@ -64,7 +64,62 @@ class DatabaseStorage {
   // Users
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    
+    if (user) {
+      // Enhance user object with database permissions
+      const enhancedUser = await this.enhanceUserWithDatabasePermissions(user);
+      return enhancedUser;
+    }
+    
     return user;
+  }
+  
+  // Database-first permission enhancement
+  private async enhanceUserWithDatabasePermissions(user: User): Promise<User> {
+    try {
+      // Get role-based permissions from database using Drizzle
+      const { roles, permissions, rolePermissions } = await import('../shared/schema');
+      const result = await db
+        .select({ name: permissions.name })
+        .from(permissions)
+        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+        .innerJoin(roles, eq(rolePermissions.roleId, roles.id))
+        .where(eq(roles.name, user.role));
+      
+      const userRolePermissions = result.map(row => row.name);
+      
+      // For crew_member, check competency-based financial access
+      let enhancedPermissions = [...userRolePermissions];
+      if (user.role === 'crew_member') {
+        const competencyResult = await db
+          .select({ name: competencies.name, financial_access: competencies.financialAccess })
+          .from(competencies)
+          .innerJoin(userCompetencies, eq(competencies.id, userCompetencies.competencyId))
+          .where(and(
+            eq(userCompetencies.userId, user.id),
+            eq(competencies.financialAccess, true)
+          ));
+        
+        if (competencyResult.length > 0) {
+          enhancedPermissions.push(
+            'financial.read',
+            'financial.create', 
+            'financial.update'
+          );
+          console.log(`🎯 Enhanced permissions for ${user.username} with financial competency`);
+        }
+      }
+      
+      // Return enhanced user object with permissions array
+      return {
+        ...user,
+        permissions: enhancedPermissions
+      };
+      
+    } catch (error) {
+      console.error('❌ Error enhancing user with database permissions:', error);
+      return user; // Return original user if permission enhancement fails
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -87,6 +142,13 @@ class DatabaseStorage {
       blockedPermissions: users.blockedPermissions,
       createdAt: users.createdAt
     }).from(users).where(eq(users.username, username));
+    
+    if (user) {
+      // Enhance user object with database permissions
+      const enhancedUser = await this.enhanceUserWithDatabasePermissions(user);
+      return enhancedUser;
+    }
+    
     return user;
   }
 
@@ -810,6 +872,13 @@ class DatabaseStorage {
     try {
       // Get user with complete profile data (role, location, permissions)
       const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      if (user) {
+        // Enhance user object with database permissions
+        const enhancedUser = await this.enhanceUserWithDatabasePermissions(user);
+        return enhancedUser;
+      }
+      
       return user;
     } catch (error) {
       console.error("Error in getUserWithProfile:", error);

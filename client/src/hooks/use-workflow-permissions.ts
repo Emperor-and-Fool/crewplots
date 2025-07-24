@@ -31,19 +31,12 @@ export const useWorkflowPermissions = () => {
     // Normalize role for migration compatibility
     const normalizedRole = normalizeRole(user.role);
 
-    // Admin fallback: if user has administrator or owner role, treat as admin with full access
-    if (normalizedRole === 'administrator' || (normalizedRole === 'owner' && !user.workflowPermissions)) {
-      console.log(`🔍 PERMISSION CHECK: Admin fallback for ${user.username} (${user.role} → ${normalizedRole})`);
-      
-      // Add development warning for forceEnableAll
-      if (isForceEnableAllActive()) {
-        console.warn('⚠️ ADMIN BYPASS ACTIVE - Development mode only');
-      }
-      
-      // Use blocked permissions if available, otherwise grant full access
-      const blockedPermissions = user.blockedPermissions?.[workflow] || [];
-      const result = !blockedPermissions.includes(permission);
-      console.log(`🔍 PERMISSION CHECK: Admin result for ${workflow}.${permission}: ${result}`);
+    // Database permissions check: Use permissions array from database (populated by backend)
+    if (user.permissions && Array.isArray(user.permissions)) {
+      const dbPermission = `${workflow}.${permission}`;
+      const result = user.permissions.includes(dbPermission);
+      console.log(`🔍 PERMISSION CHECK: Database permission check for ${workflow}.${permission}: ${result}`);
+      console.log(`🔍 PERMISSION CHECK: User has ${user.permissions.length} database permissions`);
       return result;
     }
 

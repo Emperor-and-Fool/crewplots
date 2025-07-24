@@ -55,29 +55,35 @@ private static readonly MODULE_MAPPINGS: Record<string, string> = {
   userRegistration: 'user'
 }
 
-  // Generic permission mapper for VE30 flow
-  static mapUserPermissions(user: User, modules: string[]): string[] {
+  // Generic permission mapper for VE30 flow - now uses database permissions
+  static async mapUserPermissions(user: User, modules: string[]): Promise<string[]> {
     const permissions = new Set<string>()
 
-    // 1. Add database permissions
-    user.permissions?.forEach((p: string) => permissions.add(p))
-
-    // 2. Add role-based permissions  
-    this.getRolePermissions(user.role).forEach((p: string) => permissions.add(p))
-
-    // 3. Map workflow permissions by module
+    // Get database permissions for user's role
+    const rolePermissions = await this.getDatabasePermissions(user.role)
+    
+    // Filter permissions relevant to requested modules
     modules.forEach(module => {
       const validationPrefix = this.MODULE_MAPPINGS[module]
-      if (validationPrefix && user.workflowPermissions?.[module]) {
-        const modulePerms = this.mapModuleWorkflowPermissions(
-          user.workflowPermissions[module],
-          validationPrefix
+      if (validationPrefix) {
+        // Add permissions that match the module prefix
+        const modulePermissions = rolePermissions.filter(perm => 
+          perm.startsWith(`${validationPrefix}.`) || 
+          perm.startsWith('location.') ||
+          perm.startsWith('messaging.') ||
+          perm.startsWith('email.') ||
+          perm.startsWith('competency.') ||
+          perm.startsWith('crew_planning') ||
+          perm.startsWith('development.')
         )
-        modulePerms.forEach((p: string) => permissions.add(p))
+        modulePermissions.forEach(p => permissions.add(p))
       }
     })
 
-    return Array.from(permissions)
+    // Enhanced permissions with competency system for crew_member
+    const enhancedPermissions = await this.enhancePermissionsWithCompetencies(user, Array.from(permissions))
+    
+    return enhancedPermissions
   }
 
   // Module-specific workflow mapping
@@ -85,63 +91,70 @@ private static readonly MODULE_MAPPINGS: Record<string, string> = {
     return workflows.map(workflow => `${validationPrefix}.${workflow}`)
   }
 
-  // Role-based permission mapping
-  private static getRolePermissions(userRole: string): string[] {
-    switch (userRole) {
-      case 'administrator':
-        return [
-          'schedule.create', 'schedule.read', 'schedule.update', 'schedule.delete',
-          'message.create', 'message.read', 'message.update', 'message.delete',
-          'user.create', 'user.read', 'user.update', 'user.delete',
-          'location.create', 'location.read', 'location.update', 'location.delete',
-          'email.send', 'email.read', 'email.admin', 'email.verify',
-          'competency.create', 'competency.read', 'competency.update', 'competency.delete',
-          'kb.create', 'kb.read', 'kb.update', 'kb.delete',
-          'development.testing'
-        ]
-      case 'owner':
-        return [
-          'schedule.create', 'schedule.read', 'schedule.update', 'schedule.delete',
-          'message.create', 'message.read', 'message.update',
-          'user.create', 'user.read', 'user.update',
-          'location.read', 'location.update',
-          'competency.read', 'competency.update',
-          'kb.read', 'kb.update'
-        ]
-      case 'app_manager':
-        return [
-          'schedule.create', 'schedule.read', 'schedule.update',
-          'message.create', 'message.read', 'message.update',
-          'user.read', 'user.update',
-          'location.read',
-          'competency.read',
-          'kb.read'
-        ]
-      case 'crew_chief':
-        return [
-          'schedule.read', 'schedule.update',
-          'message.create', 'message.read',
-          'user.read',
-          'competency.read',
-          'kb.read'
-        ]
-      case 'crew_member':
-        return [
-          'schedule.read',
-          'message.read',
-          'user.read',
-          'kb.read'
-        ]
-      default:
-        return ['schedule.read', 'message.read', 'kb.read']
+  // Get permissions from database role_permissions junction table
+  private static async getDatabasePermissions(role: string): Promise<string[]> {
+    try {
+      const { db } = await import('../db')
+      const { roles, permissions, rolePermissions } = await import('../../shared/schema')
+      const { eq } = await import('drizzle-orm')
+      
+      const result = await db
+        .select({ name: permissions.name })
+        .from(permissions)
+        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+        .innerJoin(roles, eq(rolePermissions.roleId, roles.id))
+        .where(eq(roles.name, role))
+      
+      return result.map(row => row.name)
+    } catch (error) {
+      console.error('❌ Error fetching database permissions:', error)
+      return []
     }
+  }
+
+  // Competency-based permission enhancement for crew_member financial access
+  private static async enhancePermissionsWithCompetencies(user: User, basePermissions: string[]): Promise<string[]> {
+    if (user.role !== 'crew_member') {
+      return basePermissions
+    }
+
+    try {
+      const { db } = await import('../db')
+      const { competencies, userCompetencies } = await import('../../shared/schema')
+      const { eq, and } = await import('drizzle-orm')
+      
+      const competencyResult = await db
+        .select({ name: competencies.name, financial_access: competencies.financialAccess })
+        .from(competencies)
+        .innerJoin(userCompetencies, eq(competencies.id, userCompetencies.competencyId))
+        .where(and(
+          eq(userCompetencies.userId, user.id),
+          eq(competencies.financialAccess, true)
+        ))
+
+      if (competencyResult.length > 0) {
+        // Crew member with financial competency gets additional financial permissions
+        const enhancedPermissions = [...basePermissions]
+        enhancedPermissions.push(
+          'financial.read',
+          'financial.create', 
+          'financial.update'
+        )
+        console.log(`🎯 Enhanced permissions for ${user.username} with financial competency`)
+        return enhancedPermissions
+      }
+    } catch (error) {
+      console.error('❌ Error checking competencies:', error)
+    }
+
+    return basePermissions
   }
 }
 
 // Export wrapper function for backward compatibility with existing VE30 calls
-export function mapWorkflowToValidationPermissions(user: User, modules?: string[]): string[] {
+export async function mapWorkflowToValidationPermissions(user: User, modules?: string[]): Promise<string[]> {
   const defaultModules = ['scheduling', 'messaging', 'usermanagement', 'locations', 'email', 'competencies', 'knowledge-base']
-  return PermissionService.mapUserPermissions(user, modules || defaultModules)
+  return await PermissionService.mapUserPermissions(user, modules || defaultModules)
 }
 
 // constructor(user: User) {

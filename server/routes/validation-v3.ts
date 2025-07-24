@@ -159,14 +159,14 @@ router.post('/execute', authenticateUser, async (req, res) => {
     const userRole = (req.user as any)?.role;
     const workflowPermissions = (req.user as any)?.workflowPermissions || {};
     
-    // Map user context to validation permissions using centralized mapper
-    const validationPermissions = mapWorkflowToValidationPermissions({
+    // Map user context to validation permissions using database-first permission service
+    const validationPermissions = await mapWorkflowToValidationPermissions({
       id: (req.user as any)?.id,
       username: (req.user as any)?.username,
       role: userRole,
       permissions: context?.permissions || [],
       workflowPermissions: workflowPermissions
-    });
+    } as any);
     
     console.log(`🔐 VALIDATION ENGINE 30: User role: ${userRole}, mapped permissions:`, validationPermissions);
 
