@@ -25,7 +25,7 @@ import { Profile } from "@/modules/users/pages";
 import { KnowledgeBase } from "@/modules/knowledge-base";
 import { Reports } from "@/modules/dashboard";
 import { Settings } from "@/modules/administration";
-import { EmailSettings, SecuritySettings, MessagingValidationTest, ValidationEngine3Test, AdminTest, EndpointTest, ValidationTest } from "@/modules/administration";
+import { EmailSettings, SecuritySettings, MessagingValidationTest, ValidationEngine3Test, AdminTest, EndpointTest, ValidationTest, PermissionTestPage } from "@/modules/administration";
 import { UserSettings } from "@/modules/users/pages";
 import NotFound from "@/pages/not-found";
 import { RegistrationSuccess } from "@/modules/users";
@@ -424,6 +424,17 @@ function App() {
                   <AppLayout>
                     <RoleProtectedRoute 
                       component={ValidationTest} 
+                      requiredRoles={["administrator"]} 
+                    />
+                  </AppLayout> : 
+                  <Redirect to="/login" />}
+              </Route>
+
+              <Route path="/permission-test">
+                {isAuthenticated ? 
+                  <AppLayout>
+                    <RoleProtectedRoute 
+                      component={PermissionTestPage} 
                       requiredRoles={["administrator"]} 
                     />
                   </AppLayout> : 
