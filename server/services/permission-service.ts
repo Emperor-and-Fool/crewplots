@@ -2,6 +2,17 @@ import { User } from '../../shared/schema'
 
 export class PermissionService {
 
+  // Static methods for batch/simple operations 
+  static mapUserPermissions(user: User, modules: string[]): string[]
+  static canPerformAction(user: User, permission: string): boolean
+  static getDbPermissionsByRole(role: string): string[]
+  static calculateRoleWorkflowIntersection(user: User, modules: string[]): string[]
+  // Instance properties for caching interactive workflows
+  private user: User
+  private permissionCache: Map<string, string[]>
+  private moduleCache: Map<string, boolean>
+  private dbPermissionsCache: Map<string, string[]>
+
 private static readonly MODULE_MAPPINGS: Record<string, string> = {
   // Users Module
   user: 'user',
@@ -131,4 +142,11 @@ private static readonly MODULE_MAPPINGS: Record<string, string> = {
 export function mapWorkflowToValidationPermissions(user: User, modules?: string[]): string[] {
   const defaultModules = ['scheduling', 'messaging', 'usermanagement', 'locations', 'email', 'competencies', 'knowledge-base']
   return PermissionService.mapUserPermissions(user, modules || defaultModules)
+}
+
+constructor(user: User) {
+  this.user = user
+  this.permissionCache = new Map()
+  this.moduleCache = new Map()
+  this.dbPermissionsCache = new Map()
 }
