@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, Database, User, Shield } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Database, User, Shield, Users, Calendar, MessageSquare, Settings, MapPin, Mail, DollarSign } from 'lucide-react';
 
 interface PermissionTestResult {
   userId: number;
@@ -25,10 +25,21 @@ interface DatabaseStats {
   totalUserCompetencies: number;
 }
 
+interface ModuleTestResult {
+  module: string;
+  requiredPermissions: string[];
+  grantedPermissions: string[];
+  missingPermissions: string[];
+  accessGranted: boolean;
+  testTime: number;
+}
+
 export default function PermissionTestPage() {
   const [testResult, setTestResult] = useState<PermissionTestResult | null>(null);
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
+  const [moduleResults, setModuleResults] = useState<ModuleTestResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingModule, setLoadingModule] = useState<string | null>(null);
   const { toast } = useToast();
 
   const runPermissionTest = async () => {
@@ -66,6 +77,65 @@ export default function PermissionTestPage() {
     }
   };
 
+  const testModulePermissions = async (module: string, requiredPermissions: string[]) => {
+    setLoadingModule(module);
+    const startTime = Date.now();
+    
+    try {
+      const response = await fetch('/api/administration/permission-test', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Module test failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const userPermissions = result.permissionTest.finalPermissions;
+      
+      const grantedPermissions = requiredPermissions.filter(perm => 
+        userPermissions.includes(perm)
+      );
+      const missingPermissions = requiredPermissions.filter(perm => 
+        !userPermissions.includes(perm)
+      );
+
+      const moduleResult: ModuleTestResult = {
+        module,
+        requiredPermissions,
+        grantedPermissions,
+        missingPermissions,
+        accessGranted: missingPermissions.length === 0,
+        testTime: Date.now() - startTime
+      };
+
+      setModuleResults(prev => {
+        const filtered = prev.filter(r => r.module !== module);
+        return [...filtered, moduleResult];
+      });
+
+      toast({
+        title: `${module} Module Test`,
+        description: `${grantedPermissions.length}/${requiredPermissions.length} permissions granted`,
+        variant: moduleResult.accessGranted ? "default" : "destructive"
+      });
+
+    } catch (error) {
+      console.error(`${module} module test failed:`, error);
+      toast({
+        title: `${module} Test Failed`,
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingModule(null);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -81,6 +151,184 @@ export default function PermissionTestPage() {
           Run Permission Test
         </Button>
       </div>
+
+      {/* Module Testing Buttons */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Settings className="mr-2 h-5 w-5" />
+            Module Permission Testing
+          </CardTitle>
+          <CardDescription>
+            Test specific module permissions to see which features are accessible
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Crew', ['crew_planning', 'schedule.read', 'location.access_all'])}
+            >
+              {loadingModule === 'Crew' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <Users className={`h-6 w-6 ${loadingModule === 'Crew' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Crew Management</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Scheduling', ['scheduler_development', 'schedule.create', 'schedule.update', 'schedule.delete'])}
+            >
+              {loadingModule === 'Scheduling' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <Calendar className={`h-6 w-6 ${loadingModule === 'Scheduling' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Scheduling</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Messaging', ['messaging.read', 'messaging.create', 'messaging.update', 'messaging.delete'])}
+            >
+              {loadingModule === 'Messaging' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <MessageSquare className={`h-6 w-6 ${loadingModule === 'Messaging' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Messaging</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Locations', ['location.access_all', 'location.access_owned', 'location.access_managed'])}
+            >
+              {loadingModule === 'Locations' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <MapPin className={`h-6 w-6 ${loadingModule === 'Locations' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Locations</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Email', ['email.admin', 'email.send', 'email.view_logs', 'email.verify'])}
+            >
+              {loadingModule === 'Email' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <Mail className={`h-6 w-6 ${loadingModule === 'Email' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Email System</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Financial', ['financial.view', 'financial.edit', 'financial.reports', 'financial.approve'])}
+            >
+              {loadingModule === 'Financial' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <DollarSign className={`h-6 w-6 ${loadingModule === 'Financial' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Financial</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Development', ['development.testing', 'competency.read', 'competency.create', 'competency.update'])}
+            >
+              {loadingModule === 'Development' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <Settings className={`h-6 w-6 ${loadingModule === 'Development' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Development</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              disabled={loadingModule !== null}
+              onClick={() => testModulePermissions('Competencies', ['competency.read', 'competency.create', 'competency.update', 'competency.delete'])}
+            >
+              {loadingModule === 'Competencies' && <Loader2 className="h-4 w-4 animate-spin mb-1" />}
+              <Shield className={`h-6 w-6 ${loadingModule === 'Competencies' ? 'hidden' : 'mb-1'}`} />
+              <span className="text-sm">Competencies</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Module Test Results */}
+      {moduleResults.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Module Test Results</CardTitle>
+            <CardDescription>
+              Permission access results for each tested module
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {moduleResults.map((result) => (
+                <div key={result.module} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <h3 className="font-semibold text-lg">{result.module} Module</h3>
+                      <Badge 
+                        variant={result.accessGranted ? "default" : "destructive"}
+                        className="ml-2"
+                      >
+                        {result.accessGranted ? (
+                          <>
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Access Granted
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Access Denied
+                          </>
+                        )}
+                      </Badge>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {result.testTime}ms
+                    </span>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium text-green-600 mb-2">
+                        Granted Permissions ({result.grantedPermissions.length})
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {result.grantedPermissions.map((perm) => (
+                          <Badge key={perm} variant="secondary" className="text-xs">
+                            {perm}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {result.missingPermissions.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-red-600 mb-2">
+                          Missing Permissions ({result.missingPermissions.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-1">
+                          {result.missingPermissions.map((perm) => (
+                            <Badge key={perm} variant="destructive" className="text-xs">
+                              {perm}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Database Statistics */}
       {dbStats && (
